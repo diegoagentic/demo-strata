@@ -40,6 +40,7 @@ import { useTenant } from './TenantContext'
 import Navbar from './components/Navbar'
 import Select from './components/Select'
 import ChatWidget from './components/ChatWidget'
+import FeatureManager, { type Feature } from './components/FeatureManager'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -275,7 +276,40 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     const [mainTab, setMainTab] = useState<'follow_up' | 'your_tools' | 'metrics'>('follow_up')
     const [expandedActionId, setExpandedActionId] = useState<number | null>(null)
     const [expandedActivityId, setExpandedActivityId] = useState<number | null>(null)
+    // Feature Customization State
+    const [isFeatureManagerOpen, setIsFeatureManagerOpen] = useState(false)
+    const [features, setFeatures] = useState<Feature[]>([
+        // Core (Existing)
+        { id: 'ai_copilot', title: 'AI Copilot', description: 'Intelligent assistant for analysis, insights, and quick actions.', enabled: true, category: 'core' },
+        { id: 'recent_orders', title: 'Recent Orders', description: 'Track active, completed, and pending orders at a glance.', enabled: true, category: 'core' },
+        { id: 'quick_quote', title: 'Quick Quote', description: 'Start quotes manually or via ERP upload.', enabled: true, category: 'core' },
+
+        // Operations (New B2B Proposals)
+        { id: 'project_tracker', title: 'Project Tracker', description: 'Monitor status of large fit-outs (Mfg, Ship, Install).', enabled: false, category: 'operations' },
+        { id: 'installation_scheduler', title: 'Installation Scheduler', description: 'Calendar view for managing delivery teams.', enabled: false, category: 'operations' },
+
+        // Analytics
+        { id: 'inventory_forecast', title: 'Inventory Forecast', description: 'AI predictions for high-demand stock items.', enabled: false, category: 'analytics' },
+
+        // Support
+        { id: 'warranty_claims', title: 'Warranty & Claims', description: 'Streamlined process for reporting damaged goods.', enabled: false, category: 'support' },
+        { id: 'quote_builder', title: 'Quote Builder', description: 'Rapid assembly of bulk furniture quotes.', enabled: false, category: 'operations' },
+    ])
+
+    // Filter toolsOrder based on enabled features
     const [toolsOrder, setToolsOrder] = useState(['ai_copilot', 'recent_orders', 'quick_quote'])
+
+    // Effect to ensure toolsOrder stays in sync with enabled features (optional auto-cleanup)
+    // For now, the loop below just checks `features.find(f => f.id === toolId)?.enabled`
+
+    const handleToggleFeature = (id: string, enabled: boolean) => {
+        setFeatures(prev => prev.map(f => f.id === id ? { ...f, enabled } : f))
+
+        // If enabling a feature not in order, add it to top (or bottom)
+        if (enabled && !toolsOrder.includes(id)) {
+            setToolsOrder(prev => [id, ...prev])
+        }
+    }
 
     const clients = ['All Clients', ...Array.from(new Set(recentOrders.map(o => o.client)))]
 
@@ -929,243 +963,384 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium text-gray-900 dark:text-white">Tools configured for you</span>
                                 </div>
-                                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-md shadow-sm text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all">
+                                <button
+                                    onClick={() => setIsFeatureManagerOpen(true)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-md shadow-sm text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all"
+                                >
                                     <PencilSquareIcon className="w-3.5 h-3.5" />
                                     Customize
                                 </button>
                             </div>
 
+                            <FeatureManager
+                                isOpen={isFeatureManagerOpen}
+                                onClose={() => setIsFeatureManagerOpen(false)}
+                                features={features}
+                                onToggleFeature={handleToggleFeature}
+                            />
+
                             <Reorder.Group axis="y" values={toolsOrder} onReorder={setToolsOrder} className="space-y-6">
-                                {toolsOrder.map((toolId) => (
-                                    <Reorder.Item
-                                        key={toolId}
-                                        value={toolId}
-                                        layout
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -20 }}
-                                        whileDrag={{ scale: 1.02, zIndex: 50, boxShadow: "0px 10px 20px rgba(0,0,0,0.1)" }}
-                                        className="mb-8 rounded-2xl bg-white dark:bg-zinc-900 overflow-hidden relative"
-                                    >
-                                        {/* Drag Handle Overlay - Optional if using specific handle, but Reorder.Item defaults to whole item draggable unless dragListener={false} */}
-                                        {/* We want smooth reordering, so we'll let the user drag from anywhere or just handle? User asked for guidance, usually handle is explicit. */}
-                                        {/* Let's try explicit handle for better control as requested "guide" */}
+                                {toolsOrder.map((toolId) => {
+                                    const feature = features.find(f => f.id === toolId)
+                                    // Only render if feature exists and is enabled
+                                    if (!feature || !feature.enabled) return null;
 
-                                        {toolId === 'recent_orders' ? (
-                                            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                                {/* Header for Orders */}
-                                                <div className="p-6 border-b border-border">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <h3 className="text-lg font-brand font-semibold text-foreground flex items-center gap-2 cursor-grab active:cursor-grabbing">
-                                                            <Bars3Icon className="w-5 h-5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors" />
-                                                            Recent Orders
-                                                        </h3>
-                                                    </div>
-                                                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                                                        {/* Tabs */}
-                                                        <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
-                                                            {[
-                                                                { id: 'active', label: 'Active', count: counts.active },
-                                                                { id: 'completed', label: 'Completed', count: counts.completed },
-                                                                { id: 'all', label: 'All', count: counts.all },
-                                                                { id: 'metrics', label: 'Metrics', count: null }
-                                                            ].map((tab) => (
-                                                                <button
-                                                                    key={tab.id}
-                                                                    onClick={() => setActiveTab(tab.id as any)}
-                                                                    className={cn(
-                                                                        "px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 outline-none",
-                                                                        activeTab === tab.id
-                                                                            ? "bg-primary text-primary-foreground shadow-sm"
-                                                                            : "text-muted-foreground hover:text-foreground"
-                                                                    )}
-                                                                >
-                                                                    {tab.id === 'metrics' && <ChartBarIcon className="w-4 h-4" />}
-                                                                    {tab.label}
-                                                                    {tab.count !== null && (
-                                                                        <span className={cn(
-                                                                            "text-xs px-1.5 py-0.5 rounded-full transition-colors",
+                                    return (
+                                        <Reorder.Item
+                                            key={toolId}
+                                            value={toolId}
+                                            layout
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -20 }}
+                                            whileDrag={{ scale: 1.02, zIndex: 50, boxShadow: "0px 10px 20px rgba(0,0,0,0.1)" }}
+                                            className="mb-8 rounded-2xl bg-white dark:bg-zinc-900 overflow-hidden relative"
+                                        >
+                                            {/* Drag Handle Overlay - Optional if using specific handle, but Reorder.Item defaults to whole item draggable unless dragListener={false} */}
+                                            {/* We want smooth reordering, so we'll let the user drag from anywhere or just handle? User asked for guidance, usually handle is explicit. */}
+                                            {/* Let's try explicit handle for better control as requested "guide" */}
+
+                                            {toolId === 'recent_orders' ? (
+                                                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                    {/* Header for Orders */}
+                                                    <div className="p-6 border-b border-border">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <h3 className="text-lg font-brand font-semibold text-foreground flex items-center gap-2 cursor-grab active:cursor-grabbing">
+                                                                <Bars3Icon className="w-5 h-5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors" />
+                                                                Recent Orders
+                                                            </h3>
+                                                        </div>
+                                                        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                                                            {/* Tabs */}
+                                                            <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
+                                                                {[
+                                                                    { id: 'active', label: 'Active', count: counts.active },
+                                                                    { id: 'completed', label: 'Completed', count: counts.completed },
+                                                                    { id: 'all', label: 'All', count: counts.all },
+                                                                    { id: 'metrics', label: 'Metrics', count: null }
+                                                                ].map((tab) => (
+                                                                    <button
+                                                                        key={tab.id}
+                                                                        onClick={() => setActiveTab(tab.id as any)}
+                                                                        className={cn(
+                                                                            "px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 outline-none",
                                                                             activeTab === tab.id
-                                                                                ? "bg-primary-foreground/10 text-primary-foreground"
-                                                                                : "bg-background text-muted-foreground group-hover:bg-muted"
-                                                                        )}>
-                                                                            {tab.count}
-                                                                        </span>
-                                                                    )}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <div className="relative group">
-                                                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                                                <input
-                                                                    type="text"
-                                                                    placeholder="Search orders..."
-                                                                    className="pl-9 pr-4 py-2 bg-background border border-input rounded-lg text-sm text-foreground w-full sm:w-64 focus:ring-2 focus:ring-primary outline-none placeholder:text-muted-foreground"
-                                                                    value={searchQuery}
-                                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                                />
+                                                                                ? "bg-primary text-primary-foreground shadow-sm"
+                                                                                : "text-muted-foreground hover:text-foreground"
+                                                                        )}
+                                                                    >
+                                                                        {tab.id === 'metrics' && <ChartBarIcon className="w-4 h-4" />}
+                                                                        {tab.label}
+                                                                        {tab.count !== null && (
+                                                                            <span className={cn(
+                                                                                "text-xs px-1.5 py-0.5 rounded-full transition-colors",
+                                                                                activeTab === tab.id
+                                                                                    ? "bg-primary-foreground/10 text-primary-foreground"
+                                                                                    : "bg-background text-muted-foreground group-hover:bg-muted"
+                                                                            )}>
+                                                                                {tab.count}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                ))}
                                                             </div>
 
-                                                            {/* Client Filter */}
-                                                            <div className="w-48">
-                                                                <Select
-                                                                    value={selectedClient}
-                                                                    onChange={setSelectedClient}
-                                                                    options={clients}
-                                                                />
-                                                            </div>
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <div className="relative group">
+                                                                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="Search orders..."
+                                                                        className="pl-9 pr-4 py-2 bg-background border border-input rounded-lg text-sm text-foreground w-full sm:w-64 focus:ring-2 focus:ring-primary outline-none placeholder:text-muted-foreground"
+                                                                        value={searchQuery}
+                                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                                    />
+                                                                </div>
 
-                                                            {/* Project Filter */}
-                                                            <div className="w-48">
-                                                                <Select
-                                                                    value={selectedProject}
-                                                                    onChange={setSelectedProject}
-                                                                    options={availableProjects}
-                                                                />
-                                                            </div>
+                                                                {/* Client Filter */}
+                                                                <div className="w-48">
+                                                                    <Select
+                                                                        value={selectedClient}
+                                                                        onChange={setSelectedClient}
+                                                                        options={clients}
+                                                                    />
+                                                                </div>
 
-                                                            <div className="h-6 w-px bg-border mx-1 hidden sm:block"></div>
+                                                                {/* Project Filter */}
+                                                                <div className="w-48">
+                                                                    <Select
+                                                                        value={selectedProject}
+                                                                        onChange={setSelectedProject}
+                                                                        options={availableProjects}
+                                                                    />
+                                                                </div>
 
-                                                            <div className="flex bg-muted p-1 rounded-lg">
-                                                                <button
-                                                                    onClick={() => setViewMode('list')}
-                                                                    className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                                                                >
-                                                                    <ListBulletIcon className="h-4 w-4" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setViewMode('grid')}
-                                                                    className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                                                                >
-                                                                    <Squares2X2Icon className="h-4 w-4" />
-                                                                </button>
+                                                                <div className="h-6 w-px bg-border mx-1 hidden sm:block"></div>
+
+                                                                <div className="flex bg-muted p-1 rounded-lg">
+                                                                    <button
+                                                                        onClick={() => setViewMode('list')}
+                                                                        className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                                                    >
+                                                                        <ListBulletIcon className="h-4 w-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setViewMode('grid')}
+                                                                        className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                                                                    >
+                                                                        <Squares2X2Icon className="h-4 w-4" />
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
 
-                                                {/* Content */}
-                                                <div className="p-6 bg-muted/30 min-h-[300px]">
-                                                    {activeTab === 'metrics' ? (
-                                                        <div className="space-y-8">
-                                                            <div className="flex items-center justify-between">
-                                                                <div>
-                                                                    <h3 className="text-lg font-semibold text-foreground">Performance Metrics</h3>
-                                                                    <p className="text-sm text-muted-foreground">
-                                                                        {selectedClient === 'All Clients' ? 'Overview across all clients' : `Showing analytics for ${selectedClient}`}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in zoom-in-95 duration-300">
-                                                                {/* Revenue Card */}
-                                                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl p-6 border border-green-200 dark:border-green-800/20 shadow-sm">
-                                                                    <div className="flex items-center justify-between mb-4">
-                                                                        <p className="text-sm font-medium text-green-700 dark:text-green-400">Total Revenue</p>
-                                                                        <CurrencyDollarIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                                                    </div>
+                                                    {/* Content */}
+                                                    <div className="p-6 bg-muted/30 min-h-[300px]">
+                                                        {activeTab === 'metrics' ? (
+                                                            <div className="space-y-8">
+                                                                <div className="flex items-center justify-between">
                                                                     <div>
-                                                                        <p className="text-2xl font-bold text-green-700 dark:text-green-300">{metricsData.revenue}</p>
-                                                                        <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">Based on visible orders</p>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Active Orders Card */}
-                                                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-6 border border-blue-200 dark:border-blue-800/20 shadow-sm">
-                                                                    <div className="flex items-center justify-between mb-4">
-                                                                        <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Active Orders</p>
-                                                                        <ShoppingBagIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{metricsData.activeOrders}</p>
-                                                                        <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">In production or pending</p>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Completion Rate Card */}
-                                                                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-2xl p-6 border border-purple-200 dark:border-purple-800/20 shadow-sm">
-                                                                    <div className="flex items-center justify-between mb-4">
-                                                                        <p className="text-sm font-medium text-purple-700 dark:text-purple-400">Completion Rate</p>
-                                                                        <ChartBarIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{metricsData.efficiency}%</p>
-                                                                        <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-1">Orders delivered successfully</p>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Project Count Card */}
-                                                                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 rounded-2xl p-6 border border-orange-200 dark:border-orange-800/20 shadow-sm">
-                                                                    <div className="flex items-center justify-between mb-4">
-                                                                        <p className="text-sm font-medium text-orange-700 dark:text-orange-400">Project Count</p>
-                                                                        <ClipboardDocumentListIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
-                                                                            {availableProjects.length > 0 && availableProjects[0] === 'All Projects' ? availableProjects.length - 1 : availableProjects.length}
+                                                                        <h3 className="text-lg font-semibold text-foreground">Performance Metrics</h3>
+                                                                        <p className="text-sm text-muted-foreground">
+                                                                            {selectedClient === 'All Clients' ? 'Overview across all clients' : `Showing analytics for ${selectedClient}`}
                                                                         </p>
-                                                                        <p className="text-xs text-orange-600/80 dark:text-orange-400/80 mt-1">Active projects</p>
                                                                     </div>
                                                                 </div>
-                                                            </div>
 
-                                                            <div className="h-[300px] w-full bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-border shadow-sm">
-                                                                <h4 className="text-md font-medium text-foreground mb-4">Monthly Trends</h4>
-                                                                <ResponsiveContainer width="100%" height="100%">
-                                                                    <BarChart data={salesData}>
-                                                                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} vertical={false} />
-                                                                        <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
-                                                                        <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                                                        <Tooltip
-                                                                            contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                                        />
-                                                                        <Bar dataKey="sales" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                                                                    </BarChart>
-                                                                </ResponsiveContainer>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in zoom-in-95 duration-300">
+                                                                    {/* Revenue Card */}
+                                                                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl p-6 border border-green-200 dark:border-green-800/20 shadow-sm">
+                                                                        <div className="flex items-center justify-between mb-4">
+                                                                            <p className="text-sm font-medium text-green-700 dark:text-green-400">Total Revenue</p>
+                                                                            <CurrencyDollarIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{metricsData.revenue}</p>
+                                                                            <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">Based on visible orders</p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Active Orders Card */}
+                                                                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-6 border border-blue-200 dark:border-blue-800/20 shadow-sm">
+                                                                        <div className="flex items-center justify-between mb-4">
+                                                                            <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Active Orders</p>
+                                                                            <ShoppingBagIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{metricsData.activeOrders}</p>
+                                                                            <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">In production or pending</p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Completion Rate Card */}
+                                                                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-2xl p-6 border border-purple-200 dark:border-purple-800/20 shadow-sm">
+                                                                        <div className="flex items-center justify-between mb-4">
+                                                                            <p className="text-sm font-medium text-purple-700 dark:text-purple-400">Completion Rate</p>
+                                                                            <ChartBarIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{metricsData.efficiency}%</p>
+                                                                            <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-1">Orders delivered successfully</p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Project Count Card */}
+                                                                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/10 dark:to-amber-900/10 rounded-2xl p-6 border border-orange-200 dark:border-orange-800/20 shadow-sm">
+                                                                        <div className="flex items-center justify-between mb-4">
+                                                                            <p className="text-sm font-medium text-orange-700 dark:text-orange-400">Project Count</p>
+                                                                            <ClipboardDocumentListIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                                                                                {availableProjects.length > 0 && availableProjects[0] === 'All Projects' ? availableProjects.length - 1 : availableProjects.length}
+                                                                            </p>
+                                                                            <p className="text-xs text-orange-600/80 dark:text-orange-400/80 mt-1">Active projects</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="h-[300px] w-full bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-border shadow-sm">
+                                                                    <h4 className="text-md font-medium text-foreground mb-4">Monthly Trends</h4>
+                                                                    <ResponsiveContainer width="100%" height="100%">
+                                                                        <BarChart data={salesData}>
+                                                                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} vertical={false} />
+                                                                            <XAxis dataKey="name" stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} />
+                                                                            <YAxis stroke="#9CA3AF" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                                                                            <Tooltip
+                                                                                contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                                            />
+                                                                            <Bar dataKey="sales" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                                                                        </BarChart>
+                                                                    </ResponsiveContainer>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ) : viewMode === 'list' ? (
-                                                        <div className="overflow-x-auto">
-                                                            <table className="min-w-full divide-y divide-border">
-                                                                <thead>
-                                                                    <tr>
-                                                                        <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Order ID</th>
-                                                                        <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer</th>
-                                                                        <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
-                                                                        <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                                                                        <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
-                                                                        <th className="relative px-3 py-3.5"><span className="sr-only">Actions</span></th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody className="divide-y divide-border bg-transparent">
-                                                                    {filteredOrders.map((order) => (
-                                                                        <Fragment key={order.id}>
-                                                                            <tr
-                                                                                className={`hover:bg-muted/50 transition-colors cursor-pointer ${expandedIds.has(order.id) ? 'bg-primary/5' : ''}`}
-                                                                                onClick={() => toggleExpand(order.id)}
-                                                                            >
-                                                                                <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-foreground flex items-center gap-2">
-                                                                                    {expandedIds.has(order.id) ? <ChevronDownIcon className="h-4 w-4 text-foreground" /> : <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />}
-                                                                                    {order.id}
-                                                                                </td>
-                                                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-foreground/80">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">{order.initials}</div>
-                                                                                        {order.customer}
+                                                        ) : viewMode === 'list' ? (
+                                                            <div className="overflow-x-auto">
+                                                                <table className="min-w-full divide-y divide-border">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Order ID</th>
+                                                                            <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer</th>
+                                                                            <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
+                                                                            <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                                                            <th className="px-3 py-3.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                                                                            <th className="relative px-3 py-3.5"><span className="sr-only">Actions</span></th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody className="divide-y divide-border bg-transparent">
+                                                                        {filteredOrders.map((order) => (
+                                                                            <Fragment key={order.id}>
+                                                                                <tr
+                                                                                    className={`hover:bg-muted/50 transition-colors cursor-pointer ${expandedIds.has(order.id) ? 'bg-primary/5' : ''}`}
+                                                                                    onClick={() => toggleExpand(order.id)}
+                                                                                >
+                                                                                    <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-foreground flex items-center gap-2">
+                                                                                        {expandedIds.has(order.id) ? <ChevronDownIcon className="h-4 w-4 text-foreground" /> : <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />}
+                                                                                        {order.id}
+                                                                                    </td>
+                                                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-foreground/80">
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">{order.initials}</div>
+                                                                                            {order.customer}
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-foreground/80">{order.amount}</td>
+                                                                                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                                                        <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset", order.statusColor)}>
+                                                                                            {order.status}
+                                                                                        </span>
+                                                                                    </td>
+                                                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-foreground/80">{order.date}</td>
+                                                                                    <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-medium">
+                                                                                        <Menu as="div" className="relative inline-block text-left">
+                                                                                            <MenuButton onClick={(e) => e.stopPropagation()} className="bg-transparent p-1 rounded-full text-muted-foreground hover:text-foreground">
+                                                                                                <EllipsisHorizontalIcon className="h-5 w-5" />
+                                                                                            </MenuButton>
+                                                                                            <Transition
+                                                                                                as={Fragment}
+                                                                                                enter="transition ease-out duration-100"
+                                                                                                enterFrom="transform opacity-0 scale-95"
+                                                                                                enterTo="transform opacity-100 scale-100"
+                                                                                                leave="transition ease-in duration-75"
+                                                                                                leaveFrom="transform opacity-100 scale-100"
+                                                                                                leaveTo="transform opacity-0 scale-95"
+                                                                                            >
+                                                                                                <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-popover shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-border">
+                                                                                                    <div className="py-1">
+                                                                                                        <MenuItem>
+                                                                                                            {({ active }) => (
+                                                                                                                <button onClick={(e) => { e.stopPropagation(); onNavigateToDetail(); }} className={`${active ? 'bg-muted' : ''} group flex w-full items-center px-4 py-2 text-sm text-foreground`}>
+                                                                                                                    <span className="w-4 h-4 mr-2" ><DocumentTextIcon /></span> View Details
+                                                                                                                </button>
+                                                                                                            )}
+                                                                                                        </MenuItem>
+                                                                                                        <MenuItem>
+                                                                                                            {({ active }) => (
+                                                                                                                <button onClick={(e) => e.stopPropagation()} className={`${active ? 'bg-gray-50 dark:bg-white/5' : ''} group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}>
+                                                                                                                    <span className="w-4 h-4 mr-2" ><PencilSquareIcon /></span> Edit
+                                                                                                                </button>
+                                                                                                            )}
+                                                                                                        </MenuItem>
+                                                                                                        <MenuItem>
+                                                                                                            {({ active }) => (
+                                                                                                                <button onClick={(e) => e.stopPropagation()} className={`${active ? 'bg-gray-50 dark:bg-white/5' : ''} group flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400`}>
+                                                                                                                    <span className="w-4 h-4 mr-2" ><TrashIcon /></span> Delete
+                                                                                                                </button>
+                                                                                                            )}
+                                                                                                        </MenuItem>
+                                                                                                        <MenuItem>
+                                                                                                            {({ active }) => (
+                                                                                                                <button onClick={(e) => e.stopPropagation()} className={`${active ? 'bg-gray-50 dark:bg-white/5' : ''} group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}>
+                                                                                                                    <span className="w-4 h-4 mr-2" ><EnvelopeIcon /></span> Contact
+                                                                                                                </button>
+                                                                                                            )}
+                                                                                                        </MenuItem>
+                                                                                                    </div>
+                                                                                                </MenuItems>
+                                                                                            </Transition>
+                                                                                        </Menu>
+                                                                                    </td>
+                                                                                </tr>
+                                                                                {/* Details Row */}
+                                                                                {expandedIds.has(order.id) && (
+                                                                                    <tr>
+                                                                                        <td colSpan={6} className="px-0 py-0 border-b border-gray-200 dark:border-white/10">
+                                                                                            <div className="p-4 bg-gray-50 dark:bg-black/40 pl-12">
+                                                                                                <div className="flex items-start gap-4">
+                                                                                                    <div className="flex-1 space-y-4">
+                                                                                                        <div className="flex items-center gap-3">
+                                                                                                            <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"><UserIcon className="w-6 h-6 text-gray-500" /></div>
+                                                                                                            <div>
+                                                                                                                <p className="text-sm font-medium text-gray-900 dark:text-white">Sarah Johnson</p>
+                                                                                                                <p className="text-xs text-gray-500">Project Manager</p>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div className="h-px bg-gray-200 dark:bg-white/10 w-full"></div>
+                                                                                                        {/* Progress Bar Simple */}
+                                                                                                        <div className="relative">
+                                                                                                            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 -translate-y-1/2"></div>
+                                                                                                            <div className="relative flex justify-between">
+                                                                                                                {['Placed', 'Mfg', 'Qual', 'Ship'].map((step, i) => (
+                                                                                                                    <div key={i} className={`flex flex-col items-center gap-2 ${i < 2 ? 'text-zinc-900 dark:text-white' : 'text-gray-400'}`}>
+                                                                                                                        <div className={`w-3 h-3 rounded-full ${i < 2 ? 'bg-primary ring-4 ring-brand-100 dark:ring-brand-900/30' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                                                                                                                        <span className="text-xs font-medium">{step}</span>
+                                                                                                                    </div>
+                                                                                                                ))}
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <div className="w-64">
+                                                                                                        <div className="p-3 bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
+                                                                                                            <p className="text-xs font-medium text-gray-500 uppercase">Alert</p>
+                                                                                                            <div className="mt-2 flex items-start gap-2">
+                                                                                                                <ExclamationTriangleIcon className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                                                                                                                <div>
+                                                                                                                    <p className="text-sm font-medium text-orange-700 dark:text-orange-400">Customs Delay</p>
+                                                                                                                    <p className="text-xs text-gray-500 mt-1">Shipment held at port. ETA +24h.</p>
+                                                                                                                    <button onClick={() => setTrackingOrder(order)} className="mt-2 text-xs font-medium text-zinc-900 dark:text-primary decoration-primary underline-offset-2 hover:underline">Track Shipment</button>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                )}
+                                                                            </Fragment>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                                                {filteredOrders.map((order) => (
+                                                                    <div
+                                                                        key={order.id}
+                                                                        className={`group relative bg-white dark:bg-zinc-900 rounded-2xl border ${expandedIds.has(order.id) ? 'border-zinc-300 dark:border-zinc-600 ring-1 ring-zinc-300 dark:ring-zinc-600' : 'border-gray-200 dark:border-white/10'} shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col`}
+                                                                        onClick={() => toggleExpand(order.id)}
+                                                                    >
+                                                                        <div className="p-5">
+                                                                            <div className="flex items-center justify-between mb-4">
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 text-white flex items-center justify-center text-sm font-bold shadow-md">
+                                                                                        {order.initials}
                                                                                     </div>
-                                                                                </td>
-                                                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-foreground/80">{order.amount}</td>
-                                                                                <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                                                                    <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset", order.statusColor)}>
-                                                                                        {order.status}
-                                                                                    </span>
-                                                                                </td>
-                                                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-foreground/80">{order.date}</td>
-                                                                                <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-medium">
+                                                                                    <div>
+                                                                                        <h4 className="text-sm font-bold text-gray-900 dark:text-white">{order.customer}</h4>
+                                                                                        <p className="text-xs text-gray-500">{order.id}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <button onClick={(e) => { e.stopPropagation(); onNavigateToDetail(); }} className="p-1 rounded-full hover:bg-primary hover:text-zinc-900 dark:hover:bg-primary text-gray-400 hover:text-zinc-900 dark:hover:text-zinc-900 transition-colors">
+                                                                                        <DocumentTextIcon className="h-5 w-5" />
+                                                                                    </button>
+                                                                                    <button onClick={(e) => e.stopPropagation()} className="p-1 rounded-full hover:bg-primary hover:text-zinc-900 dark:hover:bg-primary text-gray-400 hover:text-zinc-900 dark:hover:text-zinc-900 transition-colors">
+                                                                                        <PencilSquareIcon className="h-5 w-5" />
+                                                                                    </button>
                                                                                     <Menu as="div" className="relative inline-block text-left">
-                                                                                        <MenuButton onClick={(e) => e.stopPropagation()} className="bg-transparent p-1 rounded-full text-muted-foreground hover:text-foreground">
+                                                                                        <MenuButton onClick={(e) => e.stopPropagation()} className="p-1 rounded-full hover:bg-primary hover:text-zinc-900 dark:hover:bg-primary text-gray-400 dark:hover:text-zinc-900">
                                                                                             <EllipsisHorizontalIcon className="h-5 w-5" />
                                                                                         </MenuButton>
                                                                                         <Transition
@@ -1177,22 +1352,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                                                             leaveFrom="transform opacity-100 scale-100"
                                                                                             leaveTo="transform opacity-0 scale-95"
                                                                                         >
-                                                                                            <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-popover shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-border">
+                                                                                            <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-white dark:bg-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-100 dark:border-white/10">
                                                                                                 <div className="py-1">
-                                                                                                    <MenuItem>
-                                                                                                        {({ active }) => (
-                                                                                                            <button onClick={(e) => { e.stopPropagation(); onNavigateToDetail(); }} className={`${active ? 'bg-muted' : ''} group flex w-full items-center px-4 py-2 text-sm text-foreground`}>
-                                                                                                                <span className="w-4 h-4 mr-2" ><DocumentTextIcon /></span> View Details
-                                                                                                            </button>
-                                                                                                        )}
-                                                                                                    </MenuItem>
-                                                                                                    <MenuItem>
-                                                                                                        {({ active }) => (
-                                                                                                            <button onClick={(e) => e.stopPropagation()} className={`${active ? 'bg-gray-50 dark:bg-white/5' : ''} group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}>
-                                                                                                                <span className="w-4 h-4 mr-2" ><PencilSquareIcon /></span> Edit
-                                                                                                            </button>
-                                                                                                        )}
-                                                                                                    </MenuItem>
                                                                                                     <MenuItem>
                                                                                                         {({ active }) => (
                                                                                                             <button onClick={(e) => e.stopPropagation()} className={`${active ? 'bg-gray-50 dark:bg-white/5' : ''} group flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400`}>
@@ -1200,309 +1361,210 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                                                                             </button>
                                                                                                         )}
                                                                                                     </MenuItem>
-                                                                                                    <MenuItem>
-                                                                                                        {({ active }) => (
-                                                                                                            <button onClick={(e) => e.stopPropagation()} className={`${active ? 'bg-gray-50 dark:bg-white/5' : ''} group flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200`}>
-                                                                                                                <span className="w-4 h-4 mr-2" ><EnvelopeIcon /></span> Contact
-                                                                                                            </button>
-                                                                                                        )}
-                                                                                                    </MenuItem>
                                                                                                 </div>
                                                                                             </MenuItems>
                                                                                         </Transition>
                                                                                     </Menu>
-                                                                                </td>
-                                                                            </tr>
-                                                                            {/* Details Row */}
-                                                                            {expandedIds.has(order.id) && (
-                                                                                <tr>
-                                                                                    <td colSpan={6} className="px-0 py-0 border-b border-gray-200 dark:border-white/10">
-                                                                                        <div className="p-4 bg-gray-50 dark:bg-black/40 pl-12">
-                                                                                            <div className="flex items-start gap-4">
-                                                                                                <div className="flex-1 space-y-4">
-                                                                                                    <div className="flex items-center gap-3">
-                                                                                                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"><UserIcon className="w-6 h-6 text-gray-500" /></div>
-                                                                                                        <div>
-                                                                                                            <p className="text-sm font-medium text-gray-900 dark:text-white">Sarah Johnson</p>
-                                                                                                            <p className="text-xs text-gray-500">Project Manager</p>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                    <div className="h-px bg-gray-200 dark:bg-white/10 w-full"></div>
-                                                                                                    {/* Progress Bar Simple */}
-                                                                                                    <div className="relative">
-                                                                                                        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 -translate-y-1/2"></div>
-                                                                                                        <div className="relative flex justify-between">
-                                                                                                            {['Placed', 'Mfg', 'Qual', 'Ship'].map((step, i) => (
-                                                                                                                <div key={i} className={`flex flex-col items-center gap-2 ${i < 2 ? 'text-zinc-900 dark:text-white' : 'text-gray-400'}`}>
-                                                                                                                    <div className={`w-3 h-3 rounded-full ${i < 2 ? 'bg-primary ring-4 ring-brand-100 dark:ring-brand-900/30' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
-                                                                                                                    <span className="text-xs font-medium">{step}</span>
-                                                                                                                </div>
-                                                                                                            ))}
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                                <div className="w-64">
-                                                                                                    <div className="p-3 bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm">
-                                                                                                        <p className="text-xs font-medium text-gray-500 uppercase">Alert</p>
-                                                                                                        <div className="mt-2 flex items-start gap-2">
-                                                                                                            <ExclamationTriangleIcon className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                                                                                                            <div>
-                                                                                                                <p className="text-sm font-medium text-orange-700 dark:text-orange-400">Customs Delay</p>
-                                                                                                                <p className="text-xs text-gray-500 mt-1">Shipment held at port. ETA +24h.</p>
-                                                                                                                <button onClick={() => setTrackingOrder(order)} className="mt-2 text-xs font-medium text-zinc-900 dark:text-primary decoration-primary underline-offset-2 hover:underline">Track Shipment</button>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </td>
-                                                                                </tr>
-                                                                            )}
-                                                                        </Fragment>
-                                                                    ))}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                                            {filteredOrders.map((order) => (
-                                                                <div
-                                                                    key={order.id}
-                                                                    className={`group relative bg-white dark:bg-zinc-900 rounded-2xl border ${expandedIds.has(order.id) ? 'border-zinc-300 dark:border-zinc-600 ring-1 ring-zinc-300 dark:ring-zinc-600' : 'border-gray-200 dark:border-white/10'} shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col`}
-                                                                    onClick={() => toggleExpand(order.id)}
-                                                                >
-                                                                    <div className="p-5">
-                                                                        <div className="flex items-center justify-between mb-4">
-                                                                            <div className="flex items-center gap-3">
-                                                                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 text-white flex items-center justify-center text-sm font-bold shadow-md">
-                                                                                    {order.initials}
-                                                                                </div>
-                                                                                <div>
-                                                                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">{order.customer}</h4>
-                                                                                    <p className="text-xs text-gray-500">{order.id}</p>
                                                                                 </div>
                                                                             </div>
-                                                                            <div className="flex items-center gap-1">
-                                                                                <button onClick={(e) => { e.stopPropagation(); onNavigateToDetail(); }} className="p-1 rounded-full hover:bg-primary hover:text-zinc-900 dark:hover:bg-primary text-gray-400 hover:text-zinc-900 dark:hover:text-zinc-900 transition-colors">
-                                                                                    <DocumentTextIcon className="h-5 w-5" />
-                                                                                </button>
-                                                                                <button onClick={(e) => e.stopPropagation()} className="p-1 rounded-full hover:bg-primary hover:text-zinc-900 dark:hover:bg-primary text-gray-400 hover:text-zinc-900 dark:hover:text-zinc-900 transition-colors">
-                                                                                    <PencilSquareIcon className="h-5 w-5" />
-                                                                                </button>
-                                                                                <Menu as="div" className="relative inline-block text-left">
-                                                                                    <MenuButton onClick={(e) => e.stopPropagation()} className="p-1 rounded-full hover:bg-primary hover:text-zinc-900 dark:hover:bg-primary text-gray-400 dark:hover:text-zinc-900">
-                                                                                        <EllipsisHorizontalIcon className="h-5 w-5" />
-                                                                                    </MenuButton>
-                                                                                    <Transition
-                                                                                        as={Fragment}
-                                                                                        enter="transition ease-out duration-100"
-                                                                                        enterFrom="transform opacity-0 scale-95"
-                                                                                        enterTo="transform opacity-100 scale-100"
-                                                                                        leave="transition ease-in duration-75"
-                                                                                        leaveFrom="transform opacity-100 scale-100"
-                                                                                        leaveTo="transform opacity-0 scale-95"
-                                                                                    >
-                                                                                        <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-white dark:bg-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-gray-100 dark:border-white/10">
-                                                                                            <div className="py-1">
-                                                                                                <MenuItem>
-                                                                                                    {({ active }) => (
-                                                                                                        <button onClick={(e) => e.stopPropagation()} className={`${active ? 'bg-gray-50 dark:bg-white/5' : ''} group flex w-full items-center px-4 py-2 text-sm text-red-600 dark:text-red-400`}>
-                                                                                                            <span className="w-4 h-4 mr-2" ><TrashIcon /></span> Delete
-                                                                                                        </button>
-                                                                                                    )}
-                                                                                                </MenuItem>
-                                                                                            </div>
-                                                                                        </MenuItems>
-                                                                                    </Transition>
-                                                                                </Menu>
+
+                                                                            <div className="space-y-3">
+                                                                                <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/5">
+                                                                                    <span className="text-xs text-gray-500">Amount</span>
+                                                                                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{order.amount}</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/5">
+                                                                                    <span className="text-xs text-gray-500">Date</span>
+                                                                                    <span className="text-sm text-gray-700 dark:text-gray-300">{order.date}</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center pt-2">
+                                                                                    <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset", order.statusColor)}>
+                                                                                        {order.status}
+                                                                                    </span>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
 
-                                                                        <div className="space-y-3">
-                                                                            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/5">
-                                                                                <span className="text-xs text-gray-500">Amount</span>
-                                                                                <span className="text-sm font-semibold text-gray-900 dark:text-white">{order.amount}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-white/5">
-                                                                                <span className="text-xs text-gray-500">Date</span>
-                                                                                <span className="text-sm text-gray-700 dark:text-gray-300">{order.date}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between items-center pt-2">
-                                                                                <span className={cn("inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset", order.statusColor)}>
-                                                                                    {order.status}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {expandedIds.has(order.id) && (
-                                                                        <div className="mt-4 pt-4 px-5 border-t border-gray-100 dark:border-white/5">
-                                                                            <div className="flex flex-col md:flex-row gap-8">
-                                                                                <div className="flex-1 space-y-6">
-                                                                                    <div className="flex items-center gap-3">
-                                                                                        <div className="h-8 w-8 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-500">
-                                                                                            <UserIcon className="h-4 w-4" />
-                                                                                        </div>
-                                                                                        <div>
-                                                                                            <p className="text-sm font-bold text-gray-900 dark:text-white">Sarah Johnson</p>
-                                                                                            <p className="text-xs text-gray-500">Project Manager</p>
-                                                                                        </div>
-                                                                                    </div>
-
-                                                                                    <div className="relative py-2">
-                                                                                        <div className="absolute top-3 left-0 w-full h-0.5 bg-gray-200 dark:bg-zinc-700" />
-                                                                                        <div className="relative z-10 flex justify-between">
-                                                                                            {['Placed', 'Mfg', 'Qual', 'Ship'].map((step, i) => (
-                                                                                                <div key={i} className="flex flex-col items-center bg-white dark:bg-zinc-900 px-1">
-                                                                                                    <div className={`h-6 w-6 rounded-full flex items-center justify-center ${i <= 1 ? 'bg-primary text-primary-foreground' : 'bg-gray-200 dark:bg-zinc-700 text-gray-400'}`}>
-                                                                                                        {i < 1 ? <CheckIcon className="h-4 w-4" /> : <div className={`h-2 w-2 rounded-full ${i <= 1 ? 'bg-primary-foreground' : 'bg-white/50'}`} />}
-                                                                                                    </div>
-                                                                                                    <span className={`mt-2 text-xs font-medium ${i <= 1 ? 'text-zinc-900 dark:text-zinc-100' : 'text-gray-500'}`}>{step}</span>
-                                                                                                </div>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div className="w-full md:w-[280px]">
-                                                                                    <div className="rounded-xl border border-orange-200 dark:border-orange-500/20 bg-orange-50 dark:bg-orange-500/10 p-4">
-                                                                                        <div className="flex gap-3">
-                                                                                            <ExclamationTriangleIcon className="h-5 w-5 text-orange-500 shrink-0" />
+                                                                        {expandedIds.has(order.id) && (
+                                                                            <div className="mt-4 pt-4 px-5 border-t border-gray-100 dark:border-white/5">
+                                                                                <div className="flex flex-col md:flex-row gap-8">
+                                                                                    <div className="flex-1 space-y-6">
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <div className="h-8 w-8 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-500">
+                                                                                                <UserIcon className="h-4 w-4" />
+                                                                                            </div>
                                                                                             <div>
-                                                                                                <h5 className="text-sm font-bold text-orange-700 dark:text-orange-400">Alert: Customs Delay</h5>
-                                                                                                <p className="mt-1 text-xs text-orange-600/80 dark:text-orange-400/70">Held at port. ETA +24h.</p>
-                                                                                                <button onClick={(e) => { e.stopPropagation(); setTrackingOrder(order); }} className="mt-2 text-xs font-medium text-zinc-900 dark:text-primary decoration-primary underline-offset-2 hover:underline">
-                                                                                                    Track Shipment
-                                                                                                </button>
+                                                                                                <p className="text-sm font-bold text-gray-900 dark:text-white">Sarah Johnson</p>
+                                                                                                <p className="text-xs text-gray-500">Project Manager</p>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <div className="relative py-2">
+                                                                                            <div className="absolute top-3 left-0 w-full h-0.5 bg-gray-200 dark:bg-zinc-700" />
+                                                                                            <div className="relative z-10 flex justify-between">
+                                                                                                {['Placed', 'Mfg', 'Qual', 'Ship'].map((step, i) => (
+                                                                                                    <div key={i} className="flex flex-col items-center bg-white dark:bg-zinc-900 px-1">
+                                                                                                        <div className={`h-6 w-6 rounded-full flex items-center justify-center ${i <= 1 ? 'bg-primary text-primary-foreground' : 'bg-gray-200 dark:bg-zinc-700 text-gray-400'}`}>
+                                                                                                            {i < 1 ? <CheckIcon className="h-4 w-4" /> : <div className={`h-2 w-2 rounded-full ${i <= 1 ? 'bg-primary-foreground' : 'bg-white/50'}`} />}
+                                                                                                        </div>
+                                                                                                        <span className={`mt-2 text-xs font-medium ${i <= 1 ? 'text-zinc-900 dark:text-zinc-100' : 'text-gray-500'}`}>{step}</span>
+                                                                                                    </div>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    <div className="w-full md:w-[280px]">
+                                                                                        <div className="rounded-xl border border-orange-200 dark:border-orange-500/20 bg-orange-50 dark:bg-orange-500/10 p-4">
+                                                                                            <div className="flex gap-3">
+                                                                                                <ExclamationTriangleIcon className="h-5 w-5 text-orange-500 shrink-0" />
+                                                                                                <div>
+                                                                                                    <h5 className="text-sm font-bold text-orange-700 dark:text-orange-400">Alert: Customs Delay</h5>
+                                                                                                    <p className="mt-1 text-xs text-orange-600/80 dark:text-orange-400/70">Held at port. ETA +24h.</p>
+                                                                                                    <button onClick={(e) => { e.stopPropagation(); setTrackingOrder(order); }} className="mt-2 text-xs font-medium text-zinc-900 dark:text-primary decoration-primary underline-offset-2 hover:underline">
+                                                                                                        Track Shipment
+                                                                                                    </button>
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
-                                                                    )}
+                                                                        )}
 
-                                                                    {expandedIds.has(order.id) && (
-                                                                        <div className="mt-6 bg-gray-50 dark:bg-white/5 p-4 border-t border-gray-200 dark:border-white/10">
-                                                                            <div className="flex items-center gap-2 mb-3">
-                                                                                <ShoppingBagIcon className="h-4 w-4 text-gray-400" />
-                                                                                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Order Items (3)</span>
+                                                                        {expandedIds.has(order.id) && (
+                                                                            <div className="mt-6 bg-gray-50 dark:bg-white/5 p-4 border-t border-gray-200 dark:border-white/10">
+                                                                                <div className="flex items-center gap-2 mb-3">
+                                                                                    <ShoppingBagIcon className="h-4 w-4 text-gray-400" />
+                                                                                    <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Order Items (3)</span>
+                                                                                </div>
+                                                                                <div className="space-y-2">
+                                                                                    {['Office Chair Ergonomic', 'Standing Desk Motorized'].map((item, i) => (
+                                                                                        <div key={i} className="flex justify-between text-xs">
+                                                                                            <span className="text-gray-500">{item}</span>
+                                                                                            <span className="text-gray-900 dark:text-white font-medium">x1</span>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="space-y-2">
-                                                                                {['Office Chair Ergonomic', 'Standing Desk Motorized'].map((item, i) => (
-                                                                                    <div key={i} className="flex justify-between text-xs">
-                                                                                        <span className="text-gray-500">{item}</span>
-                                                                                        <span className="text-gray-900 dark:text-white font-medium">x1</span>
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
+                                                                        )}
 
-                                                                    <div className="p-4 pt-0 mt-auto">
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); setTrackingOrder(order); }}
-                                                                            className="w-full py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center justify-center gap-2"
-                                                                        >
-                                                                            <MapPinIcon className="h-3 w-3" /> Track Shipment
-                                                                        </button>
+                                                                        <div className="p-4 pt-0 mt-auto">
+                                                                            <button
+                                                                                onClick={(e) => { e.stopPropagation(); setTrackingOrder(order); }}
+                                                                                className="w-full py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center justify-center gap-2"
+                                                                            >
+                                                                                <MapPinIcon className="h-3 w-3" /> Track Shipment
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ) : toolId === 'quick_quote' ? (
-                                            /* Quick Quote Tool Section */
-                                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                                                {/* Left Column: Quick Quote Action Panel (2/3 width) */}
-                                                <div className="xl:col-span-2 bg-white dark:bg-zinc-900 rounded-2xl border border-border shadow-sm p-6">
-                                                    <div className="flex items-center gap-3 mb-6">
-                                                        <Bars3Icon
-                                                            className="w-5 h-5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors cursor-grab active:cursor-grabbing mr-2"
-                                                        />
-                                                        <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center justify-center">
-                                                            <DocumentPlusIcon className="w-6 h-6" />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="text-lg font-brand font-semibold text-foreground">Quick Quote</h3>
-                                                            <p className="text-sm text-muted-foreground">Upload files or start from scratch</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-6">
-                                                        {/* Upload Zone */}
-                                                        <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group">
-                                                            <CloudArrowUpIcon className="w-12 h-12 text-zinc-400 group-hover:text-primary transition-colors mb-4" />
-                                                            <h4 className="text-base font-medium text-foreground">Drag and drop files here</h4>
-                                                            <p className="text-sm text-muted-foreground mt-1">or click to select</p>
-                                                        </div>
-
-                                                        <div className="flex items-center gap-4 py-2">
-                                                            <div className="h-px flex-1 bg-border"></div>
-                                                            <span className="text-xs font-medium text-muted-foreground">Don't have files?</span>
-                                                            <div className="h-px flex-1 bg-border"></div>
-                                                        </div>
-
-                                                        {/* Action Buttons Grid */}
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                            <button className="flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 font-medium transition-colors text-sm">
-                                                                <LinkIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                                                                ERP Quote
-                                                            </button>
-                                                            <button className="flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 font-medium transition-colors text-sm">
-                                                                <PencilSquareIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                                                                Manual Quote
-                                                            </button>
-                                                        </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
+                                            ) : toolId === 'quick_quote' ? (
+                                                /* Quick Quote Tool Section */
+                                                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                                                    {/* Left Column: Quick Quote Action Panel (2/3 width) */}
+                                                    <div className="xl:col-span-2 bg-white dark:bg-zinc-900 rounded-2xl border border-border shadow-sm p-6">
+                                                        <div className="flex items-center gap-3 mb-6">
+                                                            <Bars3Icon
+                                                                className="w-5 h-5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors cursor-grab active:cursor-grabbing mr-2"
+                                                            />
+                                                            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center justify-center">
+                                                                <DocumentPlusIcon className="w-6 h-6" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-lg font-brand font-semibold text-foreground">Quick Quote</h3>
+                                                                <p className="text-sm text-muted-foreground">Upload files or start from scratch</p>
+                                                            </div>
+                                                        </div>
 
-                                                {/* Right Column: Recent Quotes List (1/3 width) */}
-                                                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-border shadow-sm p-6 flex flex-col h-full">
-                                                    <div className="flex items-center justify-between mb-6">
-                                                        <h3 className="text-lg font-brand font-semibold text-foreground">Recent Quotes</h3>
-                                                        <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">View All</button>
-                                                    </div>
+                                                        <div className="space-y-6">
+                                                            {/* Upload Zone */}
+                                                            <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group">
+                                                                <CloudArrowUpIcon className="w-12 h-12 text-zinc-400 group-hover:text-primary transition-colors mb-4" />
+                                                                <h4 className="text-base font-medium text-foreground">Drag and drop files here</h4>
+                                                                <p className="text-sm text-muted-foreground mt-1">or click to select</p>
+                                                            </div>
 
-                                                    <div className="flex-1 overflow-auto">
-                                                        <div className="space-y-4">
-                                                            {recentQuotes.map((quote) => (
-                                                                <div key={quote.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 hover:border-primary/30 transition-colors cursor-pointer group">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-10 h-10 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0">
-                                                                            <DocumentTextIcon className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300 transition-colors" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-sm font-semibold text-foreground">{quote.id}</p>
-                                                                            <p className="text-xs text-muted-foreground">{quote.date}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="text-right">
-                                                                        <p className="text-sm font-bold text-foreground">{quote.amount}</p>
-                                                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${quote.status === 'Approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                                                            quote.status === 'Pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                                                                'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                                                                            }`}>
-                                                                            {quote.status}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
+                                                            <div className="flex items-center gap-4 py-2">
+                                                                <div className="h-px flex-1 bg-border"></div>
+                                                                <span className="text-xs font-medium text-muted-foreground">Don't have files?</span>
+                                                                <div className="h-px flex-1 bg-border"></div>
+                                                            </div>
+
+                                                            {/* Action Buttons Grid */}
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                <button className="flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 font-medium transition-colors text-sm">
+                                                                    <LinkIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                                                                    ERP Quote
+                                                                </button>
+                                                                <button className="flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 font-medium transition-colors text-sm">
+                                                                    <PencilSquareIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                                                                    Manual Quote
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <button className="w-full mt-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
-                                                        Create New Quote
+
+                                                    {/* Right Column: Recent Quotes List (1/3 width) */}
+                                                    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-border shadow-sm p-6 flex flex-col h-full">
+                                                        <div className="flex items-center justify-between mb-6">
+                                                            <h3 className="text-lg font-brand font-semibold text-foreground">Recent Quotes</h3>
+                                                            <button className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">View All</button>
+                                                        </div>
+
+                                                        <div className="flex-1 overflow-auto">
+                                                            <div className="space-y-4">
+                                                                {recentQuotes.map((quote) => (
+                                                                    <div key={quote.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 hover:border-primary/30 transition-colors cursor-pointer group">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-10 h-10 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0">
+                                                                                <DocumentTextIcon className="w-5 h-5 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300 transition-colors" />
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-sm font-semibold text-foreground">{quote.id}</p>
+                                                                                <p className="text-xs text-muted-foreground">{quote.date}</p>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="text-right">
+                                                                            <p className="text-sm font-bold text-foreground">{quote.amount}</p>
+                                                                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${quote.status === 'Approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                                                                quote.status === 'Pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                                                                    'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
+                                                                                }`}>
+                                                                                {quote.status}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <button className="w-full mt-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+                                                            Create New Quote
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : toolId === 'ai_copilot' ? (
+                                                <ChatWidget className="w-full" />
+                                            ) : (
+                                                /* Placeholder for New B2B Widgets */
+                                                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 p-8 flex flex-col items-center justify-center text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                    <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
+                                                        <CubeIcon className="w-6 h-6 text-zinc-400" />
+                                                    </div>
+                                                    <h3 className="text-lg font-brand font-semibold text-foreground">{feature?.title}</h3>
+                                                    <p className="text-sm text-muted-foreground mt-1 max-w-md">{feature?.description}</p>
+                                                    <button className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                                                        Launch Preview
                                                     </button>
                                                 </div>
-                                            </div>
-                                        ) : toolId === 'ai_copilot' ? (
-                                            <ChatWidget className="w-full" />
-                                        ) : null}
-                                    </Reorder.Item>
-                                ))}
+                                            )}
+                                        </Reorder.Item>
+                                    )
+                                })}
                             </Reorder.Group>
                         </div>
                     )
