@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import InventoryMovements from './components/InventoryMovements';
 import InventoryMaintenance from './components/InventoryMaintenance';
 import RelocateAssetModal from './components/RelocateAssetModal';
@@ -34,8 +34,12 @@ import {
     ClipboardDocumentCheckIcon,
     TruckIcon,
     ChartBarIcon,
-    CurrencyDollarIcon,
-    PhotoIcon
+    CurrencyDollarIcon, // Keep only one
+    PhotoIcon,
+    LightBulbIcon,
+    ComputerDesktopIcon,
+    TableCellsIcon,
+    ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -59,9 +63,8 @@ interface InventoryItem {
     image?: string;
 }
 
-const MOCK_INVENTORY: InventoryItem[] = [
+const BASE_INVENTORY_ITEMS = [
     {
-        id: '1',
         assetName: 'LED Desk Lamp',
         description: 'Lighting • Desk Lamp',
         category: 'Lighting',
@@ -70,10 +73,9 @@ const MOCK_INVENTORY: InventoryItem[] = [
         status: 'Under Maintenance',
         value: 85.00,
         carbonImpact: 'Low Impact',
-        image: 'https://images.unsplash.com/photo-1534073828943-ef801083f9f9?auto=format&fit=crop&q=80&w=800'
+        image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=800'
     },
     {
-        id: '2',
         assetName: 'Executive Office Chair',
         description: 'Furniture • Chair',
         category: 'Furniture',
@@ -82,10 +84,9 @@ const MOCK_INVENTORY: InventoryItem[] = [
         status: 'Available',
         value: 450.00,
         carbonImpact: 'Low Impact',
-        image: 'https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&q=80&w=800'
+        image: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?auto=format&fit=crop&q=80&w=800'
     },
     {
-        id: '3',
         assetName: 'LED Ceiling Panel 40W #2',
         description: 'Lighting • LED Panel',
         category: 'Lighting',
@@ -94,10 +95,9 @@ const MOCK_INVENTORY: InventoryItem[] = [
         status: 'Available',
         value: 192.00,
         carbonImpact: 'Low Impact',
-        image: 'https://images.unsplash.com/photo-1563456075-8ec9338274d8?auto=format&fit=crop&q=80&w=800'
+        image: undefined // Test fallback
     },
     {
-        id: '4',
         assetName: 'Glass Office Partition',
         description: 'Partitions • Partition',
         category: 'Partitions',
@@ -109,7 +109,6 @@ const MOCK_INVENTORY: InventoryItem[] = [
         image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800'
     },
     {
-        id: '5',
         assetName: 'LED Ceiling Panel 40W #1',
         description: 'Lighting • LED Panel',
         category: 'Lighting',
@@ -118,10 +117,9 @@ const MOCK_INVENTORY: InventoryItem[] = [
         status: 'Available',
         value: 192.00,
         carbonImpact: 'Low Impact',
-        image: 'https://images.unsplash.com/photo-1563456075-8ec9338274d8?auto=format&fit=crop&q=80&w=800'
+        image: undefined // Test fallback
     },
     {
-        id: '6',
         assetName: 'Standing Desk (Motorized)',
         description: 'Furniture • Desk',
         category: 'Furniture',
@@ -130,10 +128,9 @@ const MOCK_INVENTORY: InventoryItem[] = [
         status: 'In Use',
         value: 850.00,
         carbonImpact: 'Medium Impact',
-        image: 'https://images.unsplash.com/photo-1595515106967-160bf288e7a8?auto=format&fit=crop&q=80&w=800'
+        image: undefined
     },
     {
-        id: '7',
         assetName: 'Conference Table (Oak)',
         description: 'Furniture • Table',
         category: 'Furniture',
@@ -143,20 +140,18 @@ const MOCK_INVENTORY: InventoryItem[] = [
         value: 1200.00,
         carbonImpact: 'Medium Impact',
         image: 'https://images.unsplash.com/photo-1611269154421-4e27233ac5c7?auto=format&fit=crop&q=80&w=800'
-    },
-    {
-        id: '8',
-        assetName: 'Ergonomic Mesh Chair',
-        description: 'Furniture • Chair',
-        category: 'Furniture',
-        location: 'Floor 2',
-        locationType: 'Office',
-        status: 'Available',
-        value: 350.00,
-        carbonImpact: 'Low Impact',
-        image: 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?auto=format&fit=crop&q=80&w=800'
-    },
+    }
 ];
+
+const MOCK_INVENTORY: InventoryItem[] = Array.from({ length: 50 }, (_, i) => {
+    const template = BASE_INVENTORY_ITEMS[i % BASE_INVENTORY_ITEMS.length];
+    return {
+        ...template,
+        id: `${i + 1}`,
+        assetName: `${template.assetName} ${Math.floor(i / BASE_INVENTORY_ITEMS.length) + 1}`, // Add number to differentiate
+        status: i % 5 === 0 ? 'Under Maintenance' : i % 3 === 0 ? 'In Use' : 'Available',
+    } as InventoryItem;
+});
 
 // Summary Data adapted for Inventory
 const inventorySummary = {
@@ -221,6 +216,10 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
     const [filterLocation, setFilterLocation] = useState('All Locations');
     const [filterType, setFilterType] = useState('All Types');
 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = viewMode === 'grid' ? 12 : 10;
+
     // Derived Data
     const uniqueLocations = useMemo(() => Array.from(new Set(inventoryData.map(i => i.location))), [inventoryData]);
     const uniqueTypes = useMemo(() => Array.from(new Set(inventoryData.map(i => i.locationType))), [inventoryData]);
@@ -236,6 +235,17 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
             return matchesSearch && matchesStatus && matchesLocation && matchesType;
         });
     }, [inventoryData, searchQuery, filterStatus, filterLocation, filterType]);
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, filterStatus, filterLocation, filterType, viewMode]);
 
     // Handlers
     const toggleSelection = (id: string) => {
@@ -343,6 +353,15 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
         return impact === 'Low Impact'
             ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/10'
             : 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/10';
+    };
+
+    const getCategoryIcon = (category: string, className: string = "w-12 h-12 mb-2 text-zinc-300 dark:text-zinc-600") => {
+        switch (category) {
+            case 'Lighting': return <LightBulbIcon className={className} />;
+            case 'Furniture': return <TableCellsIcon className={className} />; // TableCells as generic furniture/desk
+            case 'Partitions': return <Squares2X2Icon className={className} />;
+            default: return <ArchiveBoxIcon className={className} />;
+        }
     };
 
     return (
@@ -614,10 +633,24 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                                                     <td className="p-4">
                                                         <div className="flex items-center gap-3">
                                                             {item.image ? (
-                                                                <img src={item.image} alt={item.assetName} className="w-10 h-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700" />
+                                                                <>
+                                                                    <img
+                                                                        src={item.image}
+                                                                        alt={item.assetName}
+                                                                        className="w-10 h-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700"
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.style.display = 'none';
+                                                                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                                            e.currentTarget.nextElementSibling?.classList.add('flex');
+                                                                        }}
+                                                                    />
+                                                                    <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 hidden items-center justify-center border border-zinc-200 dark:border-zinc-700">
+                                                                        {getCategoryIcon(item.category, "w-6 h-6 text-zinc-400")}
+                                                                    </div>
+                                                                </>
                                                             ) : (
-                                                                <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-lg border border-zinc-200 dark:border-zinc-700">
-                                                                    📦
+                                                                <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
+                                                                    {getCategoryIcon(item.category, "w-6 h-6 text-zinc-400")}
                                                                 </div>
                                                             )}
                                                             <div>
@@ -660,7 +693,7 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                         {/* Grid View */}
                         {viewMode === 'grid' && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {filteredData.map((item) => (
+                                {paginatedData.map((item) => (
                                     <div
                                         key={item.id}
                                         onClick={() => toggleSelection(item.id)}
@@ -672,15 +705,26 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                                         {/* Image Section */}
                                         <div className="h-44 w-full relative bg-zinc-100 dark:bg-zinc-800">
                                             {item.image ? (
-                                                <img
-                                                    src={item.image}
-                                                    alt={item.assetName}
-                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                />
+                                                <>
+                                                    <img
+                                                        src={item.image}
+                                                        alt={item.assetName}
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                        onError={(e) => {
+                                                            e.currentTarget.style.display = 'none';
+                                                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                            e.currentTarget.nextElementSibling?.classList.add('flex');
+                                                        }}
+                                                    />
+                                                    <div className="w-full h-full bg-zinc-100 dark:bg-zinc-800 hidden flex-col items-center justify-center text-zinc-300 dark:text-zinc-600">
+                                                        {getCategoryIcon(item.category)}
+                                                        <span className="text-xs font-medium">{item.category}</span>
+                                                    </div>
+                                                </>
                                             ) : (
                                                 <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 dark:text-zinc-600">
-                                                    <PhotoIcon className="w-12 h-12 mb-2" />
-                                                    <span className="text-xs font-medium">No Image</span>
+                                                    {getCategoryIcon(item.category)}
+                                                    <span className="text-xs font-medium">{item.category}</span>
                                                 </div>
                                             )}
 
@@ -743,6 +787,56 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+                        {/* Pagination Footer */}
+                        {filteredData.length > 0 && (
+                            <div className="flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-8">
+                                <div className="text-sm text-muted-foreground">
+                                    Showing <span className="font-medium text-foreground">{startIndex + 1}</span> to <span className="font-medium text-foreground">{Math.min(endIndex, filteredData.length)}</span> of <span className="font-medium text-foreground">{filteredData.length}</span> results
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="px-3 py-1.5 text-sm font-medium rounded-md border border-zinc-200 dark:border-zinc-800 text-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Previous
+                                    </button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                            let p = i + 1;
+                                            if (totalPages > 5 && currentPage > 3) {
+                                                p = currentPage - 2 + i;
+                                                if (p > totalPages) p = totalPages - (4 - i);
+                                            }
+                                            // Ensure p is valid
+                                            if (p < 1) p = 1;
+
+                                            return (
+                                                <button
+                                                    key={p}
+                                                    onClick={() => setCurrentPage(p)}
+                                                    className={cn(
+                                                        "w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-colors",
+                                                        currentPage === p
+                                                            ? "bg-primary text-primary-foreground"
+                                                            : "text-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                                    )}
+                                                >
+                                                    {p}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                        disabled={currentPage === totalPages}
+                                        className="px-3 py-1.5 text-sm font-medium rounded-md border border-zinc-200 dark:border-zinc-800 text-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

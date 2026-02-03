@@ -180,7 +180,7 @@ export default function SmartAddAssetModal({ isOpen, onClose, onConfirm }: Smart
                     className={cn(
                         "flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg transition-all",
                         activeTab === tab.id
-                            ? "bg-white dark:bg-zinc-700 text-primary shadow-sm"
+                            ? "bg-white dark:bg-zinc-700 text-foreground shadow-sm"
                             : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50"
                     )}
                 >
@@ -199,14 +199,14 @@ export default function SmartAddAssetModal({ isOpen, onClose, onConfirm }: Smart
                         <div className={cn(
                             "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors duration-300",
                             currentStep >= step.id
-                                ? "bg-primary text-white"
+                                ? "bg-primary text-primary-foreground"
                                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border border-zinc-200 dark:border-zinc-700"
                         )}>
                             {currentStep > step.id ? <CheckCircleIcon className="w-5 h-5" /> : step.id}
                         </div>
                         <span className={cn(
                             "absolute top-10 text-[10px] whitespace-nowrap font-medium transition-colors duration-300",
-                            currentStep >= step.id ? "text-primary" : "text-zinc-400"
+                            currentStep >= step.id ? "text-foreground font-semibold" : "text-zinc-400"
                         )}>
                             {step.label}
                         </span>
@@ -378,7 +378,7 @@ export default function SmartAddAssetModal({ isOpen, onClose, onConfirm }: Smart
                     {currentStep === 4 && (
                         <div className="space-y-4">
                             <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-5 border border-primary/20">
-                                <h3 className="text-sm font-semibold text-primary mb-3">Summary to Create</h3>
+                                <h3 className="text-sm font-semibold text-foreground mb-3">Summary to Create</h3>
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between border-b border-primary/10 pb-2">
                                         <span className="text-zinc-500">Asset Name</span>
