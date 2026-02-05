@@ -37,3 +37,25 @@
 ## Next Steps for Monday
 - Verify glassmorphism levels across different browsers.
 - Audit any remaining hardcoded blue colors in secondary menus.
+
+---
+
+# Generative UI & UX Refinements - Summary Feb 05, 2026
+
+## 🚀 Generative UI Enhancements
+- **Enhanced Chat Confirmation:**
+    - Modified `SuccessModal` and `StreamFeed` to support deep linking.
+    - Added Markdown parsing in chat bubbles to allow rich navigation links (e.g., "View in Transactions").
+- **File Upload Workflow:**
+    - Implemented a simulated file upload in `ModeSelectionArtifact`.
+    - Added "Upload Request" mode with drag-and-drop UI and processing simulation.
+
+## 🎨 Visual & UX Improvements
+- **Document Reviews:**
+    - Improved legibility in `AssetReviewArtifact` and `QuoteProposalArtifact` by increasing font size and forcing high-contrast text (dark text on white backgrounds) to fix Dark Mode readability issues.
+- **Navigation:**
+    - Removed redundant "Continue to Asset Review" button in `AssetReviewArtifact`.
+    - Implemented programmatic navigation via `GenUIContext` to support deep links from chat system messages.
+
+## 🔧 Technical Updates
+- **Deep Linking:** Added URL parameter handling (`?tab=quotes&id=...`) in `Transactions.tsx` to allow direct navigation to specific transaction states.

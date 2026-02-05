@@ -1,4 +1,7 @@
 import type { ArtifactData } from '../../../context/GenUIContext';
+import ModeSelectionArtifact from './ModeSelectionArtifact';
+import ERPSystemSelectorArtifact from './ERPSystemSelectorArtifact';
+import ERPSelectorArtifact from './ERPSelectorArtifact';
 import QuoteProposalArtifact from './QuoteProposalArtifact';
 import OrderCorrectionArtifact from './OrderCorrectionArtifact';
 import StockMatrixArtifact from './StockMatrixArtifact';
@@ -22,6 +25,12 @@ const DefaultArtifact = ({ data }: { data: any }) => (
 export default function ArtifactContainer({ artifact }: { artifact: ArtifactData }) {
     const ArtifactComponent = () => {
         switch (artifact.type) {
+            case 'mode_selection':
+                return <ModeSelectionArtifact />;
+            case 'erp_system_selector':
+                return <ERPSystemSelectorArtifact />;
+            case 'erp_selector':
+                return <ERPSelectorArtifact />;
             case 'erp_connect_modal':
                 return <ERPConnectModal data={artifact.data} />;
             case 'erp_po_dashboard':

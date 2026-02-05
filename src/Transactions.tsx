@@ -144,6 +144,34 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
         setExpandedIds(newExpanded)
     }
 
+    // Dynamic URL Param Handling
+    useEffect(() => {
+        const handleUrlParams = () => {
+            const params = new URLSearchParams(window.location.search);
+            const tab = params.get('tab');
+            const id = params.get('id');
+
+            if (tab === 'quotes') setLifecycleTab('quotes');
+            if (tab === 'orders') setLifecycleTab('orders');
+            if (tab === 'acknowledgments') setLifecycleTab('acknowledgments');
+
+            if (id) {
+                setSearchQuery(id);
+                setExpandedIds(prev => {
+                    const newSet = new Set(prev);
+                    newSet.add(id);
+                    return newSet;
+                });
+            }
+        };
+
+        handleUrlParams(); // Run on mount
+
+        // Listen for internal navigation events
+        window.addEventListener('popstate', handleUrlParams);
+        return () => window.removeEventListener('popstate', handleUrlParams);
+    }, []);
+
     // Dynamic Metrics Data based on current filters (Status/Location)
     const metricsData = useMemo(() => {
         const dataToAnalyze = recentOrders.filter(order => {

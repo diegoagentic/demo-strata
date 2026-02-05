@@ -6,7 +6,55 @@ import { UserIcon } from '@heroicons/react/24/solid';
 import { SparklesIcon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
 const MessageBubble = ({ message }: { message: StreamMessage }) => {
+    const { navigate } = useGenUI();
     const isUser = message.type === 'user';
+
+    const renderContent = (content: string) => {
+        // Regex for [Access Text](url)
+        const parts = content.split(/(\[[^\]]+\]\([^)]+\))/g);
+
+        return parts.map((part, index) => {
+            const linkMatch = part.match(/\[([^\]]+)\]\(([^)]+)\)/);
+            if (linkMatch) {
+                const [_, text, url] = linkMatch;
+                const isInternal = url.startsWith('/');
+                return (
+                    <a
+                        key={index}
+                        href={url}
+                        onClick={(e) => {
+                            if (isInternal) {
+                                e.preventDefault();
+                                // Parse URL to separate path and search
+                                const [path] = url.split('?');
+                                // Push state so URL updates (important for Transactions.tsx useEffect)
+                                window.history.pushState(null, '', url);
+                                // Trigger navigation (mounts/updates component)
+                                // Remove leading / for page name matching in App.tsx
+                                navigate(path.substring(1));
+                            }
+                        }}
+                        target={isInternal ? undefined : '_blank'}
+                        rel={isInternal ? undefined : 'noopener noreferrer'}
+                        className={`font-semibold hover:underline px-1 rounded ${isUser ? 'text-zinc-900 bg-white/20' : 'text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20'
+                            }`}
+                    >
+                        {text}
+                    </a>
+                );
+            }
+
+            // Handle Bold **text**
+            const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
+            return boldParts.map((subPart, subIndex) => {
+                const boldMatch = subPart.match(/\*\*([^*]+)\*\*/);
+                if (boldMatch) {
+                    return <strong key={`${index}-${subIndex}`} className="font-semibold">{boldMatch[1]}</strong>;
+                }
+                return <span key={`${index}-${subIndex}`}>{subPart}</span>;
+            });
+        });
+    };
 
     return (
         <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-4`}>
@@ -20,7 +68,7 @@ const MessageBubble = ({ message }: { message: StreamMessage }) => {
                     ? 'bg-primary text-zinc-900 rounded-tr-none'
                     : 'bg-white/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-foreground rounded-tl-none'
                     }`}>
-                    {message.content}
+                    {renderContent(message.content)}
                 </div>
 
                 {message.artifact && (

@@ -150,15 +150,17 @@ export default function QuickMovementsModal({ isOpen, onClose }: QuickMovementsM
 
     // Refs for drop zones to calculate collision
     const zoneRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
+    const subsectionRefs = React.useRef<{ [key: string]: HTMLDivElement | null }>({});
 
     const handleDragStart = (id: string) => {
         setDraggingId(id);
     };
 
     const handleDrag = (event: any, info: any) => {
-        const zoneId = detectDropZone(info.point);
-        if (zoneId !== activeDropZone) {
-            setActiveDropZone(zoneId);
+        const dropTarget = detectDropZone(info.point);
+        // Compare composite IDs
+        if (dropTarget !== activeDropZone) {
+            setActiveDropZone(dropTarget);
         }
     };
 
@@ -166,9 +168,12 @@ export default function QuickMovementsModal({ isOpen, onClose }: QuickMovementsM
         setDraggingId(null);
         setActiveDropZone(null);
 
-        const droppedZoneId = detectDropZone(info.point);
+        const dropTarget = detectDropZone(info.point);
 
-        if (droppedZoneId && droppedZoneId !== sourceZoneId) {
+        // Parse drop target (could be "zoneId" or "zoneId::category")
+        const targetZoneId = dropTarget ? dropTarget.split('::')[0] : null;
+
+        if (targetZoneId && targetZoneId !== sourceZoneId) {
             // Handle Multi-Select Drag
             if (selectedAssetIds.includes(asset.id)) {
                 // Move ALL selected items
@@ -177,12 +182,12 @@ export default function QuickMovementsModal({ isOpen, onClose }: QuickMovementsM
                     // limit to unassigned for V1 of multi-select to simplify
                     const assetObj = assets.find(a => a.id === id);
                     if (assetObj) {
-                        stageMove(assetObj, droppedZoneId, 'unassigned');
+                        stageMove(assetObj, targetZoneId, 'unassigned');
                     }
                 });
             } else {
                 // Move single item
-                stageMove(asset, droppedZoneId, sourceZoneId);
+                stageMove(asset, targetZoneId, sourceZoneId);
             }
         }
     };
@@ -190,6 +195,23 @@ export default function QuickMovementsModal({ isOpen, onClose }: QuickMovementsM
     const detectDropZone = (point: { x: number, y: number }): string | null => {
         const BUFFER = 50; // 50px buffer to make dropping easier
 
+        // 1. Check Subsections first (Priority)
+        for (const key in subsectionRefs.current) {
+            const el = subsectionRefs.current[key];
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                if (
+                    point.x >= rect.left &&
+                    point.x <= rect.right &&
+                    point.y >= rect.top &&
+                    point.y <= rect.bottom
+                ) {
+                    return key; // Returns "zoneId::category"
+                }
+            }
+        }
+
+        // 2. Check general Zones
         for (const zone of zones) {
             const el = zoneRefs.current[zone.id];
             if (el) {
@@ -624,7 +646,7 @@ export default function QuickMovementsModal({ isOpen, onClose }: QuickMovementsM
                                                         className={clsx(
                                                             "rounded-3xl border-2 border-dashed flex flex-col transition-all min-h-[400px] overflow-hidden bg-white/50 dark:bg-zinc-900/50",
                                                             draggingId ? "scale-[1.01]" : "",
-                                                            activeDropZone === zone.id
+                                                            activeDropZone === zone.id || activeDropZone?.startsWith(zone.id + '::')
                                                                 ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 ring-4 ring-indigo-500/10 shadow-xl scale-[1.02]"
                                                                 : "border-zinc-200 dark:border-zinc-700"
                                                         )}
@@ -673,7 +695,15 @@ export default function QuickMovementsModal({ isOpen, onClose }: QuickMovementsM
                                                             {categories.map((category) => {
                                                                 const isExpanded = expandedCategories[`${zone.id}-${category}`] ?? true;
                                                                 return (
-                                                                    <div key={category} className="bg-white dark:bg-zinc-800/40 rounded-lg border border-zinc-100 dark:border-zinc-800 overflow-hidden shadow-sm">
+                                                                    <div
+                                                                        key={category}
+                                                                        ref={el => { subsectionRefs.current[`${zone.id}::${category}`] = el; }}
+                                                                        className={clsx(
+                                                                            "bg-white dark:bg-zinc-800/40 rounded-lg border overflow-hidden shadow-sm transition-all duration-200",
+                                                                            activeDropZone === `${zone.id}::${category}`
+                                                                                ? "border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-900/10 scale-[1.02] shadow-md z-10"
+                                                                                : "border-zinc-100 dark:border-zinc-800"
+                                                                        )}>
                                                                         <button
                                                                             onClick={() => toggleCategory(zone.id, category)}
                                                                             className="w-full flex items-center justify-between p-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors"

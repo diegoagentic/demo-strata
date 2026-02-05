@@ -58,7 +58,7 @@ export default function QuoteProposalArtifact({ data }: { data: any }) {
 
                 <div className="grid grid-cols-3 gap-2">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="aspect-[4/3] bg-zinc-200 dark:bg-zinc-800 rounded md:opacity-75 md:group-hover:opacity-100 transition-opacity"></div>
+                        <div key={i} className="aspect-[4/3] bg-zinc-200 dark:bg-zinc-800 rounded md:group-hover:opacity-100 transition-opacity"></div>
                     ))}
                 </div>
                 <p className="text-[10px] text-center text-zinc-400">Includes moodboard, product list, and sustainability specs.</p>
