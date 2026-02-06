@@ -43,19 +43,19 @@ export interface AssetType {
     };
 }
 
-export default function AssetReviewArtifact({ data }: { data: any }) {
+export default function AssetReviewArtifact({ data, source = 'upload' }: { data: any, source?: 'upload' | 'erp' }) {
     const { sendMessage } = useGenUI();
     const [filter, setFilter] = useState<'all' | 'attention' | 'validated'>('all');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingAsset, setEditingAsset] = useState<AssetType | null>(null);
-    const [currentStep, setCurrentStep] = useState<'map' | 'review' | 'discount' | 'finalize'>('map');
+    // Initialize step based on source: ERP data is pre-mapped, so skip to review
+    const [currentStep, setCurrentStep] = useState<'map' | 'review' | 'discount' | 'finalize'>(source === 'erp' ? 'review' : 'map');
     const [finalType, setFinalType] = useState<'quote' | 'po'>('po');
     const [showSuccess, setShowSuccess] = useState(false);
     const [isMappingExpanded, setIsMappingExpanded] = useState(true);
     const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
     const [selectedSuggestionAsset, setSelectedSuggestionAsset] = useState<AssetType | null>(null);
 
-    // Mock Mapping Data
     // Mock Mapping Data
     const [mappingFields, setMappingFields] = useState<{
         label: string;
@@ -271,26 +271,30 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
                         <h2 className="text-xl font-bold font-brand text-foreground tracking-tight">Asset Processing</h2>
                         <span className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Beta</span>
                     </div>
-                    <p className="text-muted-foreground text-xs">Review and validate assets from ERP integration</p>
+                    <p className="text-muted-foreground text-xs">Review and validate assets from {source === 'erp' ? 'ERP Integration' : 'Document Extraction'}</p>
                 </div>
 
                 {/* Stepper (Strata Minimalist) */}
                 <div className="hidden md:flex items-center gap-2 text-sm font-medium bg-zinc-50 dark:bg-zinc-800/50 p-1.5 rounded-full border border-zinc-200 dark:border-zinc-800">
-                    <button
-                        onClick={() => setCurrentStep('map')}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all ${currentStep === 'map' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground ring-1 ring-zinc-200 dark:ring-zinc-700' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                        <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${currentStep === 'map' ? 'bg-primary/10 text-primary' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'}`}>1</span>
-                        Intelligence
-                    </button>
+                    {source !== 'erp' && (
+                        <>
+                            <button
+                                onClick={() => setCurrentStep('map')}
+                                className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all ${currentStep === 'map' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground ring-1 ring-zinc-200 dark:ring-zinc-700' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${currentStep === 'map' ? 'bg-primary/10 text-primary' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'}`}>1</span>
+                                Intelligence
+                            </button>
 
-                    <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
+                            <div className="w-px h-4 bg-zinc-300 dark:bg-zinc-700 mx-1"></div>
+                        </>
+                    )}
 
                     <button
                         onClick={() => setCurrentStep('review')}
                         className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all ${currentStep === 'review' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground ring-1 ring-zinc-200 dark:ring-zinc-700' : 'text-muted-foreground hover:text-foreground'}`}
                     >
-                        <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${currentStep === 'review' ? 'bg-primary/10 text-primary' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'}`}>2</span>
+                        <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${currentStep === 'review' ? 'bg-primary/10 text-primary' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'}`}>{source === 'erp' ? '1' : '2'}</span>
                         Review
                     </button>
 
@@ -300,7 +304,7 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
                         onClick={() => setCurrentStep('discount')}
                         className={`flex items-center gap-2 px-4 py-1.5 rounded-full transition-all ${currentStep === 'discount' ? 'bg-white dark:bg-zinc-800 shadow-sm text-foreground ring-1 ring-zinc-200 dark:ring-zinc-700' : 'text-muted-foreground hover:text-foreground'}`}
                     >
-                        <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${currentStep === 'discount' ? 'bg-primary/10 text-primary' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'}`}>3</span>
+                        <span className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${currentStep === 'discount' ? 'bg-primary/10 text-primary' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500'}`}>{source === 'erp' ? '2' : '3'}</span>
                         Discounts
                     </button>
                 </div>
@@ -349,7 +353,7 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
                     </div>
 
                     {/* Scrollable List with Integrated Mapping Section */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-micro bg-zinc-50/50 dark:bg-zinc-900/50">
 
                         {/* Step 1: Integrated Field Mapping Section */}
                         {currentStep === 'map' && (
@@ -535,8 +539,8 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
                     </div>
 
                     {/* Mock PDF Viewer */}
-                    <div className="flex-1 p-8 overflow-y-auto flex justify-center">
-                        <div className="bg-white w-full max-w-[300px] h-[500px] shadow-lg rounded-sm border border-zinc-200 p-8 text-[10px] leading-relaxed relative text-zinc-900">
+                    <div className="flex-1 p-8 overflow-y-auto flex justify-center scrollbar-micro">
+                        <div className="bg-white w-full max-w-[300px] min-h-[500px] h-fit shadow-lg rounded-sm border border-zinc-200 p-8 text-[10px] leading-relaxed relative text-zinc-900 flex flex-col">
                             <div className="font-bold text-lg mb-4 text-center text-zinc-900">PURCHASE ORDER</div>
                             <div className="flex justify-between mb-6">
                                 <div>
@@ -552,8 +556,8 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
                                     <div>Atlanta, GA 30309</div>
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                {[1, 2, 3, 4, 5, 6].map(i => (
+                            <div className="space-y-2 flex-1">
+                                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                                     <div key={i} className="flex justify-between border-b border-zinc-100 pb-1">
                                         <div className="w-8">#{i}024</div>
                                         <div className="flex-1 ml-2">Office Chair ergonomic black mesh...</div>
@@ -561,7 +565,7 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
                                     </div>
                                 ))}
                             </div>
-                            <div className="absolute bottom-8 right-8 text-right font-bold text-sm">
+                            <div className="flex justify-end mt-8 pt-4 border-t border-zinc-200 font-bold text-sm">
                                 TOTAL: $511,575.00
                             </div>
                         </div>
@@ -597,7 +601,7 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
 
                             <div className="w-20"></div> {/* Spacer for balance */}
                         </div>
-                        <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-black/50 p-8">
+                        <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-black/50 p-8 scrollbar-micro">
                             <div className="max-w-4xl mx-auto space-y-6">
 
                                 {pricingStep === 'warranties' ? (
@@ -761,7 +765,7 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
                                 <ChevronDownIcon className="w-4 h-4 rotate-90" /> Back to Pricing
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-black/50 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-200 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-800">
+                        <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-black/50 scrollbar-micro">
                             <div className="min-h-full flex items-center justify-center p-8">
                                 <div className="w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl p-8">
                                     <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${stats.total === stats.validated ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'}`}>
@@ -877,6 +881,10 @@ export default function AssetReviewArtifact({ data }: { data: any }) {
                         ? `Purchase Order **${id}** has been submitted. [View in Transactions](/transactions?tab=orders&id=${id})`
                         : `Quote **${id}** has been created. [View in Transactions](/transactions?tab=quotes&id=${id})`;
                     sendMessage(msg, 'system');
+                }}
+                onCreateNew={() => {
+                    setShowSuccess(false);
+                    sendMessage('Start New Quote', 'user');
                 }}
             />
         </div >

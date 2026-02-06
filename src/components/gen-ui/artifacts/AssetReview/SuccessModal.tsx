@@ -5,9 +5,10 @@ interface SuccessModalProps {
     type?: 'quote' | 'po';
     poNumber?: string;
     onClose: () => void;
+    onCreateNew?: () => void;
 }
 
-export default function SuccessModal({ isOpen, type = 'po', poNumber = 'PO-2026-001', onClose }: SuccessModalProps) {
+export default function SuccessModal({ isOpen, type = 'po', poNumber = 'PO-2026-001', onClose, onCreateNew }: SuccessModalProps) {
     if (!isOpen) return null;
 
     const isPO = type === 'po';
@@ -44,10 +45,10 @@ export default function SuccessModal({ isOpen, type = 'po', poNumber = 'PO-2026-
                     </button>
 
                     <button
-                        onClick={onClose}
+                        onClick={onCreateNew || onClose}
                         className="w-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 py-3 rounded-xl font-medium transition-colors"
                     >
-                        Return to Dashboard
+                        Create New Quote
                     </button>
 
                     <div className="grid grid-cols-2 gap-3 mt-2">

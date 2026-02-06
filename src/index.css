@@ -50,4 +50,22 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         @apply bg-zinc-400 dark:bg-zinc-500;
     }
+
+    /* 2px Ultra-Minimalist Line Scrollbar */
+    .scrollbar-micro::-webkit-scrollbar {
+        width: 2px;
+        height: 2px;
+    }
+
+    .scrollbar-micro::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-micro::-webkit-scrollbar-thumb {
+        @apply bg-zinc-300 dark:bg-zinc-700 rounded-full transition-colors;
+    }
+
+    .scrollbar-micro::-webkit-scrollbar-thumb:hover {
+        @apply bg-zinc-400 dark:bg-zinc-600;
+    }
 }

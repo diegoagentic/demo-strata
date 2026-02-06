@@ -160,7 +160,7 @@ export default function DiscountStructureWidget({ subtotal, onApply }: DiscountS
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto scrollbar-micro p-6 space-y-6">
 
                 {/* Summary Card (Green) */}
                 <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30 rounded-2xl p-6 relative overflow-hidden">
