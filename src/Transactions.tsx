@@ -18,6 +18,7 @@ import { useTheme } from './useTheme'
 import { useTenant } from './TenantContext'
 import Select from './components/Select'
 import CreateOrderModal from './components/CreateOrderModal'
+import SmartQuoteHub from './components/widgets/SmartQuoteHub'
 import Breadcrumbs from './components/Breadcrumbs'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -126,7 +127,7 @@ const acksSummary = {
 // Define props interface if not heavily inferred or complex
 interface TransactionsProps {
     onLogout: () => void;
-    onNavigateToDetail: () => void;
+    onNavigateToDetail: (type: string) => void;
     onNavigateToWorkspace: () => void;
     onNavigate: (page: string) => void;
 }
@@ -135,6 +136,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
     const [viewMode, setViewMode] = useState<'list' | 'pipeline'>('pipeline');
     const [showMetrics, setShowMetrics] = useState(false);
     const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
+    const [isQuoteWidgetOpen, setIsQuoteWidgetOpen] = useState(false);
     const { theme, toggleTheme } = useTheme()
     const { currentTenant } = useTenant()
 
@@ -212,9 +214,9 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
 
     // Dynamic Metrics Data based on current filters (Status/Location)
     const metricsData = useMemo(() => {
-        const dataToAnalyze = recentOrders.filter(order => {
+        const dataToAnalyze = currentDataSet.filter(order => {
             const matchesStatus = selectedStatus === 'All Statuses' || order.status === selectedStatus
-            const matchesLocation = selectedLocation === 'All Locations' || order.location === selectedLocation
+            const matchesLocation = selectedLocation === 'All Locations' || (order.location || 'Unknown') === selectedLocation
             return matchesStatus && matchesLocation
         })
 
@@ -222,8 +224,17 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
             return sum + parseInt(order.amount.replace(/[^0-9]/g, ''))
         }, 0)
 
-        const activeCount = dataToAnalyze.filter(o => !['Delivered', 'Completed'].includes(o.status)).length
-        const completedCount = dataToAnalyze.filter(o => ['Delivered', 'Completed'].includes(o.status)).length
+        const activeCount = dataToAnalyze.filter(o => {
+            if (lifecycleTab === 'quotes') return !['Approved', 'Lost'].includes((o as any).status);
+            if (lifecycleTab === 'acknowledgments') return !['Confirmed'].includes((o as any).status);
+            return !['Delivered', 'Completed'].includes(o.status);
+        }).length
+
+        const completedCount = dataToAnalyze.filter(o => {
+            if (lifecycleTab === 'quotes') return ['Approved', 'Lost'].includes((o as any).status);
+            if (lifecycleTab === 'acknowledgments') return ['Confirmed'].includes((o as any).status);
+            return ['Delivered', 'Completed'].includes(o.status);
+        }).length
 
         return {
             revenue: totalValue.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }),
@@ -231,7 +242,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
             completedOrders: completedCount,
             efficiency: dataToAnalyze.length > 0 ? Math.round((completedCount / dataToAnalyze.length) * 100) : 0
         }
-    }, [selectedStatus, selectedLocation])
+    }, [selectedStatus, selectedLocation, currentDataSet, lifecycleTab])
 
     const filteredData = useMemo(() => {
         let currentData = [];
@@ -647,7 +658,14 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                         { icon: <ChartBarIcon className="w-5 h-5" />, label: "Gen. Report", color: "text-green-500" },
                                         { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "ERP Sync", color: "text-purple-500" },
                                     ].map((action, i) => (
-                                        <button key={i} className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-foreground transition-colors relative group" title={action.label}>
+                                        <button
+                                            key={i}
+                                            onClick={() => {
+                                                if (action.label === 'New Quote') setIsQuoteWidgetOpen(true);
+                                            }}
+                                            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-foreground transition-colors relative group"
+                                            title={action.label}
+                                        >
                                             {action.icon}
                                         </button>
                                     ))}
@@ -731,7 +749,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                                 <input
                                                     type="text"
-                                                    placeholder="Search orders..."
+                                                    placeholder={lifecycleTab === 'quotes' ? "Search quotes..." : lifecycleTab === 'acknowledgments' ? "Search acknowledgments..." : "Search orders..."}
                                                     className="pl-9 pr-4 py-2 bg-background border border-input rounded-lg text-sm text-foreground w-full sm:w-48 lg:w-64 focus:ring-2 focus:ring-primary outline-none placeholder:text-muted-foreground transition-all"
                                                     value={searchQuery}
                                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -787,17 +805,71 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             <div className="w-px h-8 bg-border hidden xl:block mx-1"></div>
 
                                             <button
-                                                onClick={() => setIsCreateOrderOpen(true)}
+                                                onClick={() => {
+                                                    if (lifecycleTab === 'quotes') {
+                                                        setIsQuoteWidgetOpen(true);
+                                                    } else {
+                                                        setIsCreateOrderOpen(true);
+                                                    }
+                                                }}
                                                 className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
                                             >
                                                 <PlusIcon className="w-4 h-4" />
-                                                <span>Create Order</span>
+                                                <span>
+                                                    {lifecycleTab === 'quotes' ? 'Create Quote' : lifecycleTab === 'acknowledgments' ? 'Upload Ack' : 'Create Order'}
+                                                </span>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <CreateOrderModal isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
+
+                            {/* Smart Quote Hub Modal */}
+                            <Transition appear show={isQuoteWidgetOpen} as={Fragment}>
+                                <Dialog as="div" className="relative z-50" onClose={() => setIsQuoteWidgetOpen(false)}>
+                                    <TransitionChild
+                                        as={Fragment}
+                                        enter="ease-out duration-300"
+                                        enterFrom="opacity-0"
+                                        enterTo="opacity-100"
+                                        leave="ease-in duration-200"
+                                        leaveFrom="opacity-100"
+                                        leaveTo="opacity-0"
+                                    >
+                                        <div className="fixed inset-0 bg-black/25 dark:bg-black/80 backdrop-blur-sm" />
+                                    </TransitionChild>
+
+                                    <div className="fixed inset-0 overflow-y-auto">
+                                        <div className="flex min-h-full items-center justify-center p-4 text-center">
+                                            <TransitionChild
+                                                as={Fragment}
+                                                enter="ease-out duration-300"
+                                                enterFrom="opacity-0 scale-95"
+                                                enterTo="opacity-100 scale-100"
+                                                leave="ease-in duration-200"
+                                                leaveFrom="opacity-100 scale-100"
+                                                leaveTo="opacity-0 scale-95"
+                                            >
+                                                <DialogPanel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-zinc-900 shadow-xl transition-all">
+                                                    <div className="relative">
+                                                        {/* Close X Button - Floating */}
+                                                        <button
+                                                            onClick={() => setIsQuoteWidgetOpen(false)}
+                                                            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/50 dark:bg-black/50 hover:bg-white dark:hover:bg-zinc-800 backdrop-blur-sm text-zinc-500 hover:text-foreground transition-colors"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                        <SmartQuoteHub onNavigate={(page: string) => { setIsQuoteWidgetOpen(false); onNavigate(page); }} />
+                                                    </div>
+                                                </DialogPanel>
+                                            </TransitionChild>
+                                        </div>
+                                    </div>
+                                </Dialog>
+                            </Transition>
 
                             {/* Main Content Area */}
                             <div className="p-6 bg-zinc-50/50 dark:bg-black/20 min-h-[500px]">
@@ -808,36 +880,46 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             {/* Revenue Card */}
                                             <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl p-6 border border-green-200 dark:border-green-800/20 shadow-sm">
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <p className="text-sm font-medium text-green-700 dark:text-green-400">Total Revenue</p>
+                                                    <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                                                        {lifecycleTab === 'quotes' ? 'Quote Value' : lifecycleTab === 'acknowledgments' ? 'Pending Value' : 'Total Revenue'}
+                                                    </p>
                                                     <CurrencyDollarIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
                                                 </div>
                                                 <div>
                                                     <p className="text-2xl font-bold text-green-700 dark:text-green-300">{metricsData.revenue}</p>
-                                                    <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">Based on visible orders</p>
+                                                    <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">Based on visible {lifecycleTab === 'quotes' ? 'quotes' : 'orders'}</p>
                                                 </div>
                                             </div>
 
                                             {/* Active Orders Card */}
                                             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-6 border border-blue-200 dark:border-blue-800/20 shadow-sm">
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Active Orders</p>
+                                                    <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                                                        {lifecycleTab === 'quotes' ? 'Active Quotes' : lifecycleTab === 'acknowledgments' ? 'Pending Acks' : 'Active Orders'}
+                                                    </p>
                                                     <ShoppingBagIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                                 </div>
                                                 <div>
                                                     <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{metricsData.activeOrders}</p>
-                                                    <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">In production or pending</p>
+                                                    <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">
+                                                        {lifecycleTab === 'quotes' ? 'Sent or Negotiating' : lifecycleTab === 'acknowledgments' ? 'Awaiting Confirmation' : 'In production or pending'}
+                                                    </p>
                                                 </div>
                                             </div>
 
                                             {/* Completion Rate Card */}
                                             <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-2xl p-6 border border-purple-200 dark:border-purple-800/20 shadow-sm">
                                                 <div className="flex items-center justify-between mb-4">
-                                                    <p className="text-sm font-medium text-purple-700 dark:text-purple-400">Completion Rate</p>
+                                                    <p className="text-sm font-medium text-purple-700 dark:text-purple-400">
+                                                        {lifecycleTab === 'quotes' ? 'Win Rate' : lifecycleTab === 'acknowledgments' ? 'Conf. Rate' : 'Completion Rate'}
+                                                    </p>
                                                     <ChartBarIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                                                 </div>
                                                 <div>
                                                     <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{metricsData.efficiency}%</p>
-                                                    <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-1">Orders delivered successfully</p>
+                                                    <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-1">
+                                                        {lifecycleTab === 'quotes' ? 'Quotes approved' : lifecycleTab === 'acknowledgments' ? 'Acks confirmed' : 'Orders delivered successfully'}
+                                                    </p>
                                                 </div>
                                             </div>
 
@@ -928,7 +1010,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                 <td className="p-4 text-right">
                                                                     <div className="flex items-center justify-end gap-1">
                                                                         <button
-                                                                            onClick={(e) => { e.stopPropagation(); onNavigateToDetail(); }}
+                                                                            onClick={(e) => { e.stopPropagation(); onNavigateToDetail(lifecycleTab === 'quotes' ? 'quote-detail' : lifecycleTab === 'acknowledgments' ? 'ack-detail' : 'order-detail'); }}
                                                                             className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                                                                         >
                                                                             <DocumentTextIcon className="h-4 w-4" />
@@ -1055,7 +1137,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                                     {expandedIds.has(order.id) ? 'Close' : 'Details'}
                                                                                 </button>
                                                                                 <button
-                                                                                    onClick={(e) => { e.stopPropagation(); onNavigateToDetail(); }}
+                                                                                    onClick={(e) => { e.stopPropagation(); onNavigateToDetail(lifecycleTab === 'quotes' ? 'quote-detail' : lifecycleTab === 'acknowledgments' ? 'ack-detail' : 'order-detail'); }}
                                                                                     className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                                                                                     title="View Full Details"
                                                                                 >
@@ -1240,15 +1322,15 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col h-full bg-brand-50 dark:bg-brand-900/10 p-5 rounded-xl border border-brand-100 dark:border-brand-800/20">
-                                                <div className="flex items-center gap-2 mb-3 text-brand-700 dark:text-brand-400">
-                                                    <SparklesIcon className="w-5 h-5" />
+                                            <div className="flex flex-col h-full bg-brand-50 dark:bg-zinc-800/80 p-5 rounded-xl border border-brand-100 dark:border-brand-500/30">
+                                                <div className="flex items-center gap-2 mb-3 text-brand-700 dark:text-brand-300">
+                                                    <SparklesIcon className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                                                     <span className="font-semibold text-sm">AI Pricing Insight</span>
                                                 </div>
-                                                <p className="text-sm text-foreground/80 leading-relaxed mb-4">
-                                                    Based on recent wins with <strong>Apex Tech</strong>, you could increase margin to <strong>32%</strong> without impacting win probability.
+                                                <p className="text-sm text-brand-900/80 dark:text-zinc-300 leading-relaxed mb-4">
+                                                    Based on recent wins with <strong className="text-brand-950 dark:text-white">Apex Tech</strong>, you could increase margin to <strong className="text-brand-950 dark:text-white">32%</strong> without impacting win probability.
                                                 </p>
-                                                <button className="mt-auto w-full py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors">
+                                                <button className="mt-auto w-full py-2 bg-brand-600 hover:bg-brand-700 text-white dark:text-brand-950 dark:bg-brand-400 dark:hover:bg-brand-300 rounded-lg text-sm font-medium transition-colors">
                                                     Apply Suggested Pricing
                                                 </button>
                                             </div>

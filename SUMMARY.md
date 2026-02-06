@@ -59,3 +59,22 @@
 
 ## 🔧 Technical Updates
 - **Deep Linking:** Added URL parameter handling (`?tab=quotes&id=...`) in `Transactions.tsx` to allow direct navigation to specific transaction states.
+
+---
+
+# Dashboard Refactor - Summary Feb 05, 2026
+
+## 📊 Analytics & Visualizations
+- **New Dashboard Architecture:**
+    - Replaced static metrics with a **responsive Bento Grid** layout (`DashboardMetricsGrid`).
+    - Integrated **9 distinct Recharts components** covering Sales, Operations, and CRM data.
+- **Chart Implementations:**
+    - **Core Performance:** `SalesAreaChart` (Revenue), `CategoryDonutChart` (Distribution), `FunnelBarChart` (Conversion).
+    - **Operational Insights:** `LogisticsStatusChart`, `MarginTrendChart`, `TeamWorkloadChart`.
+    - **Inventory & CRM:** `InventoryHealthChart`, `QuotePipelineChart`, `ClientTreemapChart`.
+- **Bug Fixes:**
+    - Resolved white screen/crash in `ClientTreemapChart` (added null safety check for undefined payloads).
+    - Fixed build errors related to missing component imports and restored accidental deletion of tracking data.
+- **Visuals:**
+    - Full **Dark Mode support** for all charts.
+    - Custom tooltips and cohesive color palettes.

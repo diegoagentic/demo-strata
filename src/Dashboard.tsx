@@ -38,8 +38,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 import { useTheme } from './useTheme'
 import { useTenant } from './TenantContext'
 import Select from './components/Select'
-import ChatWidget from './components/ChatWidget'
 import FeatureManager, { type Feature } from './components/FeatureManager'
+import ERPSyncModal from './components/modals/ERPSyncModal'
 import ProjectTrackerWidget from './components/widgets/ProjectTrackerWidget'
 import InventoryForecastWidget from './components/widgets/InventoryForecastWidget'
 import InstallationSchedulerWidget from './components/widgets/InstallationSchedulerWidget'
@@ -287,30 +287,34 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     const [mainTab, setMainTab] = useState<'follow_up' | 'your_tools' | 'metrics'>('follow_up')
     const [expandedActionId, setExpandedActionId] = useState<number | null>(null)
     const [expandedActivityId, setExpandedActivityId] = useState<number | null>(null)
-    // Feature Customization State
-    const [isFeatureManagerOpen, setIsFeatureManagerOpen] = useState(false)
+    const [showCustomizeModal, setShowCustomizeModal] = useState(false);
+    const [isERPSyncModalOpen, setIsERPSyncModalOpen] = useState(false);
+
+    // Mock dashboard customization
+    const [activeFeatures, setActiveFeatures] = useState([
+        'smart_quote',
+        'follow_up_assistant',
+        'inventory_forecast'
+    ])
     const [features, setFeatures] = useState<Feature[]>([
         // Core (Existing)
-        { id: 'ai_copilot', title: 'AI Copilot', description: 'Intelligent assistant for analysis, insights, and quick actions.', enabled: true, category: 'core', required: true },
         { id: 'recent_orders', title: 'Recent Orders', description: 'Track active, completed, and pending orders at a glance.', enabled: true, category: 'core' },
         { id: 'quick_quote', title: 'Quick Quote', description: 'Start quotes manually or via ERP upload.', enabled: true, category: 'core', required: true },
-
-        // Operations (New B2B Proposals)
-        { id: 'project_tracker', title: 'Project Tracker', description: 'Monitor status of large fit-outs (Mfg, Ship, Install).', enabled: false, category: 'operations' },
-        { id: 'installation_scheduler', title: 'Installation Scheduler', description: 'Calendar view for managing delivery teams.', enabled: false, category: 'operations' },
-
-        // Analytics
-        { id: 'inventory_forecast', title: 'Inventory Forecast', description: 'AI predictions for high-demand stock items.', enabled: false, category: 'analytics' },
-
-        // Support
-        { id: 'warranty_claims', title: 'Warranty & Claims', description: 'Streamlined process for reporting damaged goods.', enabled: false, category: 'support' },
-
-        // Operations (Advanced)
-        { id: 'po_verification', title: 'PO vs Acknowledgement', description: 'AI verification of POs against factory acks.', enabled: false, category: 'operations' },
+        // ... other features
+        { id: 'project_tracker', title: 'Project Tracker', description: 'Monitor progress across all active installations.', enabled: true, category: 'core' },
+        { id: 'inventory_forecast', title: 'Inventory Forecast', description: 'Predict stock needs based on seasonal trends.', enabled: false, category: 'analytics' },
+        { id: 'installation_scheduler', title: 'Installation Scheduler', description: 'Manage field teams and site visits.', enabled: false, category: 'operations' },
+        { id: 'warranty_claims', title: 'Warranty Claims', description: 'Process and track product issues.', enabled: true, category: 'support' },
+        { id: 'po_verification', title: 'PO Verification', description: 'Automated 3-way matching for purchases.', enabled: false, category: 'finance' },
     ])
 
-    // Filter toolsOrder based on enabled features
-    const [toolsOrder, setToolsOrder] = useState(['ai_copilot', 'recent_orders', 'quick_quote'])
+    // Tools Ordering State
+    const [toolsOrder, setToolsOrder] = useState<string[]>([
+        'recent_orders',
+        'quick_quote',
+        'project_tracker',
+        'warranty_claims'
+    ])
 
     // Effect to ensure toolsOrder stays in sync with enabled features (optional auto-cleanup)
     // For now, the loop below just checks `features.find(f => f.id === toolId)?.enabled`
@@ -518,9 +522,31 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                 </button>
                             </div>
 
-                            {/* Right Column: Smart Quote Hub (Replaces Quick Actions) */}
-                            <div className="w-full xl:w-[400px] shrink-0 flex flex-col h-[320px]">
-                                <SmartQuoteHub />
+                            {/* Right Column: Quick Actions Grid */}
+                            <div className="w-full xl:w-[400px] shrink-0 flex flex-col h-[200px] xl:h-[200px]">
+                                <h3 className="text-sm font-semibold text-foreground mb-3 px-1">Quick Actions</h3>
+                                <div className="grid grid-cols-2 gap-3 h-full">
+                                    {[
+                                        { icon: <DocumentPlusIcon className="w-6 h-6" />, label: "New Quote", desc: "Create a new quote" },
+                                        { icon: <CubeIcon className="w-6 h-6" />, label: "Check Stock", desc: "View inventory" },
+                                        { icon: <ChartBarIcon className="w-6 h-6" />, label: "Gen. Report", desc: "Analytics summary" },
+                                        { icon: <CloudArrowUpIcon className="w-6 h-6" />, label: "ERP Sync", desc: "Sync with ERP", action: () => setIsERPSyncModalOpen(true) },
+                                    ].map((action, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={action.action}
+                                            className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-border bg-white/50 dark:bg-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-primary/50 hover:text-primary transition-all group"
+                                        >
+                                            <div className="p-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 text-zinc-500 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+                                                {action.icon}
+                                            </div>
+                                            <div className="text-center">
+                                                <span className="text-xs font-semibold text-foreground group-hover:text-primary block">{action.label}</span>
+                                                <span className="text-[10px] text-muted-foreground hidden sm:block">{action.desc}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </>
@@ -585,9 +611,14 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                 { icon: <DocumentPlusIcon className="w-5 h-5" />, label: "New Quote" },
                                 { icon: <CubeIcon className="w-5 h-5" />, label: "Check Stock" },
                                 { icon: <ChartBarIcon className="w-5 h-5" />, label: "Gen. Report" },
-                                { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "ERP Sync" },
+                                { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "ERP Sync", action: () => setIsERPSyncModalOpen(true) },
                             ].map((action, i) => (
-                                <button key={i} className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-foreground transition-colors relative group" title={action.label}>
+                                <button
+                                    key={i}
+                                    onClick={action.action}
+                                    className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-foreground transition-colors relative group"
+                                    title={action.label}
+                                >
                                     {action.icon}
                                 </button>
                             ))}
@@ -1365,54 +1396,10 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                     </div>
                                                 </div>
                                             ) : toolId === 'quick_quote' ? (
-                                                /* Quick Quote Tool Section */
                                                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                                                     {/* Left Column: Quick Quote Action Panel (2/3 width) */}
-                                                    <div className="xl:col-span-2 bg-white dark:bg-zinc-900 rounded-2xl border border-border shadow-sm p-6">
-                                                        <div className="flex items-center gap-3 mb-6">
-                                                            <Bars3Icon
-                                                                className="w-5 h-5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400 transition-colors cursor-grab active:cursor-grabbing mr-2"
-                                                            />
-                                                            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center justify-center">
-                                                                <DocumentPlusIcon className="w-6 h-6" />
-                                                            </div>
-                                                            <div>
-                                                                <div className="flex items-center gap-2">
-                                                                    <h3 className="text-lg font-brand font-semibold text-foreground">Quick Quote</h3>
-                                                                    <span className="inline-flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
-                                                                        Essential
-                                                                    </span>
-                                                                </div>
-                                                                <p className="text-sm text-muted-foreground">Upload files or start from scratch</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-6">
-                                                            {/* Upload Zone */}
-                                                            <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group">
-                                                                <CloudArrowUpIcon className="w-12 h-12 text-zinc-400 group-hover:text-primary transition-colors mb-4" />
-                                                                <h4 className="text-base font-medium text-foreground">Drag and drop files here</h4>
-                                                                <p className="text-sm text-muted-foreground mt-1">or click to select</p>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-4 py-2">
-                                                                <div className="h-px flex-1 bg-border"></div>
-                                                                <span className="text-xs font-medium text-muted-foreground">Don't have files?</span>
-                                                                <div className="h-px flex-1 bg-border"></div>
-                                                            </div>
-
-                                                            {/* Action Buttons Grid */}
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                                <button className="flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 font-medium transition-colors text-sm">
-                                                                    <LinkIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                                                                    ERP Quote
-                                                                </button>
-                                                                <button className="flex items-center justify-center gap-2 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 font-medium transition-colors text-sm">
-                                                                    <PencilSquareIcon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                                                                    Manual Quote
-                                                                </button>
-                                                            </div>
-                                                        </div>
+                                                    <div className="xl:col-span-2">
+                                                        <SmartQuoteHub onNavigate={onNavigate} />
                                                     </div>
 
                                                     {/* Right Column: Recent Quotes List (1/3 width) */}
@@ -1453,8 +1440,6 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                         </button>
                                                     </div>
                                                 </div>
-                                            ) : toolId === 'ai_copilot' ? (
-                                                <ChatWidget className="w-full" />
                                             ) : toolId === 'project_tracker' ? (
                                                 <ProjectTrackerWidget />
                                             ) : toolId === 'inventory_forecast' ? (
@@ -1592,6 +1577,13 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                     </div>
                 </Dialog>
             </Transition>
+
+            {/* ERP Sync Modal */}
+            <ERPSyncModal
+                isOpen={isERPSyncModalOpen}
+                onClose={() => setIsERPSyncModalOpen(false)}
+            />
+
         </div >
     )
 }

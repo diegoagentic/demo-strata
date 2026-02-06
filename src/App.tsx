@@ -3,6 +3,9 @@ import { GenUIProvider } from './context/GenUIContext'
 import Login from "./Login"
 import Dashboard from "./Dashboard"
 import Detail from "./Detail"
+import QuoteDetail from "./QuoteDetail"
+import OrderDetail from "./OrderDetail"
+import AckDetail from "./AckDetail"
 import Workspace from "./Workspace"
 import Inventory from "./Inventory"
 import Catalogs from "./Catalogs"
@@ -13,7 +16,7 @@ import Pricing from "./Pricing"
 import Navbar from "./components/Navbar"
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'login' | 'dashboard' | 'detail' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('login')
+  const [currentPage, setCurrentPage] = useState<'login' | 'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('login')
 
   const handleNavigate = (page: string) => {
     // Map generic page names to specific state keys if needed, or just use directly
@@ -51,13 +54,23 @@ function App() {
         ) : currentPage === 'mac' ? (
           <MAC onLogout={() => setCurrentPage('login')} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         ) : currentPage === 'transactions' ? (
-          <Transactions onLogout={() => setCurrentPage('login')} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
+          <Transactions
+            onLogout={() => setCurrentPage('login')}
+            onNavigateToDetail={(type) => setCurrentPage(type as any)}
+            onNavigateToWorkspace={() => setCurrentPage('workspace')}
+          />
         ) : currentPage === 'crm' ? (
           <CRM onLogout={() => setCurrentPage('login')} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         ) : currentPage === 'pricing' ? (
           <Pricing onLogout={() => setCurrentPage('login')} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         ) : currentPage === 'detail' ? (
           <Detail onBack={() => setCurrentPage('dashboard')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
+        ) : currentPage === 'quote-detail' ? (
+          <QuoteDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
+        ) : currentPage === 'order-detail' ? (
+          <OrderDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
+        ) : currentPage === 'ack-detail' ? (
+          <AckDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
         ) : currentPage === 'workspace' ? (
           <Workspace onBack={() => setCurrentPage('dashboard')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
         ) : null}
