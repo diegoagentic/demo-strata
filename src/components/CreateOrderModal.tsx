@@ -66,48 +66,99 @@ const creationOptions = [
     }
 ]
 
+import OrderCreationForm, { type OrderFormData } from './forms/OrderCreationForm'
+import OrderImportFlow from './forms/OrderImportFlow'
+import OrderFromQuoteFlow from './forms/OrderFromQuoteFlow'
+
+// Enhanced Mock Templates with Line Items for Autofill
 const templates = [
+    // ... existing templates ...
     {
         id: 1,
         name: 'Standard Monthly Restock',
-        items: 12,
+        itemsSummary: 12,
         totalValue: '$4,250.00',
         lastUsed: '2 days ago',
-        category: 'Restock'
+        category: 'Restock',
+        data: {
+            customerId: 'CUST-002',
+            projectRef: 'Monthly Depot Restock',
+            shippingAddress: '123 Warehouse Dr, Industrial Park, NY 10001',
+            notes: 'Please deliver to Loading Dock B.',
+            items: [
+                { id: 't1-1', description: 'Standard Drywall Panel 4x8', qty: 50, unitPrice: 15.00, total: 750.00 },
+                { id: 't1-2', description: 'Joint Compound 5gal', qty: 10, unitPrice: 24.50, total: 245.00 },
+                { id: 't1-3', description: 'Corner Bead Vinyl', qty: 100, unitPrice: 3.25, total: 325.00 },
+                { id: 't1-4', description: 'Drywall Screws 1-1/4"', qty: 20, unitPrice: 45.00, total: 900.00 }
+            ]
+        }
     },
     {
         id: 2,
         name: 'New Dealer Initial Setup',
-        items: 45,
+        itemsSummary: 45,
         totalValue: '$25,000.00',
         lastUsed: '1 week ago',
-        category: 'New Setup'
+        category: 'New Setup',
+        data: {
+            customerId: 'CUST-004',
+            projectRef: 'New Branch Opening',
+            shippingAddress: '456 Retail Blvd, Shopping Center, TX 75001',
+            notes: 'Call 24h before delivery. Lift gate required.',
+            items: [
+                { id: 't2-1', description: 'Display Rack Unit A', qty: 5, unitPrice: 1200.00, total: 6000.00 },
+                { id: 't2-2', description: 'Starter Inventory Pack', qty: 1, unitPrice: 15000.00, total: 15000.00 },
+                { id: 't2-3', description: 'Marketing Materials Kit', qty: 2, unitPrice: 500.00, total: 1000.00 }
+            ]
+        }
     },
     {
         id: 3,
         name: 'Seasonal Promo (Q1)',
-        items: 8,
+        itemsSummary: 8,
         totalValue: '$1,800.00',
         lastUsed: 'Yesterday',
-        category: 'Promo'
+        category: 'Promo',
+        data: {
+            customerId: '',
+            projectRef: 'Q1 Seasonal Promotion',
+            items: [
+                { id: 't3-1', description: 'Winter Insulation Roll', qty: 20, unitPrice: 45.00, total: 900.00 },
+                { id: 't3-2', description: 'Weather Stripping Value Pack', qty: 50, unitPrice: 12.00, total: 600.00 }
+            ]
+        }
     },
     {
         id: 4,
         name: 'Urgent Parts Replacement',
-        items: 3,
+        itemsSummary: 3,
         totalValue: '$450.00',
         lastUsed: '5 days ago',
-        category: 'Maintenance'
+        category: 'Maintenance',
+        data: {
+            customerId: 'CUST-001',
+            projectRef: 'Urgent Repair',
+            items: [
+                { id: 't4-1', description: 'Replacement Motor Unit', qty: 1, unitPrice: 350.00, total: 350.00 },
+                { id: 't4-2', description: 'Mounting Bracket Set', qty: 2, unitPrice: 25.00, total: 50.00 }
+            ]
+        }
     }
 ]
 
 export default function CreateOrderModal({ isOpen, onClose }: CreateOrderModalProps) {
-    const [step, setStep] = useState<'selection' | 'templates'>('selection')
+    const [step, setStep] = useState<'selection' | 'templates' | 'import' | 'quote' | 'form'>('selection')
+    const [initialFormData, setInitialFormData] = useState<Partial<OrderFormData> | undefined>(undefined)
+    const [isTemplateMode, setIsTemplateMode] = useState(false)
 
     // Reset step when modal closes
     useEffect(() => {
         if (!isOpen) {
-            const timer = setTimeout(() => setStep('selection'), 300)
+            const timer = setTimeout(() => {
+                setStep('selection')
+                setInitialFormData(undefined)
+                setIsTemplateMode(false)
+            }, 300)
             return () => clearTimeout(timer)
         }
     }, [isOpen])
@@ -115,8 +166,38 @@ export default function CreateOrderModal({ isOpen, onClose }: CreateOrderModalPr
     const handleOptionClick = (id: string) => {
         if (id === 'template') {
             setStep('templates')
+        } else if (id === 'import') {
+            setStep('import')
+        } else if (id === 'quote') {
+            setStep('quote')
+        } else if (id === 'manual') {
+            setIsTemplateMode(false)
+            setInitialFormData(undefined)
+            setStep('form')
         }
-        // Handle other options here as needed
+    }
+
+    const handleTemplateSelect = (template: typeof templates[0]) => {
+        setInitialFormData(template.data as any);
+        setIsTemplateMode(true);
+        setStep('form');
+    }
+
+    const handleDataSelect = (data: OrderFormData) => {
+        setInitialFormData(data);
+        setIsTemplateMode(false); // It's not a template, but pre-filled data
+        setStep('form');
+    }
+
+    const handleFormSubmit = (data: OrderFormData) => {
+        console.log('Order Created:', data);
+        onClose();
+        // In a real app, this would trigger an API call and show a success toast
+    }
+
+    const getModalSize = () => {
+        if (step === 'form' || step === 'import' || step === 'quote') return 'sm:max-w-6xl h-[90vh]';
+        return 'sm:max-w-3xl';
     }
 
     return (
@@ -135,7 +216,7 @@ export default function CreateOrderModal({ isOpen, onClose }: CreateOrderModalPr
                 </Transition.Child>
 
                 <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-                    <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                    <div className="flex min-h-full items-center justify-center p-4 text-center">
                         <Transition.Child
                             as={Fragment}
                             enter="ease-out duration-300"
@@ -145,16 +226,19 @@ export default function CreateOrderModal({ isOpen, onClose }: CreateOrderModalPr
                             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         >
-                            <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-3xl border border-border">
-                                <div className="absolute right-6 top-6 z-10">
-                                    <button
-                                        type="button"
-                                        className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors outline-none"
-                                        onClick={onClose}
-                                    >
-                                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                                    </button>
-                                </div>
+                            <Dialog.Panel className={`relative transform overflow-hidden rounded-2xl bg-white dark:bg-zinc-950 text-left shadow-2xl transition-all border border-border w-full ${getModalSize()}`}>
+                                {/* Close Button logic - Hide in sub-flows that have their own navigation */}
+                                {step === 'selection' && (
+                                    <div className="absolute right-6 top-6 z-10">
+                                        <button
+                                            type="button"
+                                            className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors outline-none"
+                                            onClick={onClose}
+                                        >
+                                            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                                        </button>
+                                    </div>
+                                )}
 
                                 {step === 'selection' ? (
                                     <div className="p-8">
@@ -198,7 +282,7 @@ export default function CreateOrderModal({ isOpen, onClose }: CreateOrderModalPr
                                             ))}
                                         </div>
                                     </div>
-                                ) : (
+                                ) : step === 'templates' ? (
                                     <div className="p-8 h-[600px] flex flex-col">
                                         <div className="flex items-center gap-4 mb-6">
                                             <button
@@ -222,6 +306,7 @@ export default function CreateOrderModal({ isOpen, onClose }: CreateOrderModalPr
                                                 {templates.map((template) => (
                                                     <div
                                                         key={template.id}
+                                                        onClick={() => handleTemplateSelect(template)}
                                                         className="group flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
                                                     >
                                                         <div className="flex items-center gap-4">
@@ -232,7 +317,7 @@ export default function CreateOrderModal({ isOpen, onClose }: CreateOrderModalPr
                                                                 <h4 className="font-semibold text-foreground">{template.name}</h4>
                                                                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                                                                     <span className="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">{template.category}</span>
-                                                                    <span>{template.items} Items</span>
+                                                                    <span>{template.itemsSummary} Items</span>
                                                                     <span>•</span>
                                                                     <span>Last used {template.lastUsed}</span>
                                                                 </div>
@@ -258,6 +343,24 @@ export default function CreateOrderModal({ isOpen, onClose }: CreateOrderModalPr
                                             </button>
                                         </div>
                                     </div>
+                                ) : step === 'import' ? (
+                                    <OrderImportFlow
+                                        onImportComplete={handleDataSelect}
+                                        onCancel={() => setStep('selection')}
+                                    />
+                                ) : step === 'quote' ? (
+                                    <OrderFromQuoteFlow
+                                        onOrderCreate={handleFormSubmit}
+                                        onEditDetails={handleDataSelect}
+                                        onCancel={() => setStep('selection')}
+                                    />
+                                ) : (
+                                    <OrderCreationForm
+                                        initialData={initialFormData}
+                                        isTemplate={isTemplateMode}
+                                        onSubmit={handleFormSubmit}
+                                        onCancel={() => setStep('selection')} // Always go back to selection if cancelled from main form
+                                    />
                                 )}
                             </Dialog.Panel>
                         </Transition.Child>
