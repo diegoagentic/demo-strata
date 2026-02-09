@@ -9,7 +9,7 @@ import {
     ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, EyeIcon, PencilIcon, TrashIcon,
     CheckIcon, MapPinIcon, UserIcon, ClockIcon, ShoppingBagIcon, ExclamationTriangleIcon, PencilSquareIcon,
     ShoppingCartIcon, ClipboardDocumentCheckIcon, WrenchScrewdriverIcon, ChevronLeftIcon, CloudArrowUpIcon, DocumentPlusIcon,
-    FunnelIcon, ArrowRightIcon, SparklesIcon
+    FunnelIcon, ArrowRightIcon, SparklesIcon, CheckBadgeIcon
 } from '@heroicons/react/24/outline'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
@@ -19,6 +19,7 @@ import { useTenant } from './TenantContext'
 import Select from './components/Select'
 import CreateOrderModal from './components/CreateOrderModal'
 import SmartQuoteHub from './components/widgets/SmartQuoteHub'
+import BatchAckModal from './components/BatchAckModal'
 import Breadcrumbs from './components/Breadcrumbs'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -124,7 +125,8 @@ const acksSummary = {
     on_time: { label: 'On Time Rate', value: '94%', sub: 'Vendor perf.', icon: <ArrowTrendingUpIcon className="w-5 h-5" />, color: 'purple' },
 }
 
-// Define props interface if not heavily inferred or complex
+import AcknowledgementUploadModal from './components/AcknowledgementUploadModal'
+
 interface TransactionsProps {
     onLogout: () => void;
     onNavigateToDetail: (type: string) => void;
@@ -136,6 +138,8 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
     const [viewMode, setViewMode] = useState<'list' | 'pipeline'>('pipeline');
     const [showMetrics, setShowMetrics] = useState(false);
     const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
+    const [isAckModalOpen, setIsAckModalOpen] = useState(false);
+    const [isBatchAckOpen, setIsBatchAckOpen] = useState(false);
     const [isQuoteWidgetOpen, setIsQuoteWidgetOpen] = useState(false);
     const { theme, toggleTheme } = useTheme()
     const { currentTenant } = useTenant()
@@ -481,12 +485,12 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                 <div className="flex items-center gap-4 mt-6 animate-in fade-in slide-in-from-top-2 duration-500">
                                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Quick Actions:</span>
                                     {[
-                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack" },
+                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack", action: () => setIsAckModalOpen(true) },
                                         { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export List" },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Email Vendor" },
-                                        { icon: <WrenchScrewdriverIcon className="w-5 h-5" />, label: "Resolve All" },
+                                        { icon: <CheckBadgeIcon className="w-5 h-5" />, label: "Approve Orders", action: () => setIsBatchAckOpen(true) },
                                     ].map((action, i) => (
-                                        <button key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-primary dark:hover:border-primary hover:bg-primary dark:hover:bg-primary hover:text-zinc-900 dark:hover:text-zinc-900 text-gray-500 dark:text-gray-400 transition-all text-xs font-medium">
+                                        <button key={i} onClick={() => action.action ? action.action() : null} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-primary dark:hover:border-primary hover:bg-primary dark:hover:bg-primary hover:text-zinc-900 dark:hover:text-zinc-900 text-gray-500 dark:text-gray-400 transition-all text-xs font-medium">
                                             {action.icon}
                                             <span>{action.label}</span>
                                         </button>
@@ -519,9 +523,12 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack" },
                                             { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export List" },
                                             { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Email Vendor" },
-                                            { icon: <WrenchScrewdriverIcon className="w-5 h-5" />, label: "Resolve All" },
+                                            { icon: <CheckBadgeIcon className="w-5 h-5" />, label: "Approve Orders" },
                                         ].map((action, i) => (
-                                            <button key={i} className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-foreground transition-colors relative group" title={action.label}>
+                                            <button key={i} onClick={() => {
+                                                if (action.label === 'Upload Ack') setIsAckModalOpen(true);
+                                                if (action.label === 'Approve Orders') setIsBatchAckOpen(true);
+                                            }} className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-foreground transition-colors relative group" title={action.label}>
                                                 {action.icon}
                                             </button>
                                         ))}
@@ -809,6 +816,8 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                 onClick={() => {
                                                     if (lifecycleTab === 'quotes') {
                                                         setIsQuoteWidgetOpen(true);
+                                                    } else if (lifecycleTab === 'acknowledgments') {
+                                                        setIsAckModalOpen(true);
                                                     } else {
                                                         setIsCreateOrderOpen(true);
                                                     }
@@ -1425,6 +1434,10 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                     </div>
                 </Dialog>
             </Transition>
+            <CreateOrderModal isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
+            <AcknowledgementUploadModal isOpen={isAckModalOpen} onClose={() => setIsAckModalOpen(false)} />
+            <BatchAckModal isOpen={isBatchAckOpen} onClose={() => setIsBatchAckOpen(false)} />
+
         </div >
     )
 }
