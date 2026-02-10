@@ -91,9 +91,11 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                 let responseText = "I'm not sure how to handle that yet.";
 
                 const lowerContent = content.toLowerCase();
+                console.log('GenUI Debug:', { content, lowerContent });
 
                 // Use Case 1: Order Correction
                 if (lowerContent.includes('order #402') || lowerContent.includes('wrong caster')) {
+                    console.log('Matched: Order Correction');
                     responseText = "I found Order #402. It looks like you want to update the casters.";
                     responseArtifact = {
                         id: 'art_correct_402',
@@ -104,6 +106,7 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                 }
                 // Use Case 2: Urgent Procurement
                 else if (lowerContent.includes('standing desks') && (lowerContent.includes('urgent') || lowerContent.includes('tomorrow'))) {
+                    console.log('Matched: Urgent Procurement');
                     responseText = "I've located stock for 10 standing desks avail for pickup tomorrow in Chicago.";
                     responseArtifact = {
                         id: 'art_stock_chi',
@@ -114,6 +117,7 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                 }
                 // Use Case 3: Inventory Check (Replaced Layout Generator)
                 else if (lowerContent.includes('inventory') || lowerContent.includes('stock check') || lowerContent.includes('aeron')) {
+                    console.log('Matched: Inventory Check');
                     responseText = "Checking global inventory... I found significant stock availability across 3 regions.";
                     responseArtifact = {
                         id: 'art_inv_check',
@@ -125,6 +129,7 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                 // Use Case 4: Warranty Check
                 // Use Case 4: Warranty Claim
                 else if (lowerContent.includes('fabric') || lowerContent.includes('peeling') || lowerContent.includes('claim')) {
+                    console.log('Matched: Warranty Claim');
                     responseText = "I've analyzed the warranty for Client X. The fabric issue is covered.";
                     responseArtifact = {
                         id: 'art_warranty_x',
@@ -135,6 +140,7 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                 }
                 // Use Case 5: Start Quote (Mode Selection)
                 else if (lowerContent.includes('proposal') || lowerContent.includes('stellar tech') || (lowerContent.includes('quote') && !lowerContent.includes('qt-2941') && !lowerContent.includes('mode selected') && !lowerContent.includes('selected erp'))) {
+                    console.log('Matched: Mode Selection (Quote)');
                     responseText = "I can help you create a formal Sales Proposal. How would you like to import the data?";
                     responseArtifact = {
                         id: 'art_mode_select',
