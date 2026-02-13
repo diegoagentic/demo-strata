@@ -254,7 +254,7 @@ export default function CatalogLibrary() {
                                 "flex items-center gap-2 px-3 py-2 border rounded-lg transition-colors text-sm font-medium shadow-sm",
                                 showFilters || activeFilterCount > 0
                                     ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100"
-                                    : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-foreground"
+                                    : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 hover:bg-brand-300 dark:hover:bg-brand-600/50 text-foreground"
                             )}
                         >
                             <FunnelIcon className="w-4 h-4" />
@@ -323,7 +323,7 @@ export default function CatalogLibrary() {
             {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredCatalogs.map(catalog => (
-                    <div key={catalog.id} className="group bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-md transition-all hover:border-primary/50 cursor-pointer flex flex-col relative z-0 h-[380px]">
+                    <div key={catalog.id} className="group bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-md dark:hover:shadow-glow-sm transition-all hover:border-primary/50 cursor-pointer flex flex-col relative z-0 h-[380px]">
                         {/* Cover Area */}
                         <div
                             className={`h-32 ${catalog.cover} p-6 flex items-end relative rounded-t-2xl shrink-0`}
@@ -454,7 +454,7 @@ export default function CatalogLibrary() {
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleSync(catalog.id); }}
                                                 disabled={syncingId === catalog.id}
-                                                className={`p-2 rounded-lg transition-colors ${syncingId === catalog.id ? 'animate-spin text-zinc-500' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-muted-foreground hover:text-foreground'}`}
+                                                className={`p-2 rounded-lg transition-colors ${syncingId === catalog.id ? 'animate-spin text-zinc-500' : 'hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white'}`}
                                                 title="Sync Catalog"
                                             >
                                                 <ArrowPathIcon className="w-4 h-4" />
@@ -463,7 +463,7 @@ export default function CatalogLibrary() {
                                             {/* History Toggle Button */}
                                             <button
                                                 onClick={(e) => toggleHistory(catalog.id, e)}
-                                                className={`p-2 rounded-lg transition-colors ${historyView[catalog.id] ? 'bg-zinc-100 dark:bg-zinc-800 text-foreground' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-muted-foreground hover:text-foreground'}`}
+                                                className={`p-2 rounded-lg transition-colors ${historyView[catalog.id] ? 'bg-zinc-100 dark:bg-zinc-800 text-foreground' : 'hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white'}`}
                                                 title="View History Log"
                                             >
                                                 <ClockIcon className="w-4 h-4" />
@@ -481,7 +481,7 @@ export default function CatalogLibrary() {
 
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleOpenQuote(catalog.name); }}
-                                            className="text-zinc-900 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-white text-xs font-semibold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
+                                            className="text-zinc-900 hover:text-zinc-700 dark:text-zinc-300 dark:hover:text-white text-xs font-semibold bg-zinc-100 hover:bg-brand-300 dark:bg-zinc-800 dark:hover:bg-brand-600/50 px-3 py-1.5 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
                                         >
                                             Create Quote
                                         </button>

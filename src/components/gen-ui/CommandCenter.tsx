@@ -26,7 +26,7 @@ export default function CommandCenter() {
                 <div className="relative flex items-center bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-800 p-2 gap-1">
                     <button
                         onClick={toggleStream}
-                        className={`p-2 rounded-xl text-zinc-400 hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all ${isStreamOpen ? 'bg-zinc-100 dark:bg-zinc-800 text-foreground' : ''}`}
+                        className={`p-2 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-brand-300 dark:hover:bg-brand-600/50 dark:hover:text-white transition-all ${isStreamOpen ? 'bg-brand-300 dark:bg-brand-600/50 text-zinc-900 dark:text-white' : ''}`}
                         title={isStreamOpen ? "Hide Stream" : "Show Stream"}
                     >
                         <ChevronUpIcon className={`w-5 h-5 transition-transform duration-300 ${isStreamOpen ? 'rotate-180' : ''}`} />
@@ -37,7 +37,7 @@ export default function CommandCenter() {
                             setStreamOpen(true);
                             setShowTriggers(true);
                         }}
-                        className={`p-2 rounded-xl text-zinc-400 hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all ${showTriggers ? 'bg-zinc-100 dark:bg-zinc-800 text-foreground' : ''}`}
+                        className={`p-2 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-brand-300 dark:hover:bg-brand-600/50 dark:hover:text-white transition-all ${showTriggers ? 'bg-brand-300 dark:bg-brand-600/50 text-zinc-900 dark:text-white' : ''}`}
                         title="History & Triggers"
                     >
                         <ClockIcon className="w-5 h-5" />

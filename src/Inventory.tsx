@@ -410,8 +410,9 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                                     className={cn(
                                         "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 outline-none whitespace-nowrap",
                                         activeTab === tab.id
-                                            ? "bg-primary text-primary-foreground shadow-sm"
-                                            : "text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-700/50"
+                                            ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+
+                                            : "hover:text-zinc-900 hover:bg-brand-300 dark:hover:bg-brand-600/50 dark:hover:text-white"
                                     )}
                                 >
                                     {tab.label}
@@ -447,7 +448,10 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                                             <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{data.label}</p>
                                             <p className="mt-1 text-3xl font-semibold text-foreground group-hover:scale-105 transition-transform origin-left">{data.value}</p>
                                         </div>
-                                        <div className={cn("p-3 rounded-xl", colorStyles[data.color] || 'bg-zinc-50 text-zinc-600')}>
+                                        <div
+                                            className={cn("p-3 rounded-xl relative group", colorStyles[data.color] || 'bg-zinc-50 text-zinc-600')}
+                                            title={data.label}
+                                        >
                                             {data.icon}
                                         </div>
                                     </div>
@@ -470,7 +474,7 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                                 <button
                                     key={i}
                                     onClick={action.onClick}
-                                    className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-sm font-medium text-foreground hover:bg-accent hover:border-accent transition-all shadow-sm"
+                                    className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-sm font-medium text-foreground hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:border-brand-400 dark:hover:border-zinc-700 hover:text-zinc-900 transition-all shadow-sm"
                                 >
                                     {action.icon}
                                     {action.label}
@@ -484,7 +488,7 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                             <button
                                 onClick={() => scroll(scrollContainerRef, 'left')}
-                                className="p-1.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                                className="p-1.5 rounded-full hover:bg-brand-50 dark:hover:bg-brand-500/15 text-muted-foreground hover:text-foreground transition-colors shrink-0"
                             >
                                 <ChevronLeftIcon className="w-4 h-4" />
                             </button>
@@ -496,25 +500,25 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                             >
                                 {Object.entries(inventorySummary).map(([key, data]) => (
                                     <div key={key} className="flex items-center gap-3 min-w-fit group cursor-default">
-                                        <div className={cn("relative flex items-center justify-center w-10 h-10 rounded-full transition-colors", colorStyles[data.color])}>
+                                        <div
+                                            className={cn("relative flex items-center justify-center w-10 h-10 rounded-full transition-colors", colorStyles[data.color])}
+                                            title={data.label}
+                                        >
                                             {data.icon}
-                                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap bg-zinc-900 dark:bg-card text-white text-xs font-semibold px-2 py-1 rounded shadow-lg z-50 animate-in fade-in zoom-in duration-200">
-                                                {data.label}
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-800"></div>
-                                            </div>
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-lg font-bold text-foreground leading-none">{data.value}</span>
                                             <span className="text-[10px] text-muted-foreground mt-1 font-medium">{data.label}</span>
                                         </div>
-                                        <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700/50 ml-4 hidden md:block lg:hidden xl:block opacity-50"></div>
+                                        {/* Divider (except last) */}
+                                        <div className="h-8 w-px bg-border/50 ml-4 hidden md:block lg:hidden xl:block opacity-50"></div>
                                     </div>
                                 ))}
                             </div>
 
                             <button
                                 onClick={() => scroll(scrollContainerRef, 'right')}
-                                className="p-1.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                                className="p-1.5 rounded-full hover:bg-brand-50 dark:hover:bg-brand-500/15 text-muted-foreground hover:text-foreground transition-colors shrink-0"
                             >
                                 <ChevronRightIcon className="w-4 h-4" />
                             </button>
@@ -530,7 +534,7 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                                 { icon: <ClipboardDocumentCheckIcon className="w-5 h-5" />, label: "Start Audit" },
                                 { icon: <PlusIcon className="w-5 h-5" />, label: "Add Stock", onClick: () => setIsAddAssetModalOpen(true) },
                             ].map((action, i) => (
-                                <button key={i} onClick={action.onClick} className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors relative group" title={action.label}>
+                                <button key={i} onClick={action.onClick} className="p-2 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-500/15 text-muted-foreground hover:text-foreground transition-colors relative group" title={action.label}>
                                     {action.icon}
                                 </button>
                             ))}
@@ -540,406 +544,414 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
 
                         <button
                             onClick={() => setShowMetrics(true)}
-                            className="flex flex-col items-center justify-center gap-1 group p-2 hover:bg-primary dark:hover:bg-primary rounded-lg transition-colors"
+                            className="flex flex-col items-center justify-center gap-1 group p-2 hover:bg-brand-300 dark:hover:bg-brand-600/50 rounded-lg transition-colors"
                         >
-                            <div className="text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-900 transition-colors">
+                            <div className="text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
                                 <ChevronDownIcon className="w-4 h-4" />
                             </div>
-                            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-900 transition-colors">Details</span>
+                            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">Details</span>
                         </button>
-                    </div>
-                )}
+                    </div >
+                )
+                }
 
 
                 {/* Main Content (Tabs Logic) */}
-                {activeTab === 'inventory' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {
+                    activeTab === 'inventory' && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-                        {/* Filters & View Toggle Bar */}
-                        <div className="bg-card p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+                            {/* Filters & View Toggle Bar */}
+                            <div className="bg-card p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
 
-                            {/* Left: Search & Filters */}
-                            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                                <div className="relative w-full sm:w-64">
-                                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search assets..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-card/50 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all"
-                                    />
+                                {/* Left: Search & Filters */}
+                                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                                    <div className="relative w-full sm:w-64">
+                                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search assets..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full pl-9 pr-4 py-2 bg-zinc-50 dark:bg-card/50 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                        <div className="relative">
+                                            <BuildingOfficeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                            <select
+                                                value={filterType}
+                                                onChange={(e) => setFilterType(e.target.value)}
+                                                className="pl-9 pr-8 py-2 bg-muted/50 border border-border rounded-lg text-sm font-medium hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:border-brand-400 dark:hover:border-brand-800 transition-colors appearance-none cursor-pointer focus:ring-2 focus:ring-primary focus:outline-none"
+                                            >
+                                                <option value="All Types">All Types</option>
+                                                {uniqueTypes.map(type => (
+                                                    <option key={type} value={type}>{type}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                                        </div>
+
+                                        <div className="relative">
+                                            <MapPinIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                            <select
+                                                value={filterLocation}
+                                                onChange={(e) => setFilterLocation(e.target.value)}
+                                                className="pl-9 pr-8 py-2 bg-muted/50 border border-border rounded-lg text-sm font-medium hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:border-brand-400 dark:hover:border-brand-800 transition-colors appearance-none cursor-pointer focus:ring-2 focus:ring-primary focus:outline-none max-w-[200px] truncate"
+                                            >
+                                                <option value="All Locations">All Locations</option>
+                                                {uniqueLocations.map(loc => (
+                                                    <option key={loc} value={loc}>{loc}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    <div className="relative">
-                                        <BuildingOfficeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                        <select
-                                            value={filterType}
-                                            onChange={(e) => setFilterType(e.target.value)}
-                                            className="pl-9 pr-8 py-2 bg-muted/50 border border-border rounded-lg text-sm font-medium hover:bg-accent transition-colors appearance-none cursor-pointer focus:ring-2 focus:ring-primary focus:outline-none"
-                                        >
-                                            <option value="All Types">All Types</option>
-                                            {uniqueTypes.map(type => (
-                                                <option key={type} value={type}>{type}</option>
-                                            ))}
-                                        </select>
-                                        <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
-                                    </div>
 
-                                    <div className="relative">
-                                        <MapPinIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                        <select
-                                            value={filterLocation}
-                                            onChange={(e) => setFilterLocation(e.target.value)}
-                                            className="pl-9 pr-8 py-2 bg-muted/50 border border-border rounded-lg text-sm font-medium hover:bg-accent transition-colors appearance-none cursor-pointer focus:ring-2 focus:ring-primary focus:outline-none max-w-[200px] truncate"
-                                        >
-                                            <option value="All Locations">All Locations</option>
-                                            {uniqueLocations.map(loc => (
-                                                <option key={loc} value={loc}>{loc}</option>
-                                            ))}
-                                        </select>
-                                        <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
-                                    </div>
+                                {/* Right: View Toggle */}
+                                <div className="flex bg-zinc-100 dark:bg-card p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className={cn("p-1.5 rounded-md transition-all", viewMode === 'list' ? "bg-white dark:bg-zinc-700 shadow-sm text-foreground" : "text-muted-foreground hover:text-zinc-900 hover:bg-brand-300 dark:hover:bg-brand-600/50")}
+                                    >
+                                        <ListBulletIcon className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        className={cn("p-1.5 rounded-md transition-all", viewMode === 'grid' ? "bg-white dark:bg-zinc-700 shadow-sm text-foreground" : "text-muted-foreground hover:text-zinc-900 hover:bg-brand-300 dark:hover:bg-brand-600/50")}
+                                    >
+                                        <Squares2X2Icon className="w-5 h-5" />
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Right: View Toggle */}
-                            <div className="flex bg-zinc-100 dark:bg-card p-1 rounded-lg">
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    className={cn("p-1.5 rounded-md transition-all", viewMode === 'list' ? "bg-white dark:bg-zinc-700 shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
-                                >
-                                    <ListBulletIcon className="w-5 h-5" />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={cn("p-1.5 rounded-md transition-all", viewMode === 'grid' ? "bg-white dark:bg-zinc-700 shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
-                                >
-                                    <Squares2X2Icon className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* List View */}
-                        {viewMode === 'list' && (
-                            <div className="bg-card rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-sm">
-                                        <thead className="bg-zinc-50 dark:bg-card/50 border-b border-zinc-200 dark:border-zinc-800">
-                                            <tr>
-                                                <th className="p-4 w-12">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="rounded border-zinc-300 text-primary focus:ring-primary"
-                                                        checked={filteredData.length > 0 && selectedIds.size === filteredData.length}
-                                                        onChange={toggleAll}
-                                                    />
-                                                </th>
-                                                <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Asset</th>
-                                                <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Category</th>
-                                                <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Location</th>
-                                                <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Status</th>
-                                                <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Value</th>
-                                                <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Carbon Impact</th>
-                                                <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider text-right">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                                            {filteredData.map((item) => (
-                                                <tr key={item.id} className={cn("group hover:bg-muted/50 transition-colors", selectedIds.has(item.id) ? "bg-primary/5 hover:bg-primary/10" : "")}>
-                                                    <td className="p-4">
+                            {/* List View */}
+                            {viewMode === 'list' && (
+                                <div className="bg-card dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-sm">
+                                            <thead className="bg-zinc-50 dark:bg-card/50 border-b border-zinc-200 dark:border-zinc-800">
+                                                <tr>
+                                                    <th className="p-4 w-12">
                                                         <input
                                                             type="checkbox"
                                                             className="rounded border-zinc-300 text-primary focus:ring-primary"
-                                                            checked={selectedIds.has(item.id)}
-                                                            onChange={() => toggleSelection(item.id)}
+                                                            checked={filteredData.length > 0 && selectedIds.size === filteredData.length}
+                                                            onChange={toggleAll}
                                                         />
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <div className="flex items-center gap-3">
-                                                            {item.image ? (
-                                                                <>
-                                                                    <img
-                                                                        src={item.image}
-                                                                        alt={item.assetName}
-                                                                        className="w-10 h-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700"
-                                                                        onError={(e) => {
-                                                                            e.currentTarget.style.display = 'none';
-                                                                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                                                            e.currentTarget.nextElementSibling?.classList.add('flex');
-                                                                        }}
-                                                                    />
-                                                                    <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-card hidden items-center justify-center border border-zinc-200 dark:border-zinc-700">
+                                                    </th>
+                                                    <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Asset</th>
+                                                    <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Category</th>
+                                                    <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Location</th>
+                                                    <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Status</th>
+                                                    <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Value</th>
+                                                    <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider">Carbon Impact</th>
+                                                    <th className="p-4 font-medium text-muted-foreground uppercase text-xs tracking-wider text-right">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                                                {filteredData.map((item) => (
+                                                    <tr key={item.id} className={cn("group hover:bg-muted/50 transition-colors", selectedIds.has(item.id) ? "bg-primary/5 hover:bg-primary/10" : "")}>
+                                                        <td className="p-4">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="rounded border-zinc-300 text-primary focus:ring-primary"
+                                                                checked={selectedIds.has(item.id)}
+                                                                onChange={() => toggleSelection(item.id)}
+                                                            />
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="flex items-center gap-3">
+                                                                {item.image ? (
+                                                                    <>
+                                                                        <img
+                                                                            src={item.image}
+                                                                            alt={item.assetName}
+                                                                            className="w-10 h-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700"
+                                                                            onError={(e) => {
+                                                                                e.currentTarget.style.display = 'none';
+                                                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                                                e.currentTarget.nextElementSibling?.classList.add('flex');
+                                                                            }}
+                                                                        />
+                                                                        <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-card hidden items-center justify-center border border-zinc-200 dark:border-zinc-700">
+                                                                            {getCategoryIcon(item.category, "w-6 h-6 text-zinc-400")}
+                                                                        </div>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-card flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
                                                                         {getCategoryIcon(item.category, "w-6 h-6 text-zinc-400")}
                                                                     </div>
-                                                                </>
-                                                            ) : (
-                                                                <div className="w-10 h-10 rounded-lg bg-zinc-100 dark:bg-card flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
-                                                                    {getCategoryIcon(item.category, "w-6 h-6 text-zinc-400")}
+                                                                )}
+                                                                <div>
+                                                                    <p className="font-semibold text-foreground">{item.assetName}</p>
+                                                                    <p className="text-xs text-muted-foreground">{item.description}</p>
                                                                 </div>
-                                                            )}
-                                                            <div>
-                                                                <p className="font-semibold text-foreground">{item.assetName}</p>
-                                                                <p className="text-xs text-muted-foreground">{item.description}</p>
                                                             </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-4 text-muted-foreground">{item.category}</td>
-                                                    <td className="p-4">
-                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                            <MapPinIcon className="w-3.5 h-3.5 text-zinc-400" />
-                                                            <span>{item.location}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium border", getStatusBadge(item.status), "border-transparent")}>
-                                                            {item.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-4 font-medium">${item.value.toFixed(2)}</td>
-                                                    <td className="p-4">
-                                                        <span className={cn("px-2 py-0.5 rounded text-xs font-medium", getImpactBadge(item.carbonImpact))}>
-                                                            {item.carbonImpact}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-4 text-right">
-                                                        <button className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                                                            <EllipsisHorizontalIcon className="w-5 h-5" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                                        </td>
+                                                        <td className="p-4 text-muted-foreground">{item.category}</td>
+                                                        <td className="p-4">
+                                                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                                <MapPinIcon className="w-3.5 h-3.5 text-zinc-400" />
+                                                                <span>{item.location}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <span className={cn("px-2.5 py-1 rounded-full text-xs font-medium border", getStatusBadge(item.status), "border-transparent")}>
+                                                                {item.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 font-medium">${item.value.toFixed(2)}</td>
+                                                        <td className="p-4">
+                                                            <span className={cn("px-2 py-0.5 rounded text-xs font-medium", getImpactBadge(item.carbonImpact))}>
+                                                                {item.carbonImpact}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4 text-right">
+                                                            <button className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                                                                <EllipsisHorizontalIcon className="w-5 h-5" />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Grid View */}
-                        {viewMode === 'grid' && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {paginatedData.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        onClick={() => toggleSelection(item.id)}
-                                        className={cn(
-                                            "group bg-card rounded-2xl border shadow-sm hover:shadow-lg transition-all cursor-pointer relative overflow-hidden flex flex-col h-[340px]",
-                                            selectedIds.has(item.id) ? "border-primary ring-1 ring-primary" : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
-                                        )}
-                                    >
-                                        {/* Image Section */}
-                                        <div className="h-44 w-full relative bg-zinc-100 dark:bg-card">
-                                            {item.image ? (
-                                                <>
-                                                    <img
-                                                        src={item.image}
-                                                        alt={item.assetName}
-                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                        onError={(e) => {
-                                                            e.currentTarget.style.display = 'none';
-                                                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                                                            e.currentTarget.nextElementSibling?.classList.add('flex');
-                                                        }}
-                                                    />
-                                                    <div className="w-full h-full bg-zinc-100 dark:bg-card hidden flex-col items-center justify-center text-zinc-300 dark:text-zinc-600">
+                            {/* Grid View */}
+                            {viewMode === 'grid' && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    {paginatedData.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => toggleSelection(item.id)}
+                                            className={cn(
+                                                "group bg-card dark:bg-zinc-800 rounded-2xl border shadow-sm hover:shadow-lg transition-all cursor-pointer relative overflow-hidden flex flex-col h-[340px]",
+                                                selectedIds.has(item.id) ? "border-primary ring-1 ring-primary" : "border-zinc-200 dark:border-zinc-700 hover:border-primary/50"
+                                            )}
+                                        >
+                                            {/* Image Section */}
+                                            <div className="h-44 w-full relative bg-zinc-100 dark:bg-zinc-900">
+                                                {item.image ? (
+                                                    <>
+                                                        <img
+                                                            src={item.image}
+                                                            alt={item.assetName}
+                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                            onError={(e) => {
+                                                                e.currentTarget.style.display = 'none';
+                                                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                                                e.currentTarget.nextElementSibling?.classList.add('flex');
+                                                            }}
+                                                        />
+                                                        <div className="w-full h-full bg-zinc-100 dark:bg-zinc-900 hidden flex-col items-center justify-center text-zinc-300 dark:text-zinc-600">
+                                                            {getCategoryIcon(item.category)}
+                                                            <span className="text-xs font-medium">{item.category}</span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 dark:text-zinc-600">
                                                         {getCategoryIcon(item.category)}
                                                         <span className="text-xs font-medium">{item.category}</span>
                                                     </div>
-                                                </>
-                                            ) : (
-                                                <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 dark:text-zinc-600">
-                                                    {getCategoryIcon(item.category)}
-                                                    <span className="text-xs font-medium">{item.category}</span>
+                                                )}
+
+                                                {/* Overlay Gradient */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                                {/* Selection Checkbox */}
+                                                <div className="absolute top-3 left-3 z-10">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.has(item.id)}
+                                                        readOnly
+                                                        className="rounded border-zinc-300 text-primary focus:ring-primary shadow-sm w-5 h-5 cursor-pointer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        onChange={() => toggleSelection(item.id)}
+                                                    />
                                                 </div>
-                                            )}
 
-                                            {/* Overlay Gradient */}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                                            {/* Selection Checkbox */}
-                                            <div className="absolute top-3 left-3 z-10">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedIds.has(item.id)}
-                                                    readOnly
-                                                    className="rounded border-zinc-300 text-primary focus:ring-primary shadow-sm w-5 h-5 cursor-pointer"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    onChange={() => toggleSelection(item.id)}
-                                                />
-                                            </div>
-
-                                            {/* Kebab Menu */}
-                                            <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-1.5 bg-background/90 backdrop-blur rounded-lg text-foreground hover:bg-background shadow-sm" onClick={(e) => e.stopPropagation()}>
-                                                    <EllipsisHorizontalIcon className="w-5 h-5" />
-                                                </button>
-                                            </div>
-
-                                            {/* Status Badge (On Image) */}
-                                            <div className="absolute bottom-3 right-3 z-10">
-                                                <span className={cn(
-                                                    "px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm backdrop-blur-md border border-white/10",
-                                                    getStatusBadge(item.status)
-                                                )}>
-                                                    {item.status}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Content Section */}
-                                        <div className="p-4 flex-1 flex flex-col justify-between">
-                                            <div>
-                                                <div className="flex justify-between items-start gap-2 mb-1.5">
-                                                    <h3 className="font-semibold text-foreground truncate text-base" title={item.assetName}>{item.assetName}</h3>
+                                                {/* Kebab Menu */}
+                                                <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button className="p-1.5 bg-background/90 backdrop-blur rounded-lg text-foreground hover:bg-background shadow-sm" onClick={(e) => e.stopPropagation()}>
+                                                        <EllipsisHorizontalIcon className="w-5 h-5" />
+                                                    </button>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground mb-3 truncate">{item.description}</p>
 
-                                                <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                                                    <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
-                                                    <span className="truncate">{item.location}</span>
+                                                {/* Status Badge (On Image) */}
+                                                <div className="absolute bottom-3 right-3 z-10">
+                                                    <span className={cn(
+                                                        "px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm backdrop-blur-md border border-white/10",
+                                                        getStatusBadge(item.status)
+                                                    )}>
+                                                        {item.status}
+                                                    </span>
                                                 </div>
                                             </div>
 
-                                            <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-end">
+                                            {/* Content Section */}
+                                            <div className="p-4 flex-1 flex flex-col justify-between">
                                                 <div>
-                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">Value</p>
-                                                    <p className="text-sm font-bold text-foreground">${item.value.toLocaleString()}</p>
+                                                    <div className="flex justify-between items-start gap-2 mb-1.5">
+                                                        <h3 className="font-semibold text-foreground truncate text-base" title={item.assetName}>{item.assetName}</h3>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground mb-3 truncate">{item.description}</p>
+
+                                                    <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+                                                        <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
+                                                        <span className="truncate">{item.location}</span>
+                                                    </div>
                                                 </div>
-                                                <span className={cn("px-2 py-1 rounded text-[10px] font-medium border border-transparent", getImpactBadge(item.carbonImpact))}>
-                                                    {item.carbonImpact === 'Low Impact' ? '🌿 ' : '⚠️ '} {item.carbonImpact.split(' ')[0]}
-                                                </span>
+
+                                                <div className="pt-3 border-t border-zinc-100 dark:border-zinc-700 flex justify-between items-end">
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">Value</p>
+                                                        <p className="text-sm font-bold text-foreground">${item.value.toLocaleString()}</p>
+                                                    </div>
+                                                    <span className={cn("px-2 py-1 rounded text-[10px] font-medium border border-transparent", getImpactBadge(item.carbonImpact))}>
+                                                        {item.carbonImpact === 'Low Impact' ? '🌿 ' : '⚠️ '} {item.carbonImpact.split(' ')[0]}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        {/* Pagination Footer */}
-                        {filteredData.length > 0 && (
-                            <div className="flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-8">
-                                <div className="text-sm text-muted-foreground">
-                                    Showing <span className="font-medium text-foreground">{startIndex + 1}</span> to <span className="font-medium text-foreground">{Math.min(endIndex, filteredData.length)}</span> of <span className="font-medium text-foreground">{filteredData.length}</span> results
+                                    ))}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                        disabled={currentPage === 1}
-                                        className="px-3 py-1.5 text-sm font-medium rounded-md border border-border text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Previous
-                                    </button>
-                                    <div className="flex items-center gap-1">
-                                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                            let p = i + 1;
-                                            if (totalPages > 5 && currentPage > 3) {
-                                                p = currentPage - 2 + i;
-                                                if (p > totalPages) p = totalPages - (4 - i);
-                                            }
-                                            // Ensure p is valid
-                                            if (p < 1) p = 1;
+                            )}
+                            {/* Pagination Footer */}
+                            {filteredData.length > 0 && (
+                                <div className="flex items-center justify-between border-t border-zinc-200 dark:border-zinc-700 pt-4 mt-8">
+                                    <div className="text-sm text-muted-foreground">
+                                        Showing <span className="font-medium text-foreground">{startIndex + 1}</span> to <span className="font-medium text-foreground">{Math.min(endIndex, filteredData.length)}</span> of <span className="font-medium text-foreground">{filteredData.length}</span> results
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                            disabled={currentPage === 1}
+                                            className="px-3 py-1.5 text-sm font-medium rounded-md border border-border text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Previous
+                                        </button>
+                                        <div className="flex items-center gap-1">
+                                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                                let p = i + 1;
+                                                if (totalPages > 5 && currentPage > 3) {
+                                                    p = currentPage - 2 + i;
+                                                    if (p > totalPages) p = totalPages - (4 - i);
+                                                }
+                                                // Ensure p is valid
+                                                if (p < 1) p = 1;
 
-                                            return (
-                                                <button
-                                                    key={p}
-                                                    onClick={() => setCurrentPage(p)}
-                                                    className={cn(
-                                                        "w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-colors",
-                                                        currentPage === p
-                                                            ? "bg-primary text-primary-foreground"
-                                                            : "text-foreground hover:bg-accent"
-                                                    )}
-                                                >
-                                                    {p}
-                                                </button>
-                                            );
-                                        })}
+                                                return (
+                                                    <button
+                                                        key={p}
+                                                        onClick={() => setCurrentPage(p)}
+                                                        className={cn(
+                                                            "w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-colors",
+                                                            currentPage === p
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "text-foreground hover:bg-accent"
+                                                        )}
+                                                    >
+                                                        {p}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <button
+                                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                            disabled={currentPage === totalPages}
+                                            className="px-3 py-1.5 text-sm font-medium rounded-md border border-border text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Next
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                        disabled={currentPage === totalPages}
-                                        className="px-3 py-1.5 text-sm font-medium rounded-md border border-border text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Next
-                                    </button>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                )}
+                            )}
+                        </div>
+                    )
+                }
 
                 {/* Locations Tab */}
                 {activeTab === 'locations' && <InventoryLocations />}
 
-            </div>
+            </div >
 
             {/* Sticky Bulk Actions Footer */}
-            {selectedIds.size > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-zinc-200 dark:border-zinc-700 shadow-xl rounded-full px-6 py-3 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
-                    <div className="flex items-center gap-2 border-r border-zinc-200 dark:border-zinc-700 pr-6">
-                        <div className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-                            {selectedIds.size}
+            {
+                selectedIds.size > 0 && (
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-card border border-zinc-200 dark:border-zinc-700 shadow-xl rounded-full px-6 py-3 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+                        <div className="flex items-center gap-2 border-r border-zinc-200 dark:border-zinc-700 pr-6">
+                            <div className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                                {selectedIds.size}
+                            </div>
+                            <span className="text-sm font-medium text-foreground">Selected</span>
                         </div>
-                        <span className="text-sm font-medium text-foreground">Selected</span>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setIsStatusModalOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent rounded-lg text-sm font-medium text-foreground transition-colors group"
-                        >
-                            <ArrowPathRoundedSquareIcon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                            Change Status
-                        </button>
-                        <button
-                            onClick={() => setIsRelocateModalOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent rounded-lg text-sm font-medium text-foreground transition-colors group"
-                        >
-                            <MapPinIcon className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
-                            Move
-                        </button>
-                        <button
-                            onClick={() => setIsMaintenanceModalOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent rounded-lg text-sm font-medium text-foreground transition-colors group"
-                        >
-                            <WrenchScrewdriverIcon className="w-4 h-4 text-muted-foreground group-hover:text-amber-500 transition-colors" />
-                            Maintenance
-                        </button>
-                        <button className="flex items-center gap-2 px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 transition-colors group">
-                            <TrashIcon className="w-4 h-4" />
-                            Delete
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIsStatusModalOpen(true)}
+                                className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent rounded-lg text-sm font-medium text-foreground transition-colors group"
+                            >
+                                <div className="p-0.5 rounded-md transition-colors group-hover:bg-brand-300 dark:group-hover:bg-transparent">
+                                    <ArrowPathRoundedSquareIcon className="w-4 h-4 text-muted-foreground group-hover:text-zinc-600 dark:group-hover:text-primary transition-colors" />
+                                </div>
+                                Change Status
+                            </button>
+                            <button
+                                onClick={() => setIsRelocateModalOpen(true)}
+                                className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent rounded-lg text-sm font-medium text-foreground transition-colors group"
+                            >
+                                <MapPinIcon className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
+                                Move
+                            </button>
+                            <button
+                                onClick={() => setIsMaintenanceModalOpen(true)}
+                                className="flex items-center gap-2 px-3 py-1.5 hover:bg-accent rounded-lg text-sm font-medium text-foreground transition-colors group"
+                            >
+                                <WrenchScrewdriverIcon className="w-4 h-4 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+                                Maintenance
+                            </button>
+                            <button className="flex items-center gap-2 px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 transition-colors group">
+                                <TrashIcon className="w-4 h-4" />
+                                Delete
+                            </button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Toast Notification */}
-            {showToast && (
-                <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-right-10 fade-in duration-300">
-                    <div className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg shadow-2xl p-4 flex items-start gap-4 max-w-md border border-zinc-800 dark:border-zinc-200">
-                        <div className="bg-green-500/20 text-green-500 p-2 rounded-full shrink-0">
-                            <CheckCircleIcon className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1">
-                            <h4 className="font-semibold text-sm">{toastMessage.title}</h4>
-                            <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-1">{toastMessage.description}</p>
-                            <div className="mt-3 flex gap-3">
-                                <button
-                                    onClick={() => onNavigate('mac')}
-                                    className="text-xs font-semibold text-primary hover:underline"
-                                >
-                                    View in MAC
-                                </button>
-                                <button
-                                    onClick={() => setShowToast(false)}
-                                    className="text-xs font-medium text-zinc-500 hover:text-zinc-300 dark:hover:text-zinc-700"
-                                >
-                                    Dismiss
-                                </button>
+            {
+                showToast && (
+                    <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-right-10 fade-in duration-300">
+                        <div className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg shadow-2xl p-4 flex items-start gap-4 max-w-md border border-zinc-800 dark:border-zinc-200">
+                            <div className="bg-green-500/20 text-green-500 p-2 rounded-full shrink-0">
+                                <CheckCircleIcon className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-sm">{toastMessage.title}</h4>
+                                <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-1">{toastMessage.description}</p>
+                                <div className="mt-3 flex gap-3">
+                                    <button
+                                        onClick={() => onNavigate('mac')}
+                                        className="text-xs font-semibold text-primary hover:underline"
+                                    >
+                                        View in MAC
+                                    </button>
+                                    <button
+                                        onClick={() => setShowToast(false)}
+                                        className="text-xs font-medium text-zinc-500 hover:text-zinc-300 dark:hover:text-zinc-700"
+                                    >
+                                        Dismiss
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Modals */}
             <RelocateAssetModal
@@ -973,6 +985,6 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                 isOpen={isQuickMovementsModalOpen}
                 onClose={() => setIsQuickMovementsModalOpen(false)}
             />
-        </div>
+        </div >
     );
 }

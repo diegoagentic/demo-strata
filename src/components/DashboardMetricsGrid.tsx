@@ -35,27 +35,28 @@ export default function DashboardMetricsGrid({ selectedClient }: DashboardMetric
             </div>
 
             {/* Complementary Metrics - Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-in fade-in zoom-in-95 duration-300 delay-100">
+            {/* Complementary Metrics - Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-300 delay-100">
                 <div className="xl:col-span-1">
                     <FunnelBarChart />
                 </div>
                 <div className="xl:col-span-1">
                     <LogisticsStatusChart />
                 </div>
+                <div className="xl:col-span-1">
+                    <TeamWorkloadChart />
+                </div>
                 <div className="xl:col-span-2">
                     <MarginTrendChart />
                 </div>
                 <div className="xl:col-span-1">
-                    <TeamWorkloadChart />
+                    <QuotePipelineChart />
                 </div>
                 <div className="xl:col-span-2">
                     <ClientTreemapChart />
                 </div>
                 <div className="xl:col-span-1">
                     <InventoryHealthChart />
-                </div>
-                <div className="xl:col-span-1">
-                    <QuotePipelineChart />
                 </div>
             </div>
         </div>

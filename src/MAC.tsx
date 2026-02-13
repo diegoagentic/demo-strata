@@ -57,8 +57,8 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                             className={cn(
                                 "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 outline-none whitespace-nowrap",
                                 activeTab === tab.id
-                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-card/50"
+                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+                                    : "text-muted-foreground hover:text-zinc-900 dark:hover:text-white hover:bg-brand-300 dark:hover:bg-brand-600/50"
                             )}
                         >
                             <tab.icon className="w-4 h-4" />

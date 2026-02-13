@@ -1,12 +1,12 @@
 import { ResponsiveContainer, Tooltip, Treemap } from "recharts";
 
 const data = [
-    { name: "TechDealer", size: 4000, fill: "#8884d8" },
-    { name: "Global Logistics", size: 3000, fill: "#83a6ed" },
-    { name: "Urban Living", size: 2000, fill: "#8dd1e1" },
-    { name: "AutoManufacture", size: 2780, fill: "#82ca9d" },
-    { name: "Retail Corp", size: 1890, fill: "#a4de6c" },
-    { name: "Startup Inc", size: 2390, fill: "#d0ed57" },
+    { name: "TechDealer", size: 4000, fill: "#6366f1" },
+    { name: "Global Logistics", size: 3000, fill: "#8b5cf6" },
+    { name: "Urban Living", size: 2000, fill: "#d946ef" },
+    { name: "AutoManufacture", size: 2780, fill: "#0ea5e9" },
+    { name: "Retail Corp", size: 1890, fill: "#10b981" },
+    { name: "Startup Inc", size: 2390, fill: "#f59e0b" },
 ];
 
 const CustomizeContent = (props: any) => {

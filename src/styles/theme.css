@@ -25,11 +25,15 @@
     --chart-trend-line: #a1a1aa;
     --chart-trend-dot-fill: var(--color-primary);
     --chart-trend-dot-stroke: var(--color-primary);
+    --chart-brand-fill: var(--color-brand-300);
+    --shadow-glow-sm: none;
 }
 
 .dark {
     --chart-trend-line: var(--color-primary);
     --chart-trend-dot-fill: var(--color-background);
+    --chart-brand-fill: var(--color-brand-500);
+    --shadow-glow-sm: 0 0 20px rgba(225, 225, 225, 0.15);
 }
 
 body {

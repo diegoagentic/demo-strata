@@ -12,7 +12,7 @@ const data = [
 
 export function SalesAreaChart() {
     return (
-        <div className="h-[300px] w-full bg-white dark:bg-zinc-800 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="h-[400px] w-full bg-white dark:bg-zinc-800 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Sales Performance</h3>
@@ -24,51 +24,53 @@ export function SalesAreaChart() {
                     <option>Year to Date</option>
                 </select>
             </div>
-            <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-                <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="bg-brand-400" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="bg-brand-400" stopOpacity={0} />
-                        </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-zinc-800" />
-                    <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                        dy={10}
-                    />
-                    <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                        tickFormatter={(value) => `$${value}`}
-                    />
-                    <Tooltip
-                        contentStyle={{
-                            backgroundColor: 'rgba(24, 24, 27, 0.9)', // Zinc-900 (Dark) default for dashboards usually looks better, or keep white and use class logic if available. Keeping it simple but branded.
-                            borderRadius: '8px',
-                            border: '1px solid #27272a', // Zinc-800
-                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                            color: '#F4F4F5' // Zinc-100
-                        }}
-                        itemStyle={{ color: 'bg-brand-400' }} // Volt Lime text
-                        formatter={(value) => [`$${value}`, 'Revenue']}
-                    />
-                    <Area
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="bg-brand-400" // Volt Lime
-                        strokeWidth={3}
-                        fillOpacity={1}
-                        fill="url(#colorRevenue)"
-                        activeDot={{ r: 6, strokeWidth: 0, fill: '#BEF264' }} // Slightly lighter lime
-                        animationDuration={1500}
-                    />
-                </AreaChart>
-            </ResponsiveContainer>
+            <div className="flex-1 w-full min-h-0">
+                <ResponsiveContainer width="100%" height="100%" minHeight={200}>
+                    <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                        <defs>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="var(--chart-brand-fill)" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="var(--chart-brand-fill)" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-zinc-800" />
+                        <XAxis
+                            dataKey="name"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                            dy={10}
+                        />
+                        <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                            tickFormatter={(value) => `$${value}`}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: 'rgba(24, 24, 27, 0.9)', // Zinc-900 (Dark) default for dashboards usually looks better, or keep white and use class logic if available. Keeping it simple but branded.
+                                borderRadius: '8px',
+                                border: '1px solid #27272a', // Zinc-800
+                                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                color: '#F4F4F5' // Zinc-100
+                            }}
+                            itemStyle={{ color: 'bg-brand-400' }} // Volt Lime text
+                            formatter={(value) => [`$${value}`, 'Revenue']}
+                        />
+                        <Area
+                            type="monotone"
+                            dataKey="revenue"
+                            stroke="var(--chart-brand-fill)"
+                            strokeWidth={3}
+                            fillOpacity={1}
+                            fill="url(#colorRevenue)"
+                            activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--color-brand-300)' }}
+                            animationDuration={1500}
+                        />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
         </div>
     );
 }

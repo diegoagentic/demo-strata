@@ -24,10 +24,10 @@ export function MarginTrendChart() {
                         data={data}
                         margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                     >
-                        <CartesianGrid stroke="#f5f5f5" />
-                        <XAxis dataKey="name" scale="band" tick={{ fontSize: 10, fill: '#6B7280' }} />
-                        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" tick={{ fontSize: 10 }} />
-                        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" tick={{ fontSize: 10 }} />
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" className="dark:stroke-zinc-800" />
+                        <XAxis dataKey="name" scale="band" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
+                        <YAxis yAxisId="left" orientation="left" stroke="#6366f1" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
+                        <YAxis yAxisId="right" orientation="right" stroke="#10b981" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
                         <Tooltip
                             contentStyle={{
                                 backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -37,8 +37,8 @@ export function MarginTrendChart() {
                             }}
                         />
                         <Legend />
-                        <Bar yAxisId="left" dataKey="revenue" barSize={20} fill="#413ea0" />
-                        <Line yAxisId="right" type="monotone" dataKey="margin" stroke="#ff7300" />
+                        <Bar yAxisId="left" dataKey="revenue" barSize={20} fill="#6366f1" radius={[4, 4, 0, 0]} />
+                        <Line yAxisId="right" type="monotone" dataKey="margin" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981' }} />
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>

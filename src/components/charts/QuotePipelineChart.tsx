@@ -4,7 +4,7 @@ const data = [
     { name: "Draft", uv: 31.47, pv: 2400, fill: "#94a3b8" },
     { name: "Sent", uv: 26.69, pv: 4567, fill: "#3b82f6" },
     { name: "Negotiating", uv: 15.69, pv: 1398, fill: "#eab308" },
-    { name: "Approved", uv: 8.22, pv: 9800, fill: "bg-green-500" },
+    { name: "Approved", uv: 8.22, pv: 9800, fill: "#22c55e" },
     { name: "Rejected", uv: 4.63, pv: 3908, fill: "#ef4444" },
 ];
 

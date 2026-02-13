@@ -7,11 +7,11 @@ const data = [
     { name: "Accessories", value: 200 },
 ];
 
-const COLORS = ["bg-brand-400", "#FFFFFF", "#71717A", "#3F3F46"]; // Volt Lime, White, Zinc-500, Zinc-700
+const COLORS = ["var(--chart-brand-fill)", "#E4E4E7", "#71717A", "#3F3F46"]; // Volt Lime, Zinc-200, Zinc-500, Zinc-700
 
 export function CategoryDonutChart() {
     return (
-        <div className="h-[300px] w-full bg-white dark:bg-zinc-800 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col">
+        <div className="h-[400px] w-full bg-white dark:bg-zinc-800 rounded-xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-2">
                 <div>
                     <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Top Categories</h3>
@@ -49,6 +49,7 @@ export function CategoryDonutChart() {
                             height={36}
                             iconType="circle"
                             wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                            formatter={(value) => <span className="text-zinc-600 dark:text-zinc-300">{value}</span>}
                         />
                     </PieChart>
                 </ResponsiveContainer>

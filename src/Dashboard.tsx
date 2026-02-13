@@ -403,14 +403,17 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                 {/* Page Title & Search */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-baseline gap-4">
                             <h1 className="text-3xl font-brand font-bold tracking-tight text-foreground">
                                 {currentTenant} Overview
                             </h1>
+                            <button
+                                onClick={() => onNavigate('tenant-settings')}
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                            >
+                                View Full Profile
+                            </button>
                         </div>
-                        <p className="text-muted-foreground mt-1">
-                            Jan 1 - Jan 31, 2025
-                        </p>
                     </div>
 
 
@@ -451,7 +454,10 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                 {/* Header: Label + Icon */}
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{data.label}</span>
-                                                    <div className={`p-1 rounded-md ${colorStyles[data.color]?.replace('ring-1', '') || 'bg-gray-100 dark:bg-zinc-800'} bg-opacity-50`}>
+                                                    <div
+                                                        className={`p-1 rounded-md ${colorStyles[data.color]?.replace('ring-1', '') || 'bg-gray-100 dark:bg-zinc-800'} bg-opacity-50 relative group`}
+                                                        title={data.label}
+                                                    >
                                                         <div className="w-3.5 h-3.5 child-svg:w-full child-svg:h-full">
                                                             {data.icon}
                                                         </div>
@@ -502,7 +508,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                             <div className="flex items-center justify-between mt-1 pt-2 border-t border-transparent group-hover/card:border-border/50 transition-colors">
                                                 <button
                                                     onClick={() => setExpandedCardId(expandedCardId === key ? null : key)}
-                                                    className="p-1 -ml-1 text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-medium"
+                                                    className="p-1 -ml-1 hover:text-zinc-900 hover:bg-brand-300 dark:hover:bg-brand-600/50 dark:hover:text-white rounded-lg transition-colors flex items-center gap-1 text-[10px] font-medium"
                                                 >
                                                     <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${expandedCardId === key ? 'rotate-180' : ''}`} />
                                                     {expandedCardId === key ? 'Less' : 'Details'}
@@ -538,13 +544,13 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                         <button
                                             key={i}
                                             onClick={action.action}
-                                            className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-border bg-white/50 dark:bg-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-primary/50 hover:text-primary transition-all group"
+                                            className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-border bg-white/50 dark:bg-zinc-800/50 hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:border-brand-400 hover:text-zinc-900 transition-all group"
                                         >
-                                            <div className="p-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 text-zinc-500 group-hover:text-primary group-hover:bg-primary/10 transition-colors">
+                                            <div className="p-2.5 rounded-full bg-zinc-100 dark:bg-zinc-900 text-zinc-500 group-hover:text-zinc-900 group-hover:bg-brand-100 dark:group-hover:bg-brand-900/20 transition-colors">
                                                 {action.icon}
                                             </div>
                                             <div className="text-center">
-                                                <span className="text-xs font-semibold text-foreground group-hover:text-primary block">{action.label}</span>
+                                                <span className="text-xs font-semibold text-foreground group-hover:text-zinc-900 block">{action.label}</span>
                                                 <span className="text-[10px] text-muted-foreground hidden sm:block">{action.desc}</span>
                                             </div>
                                         </button>
@@ -573,14 +579,11 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                 {Object.entries(platformSummary).map(([key, data]) => (
                                     <div key={key} className="flex items-center gap-3 min-w-fit group cursor-default">
                                         {/* Icon with Floating Tooltip */}
-                                        <div className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors ${colorStyles[data.color] || 'bg-gray-100 dark:bg-zinc-800'}`}>
+                                        <div
+                                            className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors ${colorStyles[data.color] || 'bg-gray-100 dark:bg-zinc-800'}`}
+                                            title={data.label}
+                                        >
                                             {data.icon}
-                                            {/* Tooltip */}
-                                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap bg-zinc-900 dark:bg-zinc-800 text-white text-xs font-semibold px-2 py-1 rounded shadow-lg z-50 animate-in fade-in zoom-in duration-200">
-                                                {data.label}
-                                                {/* Arrow */}
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-800"></div>
-                                            </div>
                                         </div>
 
                                         {/* Stacked Value & Change */}
@@ -619,14 +622,14 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                 <button
                                     key={i}
                                     onClick={action.action}
-                                    className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-foreground transition-colors relative group"
+                                    className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white transition-colors relative group"
                                     title={action.label}
                                 >
                                     {action.icon}
                                 </button>
                             ))}
                             <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
-                            <button className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-indigo-500 transition-colors relative group" title="View All & Manage">
+                            <button className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white transition-colors relative group" title="View All & Manage">
                                 <Squares2X2Icon className="w-5 h-5" />
                             </button>
                         </div>
@@ -635,7 +638,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
                         <button
                             onClick={() => setShowMetrics(true)}
-                            className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-foreground transition-colors"
+                            className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white transition-colors"
                             title="Expand Summary"
                         >
                             <ChevronDownIcon className="w-5 h-5" />
@@ -652,8 +655,9 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
                                 mainTab === 'follow_up'
-                                    ? "bg-primary text-zinc-900 shadow-sm"
-                                    : "text-muted-foreground hover:bg-white/50 dark:hover:bg-zinc-700/50 hover:text-foreground"
+                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+
+                                    : "text-muted-foreground hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white"
                             )}
                         >
                             <ListBulletIcon className="w-4 h-4" />
@@ -664,8 +668,9 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
                                 mainTab === 'your_tools'
-                                    ? "bg-primary text-zinc-900 shadow-sm"
-                                    : "text-muted-foreground hover:bg-white/50 dark:hover:bg-zinc-700/50 hover:text-foreground"
+                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+
+                                    : "text-muted-foreground hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white"
                             )}
                         >
                             <WrenchScrewdriverIcon className="w-4 h-4" />
@@ -676,8 +681,9 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
                                 mainTab === 'metrics'
-                                    ? "bg-primary text-zinc-900 shadow-sm"
-                                    : "text-muted-foreground hover:bg-white/50 dark:hover:bg-zinc-700/50 hover:text-foreground"
+                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+
+                                    : "text-muted-foreground hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white"
                             )}
                         >
                             <ChartBarIcon className="w-4 h-4" />
@@ -706,7 +712,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                     </div>
                                     <div className="space-y-3">
                                         {urgentActions.map((action) => (
-                                            <div key={action.id} className="group border border-border rounded-xl hover:border-primary/50 transition-all duration-200 bg-zinc-50/50 dark:bg-zinc-800/50">
+                                            <div key={action.id} className="group border border-border rounded-xl hover:border-zinc-400 transition-all duration-200 bg-zinc-50/50 dark:bg-zinc-800/50">
                                                 <div
                                                     className="p-4 cursor-pointer"
                                                     onClick={() => setExpandedActionId(expandedActionId === action.id ? null : action.id)}
@@ -774,8 +780,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                             <div
                                                 key={item.id}
                                                 className={`group relative overflow-hidden rounded-xl border transition-all duration-300 ${expandedActivityId === item.id
-                                                    ? 'bg-muted/30 border-primary/20 shadow-sm'
-                                                    : 'bg-secondary border-border hover:border-primary/20 hover:bg-muted/10'
+                                                    ? 'bg-muted/30 border-zinc-400 shadow-sm'
+                                                    : 'bg-secondary border-border hover:border-zinc-400 hover:bg-muted/10'
                                                     }`}
                                             >
                                                 <div

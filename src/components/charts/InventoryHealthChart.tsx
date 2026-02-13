@@ -37,7 +37,7 @@ export function InventoryHealthChart() {
                         />
                         <Legend wrapperStyle={{ paddingTop: '10px' }} />
                         <Bar dataKey="available" stackId="a" fill="#10b981" name="Available" radius={[0, 0, 4, 4]} />
-                        <Bar dataKey="reserved" stackId="a" fill="#ea580c" name="Reserved" />
+                        <Bar dataKey="reserved" stackId="a" fill="#f59e0b" name="Reserved" />
                         <Bar dataKey="backordered" stackId="a" fill="#ef4444" name="Backordered" radius={[4, 4, 0, 0]} />
                     </BarChart>
                 </ResponsiveContainer>

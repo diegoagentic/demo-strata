@@ -56,8 +56,8 @@ export default function Catalogs({ onNavigate }: PageProps) {
                                     className={cn(
                                         "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all",
                                         isActive
-                                            ? "bg-primary text-zinc-900 shadow-sm"
-                                            : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50"
+                                            ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+                                            : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-brand-300 dark:hover:bg-brand-600/50"
                                     )}
                                 >
                                     {/* Icons removed/hidden as per user example preference for cleaner look, or kept subtle if needed. 

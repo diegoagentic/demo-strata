@@ -339,7 +339,8 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
                                 lifecycleTab === 'quotes'
-                                    ? "bg-primary text-zinc-900 shadow-sm"
+                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+
                                     : "text-muted-foreground hover:bg-white/50 dark:hover:bg-zinc-700/50 hover:text-foreground"
                             )}
                         >
@@ -351,8 +352,9 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
                                 lifecycleTab === 'orders'
-                                    ? "bg-primary text-zinc-900 shadow-sm"
-                                    : "text-muted-foreground hover:bg-white/50 dark:hover:bg-zinc-700/50 hover:text-foreground"
+                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+
+                                    : "text-muted-foreground hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white"
                             )}
                         >
                             <ShoppingCartIcon className="w-4 h-4" />
@@ -363,8 +365,9 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
                                 lifecycleTab === 'acknowledgments'
-                                    ? "bg-primary text-zinc-900 shadow-sm"
-                                    : "text-muted-foreground hover:bg-white/50 dark:hover:bg-zinc-700/50 hover:text-foreground"
+                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+
+                                    : "text-muted-foreground hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white"
                             )}
                         >
                             <ClipboardDocumentCheckIcon className="w-4 h-4" />
@@ -433,7 +436,10 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                         <div className="flex items-center gap-8 overflow-x-auto w-full scrollbar-hide px-2 scroll-smooth">
                                             {Object.entries(quotesSummary).map(([key, data]) => (
                                                 <div key={key} className="flex items-center gap-3 min-w-fit group cursor-default">
-                                                    <div className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors ${colorStyles[data.color] || 'bg-gray-100 dark:bg-card'}`}>
+                                                    <div
+                                                        className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors ${colorStyles[data.color] || 'bg-gray-100 dark:bg-card'}`}
+                                                        title={data.label}
+                                                    >
                                                         {data.icon}
                                                     </div>
                                                     <div className="flex flex-col">
@@ -453,7 +459,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export SIF", action: () => handleExportSIF('Quote') },
                                             { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Send to Client" },
                                         ].map((action, i) => (
-                                            <button key={i} onClick={() => action.action && action.action()} className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors relative group" title={action.label}>
+                                            <button key={i} onClick={() => action.action && action.action()} className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors relative group" title={action.label}>
                                                 {action.icon}
                                             </button>
                                         ))}
@@ -461,10 +467,10 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     <div className="w-px h-12 bg-zinc-200 dark:bg-zinc-700 hidden xl:block mx-2"></div>
                                     <button
                                         onClick={() => setShowMetrics(true)}
-                                        className="flex flex-col items-center justify-center gap-1 group p-2 hover:bg-primary dark:hover:bg-primary rounded-lg transition-colors"
+                                        className="flex flex-col items-center justify-center gap-1 group p-2 hover:bg-brand-300 dark:hover:bg-brand-600/50 rounded-lg transition-colors"
                                     >
-                                        <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-zinc-900" />
-                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-zinc-900">Details</span>
+                                        <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
+                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white">Details</span>
                                     </button>
                                 </div>
                             </>
@@ -533,7 +539,10 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                         <div className="flex items-center gap-8 overflow-x-auto w-full scrollbar-hide px-2 scroll-smooth">
                                             {Object.entries(acksSummary).map(([key, data]) => (
                                                 <div key={key} className="flex items-center gap-3 min-w-fit group cursor-default">
-                                                    <div className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors ${colorStyles[data.color] || 'bg-gray-100 dark:bg-card'}`}>
+                                                    <div
+                                                        className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors ${colorStyles[data.color] || 'bg-gray-100 dark:bg-card'}`}
+                                                        title={data.label}
+                                                    >
                                                         {data.icon}
                                                     </div>
                                                     <div className="flex flex-col">
@@ -557,7 +566,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                 if (action.label === 'Upload Ack') setIsAckModalOpen(true);
                                                 if (action.label === 'Approve Orders') setIsBatchAckOpen(true);
                                                 if (action.label === 'Export Acknowledgement') handleExportSIF('Acknowledgement');
-                                            }} className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors relative group" title={action.label}>
+                                            }} className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors relative group" title={action.label}>
                                                 {action.icon}
                                             </button>
                                         ))}
@@ -565,10 +574,10 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     <div className="w-px h-12 bg-zinc-200 dark:bg-zinc-700 hidden xl:block mx-2"></div>
                                     <button
                                         onClick={() => setShowMetrics(true)}
-                                        className="flex flex-col items-center justify-center gap-1 group p-2 hover:bg-primary dark:hover:bg-primary rounded-lg transition-colors"
+                                        className="flex flex-col items-center justify-center gap-1 group p-2 hover:bg-brand-300 dark:hover:bg-brand-600/50 rounded-lg transition-colors"
                                     >
-                                        <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-zinc-900" />
-                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-zinc-900">Details</span>
+                                        <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white" />
+                                        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white">Details</span>
                                     </button>
                                 </div>
                             </>
@@ -639,7 +648,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {/* Left Scroll Button */}
                                     <button
                                         onClick={() => scroll(scrollContainerRef, 'left')}
-                                        className="p-1.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                                        className="p-1.5 rounded-full hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors shrink-0"
                                     >
                                         <ChevronLeftIcon className="w-4 h-4" />
                                     </button>
@@ -652,14 +661,12 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                         {Object.entries(ordersSummary).map(([key, data]) => (
                                             <div key={key} className="flex items-center gap-3 min-w-fit group cursor-default">
                                                 {/* Icon with Floating Tooltip */}
-                                                <div className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors ${colorStyles[data.color] || 'bg-gray-100 dark:bg-card'}`}>
+                                                {/* Icon with Floating Tooltip */}
+                                                <div
+                                                    className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors ${colorStyles[data.color] || 'bg-gray-100 dark:bg-card'}`}
+                                                    title={data.label}
+                                                >
                                                     {data.icon}
-                                                    {/* Tooltip */}
-                                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block whitespace-nowrap bg-zinc-900 dark:bg-card text-white text-xs font-semibold px-2 py-1 rounded shadow-lg z-50 animate-in fade-in zoom-in duration-200">
-                                                        {data.label}
-                                                        {/* Arrow */}
-                                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-800"></div>
-                                                    </div>
                                                 </div>
 
                                                 {/* Stacked Value & Change */}
@@ -679,7 +686,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {/* Right Scroll Button */}
                                     <button
                                         onClick={() => scroll(scrollContainerRef, 'right')}
-                                        className="p-1.5 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                                        className="p-1.5 rounded-full hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors shrink-0"
                                     >
                                         <ChevronRightIcon className="w-4 h-4" />
                                     </button>
@@ -700,14 +707,14 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             onClick={() => {
                                                 if (action.label === 'New Quote') setIsQuoteWidgetOpen(true);
                                             }}
-                                            className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors relative group"
+                                            className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors relative group"
                                             title={action.label}
                                         >
                                             {action.icon}
                                         </button>
                                     ))}
                                     <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
-                                    <button onClick={() => handleExportSIF('Order')} className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-indigo-500 transition-colors relative group" title="Export Order">
+                                    <button onClick={() => handleExportSIF('Order')} className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors relative group" title="Export Order">
                                         <DocumentTextIcon className="w-5 h-5" />
                                     </button>
                                 </div>
@@ -715,12 +722,12 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                 <div className="w-px h-12 bg-zinc-200 dark:bg-zinc-700 hidden xl:block mx-2"></div>
                                 <button
                                     onClick={() => setShowMetrics(true)}
-                                    className="flex flex-col items-center justify-center gap-1 group p-2 hover:bg-primary dark:hover:bg-primary rounded-lg transition-colors"
+                                    className="flex flex-col items-center justify-center gap-1 group p-2 hover:bg-brand-300 dark:hover:bg-brand-600/50 rounded-lg transition-colors"
                                 >
-                                    <div className="text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-900 transition-colors">
+                                    <div className="text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
                                         <ChevronDownIcon className="w-4 h-4" />
                                     </div>
-                                    <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-900 transition-colors">Details</span>
+                                    <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">Details</span>
                                 </button>
                             </div>
                         )}
@@ -758,7 +765,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                         "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 outline-none whitespace-nowrap",
                                                         activeTab === tab.id
                                                             ? "bg-primary text-primary-foreground shadow-sm"
-                                                            : "text-muted-foreground hover:text-foreground"
+                                                            : "text-muted-foreground hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white"
                                                     )}
                                                 >
                                                     {tab.id === 'metrics' && <ChartBarIcon className="w-4 h-4" />}
@@ -1125,7 +1132,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                         {stageOrders.map(order => (
                                                             <div
                                                                 key={order.id}
-                                                                className={`group relative bg-card rounded-2xl border ${expandedIds.has(order.id) ? 'border-brand-400/50 ring-1 ring-brand-400/20 shadow-lg' : 'border-border shadow-sm hover:shadow-md'} transition-all duration-200 overflow-hidden flex flex-col`}
+                                                                className={`group relative bg-card dark:bg-zinc-800 rounded-2xl border ${expandedIds.has(order.id) ? 'border-brand-400/50 ring-1 ring-brand-400/20 shadow-lg' : 'border-border shadow-sm hover:shadow-md'} transition-all duration-200 overflow-hidden flex flex-col`}
                                                             >
                                                                 <div className="p-4">
                                                                     <div className="flex items-center justify-between mb-3">
@@ -1285,7 +1292,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                                     <Tooltip cursor={{ fill: 'var(--muted)' }} contentStyle={{ backgroundColor: 'var(--popover)', borderRadius: '12px', border: '1px solid var(--border)', color: 'var(--popover-foreground)' }} />
-                                    <Bar dataKey="value" fill="bg-indigo-500" radius={[6, 6, 0, 0]} barSize={40} />
+                                    <Bar dataKey="value" fill="#C3E433" radius={[6, 6, 0, 0]} barSize={40} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
