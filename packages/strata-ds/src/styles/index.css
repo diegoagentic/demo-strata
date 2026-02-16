@@ -1,0 +1,16 @@
+/* Import fonts first to ensure valid CSS import order */
+@import './fonts.css';
+
+/* Tailwind v4 Setup */
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Import token CSS variables (Runtime values) */
+@import './tokens/variables.css';
+@import './tokens/variables-dark.css';
+
+/* Import Tailwind Theme Mapping (Build-time config) */
+@import './tokens/theme-v4.css';
+
+/* Legacy Shadcn Theme (Removed - Migrated to Tokens) */

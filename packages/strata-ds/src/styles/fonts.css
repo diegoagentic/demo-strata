@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/** 
+ * Brand Font: PP Monument Extended
+ * Note: Font files (.woff2) need to be added to src/assets/fonts/
+ */
+@font-face {
+  font-family: 'PP Monument Extended';
+  src: url('/fonts/PPMonumentExtended-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PP Monument Extended';
+  src: url('/fonts/PPMonumentExtended-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}

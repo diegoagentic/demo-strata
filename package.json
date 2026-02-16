@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:lib --prefix packages/strata-ds && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "sync:tokens": "node scripts/sync-tokens.mjs",
@@ -22,7 +22,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "recharts": "^3.6.0",
-    "strata-design-system": "file:../../Strata Design System",
+    "strata-design-system": "file:./packages/strata-ds",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
