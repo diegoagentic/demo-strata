@@ -5,7 +5,7 @@ export type MessageType = 'user' | 'system';
 
 export interface ArtifactData {
     id: string;
-    type: 'order_correction' | 'stock_matrix' | 'layout_proposal' | 'warranty_claim' | 'quote_proposal' | 'field_mapping_request' | 'erp_connect_modal' | 'erp_po_dashboard' | 'asset_review' | 'mode_selection' | 'erp_selector' | 'erp_system_selector' | 'text';
+    type: 'order_correction' | 'stock_matrix' | 'layout_proposal' | 'warranty_claim' | 'quote_proposal' | 'field_mapping_request' | 'erp_connect_modal' | 'erp_po_dashboard' | 'asset_review' | 'mode_selection' | 'quote_extraction' | 'erp_selector' | 'erp_system_selector' | 'text';
     title?: string;
     data?: any;
     source?: string; // e.g., "Urgent Actions", "Recent Activity"
@@ -41,6 +41,7 @@ interface GenUIContextType {
     isStreamOpen: boolean;
     showTriggers: boolean;
     sendMessage: (content: string, type?: MessageType) => void;
+    pushSystemArtifact: (content: string, artifact?: ArtifactData) => void;
     clearStream: () => void;
     toggleStream: () => void;
     setStreamOpen: (isOpen: boolean) => void;
@@ -68,6 +69,18 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
     };
 
     const toggleStream = () => setStreamOpen(prev => !prev);
+
+    const pushSystemArtifact = (content: string, artifact?: ArtifactData) => {
+        const systemMsg: StreamMessage = {
+            id: Date.now().toString(),
+            type: 'system',
+            content,
+            timestamp: new Date(),
+            artifact
+        };
+        setMessages(prev => [...prev, systemMsg]);
+        setStreamOpen(true);
+    };
 
     const sendMessage = async (content: string, type: MessageType = 'user') => {
         // 1. Add Message
@@ -151,7 +164,23 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                     };
                 }
 
-                // Use Case: Mode Selection - File
+                // Use Case: Mode Selection - Processed Upload Transition
+                else if (lowerContent.includes('processed upload')) {
+                    // Extract filename if provided: "Processed Upload: filename.pdf"
+                    const filenameMatch = content.match(/Processed Upload:\s*(.*)/i);
+                    const extractedFilename = filenameMatch ? filenameMatch[1].trim() : 'Project_Requirements.pdf';
+
+                    responseText = `Analyzing document \`${extractedFilename}\`...`;
+                    responseArtifact = {
+                        id: 'art_quote_extract_' + Date.now(),
+                        type: 'quote_extraction',
+                        title: 'Data Extraction',
+                        data: { fileName: extractedFilename },
+                        source: 'File Upload'
+                    };
+                }
+
+                // Use Case: Mode Selection - File (Fallback if manual)
                 else if (lowerContent.includes('mode selected: file')) {
                     responseText = "I've analyzed the uploaded request. Here are the extracted line items for validation.";
                     responseArtifact = {
@@ -489,7 +518,7 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
     };
 
     return (
-        <GenUIContext.Provider value={{ messages, isGenerating, isStreamOpen, showTriggers, sendMessage, clearStream, toggleStream, setStreamOpen, setShowTriggers, navigate }}>
+        <GenUIContext.Provider value={{ messages, isGenerating, isStreamOpen, showTriggers, sendMessage, pushSystemArtifact, clearStream, toggleStream, setStreamOpen, setShowTriggers, navigate }}>
             {children}
         </GenUIContext.Provider>
     );

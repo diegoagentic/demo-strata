@@ -1,4 +1,5 @@
 import type { ArtifactData } from '../../../context/GenUIContext';
+import { useGenUI } from '../../../context/GenUIContext';
 import ModeSelectionArtifact from './ModeSelectionArtifact';
 import ERPSystemSelectorArtifact from './ERPSystemSelectorArtifact';
 import ERPSelectorArtifact from './ERPSelectorArtifact';
@@ -11,6 +12,7 @@ import FieldMappingArtifact from './FieldMappingArtifact';
 import ERPConnectModal from './ERPConnectModal';
 import ERPPODashboardArtifact from './ERPPODashboardArtifact';
 import AssetReviewArtifact from './AssetReviewArtifact';
+import QuoteExtractionArtifact from './QuoteExtractionArtifact';
 
 // Artifacts are fully implemented in separate files
 
@@ -23,10 +25,31 @@ const DefaultArtifact = ({ data }: { data: any }) => (
 );
 
 export default function ArtifactContainer({ artifact }: { artifact: ArtifactData }) {
+    const { pushSystemArtifact } = useGenUI();
+
     const ArtifactComponent = () => {
         switch (artifact.type) {
             case 'mode_selection':
                 return <ModeSelectionArtifact />;
+            case 'quote_extraction':
+                return (
+                    <div className="min-h-[400px]">
+                        <QuoteExtractionArtifact
+                            fileName={artifact.data.fileName}
+                            onComplete={(extractedData) => {
+                                pushSystemArtifact(
+                                    "I've completed the extraction and mapping process. Please review the assets below.",
+                                    {
+                                        id: 'art_asset_review_' + Date.now(),
+                                        type: 'asset_review',
+                                        data: extractedData,
+                                        source: 'Autonomous Extraction'
+                                    }
+                                );
+                            }}
+                        />
+                    </div>
+                );
             case 'erp_system_selector':
                 return <ERPSystemSelectorArtifact />;
             case 'erp_selector':
@@ -36,7 +59,11 @@ export default function ArtifactContainer({ artifact }: { artifact: ArtifactData
             case 'erp_po_dashboard':
                 return <ERPPODashboardArtifact data={artifact.data} />;
             case 'asset_review':
-                return <AssetReviewArtifact data={artifact.data} />;
+                return (
+                    <div className="w-[80vw] max-w-7xl h-[600px] -ml-2 -mt-2">
+                        <AssetReviewArtifact data={artifact.data} source="upload" />
+                    </div>
+                );
             case 'field_mapping_request':
                 return <FieldMappingArtifact data={artifact.data} />;
             case 'order_correction':
