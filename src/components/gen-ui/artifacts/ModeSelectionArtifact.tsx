@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { CloudArrowUpIcon, ServerStackIcon, DocumentTextIcon, ArrowPathIcon, CheckCircleIcon, XMarkIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect, useRef } from 'react';
+import { CloudArrowUpIcon, ServerStackIcon, DocumentTextIcon, ArrowPathIcon, CheckCircleIcon, XMarkIcon, ArrowLeftIcon, ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 import { useGenUI } from '../../../context/GenUIContext';
 
 export default function ModeSelectionArtifact() {
     const { sendMessage } = useGenUI();
-    const [view, setView] = useState<'selection' | 'upload' | 'processing'>('selection');
+    const [view, setView] = useState<'upload' | 'processing'>('upload');
     const [progress, setProgress] = useState(0);
     const [fileName, setFileName] = useState<string | null>(null);
+
+    // Drag and Drop state
+    const [dragActive, setDragActive] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     // Simulate Processing
     useEffect(() => {
@@ -37,6 +41,33 @@ export default function ModeSelectionArtifact() {
     const handleFileSelect = (name: string) => {
         setFileName(name);
         setView('processing');
+    };
+
+    // Drag and drop handlers
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileSelect(e.dataTransfer.files[0].name);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        if (e.target.files && e.target.files[0]) {
+            handleFileSelect(e.target.files[0].name);
+        }
     };
 
     if (view === 'processing') {
@@ -74,109 +105,95 @@ export default function ModeSelectionArtifact() {
         );
     }
 
-    if (view === 'upload') {
-        return (
-            <div className="flex flex-col w-full max-w-lg mx-auto bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-in fade-in slide-in-from-right-8 duration-300">
-                <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
-                    <button
-                        onClick={() => setView('selection')}
-                        className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-muted-foreground transition-colors"
-                    >
-                        <ArrowLeftIcon className="w-4 h-4" />
-                    </button>
-                    <span className="font-medium text-sm text-foreground">Upload Request</span>
+    return (
+        <div className="flex flex-col w-full max-w-lg mx-auto bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm animate-in fade-in slide-in-from-right-8 duration-300">
+            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/20 text-brand-600 flex items-center justify-center shrink-0">
+                    <CloudArrowUpIcon className="w-4 h-4" />
                 </div>
-
-                <div className="p-8">
-                    <div
-                        className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all group"
-                        onClick={() => handleFileSelect('Project_Requirements_v2.pdf')}
-                    >
-                        <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                            <CloudArrowUpIcon className="w-8 h-8 text-zinc-400 group-hover:text-blue-500 transition-colors" />
-                        </div>
-                        <h4 className="text-base font-semibold text-foreground">Click to upload or drag and drop</h4>
-                        <p className="text-sm text-muted-foreground mt-2 max-w-[200px]">
-                            PDF, Excel, CSV, or Email (.msg) files supported
-                        </p>
-                    </div>
-
-                    <div className="mt-6 space-y-3">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Recent Files</p>
-                        <button
-                            onClick={() => handleFileSelect('Office_Renovation_Specs.pdf')}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 text-left group"
-                        >
-                            <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center shrink-0">
-                                <DocumentTextIcon className="w-5 h-5 text-red-500" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-foreground group-hover:text-blue-600 transition-colors">Office_Renovation_Specs.pdf</p>
-                                <p className="text-xs text-muted-foreground">2.4 MB • Today, 10:23 AM</p>
-                            </div>
-                        </button>
-                        <button
-                            onClick={() => handleFileSelect('Q1_Requirements.xlsx')}
-                            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 text-left group"
-                        >
-                            <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center shrink-0">
-                                <DocumentTextIcon className="w-5 h-5 text-green-500" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-foreground group-hover:text-blue-600 transition-colors">Q1_Requirements.xlsx</p>
-                                <p className="text-xs text-muted-foreground">1.1 MB • Yesterday</p>
-                            </div>
-                        </button>
-                    </div>
+                <div>
+                    <span className="font-semibold text-sm text-foreground">Intelligent Ingestion</span>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Drag & drop or select existing data</p>
                 </div>
             </div>
-        );
-    }
 
-    return (
-        <div className="flex flex-col gap-4 p-4 w-full max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h3 className="text-lg font-semibold text-foreground mb-2">How would you like to start?</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Option 1: Process File */}
-                <button
-                    onClick={() => setView('upload')}
-                    className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all group text-left shadow-sm hover:shadow-md relative overflow-hidden"
+            <div className="p-6">
+                <div
+                    className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group mb-6 ${dragActive ? 'border-brand-400 bg-brand-50/50 dark:bg-brand-900/10' : 'border-zinc-300 dark:border-zinc-700 hover:border-brand-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                    onClick={() => inputRef.current?.click()}
                 >
-                    <div className="absolute top-0 right-0 p-2 opacity-50">
-                        <div className="w-24 h-24 bg-indigo-500/5 rounded-full blur-xl"></div>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform z-10">
-                        <CloudArrowUpIcon className="w-6 h-6" />
-                    </div>
-                    <div className="z-10">
-                        <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-foreground">Magic Upload</h4>
-                            <span className="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">AI</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">"Don't Type". Drop PDF, Excel, or Email. AI extracts everything.</p>
-                    </div>
-                </button>
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        className="hidden"
+                        multiple={true}
+                        onChange={handleChange}
+                    />
 
-                {/* Option 2: Connect ERP */}
-                <button
-                    onClick={() => sendMessage("Mode Selected: Connect ERP")}
-                    className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all group text-left shadow-sm hover:shadow-md relative overflow-hidden"
-                >
-                    <div className="absolute top-0 right-0 p-2 opacity-50">
-                        <div className="w-16 h-16 bg-indigo-500/5 rounded-full blur-xl"></div>
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 transition-transform ${dragActive ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-600 scale-110' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 group-hover:scale-110 group-hover:text-brand-500'}`}>
+                        <ArrowUpTrayIcon className="w-7 h-7" />
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform z-10">
-                        <ServerStackIcon className="w-6 h-6" />
+                    <h4 className="text-base font-semibold text-foreground">Drop PDF, Excel or Email</h4>
+                    <p className="text-sm text-muted-foreground mt-1 mb-4">
+                        I will automatically extract all line items and requirements
+                    </p>
+
+                    <button className="px-5 py-2 bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:bg-brand-400 dark:hover:bg-brand-600/50 rounded-lg text-sm font-semibold shadow-sm transition-all pointer-events-none">
+                        Browse Files
+                    </button>
+                </div>
+
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2 mb-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Relevant Recent Files</p>
                     </div>
-                    <div className="z-10">
-                        <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-foreground">Auto-Sync ERP</h4>
-                            <span className="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">AI</span>
+
+                    <button
+                        onClick={() => handleFileSelect('Office_Renovation_Specs.pdf')}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border border-zinc-100 dark:border-zinc-800 hover:border-brand-300 dark:hover:border-brand-600/50 text-left group shadow-sm hover:shadow"
+                    >
+                        <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/20 flex items-center justify-center shrink-0">
+                            <DocumentTextIcon className="w-5 h-5 text-red-500" />
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">Autonomous agent pulls POs from NetSuite/SAP.</p>
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Office_Renovation_Specs.pdf</p>
+                            <p className="text-xs text-muted-foreground">2.4 MB • Today, 10:23 AM</p>
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => handleFileSelect('Q1_Requirements.xlsx')}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors border border-zinc-100 dark:border-zinc-800 hover:border-brand-300 dark:hover:border-brand-600/50 text-left group shadow-sm hover:shadow"
+                    >
+                        <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center shrink-0">
+                            <DocumentTextIcon className="w-5 h-5 text-green-500" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Q1_Requirements.xlsx</p>
+                            <p className="text-xs text-muted-foreground">1.1 MB • Yesterday</p>
+                        </div>
+                    </button>
+                </div>
+
+                <div className="mt-6 pt-5 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-foreground">Or import from system</p>
+                            <p className="text-xs text-muted-foreground">Pull active POs directly</p>
+                        </div>
+                        <button
+                            onClick={() => sendMessage("Mode Selected: Connect ERP")}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
+                        >
+                            <ServerStackIcon className="w-4 h-4" />
+                            Auto-Sync ERP
+                        </button>
                     </div>
-                </button>
+                </div>
             </div>
         </div>
     );
