@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGenUI, GenUIProvider } from '../../context/GenUIContext';
 import ModeSelectionArtifact from '../gen-ui/artifacts/ModeSelectionArtifact';
 import AssetReviewArtifact from '../gen-ui/artifacts/AssetReviewArtifact';
@@ -11,11 +11,21 @@ import {
     DocumentPlusIcon,
     ArrowRightIcon,
     WrenchScrewdriverIcon,
-    ArrowUpTrayIcon
+    ArrowUpTrayIcon,
+    DocumentCheckIcon // Added DocumentCheckIcon
 } from '@heroicons/react/24/outline';
 
+// Define new props interface for SmartQuoteHub
+interface SmartQuoteHubProps {
+    onNavigate?: (view: string) => void;
+    // Demo Flow Props
+    demoPhase?: 'IDLE' | 'ANALYZING' | 'REVIEW_NEEDED' | 'APPROVED' | 'ORDERED';
+    onUploadStart?: (files: File[]) => void;
+    onGeneratePO?: () => void;
+}
+
 // Wrapper to intercept context messages
-function SmartQuoteHubContent({ onNavigate }: { onNavigate?: (page: string) => void }) {
+function SmartQuoteHubContent({ onNavigate, demoPhase = 'IDLE', onUploadStart, onGeneratePO }: SmartQuoteHubProps) {
     const { messages, sendMessage } = useGenUI();
     const [mode, setMode] = useState<'selection' | 'erp_selection' | 'processing' | 'review' | 'success'>('selection');
     const [reviewData, setReviewData] = useState<any>(null);
@@ -23,6 +33,40 @@ function SmartQuoteHubContent({ onNavigate }: { onNavigate?: (page: string) => v
     // Legacy Modes State
     const [showManualQuote, setShowManualQuote] = useState(false);
     const [showImportFlow, setShowImportFlow] = useState(false);
+
+    // New state and refs for the demo flow (drag and drop)
+    const [activeTab, setActiveTab] = useState<'upload' | 'erp' | 'history'>('upload'); // Not used in current render, but kept as per snippet
+    const [dragActive, setDragActive] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Effect to sync internal state with demo phase if needed
+    useEffect(() => {
+        if (demoPhase === 'APPROVED') {
+            // Ensure we are showing the success/download state
+            // This might involve setting 'mode' to 'success' or a new 'approved' state
+            // For now, the render logic below handles the 'APPROVED' phase directly.
+        }
+        // If demoPhase is 'ANALYZING', we might want to set mode to 'processing'
+        if (demoPhase === 'ANALYZING' && mode !== 'processing') {
+            setMode('processing');
+            // Potentially set reviewData for the processing artifact
+            setReviewData({ source: 'upload', fileName: 'RFQ_Demo.pdf' });
+        }
+        // If demoPhase is 'REVIEW_NEEDED', we might want to set mode to 'review'
+        if (demoPhase === 'REVIEW_NEEDED' && mode !== 'review') {
+            setMode('review');
+            // This would require demoPhase to pass the reviewData
+            // For simplicity, we'll assume a placeholder for now if not provided
+            setReviewData(reviewData || { source: 'upload', fileName: 'RFQ_Demo.pdf', extractedData: { /* ... mock data ... */ } });
+        }
+        // If demoPhase is 'IDLE', reset to 'selection'
+        if (demoPhase === 'IDLE' && mode !== 'selection') {
+            setMode('selection');
+            setReviewData(null);
+        }
+
+    }, [demoPhase, mode, reviewData]);
+
 
     // Intercept messages to drive state
     useEffect(() => {
@@ -86,6 +130,42 @@ function SmartQuoteHubContent({ onNavigate }: { onNavigate?: (page: string) => v
         if (onNavigate) onNavigate('transactions');
     };
 
+    // Flow 1 Handlers
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFiles(e.dataTransfer.files);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        if (e.target.files && e.target.files[0]) {
+            handleFiles(e.target.files);
+        }
+    };
+
+    const handleFiles = (files: FileList) => {
+        // For Flow 1: Immediately trigger upload start
+        if (onUploadStart) {
+            onUploadStart(Array.from(files));
+            // Add user message to GenUI context
+            sendMessage(`Uploaded RFQ document: ${files[0].name}`, 'user');
+        }
+    };
+
     return (
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden h-[600px] flex flex-col relative">
             {/* Header (Shared) */}
@@ -110,6 +190,39 @@ function SmartQuoteHubContent({ onNavigate }: { onNavigate?: (page: string) => v
                 {mode === 'selection' && (
                     <>
                         <div className="flex-1 overflow-y-auto p-4 scrollbar-micro">
+                            {/* Drag and Drop Area for Flow 1 */}
+                            <div
+                                className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 text-center transition-all mb-6 ${dragActive ? 'border-primary bg-primary/5' : 'border-zinc-200 dark:border-zinc-700 hover:border-primary/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDragOver={handleDrag}
+                                onDrop={handleDrop}
+                                onClick={() => inputRef.current?.click()}
+                            >
+                                <input
+                                    ref={inputRef}
+                                    type="file"
+                                    className="hidden"
+                                    multiple={true}
+                                    onChange={handleChange}
+                                />
+
+                                <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                    <ArrowUpTrayIcon className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+                                </div>
+
+                                <h4 className="text-lg font-semibold text-foreground mb-2">
+                                    Upload RFQ Documents
+                                </h4>
+                                <p className="text-sm text-muted-foreground max-w-[280px] mb-6">
+                                    Drag & drop PDF, Excel, or Email files here to start the autonomous quoting process.
+                                </p>
+
+                                <button className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium shadow-sm hover:shadow-md transition-all">
+                                    Select Files
+                                </button>
+                            </div>
+
                             <ModeSelectionArtifact />
                         </div>
 
@@ -154,10 +267,12 @@ function SmartQuoteHubContent({ onNavigate }: { onNavigate?: (page: string) => v
                 )}
 
                 {mode === 'processing' && reviewData && (
-                    <QuoteExtractionArtifact
-                        fileName={reviewData.fileName || 'Document.pdf'}
-                        onComplete={handleExtractionComplete}
-                    />
+                    <div className="h-full animate-in slide-in-from-right duration-500">
+                        <QuoteExtractionArtifact
+                            fileName={reviewData.fileName || 'Document.pdf'}
+                            onComplete={handleExtractionComplete}
+                        />
+                    </div>
                 )}
 
                 {mode === 'review' && reviewData && (
@@ -198,7 +313,7 @@ function SmartQuoteHubContent({ onNavigate }: { onNavigate?: (page: string) => v
     );
 }
 
-export default function SmartQuoteHub(props: { onNavigate?: (page: string) => void }) {
+export default function SmartQuoteHub(props: SmartQuoteHubProps) {
     return (
         <GenUIProvider>
             <SmartQuoteHubContent {...props} />

@@ -5,7 +5,7 @@ export type MessageType = 'user' | 'system';
 
 export interface ArtifactData {
     id: string;
-    type: 'order_correction' | 'stock_matrix' | 'layout_proposal' | 'warranty_claim' | 'quote_proposal' | 'field_mapping_request' | 'erp_connect_modal' | 'erp_po_dashboard' | 'asset_review' | 'mode_selection' | 'quote_extraction' | 'erp_selector' | 'erp_system_selector' | 'text';
+    type: 'order_correction' | 'stock_matrix' | 'layout_proposal' | 'warranty_claim' | 'quote_proposal' | 'field_mapping_request' | 'erp_connect_modal' | 'erp_po_dashboard' | 'asset_review' | 'mode_selection' | 'quote_extraction' | 'erp_selector' | 'erp_system_selector' | 'text' | 'analysis_report' | 'discrepancy_resolver' | 'pricing_config' | 'order_simulation' | 'quote_approved' | 'order_placed';
     title?: string;
     data?: any;
     source?: string; // e.g., "Urgent Actions", "Recent Activity"
@@ -129,7 +129,7 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                     };
                 }
                 // Use Case 3: Inventory Check (Replaced Layout Generator)
-                else if (lowerContent.includes('inventory') || lowerContent.includes('stock check') || lowerContent.includes('aeron')) {
+                else if (!lowerContent.includes('processed upload') && (lowerContent.includes('inventory') || lowerContent.includes('stock check') || lowerContent.includes('aeron'))) {
                     console.log('Matched: Inventory Check');
                     responseText = "Checking global inventory... I found significant stock availability across 3 regions.";
                     responseArtifact = {
@@ -152,7 +152,7 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                     };
                 }
                 // Use Case 5: Start Quote (Mode Selection)
-                else if (lowerContent.includes('proposal') || lowerContent.includes('stellar tech') || (lowerContent.includes('quote') && !lowerContent.includes('qt-2941') && !lowerContent.includes('mode selected') && !lowerContent.includes('selected erp'))) {
+                else if (!lowerContent.includes('processed upload') && (lowerContent.includes('proposal') || lowerContent.includes('stellar tech') || (lowerContent.includes('quote') && !lowerContent.includes('qt-2941') && !lowerContent.includes('mode selected') && !lowerContent.includes('selected erp')))) {
                     console.log('Matched: Mode Selection (Quote)');
                     responseText = "I can help you create a formal Sales Proposal. How would you like to import the data?";
                     responseArtifact = {
@@ -177,6 +177,18 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                         title: 'Data Extraction',
                         data: { fileName: extractedFilename },
                         source: 'File Upload'
+                    };
+                }
+
+                // New Use Case: Analysis Complete -> Open Unified Dashboard
+                else if (lowerContent.includes('resolve issues') || lowerContent.includes('resolve discrepancies')) {
+                    responseText = "I've prepared the quote dashboard for you. Let's resolve the flagged items and configure any pricing or warranties.";
+                    responseArtifact = {
+                        id: 'art_asset_review_' + Date.now(),
+                        type: 'asset_review',
+                        title: 'Quote Dashboard',
+                        data: { totalValue: 134250 },
+                        source: 'Analysis Complete'
                     };
                 }
 

@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { Transition, TransitionChild, Popover, PopoverButton, PopoverPanel, Tab, TabGroup, TabList, TabPanel, TabPanels, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { Fragment } from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { useTheme, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Badge, Button, Checkbox, Card, Input } from 'strata-design-system'
@@ -30,6 +30,12 @@ const items = [
     { id: "SKU-OFF-2025-007", name: "Drafting Stool High", category: "Studio Series", properties: "Mesh / Black", stock: 340, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
     { id: "SKU-OFF-2025-008", name: "Bench Seating 3-Seat", category: "Waiting Series", properties: "Metal / Chrome", stock: 28, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20" },
 ]
+
+const demoItems = [
+    { id: "AER-REM-2025-BLK", name: "Aeron Remastered", category: "Task Seating", properties: "Graphite / Size B", stock: 120, status: "In Stock", statusColor: "bg-green-50 text-green-700", aiStatus: "check" },
+    { id: "EMB-CHR-2025-GRY", name: "Embody Chair", category: "Performance", properties: "Sync / Gray", stock: 45, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700" },
+    { id: "NVI-DSK-2025-WAL", name: "Nevi Sit-Stand Desk", category: "Desking", properties: "Walnut / White", stock: 200, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" }
+];
 
 interface Message {
     id: number | string;
@@ -342,64 +348,66 @@ interface DetailProps {
 }
 
 export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, onNavigate }: DetailProps) {
+    const [isDemoOrder, setIsDemoOrder] = useState(false);
+
+    useEffect(() => {
+        const demoId = localStorage.getItem('demo_view_order_id');
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlId = urlParams.get('id');
+
+        if ((demoId === 'ORD-7829') || (urlId === 'ORD-7829')) {
+            setIsDemoOrder(true);
+            setSelectedItem(demoItems[0]);
+        }
+    }, []);
+
+    const currentItems = isDemoOrder ? demoItems : items;
+    const orderId = isDemoOrder ? '#ORD-7829' : '#ORD-2055';
+
     const [messages, setMessages] = useState<Message[]>([
         {
             id: 1,
             sender: "System",
             avatar: "",
-            content: "Order #ORD-2055 has been flagged for manual review due to stock discrepancy.",
-            time: "2 hours ago",
-            type: "system",
-        },
-        {
-            id: 2,
-            sender: "AI Assistant",
-            avatar: "AI",
-            content: <DiscrepancyResolutionFlow />,
-            time: "2 hours ago",
-            type: "ai",
-        },
-        {
-            id: 3,
-            sender: "Sarah Chen",
-            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-            content: "@InventoryManager I'm verifying the physical stock in Zone B. Will update shortly.",
-            time: "1 hour ago",
-            type: "user",
-        },
-        {
-            id: 4,
-            sender: "Sarah Chen",
-            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-            content: "I've contacted the client. They want to proceed with the available items. I've updated the order line items accordingly.",
-            time: "15 mins ago",
-            type: "user",
-        },
-        {
-            id: 5,
-            sender: "System",
-            avatar: "",
-            content: "Sarah Chen triggered context action: Process Quote",
+            content: `Order ${orderId} has been successfully placed via Smart Quote Hub.`,
             time: "Just now",
             type: "system",
         },
-        {
-            id: 6,
-            sender: "AI Assistant",
-            avatar: "AI",
-            content: "Quote processing initiated. Analyzing updated line items and generating revised PDF...",
-            time: "Just now",
-            type: "action_processing",
-        },
-        {
-            id: 7,
-            sender: "AI Assistant",
-            avatar: "AI",
-            content: "Analysis complete. I've generated the revised Purchase Order, but found stock discrepancies that require attention.",
-            time: "Just now",
-            type: "action_success",
+        // ... (We can keep or clear other messages, for demo cleaner is better)
+    ]);
+
+    // If it's the demo order, we might want cleaner messages
+    useEffect(() => {
+        if (isDemoOrder) {
+            setMessages([
+                {
+                    id: 1,
+                    sender: "System",
+                    avatar: "",
+                    content: `Order ${orderId} generated from Quote #QT-9921.`,
+                    time: "2 mins ago",
+                    type: "system",
+                },
+                {
+                    id: 2,
+                    sender: "AI Assistant",
+                    avatar: "AI",
+                    content: "I've verified the stock for replaced item 'Aeron Remastered'. 120 units available at NY-05 Distribution Center.",
+                    time: "1 min ago",
+                    type: "ai",
+                },
+                {
+                    id: 3,
+                    sender: "System",
+                    avatar: "",
+                    content: `Cost Center 'Marketing-101' applied successfully.`,
+                    time: "Just now",
+                    type: "system",
+                }
+            ]);
         }
-    ])
+    }, [isDemoOrder, orderId]);
+
     const [selectedItem, setSelectedItem] = useState(items[0])
     const [sections, setSections] = useState({
         quickActions: true,
@@ -437,7 +445,7 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                         items={[
                             { label: 'Dashboard', onClick: onBack },
                             { label: 'Transactions', onClick: onBack },
-                            { label: 'Order #ORD-2055', active: true }
+                            { label: `Order ${orderId}`, active: true }
                         ]}
                     />
                 </div>

@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ArtifactData } from '../../../context/GenUIContext';
 import { useGenUI } from '../../../context/GenUIContext';
 import ModeSelectionArtifact from './ModeSelectionArtifact';
@@ -13,10 +14,14 @@ import ERPConnectModal from './ERPConnectModal';
 import ERPPODashboardArtifact from './ERPPODashboardArtifact';
 import AssetReviewArtifact from './AssetReviewArtifact';
 import QuoteExtractionArtifact from './QuoteExtractionArtifact';
+import AnalysisReportArtifact from './AnalysisReportArtifact';
+import PricingConfigurationArtifact from './PricingConfigurationArtifact';
+import DiscrepancyResolverArtifact from './DiscrepancyResolverArtifact';
+import OrderSimulationArtifact from './OrderSimulationArtifact';
+import QuoteApprovedArtifact from './QuoteApprovedArtifact';
+import OrderPlacedArtifact from './OrderPlacedArtifact';
 
 // Artifacts are fully implemented in separate files
-
-
 
 const DefaultArtifact = ({ data }: { data: any }) => (
     <div className="p-4 bg-gray-100 rounded-lg text-sm text-gray-600">
@@ -24,62 +29,155 @@ const DefaultArtifact = ({ data }: { data: any }) => (
     </div>
 );
 
-export default function ArtifactContainer({ artifact }: { artifact: ArtifactData }) {
+const DiscrepancyResolverWrapper = ({ data }: { data: any }) => {
     const { pushSystemArtifact } = useGenUI();
+    // Using React.useState here so we don't have to redefine the global imports
+    const [issues, setIssues] = React.useState<any[]>(data?.issues || []);
+    const hasSent = React.useRef(false);
 
-    const ArtifactComponent = () => {
-        switch (artifact.type) {
-            case 'mode_selection':
-                return <ModeSelectionArtifact />;
-            case 'quote_extraction':
-                return (
-                    <div className="min-h-[400px]">
-                        <QuoteExtractionArtifact
-                            fileName={artifact.data.fileName}
-                            onComplete={(extractedData) => {
-                                pushSystemArtifact(
-                                    "I've completed the extraction and mapping process. Please review the assets below.",
-                                    {
-                                        id: 'art_asset_review_' + Date.now(),
-                                        type: 'asset_review',
-                                        data: extractedData,
-                                        source: 'Autonomous Extraction'
-                                    }
-                                );
-                            }}
-                        />
-                    </div>
+    React.useEffect(() => {
+        if (issues.length === 0 && data?.issues?.length > 0 && !hasSent.current) {
+            hasSent.current = true;
+            const timeout = setTimeout(() => {
+                pushSystemArtifact(
+                    "Great, all discrepancies have been resolved. Now we can configure the pricing for this quote.",
+                    {
+                        id: 'art_pricing_' + Date.now(),
+                        type: 'pricing_config',
+                        data: { totalValue: 134250 }, // Mock total for now
+                        source: 'Resolution Complete'
+                    }
                 );
-            case 'erp_system_selector':
-                return <ERPSystemSelectorArtifact />;
-            case 'erp_selector':
-                return <ERPSelectorArtifact />;
-            case 'erp_connect_modal':
-                return <ERPConnectModal data={artifact.data} />;
-            case 'erp_po_dashboard':
-                return <ERPPODashboardArtifact data={artifact.data} />;
-            case 'asset_review':
-                return (
-                    <div className="w-[80vw] max-w-7xl h-[600px] -ml-2 -mt-2">
-                        <AssetReviewArtifact data={artifact.data} source="upload" />
-                    </div>
-                );
-            case 'field_mapping_request':
-                return <FieldMappingArtifact data={artifact.data} />;
-            case 'order_correction':
-                return <OrderCorrectionArtifact data={artifact.data} />;
-            case 'stock_matrix':
-                return <StockMatrixArtifact data={artifact.data} />;
-            case 'layout_proposal':
-                return <LayoutProposalArtifact data={artifact.data} />;
-            case 'warranty_claim':
-                return <WarrantyClaimArtifact data={artifact.data} />;
-            case 'quote_proposal':
-                return <QuoteProposalArtifact data={artifact.data} />;
-            default:
-                return <DefaultArtifact data={artifact.data} />;
+            }, 800);
+            return () => clearTimeout(timeout);
         }
-    };
+    }, [issues, data, pushSystemArtifact]);
+
+    if (issues.length === 0) {
+        return <div className="text-sm font-medium text-green-600 p-4 border border-green-200 bg-green-50 rounded-lg max-w-sm flex items-center gap-2"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> All issues resolved successfully.</div>;
+    }
+
+    return (
+        <DiscrepancyResolverArtifact
+            issues={issues}
+            onResolve={(id) => setIssues(prev => prev.filter(i => i.id !== id))}
+            onClose={() => { }}
+        />
+    );
+};
+
+export default function ArtifactContainer({ artifact }: { artifact: ArtifactData }) {
+    const { pushSystemArtifact, navigate } = useGenUI();
+
+    let content = null;
+    switch (artifact.type) {
+        case 'analysis_report':
+            content = <AnalysisReportArtifact data={artifact.data} />;
+            break;
+        case 'pricing_config':
+            content = <PricingConfigurationArtifact data={artifact.data} />;
+            break;
+        case 'discrepancy_resolver':
+            content = <DiscrepancyResolverWrapper data={artifact.data} />;
+            break;
+        case 'mode_selection':
+            content = <ModeSelectionArtifact />;
+            break;
+        case 'quote_extraction':
+            content = (
+                <div className="min-h-[400px]">
+                    <QuoteExtractionArtifact
+                        fileName={artifact.data.fileName}
+                        onComplete={(extractedData) => {
+                            pushSystemArtifact(
+                                "I've completed the extraction and mapping process. Please review the analysis below.",
+                                {
+                                    id: 'art_analysis_report_' + Date.now(),
+                                    type: 'analysis_report',
+                                    data: extractedData,
+                                    source: 'Autonomous Extraction'
+                                }
+                            );
+                        }}
+                    />
+                </div>
+            );
+            break;
+        case 'erp_system_selector':
+            content = <ERPSystemSelectorArtifact />;
+            break;
+        case 'erp_selector':
+            content = <ERPSelectorArtifact />;
+            break;
+        case 'erp_connect_modal':
+            content = <ERPConnectModal data={artifact.data} />;
+            break;
+        case 'erp_po_dashboard':
+            content = <ERPPODashboardArtifact data={artifact.data} />;
+            break;
+        case 'asset_review':
+            content = (
+                <div className="w-full max-w-4xl xl:max-w-5xl h-[600px] -ml-2 -mt-2 shadow-lg rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800">
+                    <AssetReviewArtifact
+                        data={artifact.data}
+                        source="upload"
+                        onApprove={() => {
+                            pushSystemArtifact(
+                                "The quote has been validated and approved. You can now generate the Purchase Order or simulate the benefit view.",
+                                {
+                                    id: 'art_quote_approved_' + Date.now(),
+                                    type: 'quote_approved',
+                                    data: { client: 'Client Generic', total: '$115,450' },
+                                    source: 'Asset Review'
+                                }
+                            );
+                        }}
+                    />
+                </div>
+            );
+            break;
+        case 'field_mapping_request':
+            content = <FieldMappingArtifact data={artifact.data} />;
+            break;
+        case 'order_correction':
+            content = <OrderCorrectionArtifact data={artifact.data} />;
+            break;
+        case 'stock_matrix':
+            content = <StockMatrixArtifact data={artifact.data} />;
+            break;
+        case 'layout_proposal':
+            content = <LayoutProposalArtifact data={artifact.data} />;
+            break;
+        case 'warranty_claim':
+            content = <WarrantyClaimArtifact data={artifact.data} />;
+            break;
+        case 'quote_proposal':
+            content = <QuoteProposalArtifact data={artifact.data} />;
+            break;
+        case 'order_simulation':
+            content = (
+                <div className="w-full max-w-4xl h-[600px] -ml-2 -mt-2 shadow-lg rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-card">
+                    <OrderSimulationArtifact />
+                </div>
+            );
+            break;
+        case 'quote_approved':
+            content = (
+                <div className="w-full max-w-4xl min-h-[450px] -ml-2 -mt-2">
+                    <QuoteApprovedArtifact />
+                </div>
+            );
+            break;
+        case 'order_placed':
+            content = (
+                <div className="w-full max-w-4xl h-[450px] -ml-2 -mt-2">
+                    <OrderPlacedArtifact />
+                </div>
+            );
+            break;
+        default:
+            content = <DefaultArtifact data={artifact.data} />;
+    }
 
     return (
         <div className="flex flex-col gap-2">
@@ -94,18 +192,18 @@ export default function ArtifactContainer({ artifact }: { artifact: ArtifactData
             )}
 
             {/* The Main Artifact */}
-            <ArtifactComponent />
+            {content}
 
             {/* Deep Link Footer */}
             {artifact.link && (
-                <div className="flex justify-end">
-                    <a
-                        href="#" // Simulated link
+                <div className="flex justify-end pt-2">
+                    <button
+                        onClick={() => navigate(artifact.link!)}
                         className="text-[10px] font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 border-b border-dashed border-zinc-300 dark:border-zinc-700 pb-0.5 hover:border-primary"
                     >
                         View Permanent Record
                         <span className="font-mono text-[9px] opacity-70">({artifact.link})</span>
-                    </a>
+                    </button>
                 </div>
             )}
         </div>

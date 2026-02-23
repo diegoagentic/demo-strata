@@ -126,6 +126,7 @@ const acksSummary = {
 }
 
 import AcknowledgementUploadModal from './components/AcknowledgementUploadModal'
+import CreateQuoteModal from './components/CreateQuoteModal'
 
 interface TransactionsProps {
     onLogout: () => void;
@@ -196,7 +197,24 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
     const currentDataSet = useMemo(() => {
         if (lifecycleTab === 'quotes') return recentQuotes;
         if (lifecycleTab === 'acknowledgments') return recentAcknowledgments;
-        return recentOrders;
+
+        let orders = [...recentOrders];
+        const isDemoComplete = localStorage.getItem('demo_flow_complete') === 'true';
+        if (isDemoComplete) {
+            orders.unshift({
+                id: "#ORD-7829",
+                customer: "Acme Corp",
+                client: "Acme Corp",
+                project: "HQ Refresh",
+                amount: "$124,500",
+                status: "Order Placed",
+                date: "Just Now",
+                initials: "AC",
+                statusColor: "bg-green-50 text-green-700 ring-green-600/20",
+                location: "New York"
+            });
+        }
+        return orders;
     }, [lifecycleTab]);
 
     const statuses = useMemo(() => ['All Statuses', ...Array.from(new Set(currentDataSet.map(o => o.status)))], [currentDataSet]);
@@ -416,7 +434,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                 <div className="flex items-center gap-4 mt-6 animate-in fade-in slide-in-from-top-2 duration-500">
                                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Quick Actions:</span>
                                     {[
-                                        { icon: <PlusIcon className="w-5 h-5" />, label: "New Quote" },
+                                        { icon: <PlusIcon className="w-5 h-5" />, label: "New Quote", action: () => setIsQuoteWidgetOpen(true) },
                                         { icon: <DocumentDuplicateIcon className="w-5 h-5" />, label: "Duplicate" },
                                         { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export SIF", action: () => handleExportSIF('Quote') },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Send to Client" },
@@ -454,7 +472,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {/* Quick Actions Integrated - Compact */}
                                     <div className="flex items-center gap-1 overflow-x-auto min-w-max pl-4 border-l border-zinc-200 dark:border-zinc-700 xl:border-none xl:pl-0">
                                         {[
-                                            { icon: <PlusIcon className="w-5 h-5" />, label: "New Quote" },
+                                            { icon: <PlusIcon className="w-5 h-5" />, label: "New Quote", action: () => setIsQuoteWidgetOpen(true) },
                                             { icon: <DocumentDuplicateIcon className="w-5 h-5" />, label: "Duplicate" },
                                             { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export SIF", action: () => handleExportSIF('Quote') },
                                             { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Send to Client" },
@@ -854,6 +872,8 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                         setIsQuoteWidgetOpen(true);
                                                     } else if (lifecycleTab === 'acknowledgments') {
                                                         setIsAckModalOpen(true);
+                                                        /* @ts-ignore */
+                                                        if (onNavigate) onNavigate('order-detail');
                                                     } else {
                                                         setIsCreateOrderOpen(true);
                                                     }
@@ -1028,7 +1048,14 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                         </div>
                                                                         <div>
                                                                             <div className="font-medium text-foreground">{lifecycleTab === 'acknowledgments' ? order.vendor : order.customer}</div>
-                                                                            <div className="text-xs text-muted-foreground">{order.id}</div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className="text-xs text-muted-foreground">{order.id}</div>
+                                                                                {order.id === '#ORD-7829' && (
+                                                                                    <span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] font-bold uppercase tracking-wider">
+                                                                                        New
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </td>
@@ -1144,7 +1171,14 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                                 <h4 className="text-sm font-semibold text-foreground transition-colors">
                                                                                     {lifecycleTab === 'acknowledgments' ? (order as any).vendor : (order as any).customer}
                                                                                 </h4>
-                                                                                <p className="text-[10px] text-muted-foreground font-mono">{order.id}</p>
+                                                                                <div className="flex items-center gap-1">
+                                                                                    <p className="text-[10px] text-muted-foreground font-mono">{order.id}</p>
+                                                                                    {order.id === '#ORD-7829' && (
+                                                                                        <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] font-bold uppercase tracking-wider">
+                                                                                            New
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1473,6 +1507,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
             <CreateOrderModal isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
             <AcknowledgementUploadModal isOpen={isAckModalOpen} onClose={() => setIsAckModalOpen(false)} />
             <BatchAckModal isOpen={isBatchAckOpen} onClose={() => setIsBatchAckOpen(false)} />
+            <CreateQuoteModal isOpen={isQuoteWidgetOpen} onClose={() => setIsQuoteWidgetOpen(false)} onNavigate={onNavigate} />
 
             {/* Toast Notification */}
             {showToast && (

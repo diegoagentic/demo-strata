@@ -14,7 +14,8 @@ import {
     ShieldCheckIcon,
     ChartBarIcon,
     ArrowLeftIcon,
-    TagIcon
+    TagIcon,
+    BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import { useGenUI } from '../../../context/GenUIContext';
 import EditAssetModal from './AssetReview/EditAssetModal';
@@ -38,6 +39,7 @@ export interface AssetType {
     status: 'validated' | 'review' | 'suggestion';
     issues?: string[];
     warranty?: string; // New field
+    costCenter?: string; // New field
     suggestion?: {
         sku: string;
         price: number;
@@ -45,7 +47,7 @@ export interface AssetType {
     };
 }
 
-export default function AssetReviewArtifact({ data, source = 'upload' }: { data: any, source?: 'upload' | 'erp' }) {
+export default function AssetReviewArtifact({ data, source = 'upload', onApprove }: { data: any, source?: 'upload' | 'erp', onApprove?: () => void }) {
     const { sendMessage } = useGenUI();
     const [filter, setFilter] = useState<'all' | 'attention' | 'validated'>('all');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -53,13 +55,14 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
 
     // Initialize step based on source: ERP data is pre-mapped, so skip to review
     // Modified: Autonomous flow now starts at 'report' instead of 'map'
-    const [currentStep, setCurrentStep] = useState<'map' | 'report' | 'review' | 'discount' | 'finalize'>(source === 'erp' ? 'review' : 'report');
+    const [currentStep, setCurrentStep] = useState<'map' | 'report' | 'review' | 'discount' | 'finalize'>('review');
     const [finalType, setFinalType] = useState<'quote' | 'po'>('po');
     const [showSuccess, setShowSuccess] = useState(false);
-    const [isMappingExpanded, setIsMappingExpanded] = useState(true);
+    const [isMappingExpanded, setIsMappingExpanded] = useState(false);
     const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
     const [selectedSuggestionAsset, setSelectedSuggestionAsset] = useState<AssetType | null>(null);
     const [isResolverOpen, setIsResolverOpen] = useState(false);
+    const [isApproved, setIsApproved] = useState(false); // Tracks if this artifact has been finalized
 
     // Mock Header & Rule Issues (New for Unified Resolution)
     const [headerIssues, setHeaderIssues] = useState<DiscrepancyItem[]>([
@@ -170,7 +173,7 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
     const matchedFields = mappingFields.filter(f => f.status === 'matched');
 
     // Mock Data (will come from `data` prop later)
-    const [assets, setAssets] = useState<AssetType[]>(data?.assets?.map((a: any) => ({ ...a, warranty: 'Standard Warranty' })) || [
+    const [assets, setAssets] = useState<AssetType[]>(data?.assets?.map((a: any) => ({ ...a, warranty: 'Standard Warranty', costCenter: '' })) || [
         {
             id: '1',
             description: 'Executive Task Chair',
@@ -179,7 +182,8 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
             unitPrice: 895.00,
             totalPrice: 134250.00,
             status: 'validated',
-            warranty: 'Standard Warranty'
+            warranty: 'Standard Warranty',
+            costCenter: 'CC-101'
         },
         {
             id: '2',
@@ -190,7 +194,8 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
             totalPrice: 6800.00,
             status: 'review',
             issues: ['Needs review'],
-            warranty: 'Standard Warranty'
+            warranty: 'Standard Warranty',
+            costCenter: 'CC-GEN'
         },
         {
             id: '3',
@@ -205,17 +210,38 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                 price: 1100.00,
                 reason: 'Budget alternative available (Save $150/unit)'
             },
-            warranty: 'Standard Warranty'
+            warranty: 'Standard Warranty',
+            costCenter: 'CC-ENG'
         },
+        // MOCK DATA FOR FLOW 1: Discontinued Item
         {
             id: '4',
+            description: 'Legacy Side Table (Discontinued)',
+            sku: 'TBL-SIDE-LEGACY-09',
+            qty: 12,
+            unitPrice: 320.00,
+            totalPrice: 3840.00,
+            status: 'review',
+            issues: ['Discontinued: End of Life'],
+            costCenter: 'CC-LOBBY',
+            warranty: 'Standard Warranty',
+            suggestion: {
+                sku: 'TBL-SIDE-MODERN-24',
+                price: 345.00,
+                reason: 'Direct replacement for legacy series. 98% match on dimensions.',
+                confidence: 95
+            }
+        },
+        {
+            id: '5',
             description: 'Ergonomic Office Chair',
             sku: 'CHAIR-ERG-001',
             qty: 85,
             unitPrice: 425.00,
             totalPrice: 36125.00,
             status: 'validated',
-            warranty: 'Standard Warranty'
+            warranty: 'Standard Warranty',
+            costCenter: 'CC-HR'
         }
     ]);
 
@@ -275,7 +301,8 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                     unitPrice: a.suggestion.price,
                     totalPrice: a.qty * a.suggestion.price,
                     status: 'validated',
-                    suggestion: undefined
+                    suggestion: undefined,
+                    issues: []
                 };
             }
             return a;
@@ -286,6 +313,11 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
     const handleRejectSuggestion = (assetId: string) => {
         setAssets(prev => prev.map(a => a.id === assetId ? { ...a, status: 'validated', suggestion: undefined } : a));
         setIsSuggestionModalOpen(false); // Close modal on reject
+    };
+
+    // Update Cost Center
+    const handleCostCenterChange = (assetId: string, value: string) => {
+        setAssets(prev => prev.map(a => a.id === assetId ? { ...a, costCenter: value } : a));
     };
 
     const [activeAccordion, setActiveAccordion] = useState<string | null>('assets');
@@ -354,6 +386,39 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
 
     const totalIssues = headerIssues.length + ruleIssues.length + stats.attention;
 
+    // Generate Discrepancy Items for Resolver
+    // Maps asset issues (like discontinued) to the discrepancy format
+    const discrepancyItems: DiscrepancyItem[] = [
+        ...headerIssues,
+        ...ruleIssues,
+        ...assets
+            .filter(a => a.status === 'review' || a.status === 'suggestion')
+            .map(a => ({
+                id: a.id,
+                type: 'line_item' as const,
+                title: a.issues?.length ? a.issues[0] : 'Optimization Opportunity',
+                description: a.description,
+                severity: 'medium' as const,
+                original: {
+                    label: 'Extracted SKU',
+                    value: a.sku,
+                    subText: `Unit Price: ${formatCurrency(a.unitPrice)}`
+                },
+                suggestion: a.suggestion ? {
+                    label: 'Recommended Replacement',
+                    value: a.suggestion.sku,
+                    subText: `Unit Price: ${formatCurrency(a.suggestion.price)}`,
+                    reason: a.suggestion.reason,
+                    confidence: 95
+                } : {
+                    label: 'No Suggestion',
+                    value: 'N/A',
+                    reason: 'Please review manually.',
+                    confidence: 0
+                }
+            }))
+    ];
+
     return (
         <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-800 overflow-hidden">
             {/* Header / Status Bar */}
@@ -401,12 +466,12 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
 
                     <button
                         onClick={() => {
-                            if (totalIssues === 0) setCurrentStep('finalize');
+                            if (totalIssues === 0) setCurrentStep('discount');
                         }}
                         disabled={totalIssues > 0}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all shadow-sm ${totalIssues > 0
                             ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed'
-                            : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-md'
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md'
                             }`}
                     >
                         {totalIssues > 0 ? (
@@ -416,8 +481,8 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                             </>
                         ) : (
                             <>
-                                <CheckCircleIcon className="w-4 h-4" />
-                                Finalize & Submit
+                                <TagIcon className="w-4 h-4" />
+                                Apply Discounts & Warranties
                             </>
                         )}
                     </button>
@@ -431,9 +496,9 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
 
                     {/* Status Summary & Exceptions */}
                     <div className="p-6 pb-2">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="flex flex-wrap gap-4 mb-6">
                             {/* Validated Stats */}
-                            <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
+                            <div className="flex-1 min-w-[200px] bg-white dark:bg-zinc-800 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
                                 <div>
                                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Validated Assets</p>
                                     <p className="text-2xl font-bold text-foreground mt-1">{stats.validated}</p>
@@ -444,7 +509,7 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                             </div>
 
                             {/* Total Value */}
-                            <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
+                            <div className="flex-1 min-w-[200px] bg-white dark:bg-zinc-800 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
                                 <div>
                                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Value</p>
                                     <p className="text-2xl font-bold text-foreground mt-1">{formatCurrency(stats.totalValue)}</p>
@@ -455,7 +520,7 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                             </div>
 
                             {/* Action Card */}
-                            <div className={`p-4 rounded-xl border shadow-sm flex items-center justify-between transition-colors ${totalIssues > 0
+                            <div className={`flex-[1.5] min-w-[300px] p-4 rounded-xl border shadow-sm flex items-center justify-between transition-colors ${totalIssues > 0
                                 ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30'
                                 : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800'
                                 }`}>
@@ -470,7 +535,7 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                                 {totalIssues > 0 && (
                                     <button
                                         onClick={() => setIsResolverOpen(true)}
-                                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-sm shadow-md transition-transform active:scale-95"
+                                        className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-sm shadow-md transition-transform active:scale-95 shrink-0"
                                     >
                                         Resolve Now
                                     </button>
@@ -564,9 +629,21 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <h4 className="font-semibold text-foreground text-sm truncate">{asset.description}</h4>
-                                                <div className="flex items-center gap-2 mt-1">
+                                                <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                     <span className="text-xs text-muted-foreground font-mono bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">{asset.sku}</span>
                                                     <span className="text-xs text-muted-foreground">Qty: {asset.qty}</span>
+
+                                                    {/* Cost Center input */}
+                                                    <div className="flex items-center gap-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 py-0.5">
+                                                        <BuildingOfficeIcon className="w-3 h-3 text-zinc-400" />
+                                                        <input
+                                                            type="text"
+                                                            value={asset.costCenter || ''}
+                                                            onChange={(e) => handleCostCenterChange(asset.id, e.target.value)}
+                                                            placeholder="Cost Center"
+                                                            className="text-xs bg-transparent border-none outline-none w-20 text-foreground placeholder:text-muted-foreground/50 focus:w-24 transition-all"
+                                                        />
+                                                    </div>
 
                                                     {asset.warranty && asset.warranty !== 'Standard Warranty' && (
                                                         <span className="text-[10px] flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-indigo-800/30">
@@ -776,11 +853,11 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                                 </button>
                             ) : (
                                 <button
-                                    onClick={() => setCurrentStep('review')}
+                                    onClick={() => setCurrentStep('discount')}
                                     className="px-8 py-4 bg-green-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                                 >
                                     <CheckCircleIcon className="w-6 h-6" />
-                                    Proceed to Review
+                                    Proceed to Pricing
                                 </button>
                             )}
                         </div>
@@ -788,248 +865,231 @@ export default function AssetReviewArtifact({ data, source = 'upload' }: { data:
                 </div>
             )}
 
-            {/* Unified Discrepancy Resolver Modal */}
-            {isResolverOpen && (
-                <DiscrepancyResolverArtifact
-                    issues={[
-                        ...headerIssues,
-                        ...ruleIssues,
-                        ...assets
-                            .filter(a => a.status === 'review' || a.status === 'suggestion')
-                            .map(a => ({
-                                id: a.id,
-                                type: 'line_item' as const,
-                                title: a.description,
-                                description: a.issues?.join(', ') || 'Potential Mismatch',
-                                severity: 'medium' as const,
-                                original: {
-                                    label: 'Extracted Item',
-                                    value: a.sku,
-                                    subText: `Qty: ${a.qty} @ $${a.unitPrice}`
-                                },
-                                suggestion: {
-                                    label: 'Catalog Match',
-                                    value: a.suggestion?.sku || a.sku + '?',
-                                    subText: a.suggestion ? `$${a.suggestion.price}` : 'No match found',
-                                    reason: a.suggestion?.reason || 'Confidence low',
-                                    confidence: 85
-                                }
-                            }))
-                    ]}
-                    onResolve={handleResolveDiscrepancy}
-                    onClose={() => {
-                        setIsResolverOpen(false);
-                        // Auto-advance if clean
-                        const remaining = headerIssues.length + ruleIssues.length + assets.filter(a => a.status !== 'validated').length;
-                        if (remaining === 0) setCurrentStep('review');
-                    }}
-                />
-            )}
-
-            {currentStep === 'finalize' && (
-                <div className="absolute inset-0 z-20 bg-white dark:bg-zinc-800 flex flex-col animate-in slide-in-from-right duration-300">
-                    <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2 sticky top-0 bg-white dark:bg-zinc-800 z-10">
-                        <button onClick={() => setCurrentStep('review')} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-                            <ChevronDownIcon className="w-4 h-4 rotate-90" /> Back to Review
-                        </button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-800/50 scrollbar-micro p-4 md:p-8">
-                        <div className="max-w-3xl mx-auto space-y-6 pb-20">
-
-                            <div className="text-center mb-8">
-                                <h2 className="text-3xl font-bold font-brand mb-2">Final Review</h2>
-                                <p className="text-muted-foreground">Please review all details before submitting.</p>
+            {/* Render 'Discount' Step Overlay (New Step) */}
+            {
+                currentStep === 'discount' && (
+                    <div className="absolute inset-0 z-20 bg-zinc-50 dark:bg-zinc-800 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500 overflow-hidden">
+                        {/* Step Header */}
+                        <div className="shrink-0 bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 p-6 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-bold font-brand text-foreground">Pricing Configuration</h2>
+                                <p className="text-muted-foreground">Apply warranties and discount rules before reviewing the asset list.</p>
                             </div>
-
-                            {/* Accordion 1: Asset Summary */}
-                            <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm transition-all hover:shadow-md">
+                            <div className="flex items-center gap-4">
+                                <div className="text-right mr-4">
+                                    <div className="text-sm text-muted-foreground">Estimated Total</div>
+                                    <div className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalValue)}</div>
+                                </div>
                                 <button
-                                    className="w-full p-4 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/30 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                                    onClick={() => setActiveAccordion(activeAccordion === 'assets' ? null : 'assets')}
+                                    onClick={() => setCurrentStep('review')}
+                                    className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-primary/20 hover:scale-[1.02] transition-all flex items-center gap-2"
                                 >
-                                    <div className="flex items-center gap-3 font-bold text-lg">
-                                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">
-                                            <BoltIcon className="w-5 h-5" />
-                                        </div>
-                                        Assets ({stats.total})
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-sm font-mono font-medium text-muted-foreground">{formatCurrency(stats.totalValue)}</span>
-                                        <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${activeAccordion === 'assets' ? 'rotate-180' : ''}`} />
-                                    </div>
+                                    <CheckCircleIcon className="w-5 h-5" />
+                                    Confirm & Review Assets
                                 </button>
-
-                                {activeAccordion === 'assets' && (
-                                    <div className="p-0 animate-in slide-in-from-top-2 duration-200">
-                                        <div className="max-h-[300px] overflow-y-auto scrollbar-micro border-t border-zinc-100 dark:border-zinc-800">
-                                            {assets.map((a, idx) => (
-                                                <div key={a.id} className={`flex justify-between items-center p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors ${idx !== assets.length - 1 ? 'border-b border-zinc-100 dark:border-zinc-800' : ''}`}>
-                                                    <div className="flex-1 min-w-0 pr-4">
-                                                        <div className="font-medium text-sm truncate" title={a.description}>{a.description}</div>
-                                                        <div className="text-xs text-muted-foreground mt-0.5 flex gap-2">
-                                                            <span className="font-mono bg-zinc-100 dark:bg-zinc-800 px-1 rounded">{a.sku}</span>
-                                                            <span>Qty: {a.qty}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right whitespace-nowrap">
-                                                        <div className="font-mono text-sm font-medium">{formatCurrency(a.totalPrice)}</div>
-                                                        <div className="text-[10px] text-muted-foreground">{formatCurrency(a.unitPrice)} ea</div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
+                        </div>
 
-                            {/* Accordion 2: Warranties */}
-                            <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm transition-all hover:shadow-md">
-                                <button
-                                    className="w-full p-4 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/30 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                                    onClick={() => setActiveAccordion(activeAccordion === 'warranties' ? null : 'warranties')}
-                                >
-                                    <div className="flex items-center gap-3 font-bold text-lg">
-                                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-lg">
-                                            <ShieldCheckIcon className="w-5 h-5" />
-                                        </div>
-                                        Warranties
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-xs px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded text-muted-foreground">Standard & Extended</span>
-                                        <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${activeAccordion === 'warranties' ? 'rotate-180' : ''}`} />
-                                    </div>
-                                </button>
+                        {/* Step Content */}
+                        <div className="flex-1 overflow-y-auto p-8">
+                            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
 
-                                {activeAccordion === 'warranties' && (
-                                    <div className="p-6 animate-in slide-in-from-top-2 duration-200 border-t border-zinc-100 dark:border-zinc-800">
-                                        <div className="space-y-4">
-                                            <div className="flex items-start gap-4 p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
-                                                <ShieldCheckIcon className="w-6 h-6 text-indigo-600 mt-1" />
-                                                <div>
-                                                    <h4 className="font-bold text-indigo-900 dark:text-indigo-300">Coverage Summary</h4>
-                                                    <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-1">
-                                                        Standard Manufacturer Warranty applies to all items unless otherwise specified.
-                                                    </p>
-                                                </div>
+                                {/* Left Col: Warranties */}
+                                <div className="space-y-6">
+                                    <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-6 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-lg">
+                                                <ShieldCheckIcon className="w-6 h-6" />
                                             </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-foreground">Warranty Coverage</h3>
+                                                <p className="text-sm text-muted-foreground">Select a global warranty plan for all eligible assets.</p>
+                                            </div>
+                                        </div>
 
-                                            <button
-                                                onClick={() => setIsWarrantyMenuOpen(true)}
-                                                className="w-full py-2 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-muted-foreground hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-foreground transition-colors flex items-center justify-center gap-2"
-                                            >
-                                                <PencilSquareIcon className="w-4 h-4" />
-                                                Modify Warranty Selections
-                                            </button>
+                                        <div className="space-y-3">
+                                            {['Standard Warranty', 'Extended Protection (+50/ea)', 'Premium Care (+120/ea)'].map((plan) => {
+                                                const planName = plan.split(' (')[0];
+                                                const isSelected = assets.every(a => a.warranty?.startsWith(planName)); // Rough check
+
+                                                return (
+                                                    <button
+                                                        key={plan}
+                                                        onClick={() => handleApplyWarranty(plan, 'all')}
+                                                        className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between ${isSelected
+                                                            ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/10 dark:border-indigo-400'
+                                                            : 'border-zinc-100 dark:border-zinc-700 hover:border-indigo-200 dark:hover:border-indigo-800'
+                                                            }`}
+                                                    >
+                                                        <div>
+                                                            <div className={`font-bold ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-foreground'}`}>{plan}</div>
+                                                            <div className="text-xs text-muted-foreground mt-1">
+                                                                {plan.includes('Standard') ? 'Factory defects only. 1 year coverage.' :
+                                                                    plan.includes('Extended') ? 'Includes accidental damage. 3 year coverage.' :
+                                                                        'Full replacement, 24/7 support. 5 year coverage.'}
+                                                            </div>
+                                                        </div>
+                                                        <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-zinc-300'
+                                                            }`}>
+                                                            {isSelected && <CheckCircleIcon className="w-4 h-4" />}
+                                                        </div>
+                                                    </button>
+                                                )
+                                            })}
                                         </div>
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Accordion 3: Discounts */}
-                            <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm transition-all hover:shadow-md">
-                                <button
-                                    className="w-full p-4 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-800/30 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                                    onClick={() => setActiveAccordion(activeAccordion === 'discounts' ? null : 'discounts')}
-                                >
-                                    <div className="flex items-center gap-3 font-bold text-lg">
-                                        <div className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-lg">
-                                            <TagIcon className="w-5 h-5" />
-                                        </div>
-                                        Discounts
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-xs px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded font-medium">Applied</span>
-                                        <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${activeAccordion === 'discounts' ? 'rotate-180' : ''}`} />
-                                    </div>
-                                </button>
-
-                                {activeAccordion === 'discounts' && (
-                                    <div className="p-6 animate-in slide-in-from-top-2 duration-200 border-t border-zinc-100 dark:border-zinc-800">
-                                        <div className="space-y-4">
-                                            <DiscountStructureWidget
-                                                subtotal={stats.totalValue}
-                                                onApply={(total) => {
-                                                    // console.log('Applied', total);
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Totals & Submit Section */}
-                            <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl p-6 md:p-8 mt-8 sticky bottom-4 z-20">
-                                <div className="flex flex-col md:flex-row justify-between items-end mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800">
-                                    <div className="mb-4 md:mb-0">
-                                        <span className="block text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Estimated Total</span>
-                                        <span className="text-xs text-muted-foreground">*Excludes tax & shipping</span>
-                                    </div>
-                                    <span className="text-4xl font-bold font-brand text-foreground bg-clip-text text-transparent bg-gradient-to-r from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400">
-                                        {formatCurrency(stats.totalValue)}
-                                    </span>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <button
-                                        onClick={() => {
-                                            setFinalType('quote');
-                                            setShowSuccess(true);
-                                        }}
-                                        className="w-full py-4 bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 text-foreground rounded-xl font-bold text-lg hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
-                                    >
-                                        Create Quote Only
-                                    </button>
-
-                                    <button
-                                        onClick={() => {
-                                            setFinalType('po');
-                                            setShowSuccess(true);
-                                        }}
-                                        className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-bold text-lg hover:bg-primary/90 hover:scale-[1.02] transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
-                                    >
-                                        <DocumentTextIcon className="w-6 h-6" />
-                                        Submit Purchase Order
-                                    </button>
+                                {/* Right Col: Discounts */}
+                                <div className="h-full">
+                                    <DiscountStructureWidget
+                                        subtotal={stats.totalValue} // Note: This passes the *current* total (after warranties). 
+                                        onApply={() => { }} // Widget updates internally, no explicit apply needed here as it's visual
+                                    />
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
-            <EditAssetModal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                asset={editingAsset}
-                onSave={handleSaveAsset}
-            />
+            {/* Render 'Discount & Warranty' Step Overlay */}
+            {
+                currentStep === 'discount' && (
+                    <div className="absolute inset-0 z-20 bg-zinc-50 dark:bg-zinc-800 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
+                        <div className="max-w-2xl w-full bg-white dark:bg-zinc-800 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+                            <div className="flex items-start gap-4 mb-6">
+                                <button
+                                    onClick={() => setCurrentStep('review')}
+                                    className="p-2 -ml-2 mt-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 hover:text-foreground shrink-0"
+                                >
+                                    <ArrowLeftIcon className="w-5 h-5" />
+                                </button>
+                                <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-2xl font-bold font-brand text-foreground mb-1">Pricing & Configuration</h2>
+                                        <p className="text-muted-foreground text-sm">Review warranties and apply any special discounts before generating the PO.</p>
+                                    </div>
+                                    <div className="p-3 bg-primary/10 rounded-xl text-primary shrink-0 hidden md:block">
+                                        <TagIcon className="w-6 h-6" />
+                                    </div>
+                                </div>
+                            </div>
 
-            <SuggestionModal
-                isOpen={isSuggestionModalOpen}
-                onClose={() => setIsSuggestionModalOpen(false)}
-                asset={selectedSuggestionAsset}
-                onAccept={() => selectedSuggestionAsset && handleAcceptSuggestion(selectedSuggestionAsset.id)}
-                onReject={() => selectedSuggestionAsset && handleRejectSuggestion(selectedSuggestionAsset.id)}
-            />
+                            <div className="flex-1 overflow-y-auto pr-2 pb-4 scrollbar-micro">
+                                <DiscountStructureWidget
+                                    subtotal={stats.totalValue}
+                                    onApply={(total) => {
+                                        setCurrentStep('finalize');
+                                    }}
+                                />
+                            </div>
 
-            <SuccessModal
-                isOpen={showSuccess}
-                type={finalType}
-                poNumber={finalType === 'po' ? "PO-2026-001" : "QT-2026-892"}
-                onClose={() => {
-                    setShowSuccess(false);
-                    setCurrentStep('review');
-                    const id = finalType === 'po' ? 'PO-2026-001' : 'QT-2026-892';
-                    const msg = finalType === 'po'
-                        ? `Purchase Order **${id}** has been submitted. [View in Transactions](/transactions?tab=orders&id=${id})`
-                        : `Quote **${id}** has been created. [View in Transactions](/transactions?tab=quotes&id=${id})`;
-                    sendMessage(msg, 'system');
-                }}
-                onCreateNew={() => {
-                    setShowSuccess(false);
-                    sendMessage('Start New Quote', 'user');
-                }}
-            />
-        </div>
+                            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700 flex justify-end gap-3 mt-4">
+                                <button
+                                    onClick={() => setCurrentStep('review')}
+                                    className="px-6 py-2.5 text-zinc-500 hover:text-foreground font-medium transition-colors"
+                                >
+                                    Back to Review
+                                </button>
+                                <button
+                                    onClick={() => setCurrentStep('finalize')}
+                                    className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl shadow-sm hover:shadow-primary/20 transition-all"
+                                >
+                                    Proceed to Finalize
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Render 'Finalize' Step Overlay */}
+            {
+                currentStep === 'finalize' && !isApproved && (
+                    <div className="absolute inset-0 z-20 bg-zinc-50 dark:bg-zinc-800 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
+                        <div className="max-w-md w-full bg-white dark:bg-zinc-800 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-xl text-center">
+                            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <CheckCircleIcon className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-2xl font-bold font-brand text-foreground mb-2">Quote Ready</h2>
+                            <p className="text-muted-foreground mb-8">
+                                All assets have been validated. You are about to approve this quote for PO generation.
+                            </p>
+
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => {
+                                        setIsApproved(true);
+                                        if (onApprove) onApprove();
+                                    }}
+                                    className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-primary/20 hover:scale-[1.02] transition-all"
+                                >
+                                    Approve & Generate PO
+                                </button>
+                                <button
+                                    onClick={() => setCurrentStep('review')}
+                                    className="w-full py-3 text-zinc-500 hover:text-foreground font-medium transition-colors"
+                                >
+                                    Back to Review
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Approved State Block */}
+            {
+                currentStep === 'finalize' && isApproved && (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-800/50 animate-in fade-in zoom-in duration-300">
+                        <div className="bg-white/90 dark:bg-zinc-900/90 p-6 rounded-2xl border border-green-200 dark:border-green-900/50 shadow-sm flex items-center gap-4 text-left">
+                            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-full flex items-center justify-center shrink-0">
+                                <CheckCircleIcon className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-foreground">Quote Finalized</h4>
+                                <p className="text-sm text-muted-foreground">Action has moved to the next step below.</p>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Unified Discrepancy Resolver Modal */}
+            {
+                isResolverOpen && (
+                    <DiscrepancyResolverArtifact
+                        issues={discrepancyItems}
+                        onResolve={handleResolveDiscrepancy}
+                        onClose={() => setIsResolverOpen(false)}
+                    />
+                )
+            }
+
+            {/* Suggestion Modal (for direct clicks, if kept) */}
+            {
+                isSuggestionModalOpen && selectedSuggestionAsset && (
+                    <SuggestionModal
+                        isOpen={isSuggestionModalOpen}
+                        onClose={() => setIsSuggestionModalOpen(false)}
+                        asset={selectedSuggestionAsset}
+                        onAccept={() => handleAcceptSuggestion(selectedSuggestionAsset.id)}
+                        onReject={() => handleRejectSuggestion(selectedSuggestionAsset.id)}
+                    />
+                )
+            }
+
+            {/* Success Modal */}
+            {
+                showSuccess && (
+                    <SuccessModal
+                        isOpen={showSuccess}
+                        onClose={() => setShowSuccess(false)}
+                        type={finalType}
+                    />
+                )
+            }
+        </div >
     );
 }

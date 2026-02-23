@@ -290,16 +290,7 @@ export default function DiscountStructureWidget({ subtotal, onApply }: DiscountS
 
             </div>
 
-            {/* Bottom Action Bar */}
-            <div className="p-6 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 shrink-0">
-                <button
-                    onClick={() => onApply(finalTotal)}
-                    className="w-full py-3.5 bg-primary text-primary-foreground rounded-xl font-bold text-base hover:bg-primary/90 hover:scale-[1.01] transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
-                >
-                    <CalculatorIcon className="w-5 h-5" />
-                    Confirm Quote Pricing
-                </button>
-            </div>
+
         </div>
     );
 }

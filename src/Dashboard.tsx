@@ -49,6 +49,7 @@ import { twMerge } from 'tailwind-merge'
 import CommandCenter from './components/gen-ui/CommandCenter'
 import StreamFeed from './components/gen-ui/StreamFeed'
 import SmartQuoteHub from './components/widgets/SmartQuoteHub';
+import QuoteGenerationFlow from './components/QuoteGenerationFlow';
 import { useGenUI } from './context/GenUIContext'
 import DashboardMetricsGrid from './components/DashboardMetricsGrid';
 import { Card } from 'strata-design-system';
@@ -280,9 +281,11 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
         }
     }
 
+    // Demo Flow 1 Types
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedClient, setSelectedClient] = useState('All Clients')
     const [selectedProject, setSelectedProject] = useState('All Projects')
+
     const [activeTab, setActiveTab] = useState<'metrics' | 'active' | 'completed' | 'all'>('active')
     const [mainTab, setMainTab] = useState<'follow_up' | 'your_tools' | 'metrics'>('follow_up')
     const [expandedActionId, setExpandedActionId] = useState<number | null>(null)
@@ -857,7 +860,19 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                handleGenUIAction(`Resolve ${item.title} for ${item.related}`);
+                                                                                // Original: handleGenUIAction(`Resolve ${item.title} for ${item.related}`);
+                                                                                setDemoPhase('ORDERED');
+                                                                                setShowConfetti(true);
+                                                                                // Simulate Order Creation Backend & Navigate
+                                                                                localStorage.setItem('demo_flow_complete', 'true');
+                                                                                localStorage.setItem('demo_view_order_id', 'ORD-7829');
+
+                                                                                // Check if onNavigate exists before calling
+                                                                                if (onNavigate) {
+                                                                                    setTimeout(() => {
+                                                                                        onNavigate('transactions');
+                                                                                    }, 2500);
+                                                                                }
                                                                             }}
                                                                             className="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-colors flex items-center gap-1"
                                                                         >
@@ -1406,9 +1421,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                 </div>
                                             ) : toolId === 'quick_quote' ? (
                                                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                                                    {/* Left Column: Quick Quote Action Panel (2/3 width) */}
-                                                    <div className="xl:col-span-2">
-                                                        <SmartQuoteHub onNavigate={onNavigate} />
+                                                    <div className="xl:col-span-2 min-h-[500px]">
+                                                        <QuoteGenerationFlow onNavigate={onNavigate} />
                                                     </div>
 
                                                     {/* Right Column: Recent Quotes List (1/3 width) */}

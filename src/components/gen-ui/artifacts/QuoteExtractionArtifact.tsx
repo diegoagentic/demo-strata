@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     CheckCircleIcon,
     CpuChipIcon,
@@ -58,8 +58,10 @@ export default function QuoteExtractionArtifact({ fileName, onComplete }: QuoteE
     ]);
 
     const [currentLog, setCurrentLog] = useState<string>('Initializing agents...');
+    const hasFired = useRef(false);
 
     useEffect(() => {
+        if (hasFired.current) return;
         let mounted = true;
         const timeouts: any[] = [];
 
@@ -121,15 +123,20 @@ export default function QuoteExtractionArtifact({ fileName, onComplete }: QuoteE
             {
                 time: 4800, action: () => {
                     updateStatus('validation', 'complete');
-                    onComplete({
-                        source: 'autonomous',
-                        fileName: fileName,
-                        assets: [
-                            { id: '1', description: 'Herman Miller Aeron - Size B', sku: 'HM-AER-B', qty: 45, unitPrice: 1250.00, totalPrice: 56250.00, status: 'validated', notes: 'Contract Price Applied' },
-                            { id: '2', description: 'Conference Table (Mahogany)', sku: 'TBL-CONF-01', qty: 2, unitPrice: 3500.00, totalPrice: 7000.00, status: 'validated' },
-                            { id: '3', description: 'Side Chair', sku: 'CH-SIDE-01', qty: 12, unitPrice: 450.00, totalPrice: 5400.00, status: 'review', issues: ['Low Stock Warning'] }
-                        ]
-                    });
+                    if (!hasFired.current) {
+                        hasFired.current = true;
+                        onComplete({
+                            source: 'autonomous',
+                            fileName: fileName,
+                            assets: [
+                                { id: '1', description: 'Executive Task Chair', sku: 'CHAIR-EXEC-2024', qty: 150, unitPrice: 895.00, totalPrice: 134250.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-101' },
+                                { id: '2', description: 'Conf Chair (Leather)', sku: 'CHR-CONF-LTH', qty: 8, unitPrice: 850.00, totalPrice: 6800.00, status: 'review', issues: ['Needs review'], warranty: 'Standard Warranty', costCenter: 'CC-GEN' },
+                                { id: '3', description: 'Height Adjustable Workstation', sku: 'DESK-ELECTRIC-7230', qty: 95, unitPrice: 1250.00, totalPrice: 118750.00, status: 'suggestion', suggestion: { sku: 'DESK-ELECTRIC-7230-BUDGET', price: 1100.00, reason: 'Budget alternative available (Save $150/unit)' }, warranty: 'Standard Warranty', costCenter: 'CC-ENG' },
+                                { id: '4', description: 'Legacy Side Table (Discontinued)', sku: 'TBL-SIDE-LEGACY-09', qty: 12, unitPrice: 320.00, totalPrice: 3840.00, status: 'review', issues: ['Discontinued: End of Life'], costCenter: 'CC-LOBBY', warranty: 'Standard Warranty', suggestion: { sku: 'TBL-SIDE-MODERN-24', price: 345.00, reason: 'Direct replacement for legacy series. 98% match on dimensions.', confidence: 95 } },
+                                { id: '5', description: 'Ergonomic Office Chair', sku: 'CHAIR-ERG-001', qty: 85, unitPrice: 425.00, totalPrice: 36125.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-HR' }
+                            ]
+                        });
+                    }
                 }
             }
         ];

@@ -29,9 +29,12 @@ export default function ModeSelectionArtifact() {
         }
     }, [view]);
 
+    const hasSent = useRef(false);
+
     // Trigger completion when progress hits 100
     useEffect(() => {
-        if (progress === 100) {
+        if (progress === 100 && !hasSent.current) {
+            hasSent.current = true;
             setTimeout(() => {
                 sendMessage(`Processed Upload: ${fileName || 'Document.pdf'}`);
             }, 800); // Small delay to show 100% complete
