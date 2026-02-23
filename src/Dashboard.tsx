@@ -57,6 +57,15 @@ import { Card } from 'strata-design-system';
 // Urgent Actions Data (Dealer Persona)
 const urgentActions = [
     {
+        id: 4,
+        title: 'ACK Received - 2 Exceptions Require Review',
+        description: 'Smart ACK Engine detected anomalies vs PO #ORD-2055',
+        time: 'Under 10 mins',
+        type: 'critical',
+        action: 'Review Exceptions',
+        icon: SparklesIcon
+    },
+    {
         id: 1,
         title: 'Quote #QT-2941 Expiring',
         description: 'Quote for "Office Expansion" expires in 2 hours.',
@@ -751,7 +760,13 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                             Dismiss
                                                         </button>
                                                         <button
-                                                            onClick={() => handleGenUIAction(`${action.action} ${action.title}`)}
+                                                            onClick={() => {
+                                                                if (action.id === 4) {
+                                                                    onNavigate('ack-detail')
+                                                                } else {
+                                                                    handleGenUIAction(`${action.action} ${action.title}`)
+                                                                }
+                                                            }}
                                                             className="text-xs font-bold bg-primary text-zinc-900 px-4 py-1.5 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center gap-1.5"
                                                         >
                                                             {action.action}

@@ -23,10 +23,10 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 const items = [
     { id: "SKU-OFF-2025-001", name: "Executive Chair Pro", category: "Premium Series", properties: "Leather / Black", stock: 285, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700", aiStatus: "info" },
     { id: "SKU-OFF-2025-002", name: "Ergonomic Task Chair", category: "Standard Series", properties: "Mesh / Gray", stock: 520, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-003", name: "Conference Room Chair", category: "Meeting Series", properties: "Fabric / Navy", stock: 42, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
+    { id: "SKU-OFF-2025-003", name: "Conference Room Chair", category: "Meeting Series", properties: "Fabric / Navy", stock: 42, status: "Exception: Finish", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
     { id: "SKU-OFF-2025-004", name: "Visitor Stacking Chair", category: "Guest Series", properties: "Plastic / White", stock: 180, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
     { id: "SKU-OFF-2025-005", name: "Gaming Office Chair", category: "Sport Series", properties: "Leather / Red", stock: 0, status: "Out of Stock", statusColor: "bg-red-50 text-red-700 ring-red-600/20" },
-    { id: "SKU-OFF-2025-006", name: "Reception Lounge Chair", category: "Lobby Series", properties: "Velvet / Teal", stock: 95, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
+    { id: "SKU-OFF-2025-006", name: "Reception Lounge Chair", category: "Lobby Series", properties: "Velvet / Teal", stock: 95, status: "Exception: Date", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
     { id: "SKU-OFF-2025-007", name: "Drafting Stool High", category: "Studio Series", properties: "Mesh / Black", stock: 340, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
     { id: "SKU-OFF-2025-008", name: "Bench Seating 3-Seat", category: "Waiting Series", properties: "Metal / Chrome", stock: 28, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20" },
 ]
@@ -52,24 +52,69 @@ const DiscrepancyResolutionFlow = () => {
     if (status === 'initial') {
         return (
             <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium">
-                    <ExclamationTriangleIcon className="w-5 h-5" />
-                    Found 3 discrepancies in recent shipments.
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium tracking-tight">
+                    <SparklesIcon className="w-5 h-5 text-primary" />
+                    Found 2 discrepancies against PO #ORD-2055.
                 </div>
-                <ul className="list-disc pl-5 text-sm space-y-1 text-zinc-600 dark:text-zinc-300">
-                    <li>Order #ORD-2054: Weight mismatch (Logs: 50kg vs Gateway: 48kg)</li>
-                    <li>Order #ORD-2051: Timestamp sync error</li>
-                    <li>Order #ORD-2048: Missing carrier update</li>
-                </ul>
-                <div className="flex gap-2 mt-2">
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-zinc-900 dark:text-primary hover:bg-primary/20 text-xs font-medium rounded-lg transition-colors">
-                        <ArrowPathIcon className="w-3.5 h-3.5" /> Sync & Report
+
+                {/* Side-by-Side Comparison UI for Delta 1 */}
+                <div className="border border-zinc-200 dark:border-zinc-700/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-800/50 my-2">
+                    <div className="px-3 py-2 bg-muted/30 border-b border-border text-xs font-bold text-foreground flex items-center gap-2">
+                        <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />
+                        Exception 1: Finish Backordered / Substitution Proposed
+                    </div>
+                    <div className="p-3 grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span className="block text-[10px] uppercase text-muted-foreground font-semibold mb-1">Original PO (SKU-OFF-2025-003)</span>
+                            <div className="bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 p-2 rounded border border-red-100 dark:border-red-900/30 line-through">
+                                Finish: Fabric / Navy
+                            </div>
+                        </div>
+                        <div>
+                            <span className="block text-[10px] uppercase text-muted-foreground font-semibold mb-1">Manufacturer ACK</span>
+                            <div className="bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 p-2 rounded border border-green-100 dark:border-green-900/30 flex items-center justify-between">
+                                <span>Finish: Fabric / Azure</span>
+                                <span className="bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 px-1.5 py-0.5 rounded text-[9px] font-bold">IN STOCK</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Side-by-Side Comparison UI for Delta 2 */}
+                <div className="border border-zinc-200 dark:border-zinc-700/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-800/50 mb-2">
+                    <div className="px-3 py-2 bg-muted/30 border-b border-border text-xs font-bold text-foreground flex items-center gap-2">
+                        <ClockIcon className="w-4 h-4 text-amber-500" />
+                        Exception 2: Ship Date Slipped
+                    </div>
+                    <div className="p-3 grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span className="block text-[10px] uppercase text-muted-foreground font-semibold mb-1">Original PO (SKU-OFF-2025-006)</span>
+                            <div className="bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 p-2 rounded border border-red-100 dark:border-red-900/30 line-through">
+                                Ship Date: Nov 15, 2025
+                            </div>
+                        </div>
+                        <div>
+                            <span className="block text-[10px] uppercase text-muted-foreground font-semibold mb-1">Manufacturer ACK</span>
+                            <div className="bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 p-2 rounded border border-amber-100 dark:border-amber-900/30 flex items-center justify-between">
+                                <span>Ship Date: Nov 27, 2025</span>
+                                <span className="text-amber-600 dark:text-amber-400 font-bold text-[10px]">+12 Days</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-2 mt-1">
+                    <button
+                        onClick={handleRequest}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-primary text-zinc-900 hover:bg-primary/90 hover:shadow-md text-xs font-bold rounded-lg transition-all"
+                    >
+                        <CheckIcon className="w-4 h-4" /> 1-Click Approve Exceptions
                     </button>
                     <button
                         onClick={() => setStatus('requesting')}
-                        className="flex items-center gap-1.5 px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-medium rounded-lg hover:bg-primary hover:text-zinc-900 dark:hover:bg-primary dark:hover:text-zinc-900 transition-colors"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 text-xs font-medium rounded-lg hover:bg-muted transition-colors"
                     >
-                        <PencilIcon className="w-3.5 h-3.5" /> Request Changes
+                        <PencilIcon className="w-3.5 h-3.5" /> Request Revisions
                     </button>
                 </div>
             </div>
@@ -124,16 +169,42 @@ const DiscrepancyResolutionFlow = () => {
     if (status === 'approved') {
         return (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/10 p-2 rounded-lg border border-green-100 dark:border-green-900/30">
                     <CheckCircleIcon className="h-5 w-5" />
-                    <p>Changes approved. PO updated.</p>
+                    <p className="text-sm text-zinc-900 dark:text-zinc-100">Exceptions approved. Records updated.</p>
                 </div>
+
+                <div className="bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700/50 overflow-hidden shadow-sm">
+                    <div className="px-3 py-2 bg-muted/30 border-b border-border flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                            <DocumentTextIcon className="w-4 h-4 text-primary" />
+                            Auto-Drafted Client Update
+                        </div>
+                        <span className="bg-primary/10 text-primary-foreground px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide">Ready to Send</span>
+                    </div>
+                    <div className="p-3 text-xs text-zinc-700 dark:text-zinc-300 space-y-2">
+                        <p><span className="font-semibold text-zinc-900 dark:text-white">To:</span> client@automanufacture.com</p>
+                        <p><span className="font-semibold text-zinc-900 dark:text-white">Subject:</span> Update regarding your recent order #ORD-2055</p>
+                        <div className="p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded border border-zinc-100 dark:border-zinc-800 font-serif leading-relaxed italic text-zinc-600 dark:text-zinc-400">
+                            "Hi Team, just a quick update on Order #ORD-2055. The manufacturer noted that the Navy fabric for your Conference Room Chairs is currently backordered. We've proactively substituted it with the identical fabric in 'Azure', which is in stock, to ensure no delays. Also, please note your estimated ship date has been updated to Nov 27, 2025. Let us know if you have any questions!"
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                            <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-bold rounded shadow-sm transition-all">
+                                <PaperAirplaneIcon className="w-3.5 h-3.5" /> Send Update
+                            </button>
+                            <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 hover:bg-muted text-foreground text-xs font-medium rounded transition-all">
+                                <PencilSquareIcon className="w-3.5 h-3.5" /> Edit Draft
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 p-3 flex items-center gap-3">
                     <div className="h-10 w-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center text-red-600 dark:text-red-400">
                         <DocumentTextIcon className="h-6 w-6" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">PO_Revised_Final.pdf</p>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">PO_Revised_ORD-2055.pdf</p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">Updated just now</p>
                     </div>
                     <button className="p-2 hover:bg-primary hover:text-zinc-900 dark:hover:bg-primary dark:hover:text-zinc-900 rounded-lg transition-colors group">
@@ -347,57 +418,25 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
             id: 1,
             sender: "System",
             avatar: "",
-            content: "Acknowledgment #ACK-3099 received with 3 discrepancies against Order #ORD-2055.",
-            time: "2 hours ago",
+            content: "Acknowledgment #ACK-3099 received from Manufacturer via EDI.",
+            time: "10 mins ago",
             type: "system",
         },
         {
             id: 2,
             sender: "AI Assistant",
             avatar: "AI",
-            content: <DiscrepancyResolutionFlow />,
-            time: "2 hours ago",
-            type: "ai",
-        },
-        {
-            id: 3,
-            sender: "Sarah Chen",
-            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-            content: "@InventoryManager I'm verifying the physical stock in Zone B. Will update shortly.",
-            time: "1 hour ago",
-            type: "user",
-        },
-        {
-            id: 4,
-            sender: "Sarah Chen",
-            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-            content: "I've contacted the client. They want to proceed with the available items. I've updated the order line items accordingly.",
-            time: "15 mins ago",
-            type: "user",
-        },
-        {
-            id: 5,
-            sender: "System",
-            avatar: "",
-            content: "Sarah Chen triggered context action: Process Quote",
-            time: "Just now",
-            type: "system",
-        },
-        {
-            id: 6,
-            sender: "AI Assistant",
-            avatar: "AI",
-            content: "Quote processing initiated. Analyzing updated line items and generating revised PDF...",
-            time: "Just now",
+            content: "Smart ACK Engine intercepted the acknowledgment and compared it against PO #ORD-2055. Found 2 discrepancies requiring your review.",
+            time: "10 mins ago",
             type: "action_processing",
         },
         {
-            id: 7,
+            id: 3,
             sender: "AI Assistant",
             avatar: "AI",
-            content: "Analysis complete. I've generated the revised Purchase Order, but found stock discrepancies that require attention.",
-            time: "Just now",
-            type: "action_success",
+            content: <DiscrepancyResolutionFlow />,
+            time: "9 mins ago",
+            type: "ai",
         }
     ])
     const [selectedItem, setSelectedItem] = useState(items[0])

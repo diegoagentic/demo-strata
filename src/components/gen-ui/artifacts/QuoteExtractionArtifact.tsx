@@ -106,10 +106,10 @@ export default function QuoteExtractionArtifact({ fileName, onComplete }: QuoteE
             },
 
             // Step 3: Extraction (2.8s - 3.9s)
-            { time: 3000, action: () => addLog('extraction', 'Scanning page 1... Found 3 distinct item groups') },
+            { time: 3000, action: () => addLog('extraction', 'Scanning 3 pages... Found 42 distinct item groups') },
             // Simulating "Fuzzy Logic" mapping mentioned in plan
             { time: 3300, action: () => addLog('extraction', 'Parsing "Aeron Size B" -> Mapped to SKU HM-AER-B (98% Conf)') },
-            { time: 3600, action: () => addLog('extraction', 'Parsing "Conf Table" -> Mapped to SKU TBL-CONF-01') },
+            { time: 3600, action: () => addLog('extraction', 'Identifying Out-of-Stock and Discontinued lines...') },
             {
                 time: 3900, action: () => {
                     updateStatus('extraction', 'complete');
@@ -119,7 +119,7 @@ export default function QuoteExtractionArtifact({ fileName, onComplete }: QuoteE
 
             // Step 4: Validation (3.9s - 4.8s)
             { time: 4200, action: () => addLog('validation', 'Checking Live Inventory...') },
-            { time: 4500, action: () => addLog('validation', 'All SKUs active. 1 item low stock.') },
+            { time: 4500, action: () => addLog('validation', 'Found 3 discontinued/OOS items requiring business rule application.') },
             {
                 time: 4800, action: () => {
                     updateStatus('validation', 'complete');
@@ -128,12 +128,14 @@ export default function QuoteExtractionArtifact({ fileName, onComplete }: QuoteE
                         onComplete({
                             source: 'autonomous',
                             fileName: fileName,
+                            stats: { validated: 39, attention: 3, totalValue: 245000 },
+                            issues: { header: 0, rules: 3 },
                             assets: [
-                                { id: '1', description: 'Executive Task Chair', sku: 'CHAIR-EXEC-2024', qty: 150, unitPrice: 895.00, totalPrice: 134250.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-101' },
-                                { id: '2', description: 'Conf Chair (Leather)', sku: 'CHR-CONF-LTH', qty: 8, unitPrice: 850.00, totalPrice: 6800.00, status: 'review', issues: ['Needs review'], warranty: 'Standard Warranty', costCenter: 'CC-GEN' },
-                                { id: '3', description: 'Height Adjustable Workstation', sku: 'DESK-ELECTRIC-7230', qty: 95, unitPrice: 1250.00, totalPrice: 118750.00, status: 'suggestion', suggestion: { sku: 'DESK-ELECTRIC-7230-BUDGET', price: 1100.00, reason: 'Budget alternative available (Save $150/unit)' }, warranty: 'Standard Warranty', costCenter: 'CC-ENG' },
-                                { id: '4', description: 'Legacy Side Table (Discontinued)', sku: 'TBL-SIDE-LEGACY-09', qty: 12, unitPrice: 320.00, totalPrice: 3840.00, status: 'review', issues: ['Discontinued: End of Life'], costCenter: 'CC-LOBBY', warranty: 'Standard Warranty', suggestion: { sku: 'TBL-SIDE-MODERN-24', price: 345.00, reason: 'Direct replacement for legacy series. 98% match on dimensions.', confidence: 95 } },
-                                { id: '5', description: 'Ergonomic Office Chair', sku: 'CHAIR-ERG-001', qty: 85, unitPrice: 425.00, totalPrice: 36125.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-HR' }
+                                { id: '1', description: 'Executive Task Chair', sku: 'CHAIR-EXEC-2024', qty: 15, unitPrice: 895.00, totalPrice: 13425.00, status: 'validated', warranty: '12-Year Standard', costCenter: 'CC-101' },
+                                { id: '2', description: 'Conf Chair (Leather)', sku: 'CHR-CONF-LTH', qty: 8, unitPrice: 850.00, totalPrice: 6800.00, status: 'validated', warranty: '12-Year Standard', costCenter: 'CC-GEN' },
+                                { id: '3', description: 'Fabric Panel (Discontinued Fabric)', sku: 'PNL-FAB-OLD', qty: 12, unitPrice: 320.00, totalPrice: 3840.00, status: 'review', issues: ['Discontinued: Fabric Jet Black'], costCenter: 'CC-LOBBY', warranty: '5-Year Fabric', suggestion: { sku: 'PNL-FAB-NEW', price: 320.00, reason: 'Auto-substituted with Jet Black v2 as per universal replacement rule.', confidence: 100 } },
+                                { id: '4', description: 'Legacy Side Table (Discontinued)', sku: 'TBL-SIDE-LEGACY-09', qty: 6, unitPrice: 320.00, totalPrice: 1920.00, status: 'review', issues: ['Discontinued: End of Life'], costCenter: 'CC-LOBBY', warranty: '10-Year Frame', suggestion: { sku: 'TBL-SIDE-MODERN-24', price: 345.00, reason: 'Auto-substituted based on direct dimension match (98%).', confidence: 95 } },
+                                { id: '5', description: 'Premium Manager Desk (Out of Stock)', sku: 'DSK-PREM-OOS', qty: 2, unitPrice: 2400.00, totalPrice: 4800.00, status: 'attention', issues: ['Out of Stock: Lead time 16 weeks'], warranty: 'Lifetime Limited', costCenter: 'CC-EXEC' }
                             ]
                         });
                     }

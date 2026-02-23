@@ -204,12 +204,30 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
 
                                     <div className="pt-4 border-t border-indigo-100 dark:border-indigo-800">
                                         <label className="text-xs text-indigo-600/70 dark:text-indigo-400/70">Proposed {currentIssue.suggestion.label}</label>
-                                        <div className="font-mono text-sm bg-white dark:bg-zinc-800 p-2 rounded border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 shadow-sm flex items-center gap-2 mt-1">
-                                            {String(currentIssue.suggestion.value)}
-                                            <CheckCircleIcon className="w-4 h-4 text-green-500 ml-auto" />
-                                        </div>
-                                        {currentIssue.suggestion.subText && (
-                                            <div className="text-xs text-green-600 font-medium mt-1">{currentIssue.suggestion.subText}</div>
+
+                                        {currentIssue.metadata?.options ? (
+                                            <div className="mt-2 space-y-2 relative z-20">
+                                                <select className="w-full text-sm bg-white dark:bg-zinc-800 p-2.5 rounded-lg border border-indigo-200 dark:border-indigo-700 text-indigo-900 dark:text-indigo-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                    {currentIssue.metadata.options.map((opt: any) => (
+                                                        <option key={opt.sku} value={opt.sku}>
+                                                            {opt.name} - {formatCurrency(opt.price)} ({opt.subText})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <div className="text-[10px] font-bold text-amber-600 uppercase tracking-widest inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/10 px-2 py-1 rounded">
+                                                    Requires Manual Selection
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="font-mono text-sm bg-white dark:bg-zinc-800 p-2 rounded border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 shadow-sm flex items-center gap-2 mt-1">
+                                                    {String(currentIssue.suggestion.value)}
+                                                    <CheckCircleIcon className="w-4 h-4 text-green-500 ml-auto" />
+                                                </div>
+                                                {currentIssue.suggestion.subText && (
+                                                    <div className="text-xs text-green-600 font-medium mt-1">{currentIssue.suggestion.subText}</div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>

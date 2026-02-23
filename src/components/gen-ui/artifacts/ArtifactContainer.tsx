@@ -40,11 +40,11 @@ const DiscrepancyResolverWrapper = ({ data }: { data: any }) => {
             hasSent.current = true;
             const timeout = setTimeout(() => {
                 pushSystemArtifact(
-                    "Great, all discrepancies have been resolved. Now we can configure the pricing for this quote.",
+                    "Great, all discrepancies have been resolved. Now we can review the assets and configure pricing for this quote.",
                     {
-                        id: 'art_pricing_' + Date.now(),
-                        type: 'pricing_config',
-                        data: { totalValue: 134250 }, // Mock total for now
+                        id: 'art_asset_review_' + Date.now(),
+                        type: 'asset_review',
+                        data: { totalValue: 245000 }, // Updated Mock total for 40+ workstations
                         source: 'Resolution Complete'
                     }
                 );

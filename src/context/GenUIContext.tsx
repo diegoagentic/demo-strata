@@ -182,12 +182,51 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
 
                 // New Use Case: Analysis Complete -> Open Unified Dashboard
                 else if (lowerContent.includes('resolve issues') || lowerContent.includes('resolve discrepancies')) {
-                    responseText = "I've prepared the quote dashboard for you. Let's resolve the flagged items and configure any pricing or warranties.";
+                    responseText = "I've flagged 3 discontinued items requiring your attention before we can proceed to pricing.";
                     responseArtifact = {
-                        id: 'art_asset_review_' + Date.now(),
-                        type: 'asset_review',
-                        title: 'Quote Dashboard',
-                        data: { totalValue: 134250 },
+                        id: 'art_resolve_issues_' + Date.now(),
+                        type: 'discrepancy_resolver',
+                        title: 'Discrepancy Resolver',
+                        data: {
+                            issues: [
+                                // Case 1: Auto-resolved Rule
+                                {
+                                    id: 'issue-1',
+                                    type: 'rule',
+                                    title: 'Fabric Discontinued: Jet Black',
+                                    description: 'Manufacturer issued a technical bulletin. Jet Black is replaced by Jet Black v2.',
+                                    severity: 'low',
+                                    original: { label: 'Fabric', value: 'Jet Black v1' },
+                                    suggestion: { label: 'Substitution', value: 'Jet Black v2', reason: 'Universal replacement rule', confidence: 100 }
+                                },
+                                // Case 2: Auto-resolved Model Update
+                                {
+                                    id: 'issue-2',
+                                    type: 'rule',
+                                    title: 'Legacy Side Table End-of-Life',
+                                    description: 'The Series 09 table is no longer manufactured.',
+                                    severity: 'medium',
+                                    original: { label: 'SKU', value: 'TBL-SIDE-LEGACY-09' },
+                                    suggestion: { label: 'Substitution', value: 'TBL-SIDE-MODERN-24', reason: 'System matched dimensions (98%)', confidence: 95 }
+                                },
+                                // Case 3: Dealer Choice Required
+                                {
+                                    id: 'issue-3',
+                                    type: 'line_item',
+                                    title: 'Premium Manager Desk (Out of Stock)',
+                                    description: 'Selected SKU has 16-week lead time constraints.',
+                                    severity: 'high',
+                                    original: { label: 'SKU', value: 'DSK-PREM-OOS', subText: 'Lead Time: 16 Weeks' },
+                                    suggestion: { label: 'Alternative', value: 'Dealer Must Select', reason: 'Multiple valid alternatives exist.', confidence: 50 },
+                                    metadata: {
+                                        options: [
+                                            { sku: 'DSK-PREM-ALT-1', name: 'Executive Desk V5', price: 2200, subText: 'Lead Time: 2 Weeks' },
+                                            { sku: 'DSK-PREM-ALT-2', name: 'Manager Desk Pro', price: 2350, subText: 'Lead Time: In Stock' }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
                         source: 'Analysis Complete'
                     };
                 }

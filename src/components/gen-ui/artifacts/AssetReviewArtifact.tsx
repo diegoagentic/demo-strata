@@ -1013,9 +1013,35 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                                 <CheckCircleIcon className="w-8 h-8" />
                             </div>
                             <h2 className="text-2xl font-bold font-brand text-foreground mb-2">Quote Ready</h2>
-                            <p className="text-muted-foreground mb-8">
-                                All assets have been validated. You are about to approve this quote for PO generation.
+                            <p className="text-muted-foreground mb-6">
+                                All assets have been validated. Review the final pricing summary before generating the PO.
                             </p>
+
+                            {/* Final Pricing Summary Break-down */}
+                            <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-700/50 rounded-xl p-5 mb-8 text-left space-y-3">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Base Equipment Value</span>
+                                    <span className="font-medium">{formatCurrency(assets.reduce((acc, a) => acc + ((a.basePrice || a.unitPrice) * a.qty), 0))}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Warranties & Protection</span>
+                                    <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                                        +{formatCurrency(assets.reduce((acc, a) => acc + ((a.unitPrice - (a.basePrice || a.unitPrice)) * a.qty), 0))}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Applied Discounts</span>
+                                    <span className="font-medium text-green-600 dark:text-green-400">
+                                        -{formatCurrency(stats.totalValue * 0.02)} {/* Mock 2% discount visual */}
+                                    </span>
+                                </div>
+                                <div className="pt-3 mt-3 border-t border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
+                                    <span className="font-bold text-foreground font-brand">Final Quote Amount</span>
+                                    <span className="font-bold text-xl text-foreground">
+                                        {formatCurrency(stats.totalValue * 0.98)}
+                                    </span>
+                                </div>
+                            </div>
 
                             <div className="flex flex-col gap-3">
                                 <button

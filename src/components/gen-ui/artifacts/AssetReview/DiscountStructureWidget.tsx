@@ -14,7 +14,7 @@ import {
 
 interface DiscountStructureWidgetProps {
     subtotal: number;
-    onApply: (finalTotal: number) => void;
+    onApply: (finalTotal: number, totalDiscountAmount?: number) => void;
 }
 
 type DiscountCategory = 'contract' | 'special' | 'volume' | 'promo' | 'additional';
