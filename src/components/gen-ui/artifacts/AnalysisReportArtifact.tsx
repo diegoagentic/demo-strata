@@ -5,8 +5,8 @@ import { useGenUI } from '../../../context/GenUIContext';
 export default function AnalysisReportArtifact({ data }: { data: any }) {
     const { sendMessage } = useGenUI();
 
-    // Fallback safely if data is incomplete
-    const stats = data?.stats || { validated: 2, attention: 3, totalValue: 0 };
+    // Fallback safely if data is incomplete. Simulating 40 total items (35 validated + 5 attention)
+    const stats = data?.stats || { validated: 35, attention: 5, totalValue: 275000 };
     const issues = data?.issues || { header: 1, rules: 1 };
     const totalIssues = issues.header + issues.rules + stats.attention;
 

@@ -190,38 +190,7 @@ function SmartQuoteHubContent({ onNavigate, demoPhase = 'IDLE', onUploadStart, o
                 {mode === 'selection' && (
                     <>
                         <div className="flex-1 overflow-y-auto p-4 scrollbar-micro">
-                            {/* Drag and Drop Area for Flow 1 */}
-                            <div
-                                className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-8 text-center transition-all mb-6 ${dragActive ? 'border-primary bg-primary/5' : 'border-zinc-200 dark:border-zinc-700 hover:border-primary/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
-                                onDragEnter={handleDrag}
-                                onDragLeave={handleDrag}
-                                onDragOver={handleDrag}
-                                onDrop={handleDrop}
-                                onClick={() => inputRef.current?.click()}
-                            >
-                                <input
-                                    ref={inputRef}
-                                    type="file"
-                                    className="hidden"
-                                    multiple={true}
-                                    onChange={handleChange}
-                                />
-
-                                <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                                    <ArrowUpTrayIcon className="w-8 h-8 text-blue-500 dark:text-blue-400" />
-                                </div>
-
-                                <h4 className="text-lg font-semibold text-foreground mb-2">
-                                    Upload RFQ Documents
-                                </h4>
-                                <p className="text-sm text-muted-foreground max-w-[280px] mb-6">
-                                    Drag & drop PDF, Excel, or Email files here to start the autonomous quoting process.
-                                </p>
-
-                                <button className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium shadow-sm hover:shadow-md transition-all">
-                                    Select Files
-                                </button>
-                            </div>
+                            {/* Drag and Drop Area removed to use ModeSelectionArtifact exclusively */}
 
                             <ModeSelectionArtifact />
                         </div>

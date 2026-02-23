@@ -15,7 +15,8 @@ import {
     ChartBarIcon,
     ArrowLeftIcon,
     TagIcon,
-    BuildingOfficeIcon
+    BuildingOfficeIcon,
+    ShoppingCartIcon
 } from '@heroicons/react/24/outline';
 import { useGenUI } from '../../../context/GenUIContext';
 import EditAssetModal from './AssetReview/EditAssetModal';
@@ -40,6 +41,7 @@ export interface AssetType {
     issues?: string[];
     warranty?: string; // New field
     costCenter?: string; // New field
+    options?: { sku: string; name: string; price: number; subText: string; }[]; // New field for manual selection
     suggestion?: {
         sku: string;
         price: number;
@@ -61,7 +63,8 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
     const [isMappingExpanded, setIsMappingExpanded] = useState(false);
     const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
     const [selectedSuggestionAsset, setSelectedSuggestionAsset] = useState<AssetType | null>(null);
-    const [isResolverOpen, setIsResolverOpen] = useState(false);
+    const [isResolverOpen, setIsResolverOpen] = useState(!!data?.openResolver);
+    const [isSubstitutionsOpen, setIsSubstitutionsOpen] = useState(false);
     const [isApproved, setIsApproved] = useState(false); // Tracks if this artifact has been finalized
 
     // Mock Header & Rule Issues (New for Unified Resolution)
@@ -213,7 +216,7 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
             warranty: 'Standard Warranty',
             costCenter: 'CC-ENG'
         },
-        // MOCK DATA FOR FLOW 1: Discontinued Item
+        // MOCK DATA FOR FLOW 1: Discontinued Item 1 (AI Suggested)
         {
             id: '4',
             description: 'Legacy Side Table (Discontinued)',
@@ -231,6 +234,43 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                 reason: 'Direct replacement for legacy series. 98% match on dimensions.',
                 confidence: 95
             }
+        },
+        // MOCK DATA FOR FLOW 1: Discontinued Item 2 (AI Suggested)
+        {
+            id: '6',
+            description: 'Vintage Filing Cabinet (Discontinued)',
+            sku: 'CAB-FILE-VINT-2',
+            qty: 5,
+            unitPrice: 180.00,
+            totalPrice: 900.00,
+            status: 'review',
+            issues: ['Discontinued: Manufacturer recalled'],
+            costCenter: 'CC-ADMIN',
+            warranty: 'Standard Warranty',
+            suggestion: {
+                sku: 'CAB-FILE-STEEL-X',
+                price: 195.00,
+                reason: 'Steelcase alternative selected per client substitution rules.',
+                confidence: 92
+            }
+        },
+        // MOCK DATA FOR FLOW 1: Discontinued Item 3 (Manual Selection Required)
+        {
+            id: '7',
+            description: 'Acoustic Panel System (Discontinued)',
+            sku: 'PNL-AC-SYS-OLD',
+            qty: 24,
+            unitPrice: 150.00,
+            totalPrice: 3600.00,
+            status: 'review',
+            issues: ['Discontinued: Out of Stock Indefinitely'],
+            costCenter: 'CC-OPEN',
+            warranty: 'Standard Warranty',
+            options: [
+                { sku: 'PNL-AC-SYS-NEW-A', name: 'Acoustic Panel Pro', price: 165.00, subText: 'Premium soundproofing' },
+                { sku: 'PNL-AC-SYS-NEW-B', name: 'Acoustic Panel Lite', price: 140.00, subText: 'Budget friendly' },
+                { sku: 'PNL-AC-SYS-COLOR', name: 'Acoustic Panel Vibrant', price: 170.00, subText: 'Custom color finish' }
+            ]
         },
         {
             id: '5',
@@ -348,15 +388,29 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                         suggestion: undefined,
                         issues: []
                     };
-                } else {
-                    // Accept without suggestion (resolve warning)
-                    return {
-                        ...a,
-                        status: 'validated',
-                        suggestion: undefined,
-                        issues: []
-                    };
+                } else if (a.options) {
+                    const selectedOpt = data ? a.options.find(opt => opt.sku === data) : a.options[0];
+                    if (selectedOpt) {
+                        return {
+                            ...a,
+                            description: selectedOpt.name,
+                            sku: selectedOpt.sku,
+                            unitPrice: selectedOpt.price,
+                            totalPrice: a.qty * selectedOpt.price,
+                            status: 'validated',
+                            options: undefined,
+                            issues: []
+                        };
+                    }
                 }
+
+                // Fallback: Accept without suggestion (resolve warning)
+                return {
+                    ...a,
+                    status: 'validated',
+                    suggestion: undefined,
+                    issues: []
+                };
             }
             if (action === 'keep') {
                 return {
@@ -377,55 +431,61 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
         return true;
     });
 
+    // Simulating 40 total items without rendering all 40 list items to keep DOM light
+    const simulatedExtraItems = 33;
+    const simulatedExtraValue = simulatedExtraItems * 450; // Approximating $450 per simulated item
+
     const stats = {
-        total: assets.length,
-        attention: assets.filter(a => a.status === 'review' || a.status === 'suggestion').length,
-        validated: assets.filter(a => a.status === 'validated').length,
-        totalValue: assets.reduce((acc, curr) => acc + curr.totalPrice, 0)
+        total: (data?.stats?.total || ((data?.stats?.validated || 0) + (data?.stats?.attention || 0)) || assets.length) + simulatedExtraItems,
+        attention: data?.stats?.attention !== undefined ? data?.stats?.attention : assets.filter(a => a.status === 'review' || a.status === 'suggestion').length,
+        validated: (data?.stats?.validated !== undefined ? data?.stats?.validated : assets.filter(a => a.status === 'validated').length) + simulatedExtraItems,
+        totalValue: (data?.stats?.totalValue !== undefined ? data?.stats?.totalValue : assets.reduce((acc, curr) => acc + curr.totalPrice, 0)) + simulatedExtraValue
     };
 
     const totalIssues = headerIssues.length + ruleIssues.length + stats.attention;
 
     // Generate Discrepancy Items for Resolver
     // Maps asset issues (like discontinued) to the discrepancy format
-    const discrepancyItems: DiscrepancyItem[] = [
+    const generalDiscrepancies: DiscrepancyItem[] = [
         ...headerIssues,
-        ...ruleIssues,
-        ...assets
-            .filter(a => a.status === 'review' || a.status === 'suggestion')
-            .map(a => ({
-                id: a.id,
-                type: 'line_item' as const,
-                title: a.issues?.length ? a.issues[0] : 'Optimization Opportunity',
-                description: a.description,
-                severity: 'medium' as const,
-                original: {
-                    label: 'Extracted SKU',
-                    value: a.sku,
-                    subText: `Unit Price: ${formatCurrency(a.unitPrice)}`
-                },
-                suggestion: a.suggestion ? {
-                    label: 'Recommended Replacement',
-                    value: a.suggestion.sku,
-                    subText: `Unit Price: ${formatCurrency(a.suggestion.price)}`,
-                    reason: a.suggestion.reason,
-                    confidence: 95
-                } : {
-                    label: 'No Suggestion',
-                    value: 'N/A',
-                    reason: 'Please review manually.',
-                    confidence: 0
-                }
-            }))
+        ...ruleIssues
     ];
+
+    const substitutionItems: DiscrepancyItem[] = assets
+        .filter(a => a.status === 'review' || a.status === 'suggestion')
+        .map(a => ({
+            id: a.id,
+            type: 'line_item' as const,
+            title: a.issues?.length ? a.issues[0] : 'Optimization Opportunity',
+            description: a.description,
+            severity: 'medium' as const,
+            original: {
+                label: 'Extracted SKU',
+                value: a.sku,
+                subText: `Unit Price: ${formatCurrency(a.unitPrice)}`
+            },
+            suggestion: a.suggestion ? {
+                label: 'Recommended Replacement',
+                value: a.suggestion.sku,
+                subText: `Unit Price: ${formatCurrency(a.suggestion.price)}`,
+                reason: a.suggestion.reason,
+                confidence: 95
+            } : {
+                label: 'No Suggestion',
+                value: 'N/A',
+                reason: 'Please review manually.',
+                confidence: 0
+            },
+            metadata: a.options ? { options: a.options } : undefined
+        }));
 
     return (
         <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-800 overflow-hidden">
             {/* Header / Status Bar */}
             <div className="shrink-0 bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <SparklesIcon className="w-5 h-5 text-primary" />
+                    <div className="p-2 bg-primary/20 dark:bg-primary/10 rounded-lg">
+                        <SparklesIcon className="w-5 h-5 text-zinc-900 dark:text-primary" />
                     </div>
                     <div>
                         <h2 className="text-lg font-bold font-brand text-foreground flex items-center gap-2">
@@ -576,7 +636,7 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                             <button
                                 onClick={() => setFilter('all')}
                                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'all'
-                                    ? 'border-primary text-primary'
+                                    ? 'border-zinc-900 text-zinc-900 dark:border-primary dark:text-primary'
                                     : 'border-transparent text-muted-foreground hover:text-foreground'
                                     }`}
                             >
@@ -706,6 +766,17 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                                 </div>
                             </div>
                         ))}
+
+                        {/* Pagination / Loading Mock */}
+                        {stats.total > assets.length && (
+                            <div className="py-8 flex flex-col items-center justify-center text-center animate-in fade-in duration-700">
+                                <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin mb-3"></div>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    Showing {assets.length} of {stats.total} items
+                                </p>
+                                <p className="text-xs text-muted-foreground/70 mt-1">Scroll to load more</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -865,139 +936,142 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                 </div>
             )}
 
-            {/* Render 'Discount' Step Overlay (New Step) */}
+            {/* Render 'Discount & Warranty' Step Overlay (Unified Pricing Step) */}
             {
                 currentStep === 'discount' && (
-                    <div className="absolute inset-0 z-20 bg-zinc-50 dark:bg-zinc-800 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500 overflow-hidden">
-                        {/* Step Header */}
-                        <div className="shrink-0 bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 p-6 flex justify-between items-center">
-                            <div>
-                                <h2 className="text-2xl font-bold font-brand text-foreground">Pricing Configuration</h2>
-                                <p className="text-muted-foreground">Apply warranties and discount rules before reviewing the asset list.</p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="text-right mr-4">
-                                    <div className="text-sm text-muted-foreground">Estimated Total</div>
-                                    <div className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalValue)}</div>
-                                </div>
-                                <button
-                                    onClick={() => setCurrentStep('review')}
-                                    className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-primary/20 hover:scale-[1.02] transition-all flex items-center gap-2"
-                                >
-                                    <CheckCircleIcon className="w-5 h-5" />
-                                    Confirm & Review Assets
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Step Content */}
-                        <div className="flex-1 overflow-y-auto p-8">
-                            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-
-                                {/* Left Col: Warranties */}
-                                <div className="space-y-6">
-                                    <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-6 shadow-sm">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-lg">
-                                                <ShieldCheckIcon className="w-6 h-6" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-foreground">Warranty Coverage</h3>
-                                                <p className="text-sm text-muted-foreground">Select a global warranty plan for all eligible assets.</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            {['Standard Warranty', 'Extended Protection (+50/ea)', 'Premium Care (+120/ea)'].map((plan) => {
-                                                const planName = plan.split(' (')[0];
-                                                const isSelected = assets.every(a => a.warranty?.startsWith(planName)); // Rough check
-
-                                                return (
-                                                    <button
-                                                        key={plan}
-                                                        onClick={() => handleApplyWarranty(plan, 'all')}
-                                                        className={`w-full text-left p-4 rounded-xl border-2 transition-all flex items-center justify-between ${isSelected
-                                                            ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/10 dark:border-indigo-400'
-                                                            : 'border-zinc-100 dark:border-zinc-700 hover:border-indigo-200 dark:hover:border-indigo-800'
-                                                            }`}
-                                                    >
-                                                        <div>
-                                                            <div className={`font-bold ${isSelected ? 'text-indigo-700 dark:text-indigo-300' : 'text-foreground'}`}>{plan}</div>
-                                                            <div className="text-xs text-muted-foreground mt-1">
-                                                                {plan.includes('Standard') ? 'Factory defects only. 1 year coverage.' :
-                                                                    plan.includes('Extended') ? 'Includes accidental damage. 3 year coverage.' :
-                                                                        'Full replacement, 24/7 support. 5 year coverage.'}
-                                                            </div>
-                                                        </div>
-                                                        <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-zinc-300'
-                                                            }`}>
-                                                            {isSelected && <CheckCircleIcon className="w-4 h-4" />}
-                                                        </div>
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Right Col: Discounts */}
-                                <div className="h-full">
-                                    <DiscountStructureWidget
-                                        subtotal={stats.totalValue} // Note: This passes the *current* total (after warranties). 
-                                        onApply={() => { }} // Widget updates internally, no explicit apply needed here as it's visual
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Render 'Discount & Warranty' Step Overlay */}
-            {
-                currentStep === 'discount' && (
-                    <div className="absolute inset-0 z-20 bg-zinc-50 dark:bg-zinc-800 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
-                        <div className="max-w-2xl w-full bg-white dark:bg-zinc-800 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
-                            <div className="flex items-start gap-4 mb-6">
-                                <button
-                                    onClick={() => setCurrentStep('review')}
-                                    className="p-2 -ml-2 mt-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 hover:text-foreground shrink-0"
-                                >
-                                    <ArrowLeftIcon className="w-5 h-5" />
-                                </button>
-                                <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="absolute inset-0 z-20 bg-zinc-50 dark:bg-zinc-800 flex flex-col items-center animate-in fade-in zoom-in duration-300">
+                        <div className="w-full h-full max-w-5xl bg-white dark:bg-zinc-800 md:my-6 md:rounded-2xl border-0 md:border border-zinc-200 dark:border-zinc-700 shadow-xl overflow-hidden flex flex-col relative">
+                            {/* Sticky Header */}
+                            <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 z-10">
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setCurrentStep('review')}
+                                        className="p-2 -ml-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-500 hover:text-foreground shrink-0"
+                                    >
+                                        <ArrowLeftIcon className="w-5 h-5" />
+                                    </button>
                                     <div>
                                         <h2 className="text-2xl font-bold font-brand text-foreground mb-1">Pricing & Configuration</h2>
                                         <p className="text-muted-foreground text-sm">Review warranties and apply any special discounts before generating the PO.</p>
                                     </div>
-                                    <div className="p-3 bg-primary/10 rounded-xl text-primary shrink-0 hidden md:block">
-                                        <TagIcon className="w-6 h-6" />
-                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setCurrentStep('review')}
+                                        className="px-5 py-2.5 text-zinc-500 hover:text-foreground font-medium transition-colors hidden sm:block"
+                                    >
+                                        Back to Review
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentStep('finalize')}
+                                        className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl shadow-sm hover:shadow-primary/20 transition-all flex items-center gap-2"
+                                    >
+                                        Proceed to Finalize
+                                        <ArrowLongRightIcon className="w-5 h-5" />
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto pr-2 pb-4 scrollbar-micro">
-                                <DiscountStructureWidget
-                                    subtotal={stats.totalValue}
-                                    onApply={(total) => {
-                                        setCurrentStep('finalize');
-                                    }}
-                                />
-                            </div>
+                            {/* Scrollable Content Area */}
+                            <div className="flex-1 overflow-y-auto w-full flex justify-center scrollbar-micro p-6">
+                                <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 pb-12 h-min">
 
-                            <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700 flex justify-end gap-3 mt-4">
-                                <button
-                                    onClick={() => setCurrentStep('review')}
-                                    className="px-6 py-2.5 text-zinc-500 hover:text-foreground font-medium transition-colors"
-                                >
-                                    Back to Review
-                                </button>
-                                <button
-                                    onClick={() => setCurrentStep('finalize')}
-                                    className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-xl shadow-sm hover:shadow-primary/20 transition-all"
-                                >
-                                    Proceed to Finalize
-                                </button>
+                                    {/* Left Column: Purchase Order Items & Warranties */}
+                                    <div className="flex flex-col gap-6">
+                                        <section>
+                                            <h3 className="text-2xl font-bold font-brand text-foreground mb-6 flex items-center gap-3">
+                                                <ShoppingCartIcon className="w-6 h-6 text-zinc-400" />
+                                                Purchase Order Items
+                                            </h3>
+
+                                            {/* Warranty Quick Actions */}
+                                            <div className="mb-6 p-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <ShieldCheckIcon className="w-5 h-5 text-indigo-500 shrink-0" />
+                                                    <span className="font-bold text-foreground whitespace-nowrap">Warranty Actions</span>
+                                                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 text-xs rounded-full font-bold">
+                                                        {assets.filter(a => a.warranty !== 'Standard Warranty').length}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+                                                    <button onClick={() => handleApplyWarranty('Extended Warranty', 'all')} className="flex-1 xl:flex-none px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors flex justify-center items-center gap-2">
+                                                        <CheckCircleIcon className="w-4 h-4 text-zinc-400" />
+                                                        Extended
+                                                    </button>
+                                                    <button onClick={() => handleApplyWarranty('Premium Protection', 'all')} className="flex-1 xl:flex-none px-3 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors flex justify-center items-center gap-2">
+                                                        <SparklesIcon className="w-4 h-4 text-amber-500" />
+                                                        Premium
+                                                    </button>
+                                                    <button onClick={() => handleApplyWarranty('Standard Warranty', 'all')} className="px-3 py-1.5 text-zinc-500 hover:text-foreground text-sm font-medium transition-colors flex items-center gap-2">
+                                                        <ArrowPathIcon className="w-4 h-4 shrink-0" />
+                                                        <span className="hidden sm:inline">Reset</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Items List */}
+                                            <div className="space-y-4">
+                                                {assets.map((asset) => {
+                                                    const currentWarrantyCost = (asset.unitPrice - (asset.basePrice || asset.unitPrice)) * asset.qty;
+                                                    return (
+                                                        <div key={asset.id} className="flex flex-col sm:flex-row gap-4 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/80 shadow-sm relative overflow-hidden group">
+                                                            <div className="w-16 h-16 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shrink-0">
+                                                                <div className="text-[10px] font-bold text-zinc-400 text-center leading-tight uppercase p-1">
+                                                                    {asset.description.split(' ').slice(0, 2).join('\n')}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-semibold text-foreground truncate">{asset.description}</h4>
+                                                                <div className="text-sm text-muted-foreground mt-0.5 mb-2">
+                                                                    SKU: {asset.sku} &bull; Qty: {asset.qty} &bull; Unit: {formatCurrency(asset.basePrice || asset.unitPrice)}
+                                                                </div>
+                                                                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                                                    <div className="relative">
+                                                                        <ShieldCheckIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                                                                        <select
+                                                                            value={asset.warranty || 'Standard Warranty'}
+                                                                            onChange={(e) => handleApplyWarranty(e.target.value, 'single', asset.id)}
+                                                                            className="w-full sm:w-auto pl-9 pr-8 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs sm:text-sm font-medium text-foreground appearance-none hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                                                        >
+                                                                            <option value="Standard Warranty">Standard Warranty</option>
+                                                                            <option value="Extended Warranty">Extended Warranty</option>
+                                                                            <option value="Premium Protection">Premium Protection</option>
+                                                                        </select>
+                                                                        <ChevronDownIcon className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-left sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 sm:pl-4 sm:border-l border-zinc-100 dark:border-zinc-800 flex flex-row sm:flex-col items-center justify-between sm:justify-center">
+                                                                <div className="text-xs text-muted-foreground line-through hidden sm:block">
+                                                                    List: {formatCurrency((asset.basePrice || asset.unitPrice) * asset.qty)}
+                                                                </div>
+                                                                <div className="text-lg font-bold text-foreground">
+                                                                    {formatCurrency(asset.totalPrice)}
+                                                                </div>
+                                                                {currentWarrantyCost > 0 && (
+                                                                    <div className="text-[10px] font-bold text-green-600 mt-0.5">
+                                                                        + {formatCurrency(currentWarrantyCost)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </section>
+                                    </div>
+
+                                    {/* Right Column: Discount Widget Section */}
+                                    <div className="flex flex-col gap-6">
+                                        <section className="sticky top-0">
+                                            <DiscountStructureWidget
+                                                subtotal={stats.totalValue}
+                                                onApply={(val) => { }}
+                                            />
+                                        </section>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1084,12 +1158,35 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
 
             {/* Unified Discrepancy Resolver Modal */}
             {
-                isResolverOpen && (
-                    <DiscrepancyResolverArtifact
-                        issues={discrepancyItems}
-                        onResolve={handleResolveDiscrepancy}
-                        onClose={() => setIsResolverOpen(false)}
-                    />
+                isResolverOpen && generalDiscrepancies.length > 0 && (
+                    <div className="absolute inset-0 z-[100] bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 pt-8 pb-32 overflow-y-auto scrollbar-micro animate-in fade-in duration-300">
+                        <DiscrepancyResolverArtifact
+                            title="Review Discrepancies"
+                            issues={generalDiscrepancies}
+                            onResolve={handleResolveDiscrepancy}
+                            onClose={() => {
+                                setIsResolverOpen(false);
+                                if (substitutionItems.length > 0) setIsSubstitutionsOpen(true);
+                            }}
+                        />
+                    </div>
+                )
+            }
+
+            {/* Substitutions Modal */}
+            {
+                (isSubstitutionsOpen || (isResolverOpen && generalDiscrepancies.length === 0)) && substitutionItems.length > 0 && (
+                    <div className="absolute inset-0 z-[100] bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 pt-8 pb-32 overflow-y-auto animate-in fade-in duration-300">
+                        <DiscrepancyResolverArtifact
+                            title="Review Substitutions"
+                            issues={substitutionItems}
+                            onResolve={handleResolveDiscrepancy}
+                            onClose={() => {
+                                setIsSubstitutionsOpen(false);
+                                if (isResolverOpen) setIsResolverOpen(false);
+                            }}
+                        />
+                    </div>
                 )
             }
 

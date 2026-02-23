@@ -128,14 +128,54 @@ export default function QuoteExtractionArtifact({ fileName, onComplete }: QuoteE
                         onComplete({
                             source: 'autonomous',
                             fileName: fileName,
-                            stats: { validated: 39, attention: 3, totalValue: 245000 },
-                            issues: { header: 0, rules: 3 },
+                            stats: { validated: 37, attention: 3, totalValue: 290750 },
+                            issues: { header: 2, rules: 1 },
                             assets: [
                                 { id: '1', description: 'Executive Task Chair', sku: 'CHAIR-EXEC-2024', qty: 15, unitPrice: 895.00, totalPrice: 13425.00, status: 'validated', warranty: '12-Year Standard', costCenter: 'CC-101' },
                                 { id: '2', description: 'Conf Chair (Leather)', sku: 'CHR-CONF-LTH', qty: 8, unitPrice: 850.00, totalPrice: 6800.00, status: 'validated', warranty: '12-Year Standard', costCenter: 'CC-GEN' },
-                                { id: '3', description: 'Fabric Panel (Discontinued Fabric)', sku: 'PNL-FAB-OLD', qty: 12, unitPrice: 320.00, totalPrice: 3840.00, status: 'review', issues: ['Discontinued: Fabric Jet Black'], costCenter: 'CC-LOBBY', warranty: '5-Year Fabric', suggestion: { sku: 'PNL-FAB-NEW', price: 320.00, reason: 'Auto-substituted with Jet Black v2 as per universal replacement rule.', confidence: 100 } },
-                                { id: '4', description: 'Legacy Side Table (Discontinued)', sku: 'TBL-SIDE-LEGACY-09', qty: 6, unitPrice: 320.00, totalPrice: 1920.00, status: 'review', issues: ['Discontinued: End of Life'], costCenter: 'CC-LOBBY', warranty: '10-Year Frame', suggestion: { sku: 'TBL-SIDE-MODERN-24', price: 345.00, reason: 'Auto-substituted based on direct dimension match (98%).', confidence: 95 } },
-                                { id: '5', description: 'Premium Manager Desk (Out of Stock)', sku: 'DSK-PREM-OOS', qty: 2, unitPrice: 2400.00, totalPrice: 4800.00, status: 'attention', issues: ['Out of Stock: Lead time 16 weeks'], warranty: 'Lifetime Limited', costCenter: 'CC-EXEC' }
+                                {
+                                    id: '4',
+                                    description: 'Legacy Side Table (Discontinued)',
+                                    sku: 'TBL-SIDE-LEGACY-09',
+                                    qty: 12,
+                                    unitPrice: 320.00,
+                                    totalPrice: 3840.00,
+                                    status: 'review',
+                                    issues: ['Discontinued: End of Life'],
+                                    costCenter: 'CC-LOBBY',
+                                    warranty: 'Standard Warranty',
+                                    suggestion: { sku: 'TBL-SIDE-MODERN-24', price: 345.00, reason: 'Direct replacement for legacy series. 98% match on dimensions.', confidence: 95 }
+                                },
+                                {
+                                    id: '6',
+                                    description: 'Vintage Filing Cabinet (Discontinued)',
+                                    sku: 'CAB-FILE-VINT-2',
+                                    qty: 5,
+                                    unitPrice: 180.00,
+                                    totalPrice: 900.00,
+                                    status: 'review',
+                                    issues: ['Discontinued: Manufacturer recalled'],
+                                    costCenter: 'CC-ADMIN',
+                                    warranty: 'Standard Warranty',
+                                    suggestion: { sku: 'CAB-FILE-STEEL-X', price: 195.00, reason: 'Steelcase alternative selected per client substitution rules.', confidence: 92 }
+                                },
+                                {
+                                    id: '7',
+                                    description: 'Acoustic Panel System (Discontinued)',
+                                    sku: 'PNL-AC-SYS-OLD',
+                                    qty: 24,
+                                    unitPrice: 150.00,
+                                    totalPrice: 3600.00,
+                                    status: 'review',
+                                    issues: ['Discontinued: Out of Stock Indefinitely'],
+                                    costCenter: 'CC-OPEN',
+                                    warranty: 'Standard Warranty',
+                                    options: [
+                                        { sku: 'PNL-AC-SYS-NEW-A', name: 'Acoustic Panel Pro', price: 165.00, subText: 'Premium soundproofing' },
+                                        { sku: 'PNL-AC-SYS-NEW-B', name: 'Acoustic Panel Lite', price: 140.00, subText: 'Budget friendly' },
+                                        { sku: 'PNL-AC-SYS-COLOR', name: 'Acoustic Panel Vibrant', price: 170.00, subText: 'Custom color finish' }
+                                    ]
+                                }
                             ]
                         });
                     }

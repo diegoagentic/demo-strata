@@ -42,12 +42,16 @@ interface DiscrepancyResolverProps {
     issues: DiscrepancyItem[];
     onResolve: (id: string, action: 'accept' | 'keep' | 'manual', data?: any) => void;
     onClose: () => void;
+    title?: string;
 }
 
-export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose }: DiscrepancyResolverProps) {
+export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose, title }: DiscrepancyResolverProps) {
     const [initialTotal, setInitialTotal] = useState(issues.length);
     const [processedCount, setProcessedCount] = useState(0);
     const [isAutoFixing, setIsAutoFixing] = useState(false);
+    const [selectedValue, setSelectedValue] = useState<string>('');
+
+    const isSubstitution = title === 'Review Substitutions';
 
     // Sync initial total if issues array grows unexpectedly (optional safety)
     useEffect(() => {
@@ -66,6 +70,14 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
     // Always take the first item as the list shrinks on resolve
     const currentIssue = issues[0];
 
+    useEffect(() => {
+        if (currentIssue?.metadata?.options && currentIssue.metadata.options.length > 0) {
+            setSelectedValue(currentIssue.metadata.options[0].sku);
+        } else {
+            setSelectedValue('');
+        }
+    }, [currentIssue]);
+
     // Safety check for render
     if (!currentIssue) return null;
 
@@ -73,7 +85,8 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
     const progressIndex = processedCount + 1;
 
     const handleAction = (action: 'accept' | 'keep') => {
-        onResolve(currentIssue.id, action);
+        const hasOptions = currentIssue.metadata?.options && currentIssue.metadata.options.length > 0;
+        onResolve(currentIssue.id, action, hasOptions ? selectedValue : undefined);
         // Increment processed count for UI progress
         setProcessedCount(prev => prev + 1);
         // Do NOT increment index, as the resolved item is removed from the array
@@ -119,23 +132,23 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
     };
 
     return (
-        <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[600px] animate-in fade-in duration-300">
+        <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in duration-300 my-auto">
 
             {/* Header */}
-            <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-white dark:bg-zinc-800 z-10">
+            <div className={`p-6 border-b flex justify-between items-center z-10 ${isSubstitution ? 'bg-indigo-50/50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800/50' : 'bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800'}`}>
                 <div>
-                    <h2 className="text-xl font-bold font-brand flex items-center gap-2">
-                        {getTypeIcon(currentIssue.type)}
-                        Review Discrepancy
+                    <h2 className="text-xl font-bold font-brand flex items-center gap-2 text-foreground">
+                        {isSubstitution ? <SparklesIcon className="w-6 h-6 text-indigo-500" /> : getTypeIcon(currentIssue.type)}
+                        {title || 'Review Discrepancy'}
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Issue {progressIndex} of {initialTotal} • <span className="text-amber-600 font-medium">Resolution Required</span>
+                        Issue {progressIndex} of {initialTotal} • <span className={isSubstitution ? "text-indigo-600 font-medium" : "text-amber-600 font-medium"}>Resolution Required</span>
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="w-32 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-amber-500 transition-all duration-300"
+                            className={`h-full transition-all duration-300 ${isSubstitution ? 'bg-indigo-500' : 'bg-amber-500'}`}
                             style={{ width: `${(progressIndex / initialTotal) * 100}%` }}
                         ></div>
                     </div>
@@ -143,7 +156,7 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
             </div>
 
             {/* Main Content */}
-            <div className="p-8 flex-1 overflow-y-auto scrollbar-micro bg-zinc-50/50 dark:bg-black/10">
+            <div className="flex-1 overflow-y-auto p-8 scrollbar-micro bg-zinc-50/50 dark:bg-black/10">
 
                 {isAutoFixing ? (
                     <div className="h-full flex flex-col items-center justify-center text-center py-12">
@@ -186,7 +199,7 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
                         {/* AI Suggestion */}
                         <div className="space-y-4">
                             <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-                                <SparklesIcon className="w-4 h-4" /> AI Recommendation
+                                <SparklesIcon className="w-4 h-4" /> {currentIssue.metadata?.options ? 'Manual Substitution Required' : 'AI Recommendation'}
                                 <span className="ml-auto text-[10px] bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
                                     {confidence}% Confidence
                                 </span>
@@ -207,7 +220,11 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
 
                                         {currentIssue.metadata?.options ? (
                                             <div className="mt-2 space-y-2 relative z-20">
-                                                <select className="w-full text-sm bg-white dark:bg-zinc-800 p-2.5 rounded-lg border border-indigo-200 dark:border-indigo-700 text-indigo-900 dark:text-indigo-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                <select
+                                                    value={selectedValue}
+                                                    onChange={e => setSelectedValue(e.target.value)}
+                                                    className="w-full text-sm bg-white dark:bg-zinc-800 p-2.5 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                                >
                                                     {currentIssue.metadata.options.map((opt: any) => (
                                                         <option key={opt.sku} value={opt.sku}>
                                                             {opt.name} - {formatCurrency(opt.price)} ({opt.subText})
@@ -215,7 +232,7 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
                                                     ))}
                                                 </select>
                                                 <div className="text-[10px] font-bold text-amber-600 uppercase tracking-widest inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/10 px-2 py-1 rounded">
-                                                    Requires Manual Selection
+                                                    Action Needed: Select an alternative SKU
                                                 </div>
                                             </div>
                                         ) : (
@@ -238,27 +255,27 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
             </div>
 
             {/* Footer Controls */}
-            <div className="p-6 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 flex justify-between items-center">
-                <div className="text-xs text-muted-foreground italic">
+            <div className="p-6 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="text-xs text-muted-foreground italic w-full sm:w-auto text-center sm:text-left">
                     Resolution required to proceed.
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleBatchFix}
-                        disabled={isAutoFixing}
-                        className="mr-4 text-xs font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-wide disabled:opacity-50"
-                    >
-                        <span className="flex items-center gap-1">
+                <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+                    {issues.length > 0 && (
+                        <button
+                            onClick={handleBatchFix}
+                            disabled={isAutoFixing}
+                            className={`mr-2 px-3 py-2 text-xs font-bold uppercase tracking-wide disabled:opacity-50 whitespace-nowrap flex items-center gap-1 rounded-lg transition-colors ${isSubstitution ? 'text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30'}`}
+                        >
                             <SparklesIcon className="w-4 h-4" />
-                            Auto-Fix Remaining ({issues.length})
-                        </span>
-                    </button>
+                            Auto-Fix ({issues.length})
+                        </button>
+                    )}
 
                     <button
                         onClick={() => handleAction('keep')}
                         disabled={isAutoFixing}
-                        className="px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                        className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
                     >
                         <XCircleIcon className="w-4 h-4" />
                         Keep Original
@@ -266,7 +283,7 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
                     <button
                         onClick={() => handleAction('accept')}
                         disabled={isAutoFixing}
-                        className="px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-colors shadow-sm shadow-indigo-200 dark:shadow-indigo-900/20 flex items-center gap-2"
+                        className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-white font-bold transition-colors shadow-sm flex items-center justify-center gap-2 whitespace-nowrap ${isSubstitution ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 dark:shadow-indigo-900/20' : 'bg-amber-600 hover:bg-amber-700 shadow-amber-200 dark:shadow-amber-900/20'}`}
                     >
                         <CheckCircleIcon className="w-4 h-4" />
                         Accept & Next

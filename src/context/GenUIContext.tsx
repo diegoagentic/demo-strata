@@ -182,50 +182,14 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
 
                 // New Use Case: Analysis Complete -> Open Unified Dashboard
                 else if (lowerContent.includes('resolve issues') || lowerContent.includes('resolve discrepancies')) {
-                    responseText = "I've flagged 3 discontinued items requiring your attention before we can proceed to pricing.";
+                    responseText = "I've processed the line items and flagged 3 discontinued items. Please use the Asset Review matrix to resolve them before we finalize pricing.";
                     responseArtifact = {
-                        id: 'art_resolve_issues_' + Date.now(),
-                        type: 'discrepancy_resolver',
-                        title: 'Discrepancy Resolver',
+                        id: 'art_asset_review_' + Date.now(),
+                        type: 'asset_review',
+                        title: 'Asset Review: Uploaded Request',
                         data: {
-                            issues: [
-                                // Case 1: Auto-resolved Rule
-                                {
-                                    id: 'issue-1',
-                                    type: 'rule',
-                                    title: 'Fabric Discontinued: Jet Black',
-                                    description: 'Manufacturer issued a technical bulletin. Jet Black is replaced by Jet Black v2.',
-                                    severity: 'low',
-                                    original: { label: 'Fabric', value: 'Jet Black v1' },
-                                    suggestion: { label: 'Substitution', value: 'Jet Black v2', reason: 'Universal replacement rule', confidence: 100 }
-                                },
-                                // Case 2: Auto-resolved Model Update
-                                {
-                                    id: 'issue-2',
-                                    type: 'rule',
-                                    title: 'Legacy Side Table End-of-Life',
-                                    description: 'The Series 09 table is no longer manufactured.',
-                                    severity: 'medium',
-                                    original: { label: 'SKU', value: 'TBL-SIDE-LEGACY-09' },
-                                    suggestion: { label: 'Substitution', value: 'TBL-SIDE-MODERN-24', reason: 'System matched dimensions (98%)', confidence: 95 }
-                                },
-                                // Case 3: Dealer Choice Required
-                                {
-                                    id: 'issue-3',
-                                    type: 'line_item',
-                                    title: 'Premium Manager Desk (Out of Stock)',
-                                    description: 'Selected SKU has 16-week lead time constraints.',
-                                    severity: 'high',
-                                    original: { label: 'SKU', value: 'DSK-PREM-OOS', subText: 'Lead Time: 16 Weeks' },
-                                    suggestion: { label: 'Alternative', value: 'Dealer Must Select', reason: 'Multiple valid alternatives exist.', confidence: 50 },
-                                    metadata: {
-                                        options: [
-                                            { sku: 'DSK-PREM-ALT-1', name: 'Executive Desk V5', price: 2200, subText: 'Lead Time: 2 Weeks' },
-                                            { sku: 'DSK-PREM-ALT-2', name: 'Manager Desk Pro', price: 2350, subText: 'Lead Time: In Stock' }
-                                        ]
-                                    }
-                                }
-                            ]
+                            totalValue: 245000,
+                            openResolver: true
                         },
                         source: 'Analysis Complete'
                     };
@@ -356,47 +320,68 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                             fileName: 'Invoice_Jan2026.pdf',
                             assets: [
                                 {
-                                    id: '1',
-                                    description: 'Executive Task Chair',
-                                    sku: 'CHAIR-EXEC-2024',
-                                    qty: 150,
-                                    unitPrice: 895.00,
-                                    totalPrice: 134250.00,
+                                    id: '4',
+                                    description: 'Legacy Side Table (Discontinued)',
+                                    sku: 'TBL-SIDE-LEGACY-09',
+                                    qty: 12,
+                                    unitPrice: 320.00,
+                                    totalPrice: 3840.00,
                                     status: 'review',
-                                    issues: ['Unusual quantity for this SKU', 'Price variance (>10%)']
-                                },
-                                {
-                                    id: '2',
-                                    description: 'Conf Chair (Leather)',
-                                    sku: 'CHR-CONF-LTH',
-                                    qty: 8,
-                                    unitPrice: 850.00,
-                                    totalPrice: 6800.00,
-                                    status: 'review',
-                                    issues: ['Needs review']
-                                },
-                                {
-                                    id: '3',
-                                    description: 'Height Adjustable Workstation',
-                                    sku: 'DESK-ELECTRIC-7230',
-                                    qty: 95,
-                                    unitPrice: 1250.00,
-                                    totalPrice: 118750.00,
-                                    status: 'suggestion',
+                                    issues: ['Discontinued: End of Life'],
+                                    costCenter: 'CC-LOBBY',
+                                    warranty: 'Standard Warranty',
                                     suggestion: {
-                                        sku: 'DESK-ELECTRIC-7230-BUDGET',
-                                        price: 1100.00,
-                                        reason: 'Budget alternative available (Save $150/unit)'
+                                        sku: 'TBL-SIDE-MODERN-24',
+                                        price: 345.00,
+                                        reason: 'Direct replacement for legacy series. 98% match on dimensions.',
+                                        confidence: 95
                                     }
                                 },
                                 {
-                                    id: '4',
+                                    id: '6',
+                                    description: 'Vintage Filing Cabinet (Discontinued)',
+                                    sku: 'CAB-FILE-VINT-2',
+                                    qty: 5,
+                                    unitPrice: 180.00,
+                                    totalPrice: 900.00,
+                                    status: 'review',
+                                    issues: ['Discontinued: Manufacturer recalled'],
+                                    costCenter: 'CC-ADMIN',
+                                    warranty: 'Standard Warranty',
+                                    suggestion: {
+                                        sku: 'CAB-FILE-STEEL-X',
+                                        price: 195.00,
+                                        reason: 'Steelcase alternative selected per client substitution rules.',
+                                        confidence: 92
+                                    }
+                                },
+                                {
+                                    id: '7',
+                                    description: 'Acoustic Panel System (Discontinued)',
+                                    sku: 'PNL-AC-SYS-OLD',
+                                    qty: 24,
+                                    unitPrice: 150.00,
+                                    totalPrice: 3600.00,
+                                    status: 'review',
+                                    issues: ['Discontinued: Out of Stock Indefinitely'],
+                                    costCenter: 'CC-OPEN',
+                                    warranty: 'Standard Warranty',
+                                    options: [
+                                        { sku: 'PNL-AC-SYS-NEW-A', name: 'Acoustic Panel Pro', price: 165.00, subText: 'Premium soundproofing' },
+                                        { sku: 'PNL-AC-SYS-NEW-B', name: 'Acoustic Panel Lite', price: 140.00, subText: 'Budget friendly' },
+                                        { sku: 'PNL-AC-SYS-COLOR', name: 'Acoustic Panel Vibrant', price: 170.00, subText: 'Custom color finish' }
+                                    ]
+                                },
+                                {
+                                    id: '5',
                                     description: 'Ergonomic Office Chair',
                                     sku: 'CHAIR-ERG-001',
                                     qty: 85,
                                     unitPrice: 425.00,
                                     totalPrice: 36125.00,
-                                    status: 'validated'
+                                    status: 'validated',
+                                    warranty: 'Standard Warranty',
+                                    costCenter: 'CC-HR'
                                 }
                             ]
                         },
