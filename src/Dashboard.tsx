@@ -762,7 +762,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                         <button
                                                             onClick={() => {
                                                                 if (action.id === 4) {
-                                                                    onNavigate('ack-detail')
+                                                                    onNavigate('ack-detail-ai')
                                                                 } else {
                                                                     handleGenUIAction(`${action.action} ${action.title}`)
                                                                 }

@@ -41,12 +41,24 @@ interface Message {
 }
 
 const DiscrepancyResolutionFlow = () => {
-    const [status, setStatus] = useState<'initial' | 'requesting' | 'pending' | 'approved'>('initial')
+    const [status, setStatus] = useState<'initial' | 'requesting' | 'pending' | 'approved' | 'sending' | 'sent'>('initial')
     const [requestText, setRequestText] = useState('')
+    const [shipmentResolution, setShipmentResolution] = useState('accept')
+
+    const resolutions = [
+        { id: 'accept', label: 'Accept new date (Nov 27, 2025)' },
+        { id: 'expedite', label: 'Expedite Shipping (Nov 20, 2025)' },
+        { id: 'cancel', label: 'Cancel Backordered Item' }
+    ]
 
     const handleRequest = () => {
         setStatus('pending')
         setTimeout(() => setStatus('approved'), 3000)
+    }
+
+    const handleSendUpdate = () => {
+        setStatus('sending')
+        setTimeout(() => setStatus('sent'), 1500)
     }
 
     if (status === 'initial') {
@@ -103,12 +115,25 @@ const DiscrepancyResolutionFlow = () => {
                     </div>
                 </div>
 
+                <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 mt-2 mb-2">
+                    <label className="block text-xs font-semibold text-zinc-900 dark:text-white mb-2">Select Resolution for Ship Date Slip:</label>
+                    <select
+                        className="w-full text-sm p-2 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 ring-primary outline-none"
+                        value={shipmentResolution}
+                        onChange={(e) => setShipmentResolution(e.target.value)}
+                    >
+                        {resolutions.map(r => (
+                            <option key={r.id} value={r.id}>{r.label}</option>
+                        ))}
+                    </select>
+                </div>
+
                 <div className="flex gap-2 mt-1">
                     <button
                         onClick={handleRequest}
                         className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-primary text-zinc-900 hover:bg-primary/90 hover:shadow-md text-xs font-bold rounded-lg transition-all"
                     >
-                        <CheckIcon className="w-4 h-4" /> 1-Click Approve Exceptions
+                        <PaperAirplaneIcon className="w-4 h-4" /> Send Request
                     </button>
                     <button
                         onClick={() => setStatus('requesting')}
@@ -166,37 +191,60 @@ const DiscrepancyResolutionFlow = () => {
         )
     }
 
-    if (status === 'approved') {
+    if (status === 'approved' || status === 'sending' || status === 'sent') {
         return (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/10 p-2 rounded-lg border border-green-100 dark:border-green-900/30">
-                    <CheckCircleIcon className="h-5 w-5" />
-                    <p className="text-sm text-zinc-900 dark:text-zinc-100">Exceptions approved. Records updated.</p>
+                <div className="flex items-start gap-2 text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/10 p-3 rounded-lg border border-green-100 dark:border-green-900/30">
+                    <CheckCircleIcon className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                        <p className="text-zinc-900 dark:text-zinc-100 font-bold mb-1">Exceptions approved. Records updated.</p>
+                        <p className="text-zinc-700 dark:text-zinc-300">The Delivery Date has been updated to <span className="font-bold underline decoration-green-300 underline-offset-2">{shipmentResolution === 'expedite' ? 'Nov 20, 2025' : shipmentResolution === 'cancel' ? 'N/A' : 'Nov 27, 2025'}</span>.</p>
+                    </div>
                 </div>
 
                 <div className="bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700/50 overflow-hidden shadow-sm">
-                    <div className="px-3 py-2 bg-muted/30 border-b border-border flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                            <DocumentTextIcon className="w-4 h-4 text-primary" />
-                            Auto-Drafted Client Update
+                    {status === 'sent' ? (
+                        <div className="p-6 flex flex-col items-center justify-center gap-2 text-center text-zinc-900 dark:text-white animate-in zoom-in duration-300">
+                            <div className="h-10 w-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400">
+                                <PaperAirplaneIcon className="h-5 w-5" />
+                            </div>
+                            <p className="font-bold">Client Update Sent</p>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-[280px]">The client has been notified of the adjustments and new estimated delivery date.</p>
                         </div>
-                        <span className="bg-primary/10 text-primary-foreground px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide">Ready to Send</span>
-                    </div>
-                    <div className="p-3 text-xs text-zinc-700 dark:text-zinc-300 space-y-2">
-                        <p><span className="font-semibold text-zinc-900 dark:text-white">To:</span> client@automanufacture.com</p>
-                        <p><span className="font-semibold text-zinc-900 dark:text-white">Subject:</span> Update regarding your recent order #ORD-2055</p>
-                        <div className="p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded border border-zinc-100 dark:border-zinc-800 font-serif leading-relaxed italic text-zinc-600 dark:text-zinc-400">
-                            "Hi Team, just a quick update on Order #ORD-2055. The manufacturer noted that the Navy fabric for your Conference Room Chairs is currently backordered. We've proactively substituted it with the identical fabric in 'Azure', which is in stock, to ensure no delays. Also, please note your estimated ship date has been updated to Nov 27, 2025. Let us know if you have any questions!"
+                    ) : status === 'sending' ? (
+                        <div className="p-10 flex flex-col items-center justify-center gap-3 animate-in fade-in">
+                            <ArrowPathIcon className="w-6 h-6 animate-spin text-primary" />
+                            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Sending Client Update...</p>
                         </div>
-                        <div className="flex gap-2 pt-2">
-                            <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-bold rounded shadow-sm transition-all">
-                                <PaperAirplaneIcon className="w-3.5 h-3.5" /> Send Update
-                            </button>
-                            <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 hover:bg-muted text-foreground text-xs font-medium rounded transition-all">
-                                <PencilSquareIcon className="w-3.5 h-3.5" /> Edit Draft
-                            </button>
-                        </div>
-                    </div>
+                    ) : (
+                        <>
+                            <div className="px-3 py-2 bg-muted/30 border-b border-border flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                                    <DocumentTextIcon className="w-4 h-4 text-primary" />
+                                    Auto-Drafted Client Update
+                                </div>
+                                <span className="bg-primary/10 text-primary-foreground px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide">Ready to Send</span>
+                            </div>
+                            <div className="p-3 text-xs text-zinc-700 dark:text-zinc-300 space-y-2">
+                                <p><span className="font-semibold text-zinc-900 dark:text-white">To:</span> client@automanufacture.com</p>
+                                <p><span className="font-semibold text-zinc-900 dark:text-white">Subject:</span> Update regarding your recent order #ORD-2055</p>
+                                <div className="p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded border border-zinc-100 dark:border-zinc-800 font-serif leading-relaxed italic text-zinc-600 dark:text-zinc-400">
+                                    "Hi Team, just a quick update on Order #ORD-2055. The manufacturer noted that the Navy fabric for your Conference Room Chairs is currently backordered. We've proactively substituted it with the identical fabric in 'Azure', which is in stock, to ensure no delays. {shipmentResolution === 'expedite' ? "We've also upgraded the shipping to expedite the order, and your estimated ship date is now Nov 20, 2025." : shipmentResolution === 'accept' ? "Also, please note your estimated ship date has been updated to Nov 27, 2025." : "We've removed the backordered Lounge Chair from the order as it was severely delayed."} Let us know if you have any questions!"
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                    <button
+                                        onClick={handleSendUpdate}
+                                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 text-xs font-bold rounded shadow-sm transition-all"
+                                    >
+                                        <PaperAirplaneIcon className="w-3.5 h-3.5" /> Send Update
+                                    </button>
+                                    <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 hover:bg-muted text-foreground text-xs font-medium rounded transition-all">
+                                        <PencilSquareIcon className="w-3.5 h-3.5" /> Edit Draft
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 <div className="bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/10 p-3 flex items-center gap-3">
@@ -410,9 +458,10 @@ interface DetailProps {
     onLogout: () => void;
     onNavigateToWorkspace: () => void;
     onNavigate?: (page: string) => void;
+    initialTab?: number;
 }
 
-export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onNavigate }: DetailProps) {
+export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onNavigate, initialTab }: DetailProps) {
     const [messages, setMessages] = useState<Message[]>([
         {
             id: 1,
@@ -503,11 +552,12 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                     Hide Details <ChevronUpIcon className="w-3.5 h-3.5" />
                                 </button>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 animate-in fade-in zoom-in duration-300">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 animate-in fade-in zoom-in duration-300">
                                 {[
-                                    { label: 'MATCH RATE', value: '92%' },
-                                    { label: 'ITEMS', value: '45' },
-                                    { label: 'EXCEPTIONS', value: '3', color: 'text-amber-600 dark:text-amber-400' },
+                                    { label: 'MATCH RATE', value: '95%' },
+                                    { label: 'ITEMS', value: '40' },
+                                    { label: 'EST. DELIVERY', value: 'Nov 27, 2025' },
+                                    { label: 'EXCEPTIONS', value: '2', color: 'text-amber-600 dark:text-amber-400' },
                                     { label: 'ORIGINAL ORDER', value: '#ORD-2055' },
                                     { label: 'STATUS', value: 'Review Needed', color: 'text-amber-600 dark:text-amber-400' },
                                 ].map((stat, i) => (
@@ -575,8 +625,9 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                     <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
                         <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide">
                             {[
-                                { label: 'Match Rate', value: '92%' },
-                                { label: 'Exceptions', value: '3', color: 'text-amber-600 dark:text-amber-400' },
+                                { label: 'Match Rate', value: '95%' },
+                                { label: 'Est. Delivery', value: 'Nov 27, 2025' },
+                                { label: 'Exceptions', value: '2', color: 'text-amber-600 dark:text-amber-400' },
                                 { label: 'Status', value: 'Review Needed', color: 'text-amber-600 dark:text-amber-400' },
                             ].map((stat, i) => (
                                 <Fragment key={i}>
@@ -590,6 +641,18 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                         </div>
 
                         <div className="flex items-center gap-4 ml-auto">
+                            {/* Resolution Time Indicator */}
+                            <div className="hidden lg:flex flex-col items-end">
+                                <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Resolution Time</span>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <ClockIcon className="w-4 h-4 text-primary" />
+                                    <span className="text-sm font-bold text-zinc-900 dark:text-white">Under 10 mins</span>
+                                    <span className="text-[10px] text-muted-foreground ml-1">(Industry Avg: 2-3 days)</span>
+                                </div>
+                            </div>
+
+                            <div className="w-px h-12 bg-zinc-200 dark:bg-zinc-700 hidden lg:block mx-2"></div>
+
                             {/* Current Phase Indicator */}
                             <div className="flex items-center gap-3 hidden md:flex">
                                 <div className="flex flex-col items-end">
@@ -620,7 +683,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
 
                 {/* Main Content Area */}
                 <div className="flex flex-col">
-                    <TabGroup className="flex flex-col">
+                    <TabGroup className="flex flex-col" defaultIndex={initialTab || 0}>
                         <div className="px-4 border-b border-border flex items-center justify-between bg-background">
                             <TabList className="flex gap-6">
                                 <Tab
@@ -645,7 +708,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                         )
                                     }
                                 >
-                                    Discrepancies
+                                    AI Assistant
                                 </Tab>
                             </TabList>
                         </div>

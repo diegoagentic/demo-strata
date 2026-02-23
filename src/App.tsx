@@ -16,7 +16,7 @@ import Pricing from "./Pricing"
 import Navbar from "./components/Navbar"
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'login' | 'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('login')
+  const [currentPage, setCurrentPage] = useState<'login' | 'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'ack-detail-ai' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('login')
 
   const handleNavigate = (page: string) => {
     // Map generic page names to specific state keys if needed, or just use directly
@@ -65,13 +65,15 @@ function App() {
         ) : currentPage === 'pricing' ? (
           <Pricing onLogout={() => setCurrentPage('login')} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         ) : currentPage === 'detail' ? (
-          <Detail onBack={() => setCurrentPage('dashboard')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
+          <Detail onBack={() => setCurrentPage('dashboard')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         ) : currentPage === 'quote-detail' ? (
-          <QuoteDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
+          <QuoteDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         ) : currentPage === 'order-detail' ? (
-          <OrderDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
+          <OrderDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         ) : currentPage === 'ack-detail' ? (
-          <AckDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
+          <AckDetail onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
+        ) : currentPage === 'ack-detail-ai' ? (
+          <AckDetail initialTab={1} onBack={() => setCurrentPage('transactions')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         ) : currentPage === 'workspace' ? (
           <Workspace onBack={() => setCurrentPage('dashboard')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
         ) : null}
