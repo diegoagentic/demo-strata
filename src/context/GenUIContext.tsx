@@ -5,7 +5,7 @@ export type MessageType = 'user' | 'system';
 
 export interface ArtifactData {
     id: string;
-    type: 'order_correction' | 'stock_matrix' | 'layout_proposal' | 'warranty_claim' | 'quote_proposal' | 'field_mapping_request' | 'erp_connect_modal' | 'erp_po_dashboard' | 'asset_review' | 'mode_selection' | 'quote_extraction' | 'erp_selector' | 'erp_system_selector' | 'text' | 'analysis_report' | 'discrepancy_resolver' | 'pricing_config' | 'order_simulation' | 'quote_approved' | 'order_placed';
+    type: 'order_correction' | 'stock_matrix' | 'layout_proposal' | 'warranty_claim' | 'quote_proposal' | 'field_mapping_request' | 'erp_connect_modal' | 'erp_po_dashboard' | 'asset_review' | 'mode_selection' | 'quote_extraction' | 'erp_selector' | 'erp_system_selector' | 'text' | 'analysis_report' | 'discrepancy_resolver' | 'pricing_config' | 'order_simulation' | 'quote_approved' | 'order_placed' | 'inventory_check';
     title?: string;
     data?: any;
     source?: string; // e.g., "Urgent Actions", "Recent Activity"
@@ -134,9 +134,9 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
                     responseText = "Checking global inventory... I found significant stock availability across 3 regions.";
                     responseArtifact = {
                         id: 'art_inv_check',
-                        type: 'stock_matrix',
-                        title: 'Inventory Status: Herman Miller Aeron',
-                        data: { item: 'Aeron Chair (Graphite, Size B)', qty: 142, location: 'Main Distribution Center', canPickup: true }
+                        type: 'inventory_check',
+                        title: 'Global Inventory: Herman Miller Aeron',
+                        data: { item: 'Aeron Chair (Graphite, Size B)', sku: 'HM-AER-GRB' }
                     };
                 }
                 // Use Case 4: Warranty Check

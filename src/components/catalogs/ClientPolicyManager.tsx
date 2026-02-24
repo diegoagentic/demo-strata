@@ -8,6 +8,8 @@ import {
     InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import { Switch } from '@headlessui/react';
+import SmartRuleBuilderModal, { type CustomRule } from './SmartRuleBuilderModal';
+import { SparklesIcon } from '@heroicons/react/24/solid';
 
 const MOCK_CLIENTS = [
     { id: '1', name: 'Wells Fargo', contractId: 'WF-2024-QX' },
@@ -30,6 +32,10 @@ export default function ClientPolicyManager() {
     const [useSpecialAuth, setUseSpecialAuth] = useState(false);
     const [useVolumeDiscount, setUseVolumeDiscount] = useState(false);
     const [usePromotions, setUsePromotions] = useState(true);
+
+    // AI Rule Builder State
+    const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+    const [customRules, setCustomRules] = useState<CustomRule[]>([]);
 
     // Derived Logic
     const baseTotalList = MOCK_PRODUCTS.filter(p => p.active).reduce((acc, p) => acc + p.list, 0);
@@ -75,6 +81,18 @@ export default function ClientPolicyManager() {
             activeDiscountsCount++;
             savingsBreakdown.push({ label: 'Q3 Promo (Flat)', amount: discount });
         }
+
+        // 5. Custom Rules (AI Generated)
+        customRules.forEach(rule => {
+            if (net >= rule.conditionThreshold) {
+                const discount = rule.type === 'percentage'
+                    ? net * (rule.value / 100)
+                    : rule.value;
+                net -= discount;
+                activeDiscountsCount++;
+                savingsBreakdown.push({ label: rule.name, amount: discount });
+            }
+        });
 
         return {
             net,
@@ -183,6 +201,15 @@ export default function ClientPolicyManager() {
                     {/* Toggles */}
                     <div className="p-6 space-y-4">
 
+                        {/* Add Rule Button */}
+                        <button
+                            onClick={() => setIsRuleModalOpen(true)}
+                            className="w-full py-3 mb-2 border-2 border-dashed border-indigo-200 dark:border-indigo-900/50 rounded-xl text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <SparklesIcon className="w-5 h-5" />
+                            Use A.I. to create a rule
+                        </button>
+
                         {/* 1. Contract Pricing */}
                         <div className="flex items-center justify-between p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/20">
                             <div>
@@ -243,6 +270,33 @@ export default function ClientPolicyManager() {
                                 <span className={`${usePromotions ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
                             </Switch>
                         </div>
+
+                        {/* Custom AI Rules */}
+                        {customRules.map(rule => {
+                            const conditionMet = results.net > rule.conditionThreshold;
+                            return (
+                                <div key={rule.id} className="flex items-center justify-between p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-900/20">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-1.5 font-medium text-indigo-900 dark:text-indigo-300">
+                                            <SparklesIcon className="w-4 h-4 text-indigo-500" />
+                                            {rule.name}
+                                        </div>
+                                        <div className="text-xs text-indigo-700/70 dark:text-indigo-400/70 mt-0.5">{rule.description}</div>
+                                        {!conditionMet && (
+                                            <div className="text-[10px] uppercase text-indigo-500/70 font-semibold mt-1 flex items-center gap-1"><ShieldCheckIcon className="w-3 h-3" />Condition not met (Net &lt; ${rule.conditionThreshold.toLocaleString()})</div>
+                                        )}
+                                    </div>
+                                    <Switch
+                                        checked={true} // Custom rules are always on once saved in this simplified flow, could add toggle later
+                                        onChange={() => { }}
+                                        className={`bg-indigo-500 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors`}
+                                    >
+                                        <span className={`translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                                    </Switch>
+                                </div>
+                            );
+                        })}
+
                     </div>
 
                     {/* Footer / Warranty Actions */}
@@ -252,6 +306,19 @@ export default function ClientPolicyManager() {
                     </div>
                 </div>
             </div>
+
+            <SmartRuleBuilderModal
+                isOpen={isRuleModalOpen}
+                onClose={() => setIsRuleModalOpen(false)}
+                onSaveRule={(rule, disableConflict) => {
+                    setCustomRules([...customRules, rule]);
+                    if (disableConflict) {
+                        setUseVolumeDiscount(false);
+                    }
+                }}
+                currentNet={results.net}
+                existingRulesCount={results.count}
+            />
         </div>
     );
 }

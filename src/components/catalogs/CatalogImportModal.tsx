@@ -24,7 +24,6 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 interface CatalogImportModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onClose: () => void;
     onImportComplete: (data: unknown) => void;
 }
 
@@ -63,6 +62,7 @@ export default function CatalogImportModal({ isOpen, onClose, onImportComplete }
     // Processing State
     const [processStage, setProcessStage] = useState<ProcessStage>('scanning');
     const [progress, setProgress] = useState(0);
+    const [suggestedName, setSuggestedName] = useState('');
 
     // Reset state on open
     useEffect(() => {
@@ -75,6 +75,7 @@ export default function CatalogImportModal({ isOpen, onClose, onImportComplete }
             setSelectedErpCatalog(null);
             setTenantScope('current');
             setSelectedTenants([]);
+            setSuggestedName('');
         }
     }, [isOpen]);
 
@@ -101,6 +102,14 @@ export default function CatalogImportModal({ isOpen, onClose, onImportComplete }
 
         const runStage = () => {
             if (currentStageIndex >= stages.length) {
+                let defaultName = 'Imported Catalog';
+                if (sourceType === 'url') defaultName = 'Web Import ' + new Date().toLocaleDateString();
+                if (sourceType === 'erp' && selectedErpCatalog) {
+                    const cat = MOCK_ERP_CATALOGS.find(c => c.id === selectedErpCatalog);
+                    defaultName = cat ? cat.name : 'ERP Catalog';
+                }
+                setSuggestedName(defaultName);
+
                 setStep('complete');
                 return;
             }
@@ -131,15 +140,8 @@ export default function CatalogImportModal({ isOpen, onClose, onImportComplete }
     };
 
     const handleComplete = () => {
-        let name = 'Imported Catalog';
-        if (sourceType === 'url') name = 'Web Import ' + new Date().toLocaleDateString();
-        if (sourceType === 'erp' && selectedErpCatalog) {
-            const cat = MOCK_ERP_CATALOGS.find(c => c.id === selectedErpCatalog);
-            name = cat ? cat.name : 'ERP Catalog';
-        }
-
         onImportComplete({
-            name: name,
+            name: suggestedName || 'Imported Catalog',
             source: sourceType,
             items: sourceType === 'erp' ? 4500 : 124, // Mock
             syncStatus: 'Synced'
@@ -480,6 +482,22 @@ export default function CatalogImportModal({ isOpen, onClose, onImportComplete }
                                             {tenantScope === 'all' && <span className="text-xs bg-secondary px-2 py-1 rounded mt-2 inline-block">Applies to All Tenants</span>}
                                             {tenantScope === 'select' && <span className="text-xs bg-secondary px-2 py-1 rounded mt-2 inline-block">Applies to {selectedTenants.length} Tenants</span>}
                                         </p>
+
+                                        {/* AI Suggested Name Input */}
+                                        <div className="w-full max-w-sm mb-8 text-left animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150 fill-mode-both">
+                                            <label className="block text-sm font-medium text-foreground mb-2 flex items-center justify-between">
+                                                <span>A.I. Suggested Name</span>
+                                                <span className="text-[10px] uppercase tracking-wider bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">Editable</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={suggestedName}
+                                                onChange={(e) => setSuggestedName(e.target.value)}
+                                                className="w-full px-4 py-3 bg-muted/30 border border-input rounded-xl focus:ring-2 focus:ring-primary focus:border-primary focus:bg-background outline-none transition-all text-foreground font-medium shadow-sm"
+                                                placeholder="Enter catalog name..."
+                                            />
+                                        </div>
+
                                         <div className="grid grid-cols-3 gap-4 w-full max-w-md text-center mb-8">
                                             <div className="bg-secondary/50 p-3 rounded-lg">
                                                 <div className="text-2xl font-bold text-foreground">{sourceType === 'erp' ? 4500 : 124}</div>

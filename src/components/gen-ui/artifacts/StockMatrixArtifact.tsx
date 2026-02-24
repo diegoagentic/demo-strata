@@ -4,13 +4,20 @@ import { useGenUI } from '../../../context/GenUIContext';
 
 export default function StockMatrixArtifact({ data }: { data: any }) {
     const [reserved, setReserved] = useState(false);
-    const { sendMessage } = useGenUI();
+    const { sendMessage, pushSystemArtifact } = useGenUI();
 
     const handleReserve = () => {
         setReserved(true);
         setTimeout(() => {
-            sendMessage("System: 10x Height-Adjustable Desks reserved at Chicago Warehouse. Pickup code: #URG-992.");
-        }, 500);
+            sendMessage("System: Fast-Track Checkout initiated. Creating Purchase Order for immediate pickup.", "system");
+            pushSystemArtifact("Purchase Order automatically generated based on your account terms.", {
+                id: 'art_urgent_po_' + Date.now(),
+                type: 'order_placed',
+                title: 'Purchase Order #URG-992',
+                data: { orderId: 'URG-992', client: 'Internal Procurement', total: '$4,250.00', status: 'Ready for Pickup' },
+                source: 'System'
+            });
+        }, 800);
     };
 
     if (reserved) {

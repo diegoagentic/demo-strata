@@ -4,7 +4,7 @@ import { useGenUI } from '../../../context/GenUIContext';
 
 export default function WarrantyClaimArtifact({ data }: { data: any }) {
     const [submitted, setSubmitted] = useState(false);
-    const { sendMessage } = useGenUI();
+    const { sendMessage, navigate, setStreamOpen } = useGenUI();
 
     const handleDraft = () => {
         setSubmitted(true);
@@ -15,14 +15,25 @@ export default function WarrantyClaimArtifact({ data }: { data: any }) {
 
     if (submitted) {
         return (
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 flex items-start gap-3 animate-in fade-in zoom-in duration-300">
-                <div className="p-1 bg-green-100 dark:bg-green-900/40 rounded-full text-green-600 dark:text-green-400">
-                    <ClipboardDocumentCheckIcon className="w-5 h-5" />
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 flex flex-col gap-3 animate-in fade-in zoom-in duration-300">
+                <div className="flex items-start gap-3">
+                    <div className="p-1 bg-green-100 dark:bg-green-900/40 rounded-full text-green-600 dark:text-green-400">
+                        <ClipboardDocumentCheckIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h4 className="font-semibold text-green-900 dark:text-green-100 text-sm">Claim Initialized</h4>
+                        <p className="text-xs text-green-800 dark:text-green-200 mt-1">Check your inbox to finalize details for {data.client}.</p>
+                    </div>
                 </div>
-                <div>
-                    <h4 className="font-semibold text-green-900 dark:text-green-100 text-sm">Claim Initialized</h4>
-                    <p className="text-xs text-green-800 dark:text-green-200 mt-1">Check your inbox to finalize details for {data.client}.</p>
-                </div>
+                <button
+                    onClick={() => {
+                        setStreamOpen(false);
+                        navigate('/mac');
+                    }}
+                    className="mt-2 w-full py-2 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-foreground border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-semibold transition-colors shadow-sm text-center"
+                >
+                    View in MAC Punch List
+                </button>
             </div>
         );
     }

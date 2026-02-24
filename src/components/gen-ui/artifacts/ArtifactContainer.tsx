@@ -14,6 +14,7 @@ import ERPConnectModal from './ERPConnectModal';
 import ERPPODashboardArtifact from './ERPPODashboardArtifact';
 import AssetReviewArtifact from './AssetReviewArtifact';
 import QuoteExtractionArtifact from './QuoteExtractionArtifact';
+import InventoryCheckArtifact from './InventoryCheckArtifact';
 import AnalysisReportArtifact from './AnalysisReportArtifact';
 import PricingConfigurationArtifact from './PricingConfigurationArtifact';
 import DiscrepancyResolverArtifact from './DiscrepancyResolverArtifact';
@@ -141,6 +142,9 @@ export default function ArtifactContainer({ artifact }: { artifact: ArtifactData
             break;
         case 'order_correction':
             content = <OrderCorrectionArtifact data={artifact.data} />;
+            break;
+        case 'inventory_check':
+            content = <InventoryCheckArtifact data={artifact.data} />;
             break;
         case 'stock_matrix':
             content = <StockMatrixArtifact data={artifact.data} />;

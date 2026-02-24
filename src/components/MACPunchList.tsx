@@ -5,13 +5,54 @@ import {
     SparklesIcon,
     DocumentTextIcon,
     CameraIcon,
-    Bars4Icon
+    Bars4Icon,
+    TruckIcon
 } from '@heroicons/react/24/outline';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
+import TrackingModal, { type TrackingStep } from './TrackingModal';
+
+const DEMO_PUNCH_TRACKING_STEPS: TrackingStep[] = [
+    {
+        id: 'step-1',
+        title: 'Order Received',
+        description: 'Order created and logged.',
+        status: 'completed',
+        timestamp: '2/2/2026 09:30 AM',
+        actor: 'System',
+        evidence: [
+            {
+                type: 'photo',
+                label: 'Initial Request Photo',
+                url: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&q=80&w=800'
+            }
+        ]
+    },
+    {
+        id: 'step-2',
+        title: 'Team Assigned',
+        description: 'Waiting for team acceptance.',
+        status: 'current',
+        timestamp: '2/2/2026 10:15 AM',
+        actor: 'Dispatch'
+    },
+    {
+        id: 'step-3',
+        title: 'Pickup',
+        description: 'Schedule pickup from Floor 2.',
+        status: 'upcoming'
+    },
+    {
+        id: 'step-4',
+        title: 'Delivery',
+        description: 'Transport to Renovation zone.',
+        status: 'upcoming'
+    }
+];
 
 export default function MACPunchList() {
     const [selectedItem, setSelectedItem] = useState<string | null>(null);
     const [resolutionStatus, setResolutionStatus] = useState<'initial' | 'assembling' | 'submitted' | 'acknowledged' | 'assigning' | 'assigned'>('initial');
+    const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
 
     const handleAssembleClaim = () => {
         setResolutionStatus('assembling');
@@ -230,6 +271,15 @@ export default function MACPunchList() {
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex justify-end">
+                                                    <button
+                                                        onClick={() => setIsTrackModalOpen(true)}
+                                                        className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
+                                                    >
+                                                        <TruckIcon className="w-5 h-5 -ml-1" />
+                                                        Track Resolution
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -246,6 +296,15 @@ export default function MACPunchList() {
                     </div>
                 )}
             </div>
+
+            <TrackingModal
+                isOpen={isTrackModalOpen}
+                onClose={() => setIsTrackModalOpen(false)}
+                title="Executive Desk"
+                trackingId="TRK-2026-001"
+                type="movement"
+                steps={DEMO_PUNCH_TRACKING_STEPS}
+            />
         </div>
     );
 }
