@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useGenUI, type StreamMessage, TRIGGERS } from '../../context/GenUIContext';
 import ArtifactContainer from './artifacts/ArtifactContainer';
 import ThinkingIndicator from './ThinkingIndicator';
@@ -88,6 +88,18 @@ const MessageBubble = ({ message }: { message: StreamMessage }) => {
 export default function StreamFeed() {
     const { messages, isGenerating, isStreamOpen, showTriggers, setShowTriggers, sendMessage } = useGenUI();
     const bottomRef = useRef<HTMLDivElement>(null);
+    const [highlightedTrigger, setHighlightedTrigger] = useState<string | null>(null);
+
+    useEffect(() => {
+        const handleHighlight = (e: CustomEvent) => {
+            if (e.detail === 'quote-flow') {
+                setHighlightedTrigger('t5');
+                setTimeout(() => setHighlightedTrigger(null), 4000);
+            }
+        };
+        window.addEventListener('demo-highlight', handleHighlight as EventListener);
+        return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
+    }, []);
 
     useEffect(() => {
         if (isStreamOpen && !showTriggers) {
@@ -132,7 +144,10 @@ export default function StreamFeed() {
                             <button
                                 key={trigger.id}
                                 onClick={() => handleTriggerClick(trigger.prompt)}
-                                className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center justify-between group border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700"
+                                className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between group border ${highlightedTrigger === trigger.id
+                                        ? "bg-green-100 dark:bg-green-900/30 border-green-500 animate-[pulse_1.5s_ease-in-out_infinite] relative z-50 shadow-lg glow"
+                                        : "border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700"
+                                    }`}
                             >
                                 <div>
                                     <div className="flex items-center gap-2 mb-0.5">

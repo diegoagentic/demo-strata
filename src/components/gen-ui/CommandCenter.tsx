@@ -1,10 +1,30 @@
-import { useState, type KeyboardEvent } from 'react';
+import { useState, useEffect, type KeyboardEvent } from 'react';
 import { PaperAirplaneIcon, SparklesIcon, ChevronUpIcon, ClockIcon } from '@heroicons/react/24/solid';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { useGenUI } from '../../context/GenUIContext';
+
+export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
 
 export default function CommandCenter() {
     const [input, setInput] = useState('');
+    const [isHighlighted, setIsHighlighted] = useState(false);
     const { sendMessage, isGenerating, isStreamOpen, toggleStream, setStreamOpen, setShowTriggers, showTriggers } = useGenUI();
+
+    useEffect(() => {
+        const handleHighlight = (e: CustomEvent) => {
+            if (e.detail === 'gen-ui-scenarios' || e.detail === 'quote-flow') {
+                setIsHighlighted(true);
+                setStreamOpen(true);
+                setShowTriggers(true);
+                setTimeout(() => setIsHighlighted(false), 4000);
+            }
+        };
+        window.addEventListener('demo-highlight', handleHighlight as EventListener);
+        return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
+    }, [setStreamOpen, setShowTriggers]);
 
     const handleSend = () => {
         if (!input.trim() || isGenerating) return;
@@ -21,7 +41,10 @@ export default function CommandCenter() {
 
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-4">
-            <div className="relative group">
+            <div className={cn(
+                "relative group transition-all duration-700 ease-in-out rounded-2xl",
+                isHighlighted && "ring-4 ring-purple-500 ring-offset-4 ring-offset-background shadow-[0_0_30px_rgba(168,85,247,0.6)] animate-pulse"
+            )}>
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                 <div className="relative flex items-center bg-white dark:bg-zinc-800 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-800 p-2 gap-1">
                     <button

@@ -298,6 +298,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     const [mainTab, setMainTab] = useState<'follow_up' | 'your_tools' | 'metrics'>('follow_up')
     const [expandedActionId, setExpandedActionId] = useState<number | null>(null)
     const [highlightedAction, setHighlightedAction] = useState<number | null>(null)
+    const [isCustomizeHighlighted, setIsCustomizeHighlighted] = useState(false)
 
     // Listen for Demo Guide Highlights
     useEffect(() => {
@@ -307,6 +308,10 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                 setMainTab('follow_up');
                 setHighlightedAction(4);
                 setTimeout(() => setHighlightedAction(null), 4000);
+            } else if (e.detail === 'dashboard-customize-tools') {
+                setMainTab('your_tools');
+                setIsCustomizeHighlighted(true);
+                setTimeout(() => setIsCustomizeHighlighted(false), 4000);
             }
         };
         window.addEventListener('demo-highlight', handleHighlight as EventListener);
@@ -1028,7 +1033,10 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                 </div>
                                 <button
                                     onClick={() => setIsFeatureManagerOpen(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-md shadow-sm text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all"
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-md shadow-sm text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all",
+                                        isCustomizeHighlighted && "ring-2 ring-purple-500 animate-pulse relative z-50"
+                                    )}
                                 >
                                     <PencilSquareIcon className="w-3.5 h-3.5" />
                                     Customize

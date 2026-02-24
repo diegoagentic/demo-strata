@@ -7,7 +7,7 @@ import {
     WrenchScrewdriverIcon,
     CalculatorIcon,
     ArrowRightIcon,
-    BookOpenIcon,
+    PencilSquareIcon,
     SparklesIcon
 } from '@heroicons/react/24/outline';
 
@@ -56,27 +56,27 @@ export default function DemoGuide({ isOpen, onClose, onNavigate }: DemoGuideProp
             }
         },
         {
-            title: "Smart Catalog AI Search",
-            description: "Quickly locate alternative products and finishes using Gen UI smart filters.",
-            icon: BookOpenIcon,
-            color: "text-pink-500",
-            bg: "bg-pink-50 dark:bg-pink-500/10",
+            title: "Gen UI Scenarios",
+            description: "Explore generative UI workflows using conversational prompts and pre-built scenarios.",
+            icon: SparklesIcon,
+            color: "text-purple-500",
+            bg: "bg-purple-50 dark:bg-purple-500/10",
             action: () => {
-                onNavigate('catalogs');
+                onNavigate('dashboard');
                 onClose();
-                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'catalog-search' })), 800);
+                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'gen-ui-scenarios' })), 800);
             }
         },
         {
-            title: "Multi-Role Simulation",
-            description: "Experience identical context views from Dealer, Manufacturer, and End-User roles.",
-            icon: SparklesIcon,
-            color: "text-indigo-500",
-            bg: "bg-indigo-50 dark:bg-indigo-500/10",
+            title: "Dashboard Customization",
+            description: "Personalize your workspace by configuring visible widgets and tools.",
+            icon: PencilSquareIcon,
+            color: "text-pink-500",
+            bg: "bg-pink-50 dark:bg-pink-500/10",
             action: () => {
-                onNavigate('transactions');
+                onNavigate('dashboard');
                 onClose();
-                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'transactions-orders' })), 800);
+                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'dashboard-customize-tools' })), 800);
             }
         }
     ];
