@@ -1205,7 +1205,7 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
             {/* Substitutions Modal */}
             {
                 (isSubstitutionsOpen || (isResolverOpen && generalDiscrepancies.length === 0)) && substitutionItems.length > 0 && (
-                    <div className="absolute inset-0 z-[100] bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 pt-8 pb-32 overflow-y-auto animate-in fade-in duration-300">
+                    <div className="absolute inset-0 z-[100] bg-black/60 dark:bg-black/80 backdrop-blur-sm flex items-start justify-center p-4 pt-8 pb-32 overflow-y-auto scrollbar-micro animate-in fade-in duration-300">
                         <DiscrepancyResolverArtifact
                             title="Review Substitutions"
                             issues={substitutionItems}

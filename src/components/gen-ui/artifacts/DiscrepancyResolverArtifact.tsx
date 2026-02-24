@@ -210,8 +210,13 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
                                 <div className="flex-1 space-y-4 relative z-10">
                                     <div>
                                         <label className="text-xs text-indigo-600/70 dark:text-indigo-400/70">Analysis</label>
-                                        <div className="text-sm font-medium text-indigo-900 dark:text-indigo-100 mt-1 leading-relaxed">
-                                            {currentIssue.suggestion.reason}
+                                        <div className="text-sm font-medium text-indigo-900 dark:text-indigo-100 mt-2 space-y-2">
+                                            {currentIssue.suggestion.reason.split(',').map((criteria, idx) => (
+                                                <div key={idx} className="flex items-start gap-2">
+                                                    <CheckCircleIcon className="w-4 h-4 mt-0.5 shrink-0 text-indigo-500" />
+                                                    <span className="leading-snug">{criteria.trim()}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
 
@@ -272,14 +277,16 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
                         </button>
                     )}
 
-                    <button
-                        onClick={() => handleAction('keep')}
-                        disabled={isAutoFixing}
-                        className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
-                    >
-                        <XCircleIcon className="w-4 h-4" />
-                        Keep Original
-                    </button>
+                    {!isSubstitution && (
+                        <button
+                            onClick={() => handleAction('keep')}
+                            disabled={isAutoFixing}
+                            className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                        >
+                            <XCircleIcon className="w-4 h-4" />
+                            Keep Original
+                        </button>
+                    )}
                     <button
                         onClick={() => handleAction('accept')}
                         disabled={isAutoFixing}
