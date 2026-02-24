@@ -530,23 +530,7 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {/* Optional Actions Menu */}
-                    <div className="flex items-center border-r border-zinc-200 dark:border-zinc-800 pr-3 gap-2">
-                        <button
-                            onClick={() => setIsWarrantyMenuOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                        >
-                            <ShieldCheckIcon className="w-4 h-4" />
-                            Warranties
-                        </button>
-                        <button
-                            onClick={() => setPricingStep('discounts')} // Re-using state for now to show discount widget
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                        >
-                            <TagIcon className="w-4 h-4" />
-                            Discounts
-                        </button>
-                    </div>
+
 
                     <button className="flex items-center gap-2 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-xs font-medium transition-colors text-foreground">
                         <DocumentTextIcon className="w-4 h-4" />
