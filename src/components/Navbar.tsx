@@ -14,7 +14,8 @@ import {
     WrenchScrewdriverIcon,
     PhotoIcon,
     CreditCardIcon,
-    ArrowPathRoundedSquareIcon
+    ArrowPathRoundedSquareIcon,
+    PlayCircleIcon
 } from '@heroicons/react/24/outline';
 import { useTheme } from 'strata-design-system'
 import { useTenant } from '../TenantContext'
@@ -46,9 +47,10 @@ interface NavbarProps {
     activeTab?: NavTab | string; // Allow string for flexibility
     onNavigateToWorkspace: () => void;
     onNavigate: (page: any) => void;
+    onOpenDemoGuide: () => void;
 }
 
-export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToWorkspace, onNavigate }: NavbarProps) {
+export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToWorkspace, onNavigate, onOpenDemoGuide }: NavbarProps) {
     const { theme, toggleTheme } = useTheme()
     const { currentTenant, tenants, setTenant } = useTenant()
 
@@ -306,6 +308,10 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
                             </PopoverPanel>
                         </Transition>
                     </Popover>
+
+                    <button onClick={onOpenDemoGuide} className="hidden lg:flex p-2 rounded-full hover:bg-muted text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" title="Demo Guide">
+                        <PlayCircleIcon className="w-5 h-5" />
+                    </button>
 
                     <button onClick={toggleTheme} className="hidden lg:flex p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                         {theme === 'dark' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}

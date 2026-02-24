@@ -14,9 +14,11 @@ import Transactions from "./Transactions"
 import CRM from "./CRM"
 import Pricing from "./Pricing"
 import Navbar from "./components/Navbar"
+import DemoGuide from "./components/DemoGuide"
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'login' | 'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'ack-detail-ai' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('login')
+  const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false)
 
   const handleNavigate = (page: string) => {
     // Map generic page names to specific state keys if needed, or just use directly
@@ -36,6 +38,7 @@ function App() {
           <Navbar
             onLogout={() => setCurrentPage('login')}
             onNavigateToWorkspace={() => setCurrentPage('workspace')}
+            onOpenDemoGuide={() => setIsDemoGuideOpen(true)}
             activeTab={currentPage}
             onNavigate={handleNavigate}
           />
@@ -78,6 +81,12 @@ function App() {
           <Workspace onBack={() => setCurrentPage('dashboard')} onLogout={() => setCurrentPage('login')} onNavigateToWorkspace={() => setCurrentPage('workspace')} />
         ) : null}
       </div>
+
+      <DemoGuide
+        isOpen={isDemoGuideOpen}
+        onClose={() => setIsDemoGuideOpen(false)}
+        onNavigate={handleNavigate}
+      />
     </GenUIProvider>
   )
 }
