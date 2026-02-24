@@ -166,10 +166,10 @@ export default function MACPunchList() {
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1 block">Assigned Team</label>
-                                                        <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
-                                                            <option>Internal Warranty Team</option>
-                                                            <option>Site Supervisors</option>
-                                                            <option>External Contractor</option>
+                                                        <select className="flex h-9 w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-50">
+                                                            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">Internal Warranty Team</option>
+                                                            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">Site Supervisors</option>
+                                                            <option className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">External Contractor</option>
                                                         </select>
                                                     </div>
                                                     <div>

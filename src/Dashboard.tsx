@@ -46,8 +46,7 @@ import WarrantyClaimsWidget from './components/widgets/WarrantyClaimsWidget'
 import POVerificationWidget from './components/widgets/POVerificationWidget'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import CommandCenter from './components/gen-ui/CommandCenter'
-import StreamFeed from './components/gen-ui/StreamFeed'
+import GenUIContainer from './components/gen-ui/GenUIContainer'
 import SmartQuoteHub from './components/widgets/SmartQuoteHub';
 import QuoteGenerationFlow from './components/QuoteGenerationFlow';
 import { useGenUI } from './context/GenUIContext'
@@ -423,8 +422,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
     return (
         <div className="min-h-screen bg-background font-sans text-foreground pb-10">
-            <CommandCenter />
-            <StreamFeed />
+            <GenUIContainer />
             {/* Main Content Content - Padded top to account for floating nav */}
             <div className="pt-24 px-4 max-w-7xl mx-auto space-y-6">
                 {/* Page Title & Search */}
@@ -740,8 +738,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                     <div className="space-y-3">
                                         {urgentActions.map((action) => (
                                             <div key={action.id} className={`group border rounded-xl hover:border-zinc-400 transition-all duration-700 bg-zinc-50/50 dark:bg-zinc-800/50 ${highlightedAction === action.id
-                                                    ? 'ring-4 ring-brand-500 shadow-[0_0_30px_rgba(var(--brand-500),0.6)] animate-pulse border-brand-500'
-                                                    : 'border-border'
+                                                ? 'ring-4 ring-brand-500 shadow-[0_0_30px_rgba(var(--brand-500),0.6)] animate-pulse border-brand-500'
+                                                : 'border-border'
                                                 }`}>
                                                 <div
                                                     className="p-4 cursor-pointer"

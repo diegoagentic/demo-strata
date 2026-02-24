@@ -135,7 +135,7 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
         <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in duration-300 my-auto">
 
             {/* Header */}
-            <div className={`p-6 border-b flex justify-between items-center z-10 ${isSubstitution ? 'bg-indigo-50/50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800/50' : 'bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800'}`}>
+            <div className={`shrink-0 p-6 border-b flex justify-between items-center z-10 ${isSubstitution ? 'bg-indigo-50/50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800/50' : 'bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800'}`}>
                 <div>
                     <h2 className="text-xl font-bold font-brand flex items-center gap-2 text-foreground">
                         {isSubstitution ? <SparklesIcon className="w-6 h-6 text-indigo-500" /> : getTypeIcon(currentIssue.type)}
@@ -255,12 +255,12 @@ export default function DiscrepancyResolverArtifact({ issues, onResolve, onClose
             </div>
 
             {/* Footer Controls */}
-            <div className="p-6 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="shrink-0 p-6 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="text-xs text-muted-foreground italic w-full sm:w-auto text-center sm:text-left">
                     Resolution required to proceed.
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-end gap-2 w-full sm:w-auto">
                     {issues.length > 0 && (
                         <button
                             onClick={handleBatchFix}

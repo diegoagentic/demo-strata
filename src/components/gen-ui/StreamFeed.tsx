@@ -120,7 +120,7 @@ export default function StreamFeed() {
                 )}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200/50 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-800/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
+            <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-micro">
                 {showTriggers ? (
                     <div className="space-y-2">
                         <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl mb-4">
