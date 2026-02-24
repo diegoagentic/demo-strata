@@ -175,7 +175,10 @@ export default function QuoteExtractionArtifact({ fileName, onComplete }: QuoteE
                                         { sku: 'PNL-AC-SYS-NEW-B', name: 'Acoustic Panel Lite', price: 140.00, subText: 'Budget friendly' },
                                         { sku: 'PNL-AC-SYS-COLOR', name: 'Acoustic Panel Vibrant', price: 170.00, subText: 'Custom color finish' }
                                     ]
-                                }
+                                },
+                                { id: '8', description: 'Steel Mobile Pedestal', sku: 'PED-MOB-STL-01', qty: 120, unitPrice: 225.00, totalPrice: 27000.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-101' },
+                                { id: '9', description: 'Dual Monitor Arm', sku: 'ACC-MON-DUAL', qty: 150, unitPrice: 145.00, totalPrice: 21750.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-101' },
+                                { id: '10', description: 'Lounge Seating Sofa', sku: 'SOFA-LNG-3STR', qty: 4, unitPrice: 1200.00, totalPrice: 4800.00, status: 'validated', warranty: '12-Year Standard', costCenter: 'CC-LOBBY' }
                             ]
                         });
                     }
