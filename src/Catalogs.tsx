@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import {
@@ -22,6 +22,19 @@ interface PageProps {
 
 export default function Catalogs({ onNavigate }: PageProps) {
     const [activeTab, setActiveTab] = useState<'library' | 'rules'>('library');
+    const [highlightedTab, setHighlightedTab] = useState<string | null>(null);
+
+    useEffect(() => {
+        const handleHighlight = (e: CustomEvent) => {
+            if (e.detail === 'catalog-search') {
+                setActiveTab('library');
+                setHighlightedTab('library');
+                setTimeout(() => setHighlightedTab(null), 4000);
+            }
+        };
+        window.addEventListener('demo-highlight', handleHighlight as EventListener);
+        return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
+    }, []);
 
     const tabs = [
         { id: 'library', label: 'Catalog Library', icon: BookOpenIcon },
@@ -57,7 +70,8 @@ export default function Catalogs({ onNavigate }: PageProps) {
                                         "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all",
                                         isActive
                                             ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
-                                            : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-brand-300 dark:hover:bg-brand-600/50"
+                                            : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-brand-300 dark:hover:bg-brand-600/50",
+                                        highlightedTab === tab.id && "ring-4 ring-brand-500 shadow-[0_0_30px_rgba(var(--brand-500),0.6)] animate-pulse"
                                     )}
                                 >
                                     {/* Icons removed/hidden as per user example preference for cleaner look, or kept subtle if needed. 

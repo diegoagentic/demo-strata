@@ -6,7 +6,9 @@ import {
     DocumentCheckIcon,
     WrenchScrewdriverIcon,
     CalculatorIcon,
-    ArrowRightIcon
+    ArrowRightIcon,
+    BookOpenIcon,
+    SparklesIcon
 } from '@heroicons/react/24/outline';
 
 interface DemoGuideProps {
@@ -24,10 +26,9 @@ export default function DemoGuide({ isOpen, onClose, onNavigate }: DemoGuideProp
             color: "text-blue-500",
             bg: "bg-blue-50 dark:bg-blue-500/10",
             action: () => {
-                onNavigate('transactions');
-                // The actual flow would start from Transactions or Dashboard, 
-                // but let's navigate to transactions which is where quotes live.
+                onNavigate('dashboard');
                 onClose();
+                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'quote-flow' })), 800);
             }
         },
         {
@@ -37,8 +38,9 @@ export default function DemoGuide({ isOpen, onClose, onNavigate }: DemoGuideProp
             color: "text-amber-500",
             bg: "bg-amber-50 dark:bg-amber-500/10",
             action: () => {
-                onNavigate('ack-detail-ai');
+                onNavigate('dashboard');
                 onClose();
+                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'ack-urgent-action' })), 800);
             }
         },
         {
@@ -50,6 +52,31 @@ export default function DemoGuide({ isOpen, onClose, onNavigate }: DemoGuideProp
             action: () => {
                 onNavigate('mac');
                 onClose();
+                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'mac-punch-list' })), 800);
+            }
+        },
+        {
+            title: "Smart Catalog AI Search",
+            description: "Quickly locate alternative products and finishes using Gen UI smart filters.",
+            icon: BookOpenIcon,
+            color: "text-pink-500",
+            bg: "bg-pink-50 dark:bg-pink-500/10",
+            action: () => {
+                onNavigate('catalogs');
+                onClose();
+                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'catalog-search' })), 800);
+            }
+        },
+        {
+            title: "Multi-Role Simulation",
+            description: "Experience identical context views from Dealer, Manufacturer, and End-User roles.",
+            icon: SparklesIcon,
+            color: "text-indigo-500",
+            bg: "bg-indigo-50 dark:bg-indigo-500/10",
+            action: () => {
+                onNavigate('transactions');
+                onClose();
+                setTimeout(() => window.dispatchEvent(new CustomEvent('demo-highlight', { detail: 'transactions-orders' })), 800);
             }
         }
     ];

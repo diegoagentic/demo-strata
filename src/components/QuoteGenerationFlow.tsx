@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import SmartQuoteHub from './widgets/SmartQuoteHub';
 import QuoteExtractionArtifact from './gen-ui/artifacts/QuoteExtractionArtifact';
 import AssetReviewArtifact from './gen-ui/artifacts/AssetReviewArtifact';
 import QuoteApprovedArtifact from './gen-ui/artifacts/QuoteApprovedArtifact';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+// Helper for conditional classNames
+function cn(...inputs: (string | undefined | null | false)[]) {
+    return twMerge(clsx(inputs));
+}
 
 interface QuoteGenerationFlowProps {
     onNavigate: (path: string) => void;
@@ -12,6 +19,19 @@ interface QuoteGenerationFlowProps {
 
 export default function QuoteGenerationFlow({ onNavigate, onComplete }: QuoteGenerationFlowProps) {
     const [phase, setPhase] = useState<'IDLE' | 'ANALYZING' | 'REVIEW_NEEDED' | 'APPROVED' | 'ORDERED'>('IDLE');
+    const [isHighlighted, setIsHighlighted] = useState(false);
+
+    useEffect(() => {
+        const handleHighlight = (e: CustomEvent) => {
+            if (e.detail === 'quote-flow') {
+                setIsHighlighted(true);
+                // Automatically remove highlight after 4 seconds
+                setTimeout(() => setIsHighlighted(false), 4000);
+            }
+        };
+        window.addEventListener('demo-highlight', handleHighlight as EventListener);
+        return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
+    }, []);
 
     // Mock data for review Phase
     const reviewData = {
@@ -25,6 +45,7 @@ export default function QuoteGenerationFlow({ onNavigate, onComplete }: QuoteGen
     }
 
     const handleUploadStart = () => {
+        setIsHighlighted(false); // remove highlight on interaction
         setPhase('ANALYZING');
     }
 
@@ -41,7 +62,14 @@ export default function QuoteGenerationFlow({ onNavigate, onComplete }: QuoteGen
     }
 
     if (phase === 'IDLE') {
-        return <SmartQuoteHub onNavigate={onNavigate} onUploadStart={handleUploadStart} />;
+        return (
+            <div className={cn(
+                "transition-all duration-700 ease-in-out rounded-2xl",
+                isHighlighted && "ring-4 ring-brand-500 ring-offset-4 ring-offset-background shadow-[0_0_30px_rgba(var(--brand-500),0.6)] animate-pulse"
+            )}>
+                <SmartQuoteHub onNavigate={onNavigate} onUploadStart={handleUploadStart} />
+            </div>
+        );
     }
 
     if (phase === 'ANALYZING') {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import { useTenant } from './TenantContext';
 import InventoryMovements from './components/InventoryMovements';
@@ -31,10 +31,22 @@ interface PageProps {
 export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspace, onNavigate }: PageProps) {
     const { currentTenant } = useTenant();
     const [activeTab, setActiveTab] = useState<'movements' | 'maintenance' | 'requests' | 'punchlist'>('requests');
+    const [highlightedTab, setHighlightedTab] = useState<string | null>(null);
+
+    useEffect(() => {
+        const handleHighlight = (e: CustomEvent) => {
+            if (e.detail === 'mac-punch-list') {
+                setActiveTab('punchlist');
+                setHighlightedTab('punchlist');
+                setTimeout(() => setHighlightedTab(null), 4000);
+            }
+        };
+        window.addEventListener('demo-highlight', handleHighlight as EventListener);
+        return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
+    }, []);
 
     return (
         <div className="min-h-screen bg-background font-sans text-foreground pb-10">
-            <Navbar onLogout={onLogout} activeTab="mac" onNavigateToWorkspace={onNavigateToWorkspace} onNavigate={onNavigate} />
             <div className="pt-24 px-4 max-w-7xl mx-auto space-y-6">
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -58,10 +70,11 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={cn(
-                                "px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 outline-none whitespace-nowrap",
+                                "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all whitespace-nowrap",
                                 activeTab === tab.id
-                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
-                                    : "text-muted-foreground hover:text-zinc-900 dark:hover:text-white hover:bg-brand-300 dark:hover:bg-brand-600/50"
+                                    ? "bg-card text-brand-600 dark:text-brand-400 shadow-sm border border-border"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent",
+                                highlightedTab === tab.id && "ring-4 ring-brand-500 shadow-[0_0_30px_rgba(var(--brand-500),0.6)] animate-pulse"
                             )}
                         >
                             <tab.icon className="w-4 h-4" />

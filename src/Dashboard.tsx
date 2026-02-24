@@ -298,6 +298,21 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     const [activeTab, setActiveTab] = useState<'metrics' | 'active' | 'completed' | 'all'>('active')
     const [mainTab, setMainTab] = useState<'follow_up' | 'your_tools' | 'metrics'>('follow_up')
     const [expandedActionId, setExpandedActionId] = useState<number | null>(null)
+    const [highlightedAction, setHighlightedAction] = useState<number | null>(null)
+
+    // Listen for Demo Guide Highlights
+    useEffect(() => {
+        const handleHighlight = (e: CustomEvent) => {
+            if (e.detail === 'ack-urgent-action') {
+                // Assuming 'follow_up' tab is already active default, set highlight to ID 4 (ACK Received)
+                setMainTab('follow_up');
+                setHighlightedAction(4);
+                setTimeout(() => setHighlightedAction(null), 4000);
+            }
+        };
+        window.addEventListener('demo-highlight', handleHighlight as EventListener);
+        return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
+    }, []);
     const [expandedActivityId, setExpandedActivityId] = useState<number | null>(null)
     const [performanceTimePeriod, setPerformanceTimePeriod] = useState<'Day' | 'Month' | 'Sem' | 'Year'>('Month')
     const [showCustomizeModal, setShowCustomizeModal] = useState(false);
@@ -724,7 +739,10 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                     </div>
                                     <div className="space-y-3">
                                         {urgentActions.map((action) => (
-                                            <div key={action.id} className="group border border-border rounded-xl hover:border-zinc-400 transition-all duration-200 bg-zinc-50/50 dark:bg-zinc-800/50">
+                                            <div key={action.id} className={`group border rounded-xl hover:border-zinc-400 transition-all duration-700 bg-zinc-50/50 dark:bg-zinc-800/50 ${highlightedAction === action.id
+                                                    ? 'ring-4 ring-brand-500 shadow-[0_0_30px_rgba(var(--brand-500),0.6)] animate-pulse border-brand-500'
+                                                    : 'border-border'
+                                                }`}>
                                                 <div
                                                     className="p-4 cursor-pointer"
                                                     onClick={() => setExpandedActionId(expandedActionId === action.id ? null : action.id)}

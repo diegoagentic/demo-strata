@@ -309,7 +309,7 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
                         </Transition>
                     </Popover>
 
-                    <button onClick={onOpenDemoGuide} className="hidden lg:flex p-2 rounded-full hover:bg-muted text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors" title="Demo Guide">
+                    <button onClick={onOpenDemoGuide} className="flex p-2 rounded-full hover:bg-muted text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors animate-pulse ring-2 ring-brand-500/50 ring-offset-2 ring-offset-background" title="Demo Guide">
                         <PlayCircleIcon className="w-5 h-5" />
                     </button>
 

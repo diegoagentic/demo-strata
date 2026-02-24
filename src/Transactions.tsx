@@ -193,6 +193,20 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
 
     const [activeTab, setActiveTab] = useState<'metrics' | 'active' | 'completed' | 'all'>('active')
     const [lifecycleTab, setLifecycleTab] = useState<'quotes' | 'orders' | 'acknowledgments'>('orders')
+    const [highlightedSection, setHighlightedSection] = useState<string | null>(null);
+
+    useEffect(() => {
+        const handleHighlight = (e: CustomEvent) => {
+            if (e.detail === 'transactions-orders') {
+                setLifecycleTab('orders');
+                setActiveTab('active');
+                setHighlightedSection('orders');
+                setTimeout(() => setHighlightedSection(null), 4000);
+            }
+        };
+        window.addEventListener('demo-highlight', handleHighlight as EventListener);
+        return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
+    }, []);
 
     const currentDataSet = useMemo(() => {
         if (lifecycleTab === 'quotes') return recentQuotes;
@@ -758,7 +772,10 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                 {/* Recent Orders - The Grid/List view handled here */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-3">
-                        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                        <div className={cn(
+                            "bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-all duration-700",
+                            highlightedSection === 'orders' && "ring-4 ring-brand-500 shadow-[0_0_30px_rgba(var(--brand-500),0.6)] animate-pulse"
+                        )}>
                             {/* Header for Orders */}
                             <div className="p-6 border-b border-border">
                                 <div className="flex flex-col gap-6">
