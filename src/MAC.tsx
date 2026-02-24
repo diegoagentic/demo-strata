@@ -4,11 +4,13 @@ import { useTenant } from './TenantContext';
 import InventoryMovements from './components/InventoryMovements';
 import InventoryMaintenance from './components/InventoryMaintenance';
 import MACRequests from './components/MACRequests';
+import MACPunchList from './components/MACPunchList';
 import {
     Squares2X2Icon,
     WrenchScrewdriverIcon,
     ArrowPathRoundedSquareIcon,
-    ClipboardDocumentCheckIcon
+    ClipboardDocumentCheckIcon,
+    ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 // Mock Utils if cn is not available globally
@@ -28,7 +30,7 @@ interface PageProps {
 
 export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspace, onNavigate }: PageProps) {
     const { currentTenant } = useTenant();
-    const [activeTab, setActiveTab] = useState<'movements' | 'maintenance' | 'requests'>('requests');
+    const [activeTab, setActiveTab] = useState<'movements' | 'maintenance' | 'requests' | 'punchlist'>('requests');
 
     return (
         <div className="min-h-screen bg-background font-sans text-foreground pb-10">
@@ -49,7 +51,8 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                     {[
                         { id: 'requests', label: 'Requests', count: 12, icon: ClipboardDocumentCheckIcon },
                         { id: 'movements', label: 'Movements', count: 4, icon: ArrowPathRoundedSquareIcon },
-                        { id: 'maintenance', label: 'Maintenance', count: 3, icon: WrenchScrewdriverIcon }
+                        { id: 'maintenance', label: 'Maintenance', count: 3, icon: WrenchScrewdriverIcon },
+                        { id: 'punchlist', label: 'Punch List', count: 3, icon: ExclamationTriangleIcon }
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -79,6 +82,7 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
 
                 {/* Content */}
                 <div className="min-h-[400px]">
+                    {activeTab === 'punchlist' && <MACPunchList />}
                     {activeTab === 'movements' && <InventoryMovements />}
                     {activeTab === 'maintenance' && <InventoryMaintenance />}
                     {activeTab === 'requests' && <MACRequests />}

@@ -85,13 +85,33 @@ const MOCK_REQUESTS: MACRequest[] = [
         receivedAt: "3 days ago",
         urgency: "Low",
         status: "New"
+    },
+    {
+        id: 'REQ-006',
+        description: "Missing hardware for 3 workstations installed yesterday.",
+        requester: "Installer Team Beta",
+        department: "Installation",
+        origin: "MobileApp",
+        receivedAt: "4 hours ago",
+        urgency: "High",
+        status: "New"
+    },
+    {
+        id: 'REQ-007',
+        description: "Scratched glass partitions on floor 3, needs replacement.",
+        requester: "Site Supervisor",
+        department: "Operations",
+        origin: "Email",
+        receivedAt: "1 day ago",
+        urgency: "High",
+        status: "New"
     }
 ];
 
 export default function MACRequests() {
     const [requests, setRequests] = useState<MACRequest[]>(MOCK_REQUESTS);
 
-    const handleAction = (id: string, action: 'move' | 'maintenance' | 'reject') => {
+    const handleAction = (id: string, action: 'move' | 'maintenance' | 'reject' | 'punchlist') => {
         // In a real app, this would trigger a conversion flow or API call
         console.log(`Action ${action} on request ${id}`);
         // For demo, just remove or change status
@@ -173,6 +193,13 @@ export default function MACRequests() {
 
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => handleAction(req.id, 'punchlist')}
+                                            title="Convert to Punch List"
+                                            className="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-full transition-colors"
+                                        >
+                                            <ExclamationTriangleIcon className="w-5 h-5" />
+                                        </button>
                                         <button
                                             onClick={() => handleAction(req.id, 'move')}
                                             title="Convert to Move"
