@@ -18,6 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useTheme } from 'strata-design-system'
 import { useTenant } from '../TenantContext'
+import { useAuth } from '../context/AuthContext'
 
 import ActionCenter from './notifications/ActionCenter';
 
@@ -51,6 +52,11 @@ interface NavbarProps {
 export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToWorkspace, onNavigate }: NavbarProps) {
     const { theme, toggleTheme } = useTheme()
     const { currentTenant, tenants, setTenant } = useTenant()
+    const { user } = useAuth()
+
+    const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
+    const userInitials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    const userEmail = user?.email || ''
 
     const navigation = [
         { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
@@ -318,7 +324,7 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
                                 <span className="text-sm font-bold text-foreground leading-tight truncate w-full text-right">{currentTenant}</span>
                             </div>
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
-                                JD
+                                {userInitials}
                             </div>
                             <ChevronDownIcon className="w-3 h-3 text-muted-foreground" />
                         </button>
@@ -327,8 +333,8 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
 
                             {/* User Info */}
                             <div className="px-4 py-2 border-b border-border mb-1">
-                                <p className="text-sm font-medium">Jhon Doe</p>
-                                <p className="text-xs text-muted-foreground">Admin</p>
+                                <p className="text-sm font-medium">{displayName}</p>
+                                <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
                             </div>
 
                             {/* Tenant Selector Section */}

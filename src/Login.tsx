@@ -1,49 +1,183 @@
 import { useState, useRef, useEffect } from 'react'
-import { EyeIcon, EyeSlashIcon, ArrowRightIcon, ChevronDownIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline'
-import logoLightBrand from './assets/logo-light-brand.png';
-import logoDarkBrand from './assets/logo-dark-brand.png';
-import { useTheme } from 'strata-design-system';
+import { EyeIcon, EyeSlashIcon, ArrowRightIcon, ExclamationCircleIcon, CheckCircleIcon, EnvelopeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import logoLightBrand from './assets/logo-light-brand.png'
+import logoDarkBrand from './assets/logo-dark-brand.png'
+import { useTheme } from 'strata-design-system'
+import { useAuth } from './context/AuthContext'
+import { validatePassword, getDomainError, isAllowedDomain } from './lib/auth-utils'
+import type { PasswordValidation } from './lib/auth-utils'
 
-const organizations = [
-    { name: 'Strata Manufacturing HQ', users: 245, type: 'Primary workspace' },
-    { name: 'Strata Sales Division', users: 120, type: 'Regional hub' },
-    { name: 'Strata Logistics Link', users: 85, type: 'Distribution center' }
-]
+type ViewMode = 'login' | 'register' | 'forgot-password';
 
-export default function Login({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+export default function Login() {
+    const { signIn, signUp, signInWithMicrosoft, resetPassword, loading, clearError } = useAuth()
+    const { theme } = useTheme()
+
+    const [viewMode, setViewMode] = useState<ViewMode>('login')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [fullName, setFullName] = useState('')
     const [showPassword, setShowPassword] = useState(false)
-    const [isRegistering, setIsRegistering] = useState(false)
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const [selectedOrg, setSelectedOrg] = useState(organizations[0])
-    const dropdownRef = useRef<HTMLDivElement>(null)
-    const { theme } = useTheme();
+    const [formError, setFormError] = useState<string | null>(null)
+    const [successMessage, setSuccessMessage] = useState<string | null>(null)
+    const [domainError, setDomainError] = useState<string | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [passwordValidation, setPasswordValidation] = useState<PasswordValidation>(
+        validatePassword('')
+    )
 
-    const handleAction = () => {
-        onLoginSuccess()
+    const emailInputRef = useRef<HTMLInputElement>(null)
+
+    // Reset state when switching views
+    useEffect(() => {
+        setFormError(null)
+        setSuccessMessage(null)
+        setDomainError(null)
+        clearError()
+    }, [viewMode, clearError])
+
+    // Real-time password validation
+    const handlePasswordChange = (value: string) => {
+        setPassword(value)
+        setPasswordValidation(validatePassword(value))
     }
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsDropdownOpen(false)
-            }
+    // Domain validation on blur
+    const handleEmailBlur = () => {
+        if (email && email.includes('@')) {
+            const error = getDomainError(email)
+            setDomainError(error)
+        } else {
+            setDomainError(null)
         }
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside)
+    }
+
+    const handleEmailChange = (value: string) => {
+        setEmail(value)
+        if (domainError) {
+            setDomainError(null)
         }
-    }, [])
+    }
+
+    // --- Handlers ---
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setFormError(null)
+        setIsSubmitting(true)
+
+        const result = await signIn(email, password)
+        setIsSubmitting(false)
+
+        if (!result.success) {
+            setFormError(result.error ?? 'Login failed')
+        }
+    }
+
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setFormError(null)
+
+        if (!fullName.trim()) {
+            setFormError('Full name is required.')
+            return
+        }
+
+        const domainErr = getDomainError(email)
+        if (domainErr) {
+            setFormError(domainErr)
+            return
+        }
+
+        if (!passwordValidation.isValid) {
+            setFormError('Please meet all password requirements.')
+            return
+        }
+
+        setIsSubmitting(true)
+        const result = await signUp(email, password, fullName.trim())
+        setIsSubmitting(false)
+
+        if (!result.success) {
+            setFormError(result.error ?? 'Registration failed')
+        } else if (result.needsVerification) {
+            setSuccessMessage('Account created! Please check your email to verify your account before logging in.')
+        }
+    }
+
+    const handleMicrosoftLogin = async () => {
+        setFormError(null)
+        const result = await signInWithMicrosoft()
+        if (!result.success) {
+            setFormError(result.error ?? 'Microsoft login failed')
+        }
+    }
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setFormError(null)
+
+        if (!email) {
+            setFormError('Please enter your email address.')
+            return
+        }
+
+        if (!isAllowedDomain(email)) {
+            setFormError('Access is restricted to authorized organization emails only.')
+            return
+        }
+
+        setIsSubmitting(true)
+        const result = await resetPassword(email)
+        setIsSubmitting(false)
+
+        if (!result.success) {
+            setFormError(result.error ?? 'Failed to send reset email')
+        } else {
+            setSuccessMessage('Password reset email sent! Check your inbox for the reset link.')
+        }
+    }
+
+    const switchView = (mode: ViewMode) => {
+        setViewMode(mode)
+        setPassword('')
+        setFullName('')
+        setShowPassword(false)
+        setPasswordValidation(validatePassword(''))
+    }
+
+    // --- Password Requirement Item ---
+    const PasswordCheck = ({ met, label }: { met: boolean; label: string }) => (
+        <li className="flex items-center gap-2">
+            {met ? (
+                <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+            ) : (
+                <svg className="w-3 h-3 text-zinc-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            )}
+            <span className={met ? 'text-green-400' : 'text-zinc-500'}>{label}</span>
+        </li>
+    )
+
+    // --- Spinner Component ---
+    const Spinner = () => (
+        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+    )
 
     return (
         <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 font-sans bg-background transition-colors duration-300">
             {/* Left Side - Branding */}
             <div className="relative overflow-hidden flex flex-col justify-center p-12 lg:p-20 bg-sidebar text-sidebar-foreground transition-colors duration-300">
-                {/* Decorative background element */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-sidebar-accent/50 to-sidebar/50 pointer-events-none" />
 
                 <div className="relative z-10 max-w-lg space-y-8">
                     <div className="flex items-center gap-3 mb-12">
-                        {/* Logo */}
                         <div className="mb-4">
                             <img src={logoLightBrand} alt="Strata" className="h-20 w-auto block dark:hidden" />
                             <img src={logoDarkBrand} alt="Strata" className="h-20 w-auto hidden dark:block" />
@@ -71,176 +205,241 @@ export default function Login({ onLoginSuccess }: { onLoginSuccess: () => void }
 
             {/* Right Side - Form */}
             <div className="flex items-center justify-center p-8 relative overflow-hidden bg-[url('/login-bg.jpg')] bg-cover bg-center">
-                {/* Dark Overlay */}
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
 
                 <div className="w-full max-w-[440px] p-8 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl relative z-10 transition-all duration-300">
                     <div className="space-y-6">
-                        <div className="space-y-2 text-center lg:text-left">
-                            <h2 className="text-3xl font-bold text-white">
-                                {isRegistering ? 'Create Account' : 'Welcome Back!'}
-                            </h2>
-                            <div className="flex flex-wrap gap-1 text-sm text-zinc-200 dark:text-zinc-300 justify-center lg:justify-start">
-                                <span>{isRegistering ? 'Already have an account?' : "Don't have an account?"}</span>
+
+                        {/* Success Message */}
+                        {successMessage ? (
+                            <div className="space-y-6 text-center">
+                                <div className="mx-auto w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+                                    <CheckCircleIcon className="w-8 h-8 text-green-400" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h2 className="text-2xl font-bold text-white">Check Your Email</h2>
+                                    <p className="text-sm text-zinc-300 leading-relaxed">{successMessage}</p>
+                                </div>
                                 <button
-                                    onClick={() => {
-                                        setIsRegistering(!isRegistering);
-                                        // Reset state if desired, or keep consistent
-                                    }}
-                                    className="font-medium text-white hover:underline decoration-white/50 underline-offset-4"
+                                    onClick={() => { setSuccessMessage(null); switchView('login') }}
+                                    className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-bold text-base shadow-lg shadow-black/10 transition-all flex items-center justify-center gap-2"
                                 >
-                                    {isRegistering ? 'Login now' : 'Create a new account now,'}
+                                    <ArrowLeftIcon className="w-4 h-4" />
+                                    Back to Login
                                 </button>
-                                {!isRegistering && <span>it's FREE! Takes less than a minute.</span>}
                             </div>
-                        </div>
+                        ) : viewMode === 'forgot-password' ? (
+                            /* Forgot Password View */
+                            <div className="space-y-6">
+                                <div className="space-y-2 text-center lg:text-left">
+                                    <h2 className="text-3xl font-bold text-white">Reset Password</h2>
+                                    <p className="text-sm text-zinc-300">Enter your email and we'll send you a link to reset your password.</p>
+                                </div>
 
-                        <div className="space-y-5">
-                            {!isRegistering && (
-                                <>
-                                    <button className="w-full h-12 flex items-center justify-center gap-3 bg-white/10 border border-white/20 text-white rounded-xl hover:bg-white/20 transition-colors">
-                                        <svg className="w-5 h-5" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg"><path fill="#f25022" d="M1 1h9v9H1z" /><path fill="#7fba00" d="M11 1h9v9h-9z" /><path fill="#00a4ef" d="M1 11h9v9H1z" /><path fill="#ffb900" d="M11 11h9v9h-9z" /></svg>
-                                        Login with Microsoft
-                                    </button>
+                                {formError && (
+                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                                        <ExclamationCircleIcon className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                                        <p className="text-sm text-red-300">{formError}</p>
+                                    </div>
+                                )}
 
-                                    <div className="relative">
-                                        <div className="absolute inset-0 flex items-center">
-                                            <span className="w-full border-t border-white/20" />
-                                        </div>
-                                        <div className="relative flex justify-center text-xs uppercase">
-                                            <span className="bg-transparent px-2 text-zinc-300 font-medium tracking-wider">Or login with email</span>
+                                <form className="space-y-4" onSubmit={handleForgotPassword}>
+                                    <div>
+                                        <label className="text-zinc-200 text-sm font-medium mb-1 block">Email</label>
+                                        <div className="relative">
+                                            <input
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => handleEmailChange(e.target.value)}
+                                                onBlur={handleEmailBlur}
+                                                placeholder="you@company.com"
+                                                className="w-full bg-white/10 border border-white/20 text-white focus:border-white/40 focus:ring-0 rounded-lg h-12 px-4 pl-10 placeholder:text-zinc-500 outline-none transition-colors"
+                                            />
+                                            <EnvelopeIcon className="w-5 h-5 text-zinc-400 absolute left-3 top-3.5" />
                                         </div>
                                     </div>
-                                </>
-                            )}
 
-                            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleAction(); }}>
-                                {isRegistering && (
-                                    <div ref={dropdownRef}>
-                                        <label className="text-zinc-200 dark:text-zinc-300 text-sm font-medium mb-1 block">Select Organization</label>
-                                        <div className="relative group">
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting || loading}
+                                        className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-bold text-base shadow-lg shadow-black/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        {isSubmitting ? <Spinner /> : 'Send Reset Link'}
+                                    </button>
+                                </form>
+
+                                <div className="text-center">
+                                    <button
+                                        onClick={() => switchView('login')}
+                                        className="text-sm font-medium text-zinc-300 hover:text-white transition-colors flex items-center gap-1 mx-auto"
+                                    >
+                                        <ArrowLeftIcon className="w-3.5 h-3.5" />
+                                        Back to Login
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Login / Register View */
+                            <>
+                                <div className="space-y-2 text-center lg:text-left">
+                                    <h2 className="text-3xl font-bold text-white">
+                                        {viewMode === 'register' ? 'Create Account' : 'Welcome Back!'}
+                                    </h2>
+                                    <div className="flex flex-wrap gap-1 text-sm text-zinc-200 justify-center lg:justify-start">
+                                        <span>{viewMode === 'register' ? 'Already have an account?' : "Don't have an account?"}</span>
+                                        <button
+                                            onClick={() => switchView(viewMode === 'register' ? 'login' : 'register')}
+                                            className="font-medium text-white hover:underline decoration-white/50 underline-offset-4"
+                                        >
+                                            {viewMode === 'register' ? 'Login now' : 'Create a new account now,'}
+                                        </button>
+                                        {viewMode === 'login' && <span>it's FREE! Takes less than a minute.</span>}
+                                    </div>
+                                </div>
+
+                                {/* Error Alert */}
+                                {formError && (
+                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                                        <ExclamationCircleIcon className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                                        <p className="text-sm text-red-300">{formError}</p>
+                                    </div>
+                                )}
+
+                                <div className="space-y-5">
+                                    {viewMode === 'login' && (
+                                        <>
                                             <button
-                                                type="button"
-                                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                                className="w-full bg-white/10 border border-white/20 hover:bg-white/15 text-white rounded-xl p-3 flex items-center gap-3 transition-colors text-left"
+                                                onClick={handleMicrosoftLogin}
+                                                disabled={isSubmitting}
+                                                className="w-full h-12 flex items-center justify-center gap-3 bg-white/10 border border-white/20 text-white rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50"
                                             >
-                                                <div className="h-10 w-10 bg-white/10 rounded-lg flex items-center justify-center shrink-0">
-                                                    <BuildingOfficeIcon className="w-6 h-6 text-zinc-200" />
-                                                </div>
-                                                <div className="flex-1 overflow-hidden">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-semibold text-sm truncate">{selectedOrg.name}</span>
-                                                        <span className="h-2 w-2 rounded-full bg-green-500 shrink-0"></span>
-                                                    </div>
-                                                    <div className="text-xs text-zinc-400 truncate">{selectedOrg.type} • {selectedOrg.users} users</div>
-                                                </div>
-                                                <ChevronDownIcon className={`w-5 h-5 text-zinc-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                                <svg className="w-5 h-5" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg"><path fill="#f25022" d="M1 1h9v9H1z" /><path fill="#7fba00" d="M11 1h9v9h-9z" /><path fill="#00a4ef" d="M1 11h9v9H1z" /><path fill="#ffb900" d="M11 11h9v9h-9z" /></svg>
+                                                Login with Microsoft
                                             </button>
 
-                                            {isDropdownOpen && (
-                                                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-white/10 rounded-xl shadow-xl overflow-hidden z-50">
-                                                    {organizations.map((org, index) => (
-                                                        <button
-                                                            key={index}
-                                                            type="button"
-                                                            className={`w-full p-3 flex items-center gap-3 text-left hover:bg-white/5 transition-colors ${selectedOrg.name === org.name ? 'bg-white/5' : ''}`}
-                                                            onClick={() => {
-                                                                setSelectedOrg(org)
-                                                                setIsDropdownOpen(false)
-                                                            }}
-                                                        >
-                                                            <div className="h-8 w-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-                                                                <BuildingOfficeIcon className="w-4 h-4 text-zinc-400" />
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <div className="font-medium text-sm text-white">{org.name}</div>
-                                                                <div className="text-xs text-zinc-500">{org.type}</div>
-                                                            </div>
-                                                        </button>
-                                                    ))}
+                                            <div className="relative">
+                                                <div className="absolute inset-0 flex items-center">
+                                                    <span className="w-full border-t border-white/20" />
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div>
-                                    <label className="text-zinc-200 dark:text-zinc-300 text-sm font-medium mb-1 block">{isRegistering ? 'Work Email' : 'Email'}</label>
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        defaultValue="hisalim.ux@gmail.com"
-                                        className="w-full bg-white/10 border border-white/20 text-white focus:border-white/40 focus:ring-0 rounded-lg h-12 px-4 placeholder:text-zinc-400 outline-none transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="text-zinc-200 dark:text-zinc-300 text-sm font-medium mb-1 block">Password</label>
-                                    <div className="relative">
-                                        <input
-                                            name="password"
-                                            type={showPassword ? 'text' : 'password'}
-                                            defaultValue="Password123!"
-                                            className="w-full bg-white/10 border border-white/20 text-white focus:border-white/40 focus:ring-0 rounded-lg h-12 px-4 pr-10 outline-none transition-colors"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-3.5 text-zinc-300 hover:text-white transition-colors"
-                                        >
-                                            {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {isRegistering && (
-                                    <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
-                                        <div className="flex items-start gap-2 text-xs text-green-400">
-                                            <div className="mt-0.5">
-                                                <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
+                                                <div className="relative flex justify-center text-xs uppercase">
+                                                    <span className="bg-transparent px-2 text-zinc-300 font-medium tracking-wider">Or login with email</span>
+                                                </div>
                                             </div>
+                                        </>
+                                    )}
+
+                                    <form className="space-y-4" onSubmit={viewMode === 'register' ? handleRegister : handleLogin}>
+                                        {/* Full Name (Register only) */}
+                                        {viewMode === 'register' && (
                                             <div>
-                                                <p className="font-medium text-green-200 mb-1">Password requirements met:</p>
-                                                <ul className="space-y-1 ml-1">
-                                                    <li className="flex items-center gap-2">
-                                                        <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                        <span>Minimum 8 characters</span>
-                                                    </li>
-                                                    <li className="flex items-center gap-2">
-                                                        <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                        <span>At least one uppercase letter</span>
-                                                    </li>
-                                                    <li className="flex items-center gap-2">
-                                                        <svg className="w-3 h-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                        <span>At least one number</span>
-                                                    </li>
-                                                </ul>
+                                                <label className="text-zinc-200 text-sm font-medium mb-1 block">Full Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={fullName}
+                                                    onChange={(e) => setFullName(e.target.value)}
+                                                    placeholder="John Doe"
+                                                    className="w-full bg-white/10 border border-white/20 text-white focus:border-white/40 focus:ring-0 rounded-lg h-12 px-4 placeholder:text-zinc-500 outline-none transition-colors"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* Email */}
+                                        <div>
+                                            <label className="text-zinc-200 text-sm font-medium mb-1 block">
+                                                {viewMode === 'register' ? 'Work Email' : 'Email'}
+                                            </label>
+                                            <input
+                                                ref={emailInputRef}
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => handleEmailChange(e.target.value)}
+                                                onBlur={handleEmailBlur}
+                                                placeholder="you@company.com"
+                                                className={`w-full bg-white/10 border text-white focus:border-white/40 focus:ring-0 rounded-lg h-12 px-4 placeholder:text-zinc-500 outline-none transition-colors ${
+                                                    domainError ? 'border-red-500/50' : 'border-white/20'
+                                                }`}
+                                            />
+                                            {domainError && (
+                                                <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                                                    <ExclamationCircleIcon className="w-3.5 h-3.5" />
+                                                    {domainError}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-zinc-500 mt-1">
+                                                Access restricted to @agenticdream.com and @goavanto.com
+                                            </p>
+                                        </div>
+
+                                        {/* Password */}
+                                        <div>
+                                            <label className="text-zinc-200 text-sm font-medium mb-1 block">Password</label>
+                                            <div className="relative">
+                                                <input
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    value={password}
+                                                    onChange={(e) => handlePasswordChange(e.target.value)}
+                                                    placeholder="Enter your password"
+                                                    className="w-full bg-white/10 border border-white/20 text-white focus:border-white/40 focus:ring-0 rounded-lg h-12 px-4 pr-10 placeholder:text-zinc-500 outline-none transition-colors"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-3 top-3.5 text-zinc-300 hover:text-white transition-colors"
+                                                >
+                                                    {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                                                </button>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
 
-                                <button type="submit" className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-bold text-base shadow-lg shadow-black/10 transition-all">
-                                    {isRegistering ? 'Create Account' : 'Login Now'}
-                                </button>
-                            </form>
+                                        {/* Password Requirements (Register only) */}
+                                        {viewMode === 'register' && (
+                                            <div className={`rounded-lg p-4 border ${
+                                                passwordValidation.isValid
+                                                    ? 'bg-green-500/10 border-green-500/20'
+                                                    : 'bg-white/5 border-white/10'
+                                            }`}>
+                                                <div className="text-xs">
+                                                    <p className={`font-medium mb-2 ${passwordValidation.isValid ? 'text-green-200' : 'text-zinc-300'}`}>
+                                                        Password requirements:
+                                                    </p>
+                                                    <ul className="space-y-1 ml-1">
+                                                        <PasswordCheck met={passwordValidation.hasMinLength} label="Minimum 8 characters" />
+                                                        <PasswordCheck met={passwordValidation.hasUppercase} label="At least one uppercase letter" />
+                                                        <PasswordCheck met={passwordValidation.hasNumber} label="At least one number" />
+                                                        <PasswordCheck met={passwordValidation.hasSpecialChar} label="At least one special character" />
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        )}
 
-                            {!isRegistering && (
-                                <div className="text-center">
-                                    <button className="text-sm font-medium text-zinc-300 hover:text-white transition-colors">
-                                        Forget password <span className="text-white underline decoration-zinc-400 underline-offset-4 pointer-events-auto">Click here</span>
-                                    </button>
+                                        {/* Submit Button */}
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting || loading}
+                                            className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-bold text-base shadow-lg shadow-black/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            {isSubmitting ? (
+                                                <Spinner />
+                                            ) : (
+                                                viewMode === 'register' ? 'Create Account' : 'Login Now'
+                                            )}
+                                        </button>
+                                    </form>
+
+                                    {/* Forgot Password Link */}
+                                    {viewMode === 'login' && (
+                                        <div className="text-center">
+                                            <button
+                                                onClick={() => switchView('forgot-password')}
+                                                className="text-sm font-medium text-zinc-300 hover:text-white transition-colors"
+                                            >
+                                                Forget password? <span className="text-white underline decoration-zinc-400 underline-offset-4">Click here</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
