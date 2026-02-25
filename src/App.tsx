@@ -20,7 +20,7 @@ import logoLightBrand from './assets/logo-light-brand.png'
 import logoDarkBrand from './assets/logo-dark-brand.png'
 
 function App() {
-  const { user, loading, signOut, showSessionWarning, refreshSession } = useAuth()
+  const { user, initialLoading, signOut, showSessionWarning, refreshSession } = useAuth()
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('dashboard')
 
   const handleNavigate = (page: string) => {
@@ -37,8 +37,8 @@ function App() {
     setCurrentPage('dashboard')
   }
 
-  // Loading screen while checking auth
-  if (loading) {
+  // Loading screen only during initial session check
+  if (initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">

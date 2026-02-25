@@ -1,24 +1,23 @@
 import { useState, useRef, useEffect } from 'react'
-import { EyeIcon, EyeSlashIcon, ArrowRightIcon, ExclamationCircleIcon, CheckCircleIcon, EnvelopeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, EyeSlashIcon, ArrowRightIcon, CheckCircleIcon, EnvelopeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import logoLightBrand from './assets/logo-light-brand.png'
 import logoDarkBrand from './assets/logo-dark-brand.png'
-import { useTheme } from 'strata-design-system'
 import { useAuth } from './context/AuthContext'
 import { validatePassword, getDomainError, isAllowedDomain } from './lib/auth-utils'
 import type { PasswordValidation } from './lib/auth-utils'
+import { useToast, ToastContainer } from './components/AuthToast'
 
 type ViewMode = 'login' | 'register' | 'forgot-password';
 
 export default function Login() {
-    const { signIn, signUp, signInWithMicrosoft, resetPassword, loading, clearError } = useAuth()
-    const { theme } = useTheme()
+    const { signIn, signUp, signInWithMicrosoft, resetPassword, clearError } = useAuth()
+    const { toasts, addToast, dismissToast } = useToast()
 
     const [viewMode, setViewMode] = useState<ViewMode>('login')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [fullName, setFullName] = useState('')
     const [showPassword, setShowPassword] = useState(false)
-    const [formError, setFormError] = useState<string | null>(null)
     const [successMessage, setSuccessMessage] = useState<string | null>(null)
     const [domainError, setDomainError] = useState<string | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,11 +29,11 @@ export default function Login() {
 
     // Reset state when switching views
     useEffect(() => {
-        setFormError(null)
         setSuccessMessage(null)
         setDomainError(null)
         clearError()
-    }, [viewMode, clearError])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewMode])
 
     // Real-time password validation
     const handlePasswordChange = (value: string) => {
@@ -63,34 +62,32 @@ export default function Login() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
-        setFormError(null)
         setIsSubmitting(true)
 
         const result = await signIn(email, password)
         setIsSubmitting(false)
 
         if (!result.success) {
-            setFormError(result.error ?? 'Login failed')
+            addToast('error', result.error ?? 'Login failed')
         }
     }
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
-        setFormError(null)
 
         if (!fullName.trim()) {
-            setFormError('Full name is required.')
+            addToast('error', 'Full name is required.')
             return
         }
 
         const domainErr = getDomainError(email)
         if (domainErr) {
-            setFormError(domainErr)
+            addToast('error', domainErr)
             return
         }
 
         if (!passwordValidation.isValid) {
-            setFormError('Please meet all password requirements.')
+            addToast('error', 'Please meet all password requirements.')
             return
         }
 
@@ -99,31 +96,32 @@ export default function Login() {
         setIsSubmitting(false)
 
         if (!result.success) {
-            setFormError(result.error ?? 'Registration failed')
+            addToast('error', result.error ?? 'Registration failed')
         } else if (result.needsVerification) {
             setSuccessMessage('Account created! Please check your email to verify your account before logging in.')
+            addToast('success', 'Account created! Check your email to verify your account.')
         }
     }
 
     const handleMicrosoftLogin = async () => {
-        setFormError(null)
+        setIsSubmitting(true)
         const result = await signInWithMicrosoft()
+        setIsSubmitting(false)
         if (!result.success) {
-            setFormError(result.error ?? 'Microsoft login failed')
+            addToast('error', result.error ?? 'Microsoft login failed')
         }
     }
 
     const handleForgotPassword = async (e: React.FormEvent) => {
         e.preventDefault()
-        setFormError(null)
 
         if (!email) {
-            setFormError('Please enter your email address.')
+            addToast('error', 'Please enter your email address.')
             return
         }
 
         if (!isAllowedDomain(email)) {
-            setFormError('Access is restricted to authorized organization emails only.')
+            addToast('error', 'Access is restricted to authorized organization emails only.')
             return
         }
 
@@ -132,9 +130,10 @@ export default function Login() {
         setIsSubmitting(false)
 
         if (!result.success) {
-            setFormError(result.error ?? 'Failed to send reset email')
+            addToast('error', result.error ?? 'Failed to send reset email')
         } else {
             setSuccessMessage('Password reset email sent! Check your inbox for the reset link.')
+            addToast('success', 'Password reset email sent! Check your inbox.')
         }
     }
 
@@ -172,6 +171,9 @@ export default function Login() {
 
     return (
         <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 font-sans bg-background transition-colors duration-300">
+            {/* Toast Notifications */}
+            <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
             {/* Left Side - Branding */}
             <div className="relative overflow-hidden flex flex-col justify-center p-12 lg:p-20 bg-sidebar text-sidebar-foreground transition-colors duration-300">
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-sidebar-accent/50 to-sidebar/50 pointer-events-none" />
@@ -236,13 +238,6 @@ export default function Login() {
                                     <p className="text-sm text-zinc-300">Enter your email and we'll send you a link to reset your password.</p>
                                 </div>
 
-                                {formError && (
-                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                                        <ExclamationCircleIcon className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                                        <p className="text-sm text-red-300">{formError}</p>
-                                    </div>
-                                )}
-
                                 <form className="space-y-4" onSubmit={handleForgotPassword}>
                                     <div>
                                         <label className="text-zinc-200 text-sm font-medium mb-1 block">Email</label>
@@ -261,7 +256,7 @@ export default function Login() {
 
                                     <button
                                         type="submit"
-                                        disabled={isSubmitting || loading}
+                                        disabled={isSubmitting}
                                         className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-bold text-base shadow-lg shadow-black/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {isSubmitting ? <Spinner /> : 'Send Reset Link'}
@@ -296,14 +291,6 @@ export default function Login() {
                                         {viewMode === 'login' && <span>it's FREE! Takes less than a minute.</span>}
                                     </div>
                                 </div>
-
-                                {/* Error Alert */}
-                                {formError && (
-                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                                        <ExclamationCircleIcon className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                                        <p className="text-sm text-red-300">{formError}</p>
-                                    </div>
-                                )}
 
                                 <div className="space-y-5">
                                     {viewMode === 'login' && (
@@ -359,12 +346,6 @@ export default function Login() {
                                                     domainError ? 'border-red-500/50' : 'border-white/20'
                                                 }`}
                                             />
-                                            {domainError && (
-                                                <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                                                    <ExclamationCircleIcon className="w-3.5 h-3.5" />
-                                                    {domainError}
-                                                </p>
-                                            )}
                                             <p className="text-xs text-zinc-500 mt-1">
                                                 Access restricted to @agenticdream.com and @goavanto.com
                                             </p>
@@ -415,7 +396,7 @@ export default function Login() {
                                         {/* Submit Button */}
                                         <button
                                             type="submit"
-                                            disabled={isSubmitting || loading}
+                                            disabled={isSubmitting}
                                             className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-bold text-base shadow-lg shadow-black/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
                                             {isSubmitting ? (

@@ -16,7 +16,7 @@ import {
 interface AuthState {
   session: Session | null;
   user: User | null;
-  loading: boolean;
+  initialLoading: boolean; // Only true during initial session check
   error: string | null;
   showSessionWarning: boolean;
   authEvent: AuthChangeEvent | null;
@@ -44,7 +44,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSessionWarning, setShowSessionWarning] = useState(false);
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (msRemaining <= SESSION_WARNING_MINUTES * 60 * 1000) {
         setShowSessionWarning(true);
       }
-    }, 30_000); // Check every 30 seconds
+    }, 30_000);
   }, []);
 
   // --- Initialize Auth ---
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      setInitialLoading(false);
       if (session) startSessionExpiryCheck(session);
     });
 
@@ -89,7 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (email && !isAllowedDomain(email)) {
           await supabase.auth.signOut();
           setError('Access restricted to authorized organization domains only.');
-          setLoading(false);
           return;
         }
       }
@@ -97,7 +96,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setAuthEvent(event);
-      setLoading(false);
 
       if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
         setShowSessionWarning(false);
@@ -124,17 +122,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     setError(null);
-    setLoading(true);
 
     const domainError = getDomainError(email);
     if (domainError) {
       setError(domainError);
-      setLoading(false);
       return { success: false, error: domainError };
     }
 
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
 
     if (authError) {
       const msg = getAuthErrorMessage(authError);
@@ -147,12 +142,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     setError(null);
-    setLoading(true);
 
     const domainError = getDomainError(email);
     if (domainError) {
       setError(domainError);
-      setLoading(false);
       return { success: false, error: domainError };
     }
 
@@ -160,7 +153,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!pwValidation.isValid) {
       const msg = 'Password does not meet all requirements.';
       setError(msg);
-      setLoading(false);
       return { success: false, error: msg };
     }
 
@@ -172,7 +164,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: `${window.location.origin}`,
       },
     });
-    setLoading(false);
 
     if (authError) {
       const msg = getAuthErrorMessage(authError);
@@ -185,16 +176,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithMicrosoft = async () => {
     setError(null);
-    const { error: authError } = await supabase.auth.signInWithOAuth({
+    const { data, error: authError } = await supabase.auth.signInWithOAuth({
       provider: 'azure',
       options: {
         scopes: 'openid email profile',
         redirectTo: `${window.location.origin}`,
+        skipBrowserRedirect: true,
       },
     });
 
     if (authError) {
       const msg = getAuthErrorMessage(authError);
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      const msg = 'Microsoft login is not available. Please contact your administrator to configure Azure AD.';
       setError(msg);
       return { success: false, error: msg };
     }
@@ -215,8 +215,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const dismissSessionWarning = () => setShowSessionWarning(false);
-  const clearError = () => setError(null);
+  const dismissSessionWarning = useCallback(() => setShowSessionWarning(false), []);
+  const clearError = useCallback(() => setError(null), []);
 
   const resetPassword = async (email: string) => {
     setError(null);
@@ -235,7 +235,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{
-      session, user, loading, error, showSessionWarning, authEvent,
+      session, user, initialLoading, error, showSessionWarning, authEvent,
       signIn, signUp, signInWithMicrosoft, signOut, refreshSession,
       dismissSessionWarning, clearError, resetPassword,
     }}>
