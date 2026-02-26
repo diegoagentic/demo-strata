@@ -14,8 +14,7 @@ import {
     WrenchScrewdriverIcon,
     PhotoIcon,
     CreditCardIcon,
-    ArrowPathRoundedSquareIcon,
-    PlayCircleIcon
+    ArrowPathRoundedSquareIcon
 } from '@heroicons/react/24/outline';
 import { useTheme } from 'strata-design-system'
 import { useTenant } from '../TenantContext'
@@ -48,10 +47,9 @@ interface NavbarProps {
     activeTab?: NavTab | string; // Allow string for flexibility
     onNavigateToWorkspace: () => void;
     onNavigate: (page: any) => void;
-    onOpenDemoGuide: () => void;
 }
 
-export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToWorkspace, onNavigate, onOpenDemoGuide }: NavbarProps) {
+export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToWorkspace, onNavigate }: NavbarProps) {
     const { theme, toggleTheme } = useTheme()
     const { currentTenant, tenants, setTenant } = useTenant()
     const { user } = useAuth()
@@ -315,10 +313,6 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
                         </Transition>
                     </Popover>
 
-                    <button onClick={onOpenDemoGuide} className="flex p-2 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-500/30 transition-colors animate-pulse ring-2 ring-purple-500/60 ring-offset-2 ring-offset-background shadow-sm" title="Demo Guide">
-                        <PlayCircleIcon className="w-5 h-5" />
-                    </button>
-
                     <button onClick={toggleTheme} className="hidden lg:flex p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
                         {theme === 'dark' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
                     </button>
@@ -340,7 +334,7 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
                             {/* User Info */}
                             <div className="px-4 py-2 border-b border-border mb-1">
                                 <p className="text-sm font-medium">{displayName}</p>
-                                <p className="text-xs text-muted-foreground">{userEmail}</p>
+                                <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
                             </div>
 
                             {/* Tenant Selector Section */}
