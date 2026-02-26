@@ -122,6 +122,17 @@ export default function ArtifactContainer({ artifact }: { artifact: ArtifactData
                     <AssetReviewArtifact
                         data={artifact.data}
                         source="upload"
+                        onBack={() => {
+                            pushSystemArtifact(
+                                "Going back to the discrepancy review step. You can re-examine and adjust the items before proceeding.",
+                                {
+                                    id: 'art_discrepancy_back_' + Date.now(),
+                                    type: 'discrepancy_resolver',
+                                    data: { issues: [] },
+                                    source: 'Back from Asset Review'
+                                }
+                            );
+                        }}
                         onApprove={() => {
                             pushSystemArtifact(
                                 "The quote has been validated and approved. You can now generate the Purchase Order or simulate the benefit view.",

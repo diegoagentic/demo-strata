@@ -11,20 +11,20 @@ export function cn(...inputs: ClassValue[]) {
 export default function CommandCenter() {
     const [input, setInput] = useState('');
     const [isHighlighted, setIsHighlighted] = useState(false);
-    const { sendMessage, isGenerating, isStreamOpen, toggleStream, setStreamOpen, setShowTriggers, showTriggers } = useGenUI();
+    const { sendMessage, isGenerating, isStreamOpen, toggleStream, setStreamOpen, setShowTriggers, showTriggers, openStreamFresh } = useGenUI();
 
     useEffect(() => {
         const handleHighlight = (e: CustomEvent) => {
             if (e.detail === 'gen-ui-scenarios' || e.detail === 'quote-flow') {
                 setIsHighlighted(true);
-                setStreamOpen(true);
+                openStreamFresh();   // open with clean state
                 setShowTriggers(true);
                 setTimeout(() => setIsHighlighted(false), 4000);
             }
         };
         window.addEventListener('demo-highlight', handleHighlight as EventListener);
         return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
-    }, [setStreamOpen, setShowTriggers]);
+    }, [openStreamFresh, setShowTriggers]);
 
     const handleSend = () => {
         if (!input.trim() || isGenerating) return;
@@ -57,7 +57,7 @@ export default function CommandCenter() {
 
                     <button
                         onClick={() => {
-                            setStreamOpen(true);
+                            openStreamFresh();
                             setShowTriggers(true);
                         }}
                         className={`p-2 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-brand-300 dark:hover:bg-brand-600/50 dark:hover:text-white transition-all ${showTriggers ? 'bg-brand-300 dark:bg-brand-600/50 text-zinc-900 dark:text-white' : ''}`}

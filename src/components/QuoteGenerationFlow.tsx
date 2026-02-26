@@ -77,7 +77,7 @@ export default function QuoteGenerationFlow({ onNavigate, onComplete }: QuoteGen
     }
 
     if (phase === 'REVIEW_NEEDED') {
-        return <AssetReviewArtifact data={reviewData} onApprove={handleReviewComplete} source="upload" />;
+        return <AssetReviewArtifact data={reviewData} onApprove={handleReviewComplete} onBack={() => setPhase('ANALYZING')} source="upload" />;
     }
 
     if (phase === 'APPROVED') {

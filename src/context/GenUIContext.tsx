@@ -44,6 +44,7 @@ interface GenUIContextType {
     pushSystemArtifact: (content: string, artifact?: ArtifactData) => void;
     clearStream: () => void;
     toggleStream: () => void;
+    openStreamFresh: () => void;
     setStreamOpen: (isOpen: boolean) => void;
     setShowTriggers: (show: boolean) => void;
     navigate: (path: string) => void;
@@ -51,15 +52,15 @@ interface GenUIContextType {
 
 const GenUIContext = createContext<GenUIContextType | undefined>(undefined);
 
+const WELCOME_MESSAGE: StreamMessage = {
+    id: 'welcome',
+    type: 'system',
+    content: 'Hello! I am your Strata Assistant. How can I help you with your dealership tasks today?',
+    timestamp: new Date(),
+};
+
 export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, onNavigate?: (path: string) => void }) => {
-    const [messages, setMessages] = useState<StreamMessage[]>([
-        {
-            id: 'welcome',
-            type: 'system',
-            content: 'Hello! I am your Strata Assistant. How can I help you with your dealership tasks today?',
-            timestamp: new Date(),
-        }
-    ]);
+    const [messages, setMessages] = useState<StreamMessage[]>([WELCOME_MESSAGE]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isStreamOpen, setStreamOpen] = useState(false);
     const [showTriggers, setShowTriggers] = useState(false);
@@ -68,7 +69,23 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
         if (onNavigate) onNavigate(path);
     };
 
-    const toggleStream = () => setStreamOpen(prev => !prev);
+    // Auto-reset messages to welcome when OPENING the stream
+    // This prevents old artifacts (e.g. DiscrepancyResolver from past flows) from showing
+    const toggleStream = () => {
+        setStreamOpen(prev => {
+            if (!prev) {
+                // Opening: reset to welcome message so stream is clean
+                setMessages([{ ...WELCOME_MESSAGE, timestamp: new Date() }]);
+            }
+            return !prev;
+        });
+    };
+
+    // Opens stream fresh (used by trigger buttons in CommandCenter)
+    const openStreamFresh = () => {
+        setMessages([{ ...WELCOME_MESSAGE, timestamp: new Date() }]);
+        setStreamOpen(true);
+    };
 
     const pushSystemArtifact = (content: string, artifact?: ArtifactData) => {
         const systemMsg: StreamMessage = {
@@ -550,11 +567,13 @@ export const GenUIProvider = ({ children, onNavigate }: { children: ReactNode, o
     };
 
     const clearStream = () => {
-        setMessages([]);
+        // Reset to welcome message instead of empty — prevents old artifacts from showing on reopen
+        setMessages([{ ...WELCOME_MESSAGE, timestamp: new Date() }]);
+        setStreamOpen(false);
     };
 
     return (
-        <GenUIContext.Provider value={{ messages, isGenerating, isStreamOpen, showTriggers, sendMessage, pushSystemArtifact, clearStream, toggleStream, setStreamOpen, setShowTriggers, navigate }}>
+        <GenUIContext.Provider value={{ messages, isGenerating, isStreamOpen, showTriggers, sendMessage, pushSystemArtifact, clearStream, toggleStream, openStreamFresh, setStreamOpen, setShowTriggers, navigate }}>
             {children}
         </GenUIContext.Provider>
     );

@@ -79,7 +79,6 @@ function SmartQuoteHubContent({ onNavigate, demoPhase = 'IDLE', onUploadStart, o
         if (mode === 'selection') {
             if (content.includes('mode selected: file') || content.includes('upload request') || content.includes('magic upload')) {
                 setMode('processing');
-                // Initialize artifact with filename
                 setReviewData({ source: 'upload', fileName: 'Request_Upload.pdf' });
             } else if (content.includes('processed upload')) {
                 setMode('processing');
@@ -107,6 +106,23 @@ function SmartQuoteHubContent({ onNavigate, demoPhase = 'IDLE', onUploadStart, o
                     }, 1500);
                 }
             } else if (content.includes('start new quote')) {
+                setMode('selection');
+                setReviewData(null);
+            }
+        }
+
+        // 4. FIX: Reset state when user initiates a brand new quote while in a non-idle mode
+        // This prevents the "stuck review steps" bug after completing a quote flow
+        if (lastMsg.type === 'user' && (mode === 'review' || mode === 'success' || mode === 'processing')) {
+            if (
+                content.includes('proposal') ||
+                content.includes('stellar tech') ||
+                (content.includes('quote') &&
+                    !content.includes('qt-2941') &&
+                    !content.includes('mode selected') &&
+                    !content.includes('selected erp') &&
+                    !content.includes('purchase order'))
+            ) {
                 setMode('selection');
                 setReviewData(null);
             }
@@ -186,6 +202,25 @@ function SmartQuoteHubContent({ onNavigate, demoPhase = 'IDLE', onUploadStart, o
                 </div>
             )}
 
+            {/* Header for active flow states — shows "New Quote" reset button */}
+            {(mode === 'processing' || mode === 'review') && (
+                <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <DocumentCheckIcon className="w-5 h-5 text-indigo-500" />
+                        <span className="text-sm font-semibold text-foreground">
+                            {mode === 'processing' ? 'Analyzing Document...' : 'Asset Review'}
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => { setMode('selection'); setReviewData(null); }}
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors border border-transparent hover:border-border"
+                    >
+                        <DocumentPlusIcon className="w-3.5 h-3.5" />
+                        New Quote
+                    </button>
+                </div>
+            )}
+
             <div className="flex-1 overflow-hidden relative flex flex-col">
                 {mode === 'selection' && (
                     <>
@@ -246,7 +281,12 @@ function SmartQuoteHubContent({ onNavigate, demoPhase = 'IDLE', onUploadStart, o
 
                 {mode === 'review' && reviewData && (
                     <div className="h-full animate-in slide-in-from-right duration-500">
-                        <AssetReviewArtifact data={reviewData} source={reviewData.source} />
+                        <AssetReviewArtifact
+                            data={reviewData}
+                            source={reviewData.source}
+                            onBack={() => setMode('processing')}
+                            onApprove={() => setMode('success')}
+                        />
                     </div>
                 )}
 

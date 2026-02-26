@@ -3,7 +3,7 @@ import { useGenUI, type StreamMessage, TRIGGERS } from '../../context/GenUIConte
 import ArtifactContainer from './artifacts/ArtifactContainer';
 import ThinkingIndicator from './ThinkingIndicator';
 import { UserIcon } from '@heroicons/react/24/solid';
-import { SparklesIcon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, XMarkIcon, ArrowRightIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const MessageBubble = ({ message }: { message: StreamMessage }) => {
     const { navigate } = useGenUI();
@@ -86,7 +86,7 @@ const MessageBubble = ({ message }: { message: StreamMessage }) => {
 };
 
 export default function StreamFeed() {
-    const { messages, isGenerating, isStreamOpen, showTriggers, setShowTriggers, sendMessage } = useGenUI();
+    const { messages, isGenerating, isStreamOpen, showTriggers, setShowTriggers, sendMessage, clearStream } = useGenUI();
     const bottomRef = useRef<HTMLDivElement>(null);
     const [highlightedTrigger, setHighlightedTrigger] = useState<string | null>(null);
 
@@ -121,15 +121,28 @@ export default function StreamFeed() {
                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                     {showTriggers ? 'Select a Scenario' : 'Generative Stream'}
                 </span>
-                {showTriggers ? (
-                    <button onClick={() => setShowTriggers(false)} className="text-zinc-400 hover:text-foreground">
-                        <XMarkIcon className="w-4 h-4" />
-                    </button>
-                ) : (
-                    <button onClick={() => setShowTriggers(true)} className="text-[10px] text-zinc-400 hover:text-primary transition-colors cursor-pointer flex items-center gap-1">
-                        History & Actions
-                    </button>
-                )}
+                <div className="flex items-center gap-2">
+                    {/* New Conversation button — clears stream and restarts */}
+                    {!showTriggers && messages.length > 1 && (
+                        <button
+                            onClick={clearStream}
+                            title="New conversation"
+                            className="flex items-center gap-1 text-[10px] text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10"
+                        >
+                            <ArrowPathIcon className="w-3.5 h-3.5" />
+                            New
+                        </button>
+                    )}
+                    {showTriggers ? (
+                        <button onClick={() => setShowTriggers(false)} className="text-zinc-400 hover:text-foreground">
+                            <XMarkIcon className="w-4 h-4" />
+                        </button>
+                    ) : (
+                        <button onClick={() => setShowTriggers(true)} className="text-[10px] text-zinc-400 hover:text-primary transition-colors cursor-pointer flex items-center gap-1">
+                            History &amp; Actions
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-micro">
@@ -145,8 +158,8 @@ export default function StreamFeed() {
                                 key={trigger.id}
                                 onClick={() => handleTriggerClick(trigger.prompt)}
                                 className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between group border ${highlightedTrigger === trigger.id
-                                        ? "bg-green-100 dark:bg-green-900/30 border-green-500 animate-[pulse_1.5s_ease-in-out_infinite] relative z-50 shadow-lg glow"
-                                        : "border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700"
+                                    ? "bg-green-100 dark:bg-green-900/30 border-green-500 animate-[pulse_1.5s_ease-in-out_infinite] relative z-50 shadow-lg glow"
+                                    : "border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700"
                                     }`}
                             >
                                 <div>

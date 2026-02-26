@@ -39,20 +39,59 @@ export interface AssetType {
     totalPrice: number;
     status: 'validated' | 'review' | 'suggestion';
     issues?: string[];
-    warranty?: string; // New field
-    costCenter?: string; // New field
-    options?: { sku: string; name: string; price: number; subText: string; }[]; // New field for manual selection
+    warranty?: string;
+    costCenter?: string;
+    options?: { sku: string; name: string; price: number; subText: string; }[];
     suggestion?: {
         sku: string;
         price: number;
         reason: string;
         confidence?: number;
     };
+    // Change tracking: origin and human-readable label
+    changeOrigin?: 'ai_substitution' | 'manual_selection' | 'document_field_fix';
+    changeLabel?: string; // e.g. "SKU replaced", "Dealer selected", "PO# corrected"
+    originalSku?: string; // To show the before/after SKU in the AI Applied tab
 }
 
-export default function AssetReviewArtifact({ data, source = 'upload', onApprove }: { data: any, source?: 'upload' | 'erp', onApprove?: () => void }) {
+export default function AssetReviewArtifact({ data, source = 'upload', onApprove, onBack }: { data: any, source?: 'upload' | 'erp', onApprove?: () => void, onBack?: () => void }) {
     const { sendMessage } = useGenUI();
-    const [filter, setFilter] = useState<'all' | 'attention' | 'validated'>('all');
+    const [filter, setFilter] = useState<'all' | 'ai_changes' | 'manual_edits'>('all');
+
+    // Define the initial asset list inline so lazy initializers can reference it
+    const INITIAL_ASSETS: AssetType[] = data?.assets?.map((a: any) => ({ ...a, warranty: 'Standard Warranty', costCenter: '' })) || [
+        // ✅ Validated — no change
+        { id: '1', description: 'Executive Task Chair', sku: 'CHAIR-EXEC-2024', qty: 150, unitPrice: 895.00, totalPrice: 134250.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-101', basePrice: 895.00 },
+        // ✏️ AI Substitution — "Needs review" asset substituted by AI (shows in Review Substitutions as "Asset Data Mismatch")
+        { id: '2', description: 'Conf Chair (Leather)', sku: 'CHR-CONF-LTH-ALT-1', qty: 8, unitPrice: 807.50, totalPrice: 6460.00, status: 'review', issues: ['Asset Data Mismatch'], warranty: 'Standard Warranty', costCenter: 'CC-GEN', basePrice: 850.00, changeOrigin: 'ai_substitution', changeLabel: 'AI recommended replacement (85% match)', originalSku: 'CHR-CONF-LTH' },
+        // ✨ AI Substitution — budget alternative detected by AI
+        { id: '3', description: 'Height Adjustable Workstation', sku: 'DESK-ELECTRIC-7230-BUDGET', qty: 95, unitPrice: 1100.00, totalPrice: 104500.00, status: 'suggestion', suggestion: { sku: 'DESK-ELECTRIC-7230-BUDGET', price: 1100.00, reason: 'Budget alternative available (Save $150/unit)' }, warranty: 'Standard Warranty', costCenter: 'CC-ENG', basePrice: 1250.00, changeOrigin: 'ai_substitution', changeLabel: 'AI replaced discontinued SKU', originalSku: 'DESK-ELECTRIC-7230' },
+        // ✨ AI Substitution — discontinued product auto-replaced by AI
+        { id: '4', description: 'Legacy Side Table', sku: 'TBL-SIDE-MODERN-24', qty: 12, unitPrice: 345.00, totalPrice: 4140.00, status: 'review', issues: ['Discontinued: End of Life'], costCenter: 'CC-LOBBY', warranty: 'Standard Warranty', suggestion: { sku: 'TBL-SIDE-MODERN-24', price: 345.00, reason: 'Direct replacement for legacy series. 98% match on dimensions.', confidence: 95 }, basePrice: 320.00, changeOrigin: 'ai_substitution', changeLabel: 'AI auto-substituted (95% match)', originalSku: 'TBL-SIDE-LEGACY-09' },
+        // ✨ AI Substitution — recalled product replaced by AI
+        { id: '6', description: 'Vintage Filing Cabinet', sku: 'CAB-FILE-STEEL-X', qty: 5, unitPrice: 195.00, totalPrice: 975.00, status: 'review', issues: ['Discontinued: Manufacturer recalled'], costCenter: 'CC-ADMIN', warranty: 'Standard Warranty', suggestion: { sku: 'CAB-FILE-STEEL-X', price: 195.00, reason: 'Steelcase alternative selected per client substitution rules.', confidence: 92 }, basePrice: 180.00, changeOrigin: 'ai_substitution', changeLabel: 'AI applied substitution rule (92%)', originalSku: 'CAB-FILE-VINT-2' },
+        // ✏️ Manual Selection — dealer chose from options
+        { id: '7', description: 'Acoustic Panel System', sku: 'PNL-AC-SYS-NEW-A', qty: 24, unitPrice: 165.00, totalPrice: 3960.00, status: 'review', issues: ['Discontinued: Out of Stock'], costCenter: 'CC-OPEN', warranty: 'Standard Warranty', options: [{ sku: 'PNL-AC-SYS-NEW-A', name: 'Acoustic Panel Pro', price: 165.00, subText: 'Premium soundproofing' }, { sku: 'PNL-AC-SYS-NEW-B', name: 'Acoustic Panel Lite', price: 140.00, subText: 'Budget friendly' }, { sku: 'PNL-AC-SYS-COLOR', name: 'Acoustic Panel Vibrant', price: 170.00, subText: 'Custom color finish' }], basePrice: 150.00, changeOrigin: 'manual_selection', changeLabel: 'Dealer selected: PNL-AC-SYS-NEW-A', originalSku: 'PNL-AC-SYS-OLD' },
+        // ✅ Validated — no change
+        { id: '5', description: 'Ergonomic Office Chair', sku: 'CHAIR-ERG-001', qty: 85, unitPrice: 425.00, totalPrice: 36125.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-HR', basePrice: 425.00 },
+        { id: '8', description: 'Steel Mobile Pedestal', sku: 'PED-MOB-STL-01', qty: 120, unitPrice: 225.00, totalPrice: 27000.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-101', basePrice: 225.00 },
+        { id: '9', description: 'Dual Monitor Arm', sku: 'ACC-MON-DUAL', qty: 150, unitPrice: 145.00, totalPrice: 21750.00, status: 'validated', warranty: 'Standard Warranty', costCenter: 'CC-101', basePrice: 145.00 },
+        { id: '10', description: 'Lounge Seating Sofa', sku: 'SOFA-LNG-3STR', qty: 4, unitPrice: 1200.00, totalPrice: 4800.00, status: 'validated', warranty: '12-Year Standard', costCenter: 'CC-LOBBY', basePrice: 1200.00 },
+    ];
+
+    // Pre-populate: AI flagged = has a suggestion from AI (discontinued/budget alternatives)
+    const [aiChangedIds, setAiChangedIds] = useState<Set<string>>(() => {
+        const s = new Set<string>();
+        INITIAL_ASSETS.forEach(a => { if (a.suggestion || a.status === 'suggestion') s.add(a.id); });
+        return s;
+    });
+
+    // Pre-populate: Manual edits = items that required dealer decision (options to choose from or flagged for review without AI suggestion)
+    const [manuallyEditedIds, setManuallyEditedIds] = useState<Set<string>>(() => {
+        const s = new Set<string>();
+        INITIAL_ASSETS.forEach(a => { if (a.options || (a.status === 'review' && !a.suggestion)) s.add(a.id); });
+        return s;
+    });
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingAsset, setEditingAsset] = useState<AssetType | null>(null);
 
@@ -67,6 +106,16 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
     const [isResolverOpen, setIsResolverOpen] = useState(!!data?.openResolver);
     const [isSubstitutionsOpen, setIsSubstitutionsOpen] = useState(false);
     const [isApproved, setIsApproved] = useState(false); // Tracks if this artifact has been finalized
+
+    // Tracks resolved document-level discrepancies (from DiscrepancyResolver header/rule steps)
+    const [resolvedDocChanges, setResolvedDocChanges] = useState<{
+        id: string; type: 'header' | 'rule'; title: string; action: 'accept' | 'keep';
+        before: string; after: string; confidence: number;
+    }[]>([
+        // Pre-populated with the 2 resolved discrepancies from Review Discrepancies step
+        { id: 'h-1', type: 'header', title: 'Reference Number Mismatch', action: 'accept', before: '12345', after: 'PO-12345-RevA', confidence: 92 },
+        { id: 'r-1', type: 'rule', title: 'Margin Threshold Alert', action: 'accept', before: '22%', after: '25%', confidence: 100 },
+    ]);
 
     // Mock Header & Rule Issues (New for Unified Resolution)
     const [headerIssues, setHeaderIssues] = useState<DiscrepancyItem[]>([
@@ -176,148 +225,7 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
     const unmappedFields = mappingFields.filter(f => f.status !== 'matched');
     const matchedFields = mappingFields.filter(f => f.status === 'matched');
 
-    // Mock Data (will come from `data` prop later)
-    const [assets, setAssets] = useState<AssetType[]>(data?.assets?.map((a: any) => ({ ...a, warranty: 'Standard Warranty', costCenter: '' })) || [
-        {
-            id: '1',
-            description: 'Executive Task Chair',
-            sku: 'CHAIR-EXEC-2024',
-            qty: 150,
-            unitPrice: 895.00,
-            totalPrice: 134250.00,
-            status: 'validated',
-            warranty: 'Standard Warranty',
-            costCenter: 'CC-101'
-        },
-        {
-            id: '2',
-            description: 'Conf Chair (Leather)',
-            sku: 'CHR-CONF-LTH',
-            qty: 8,
-            unitPrice: 850.00,
-            totalPrice: 6800.00,
-            status: 'review',
-            issues: ['Needs review'],
-            warranty: 'Standard Warranty',
-            costCenter: 'CC-GEN'
-        },
-        {
-            id: '3',
-            description: 'Height Adjustable Workstation',
-            sku: 'DESK-ELECTRIC-7230',
-            qty: 95,
-            unitPrice: 1250.00,
-            totalPrice: 118750.00,
-            status: 'suggestion',
-            suggestion: {
-                sku: 'DESK-ELECTRIC-7230-BUDGET',
-                price: 1100.00,
-                reason: 'Budget alternative available (Save $150/unit)'
-            },
-            warranty: 'Standard Warranty',
-            costCenter: 'CC-ENG'
-        },
-        // MOCK DATA FOR FLOW 1: Discontinued Item 1 (AI Suggested)
-        {
-            id: '4',
-            description: 'Legacy Side Table (Discontinued)',
-            sku: 'TBL-SIDE-LEGACY-09',
-            qty: 12,
-            unitPrice: 320.00,
-            totalPrice: 3840.00,
-            status: 'review',
-            issues: ['Discontinued: End of Life'],
-            costCenter: 'CC-LOBBY',
-            warranty: 'Standard Warranty',
-            suggestion: {
-                sku: 'TBL-SIDE-MODERN-24',
-                price: 345.00,
-                reason: 'Direct replacement for legacy series. 98% match on dimensions.',
-                confidence: 95
-            }
-        },
-        // MOCK DATA FOR FLOW 1: Discontinued Item 2 (AI Suggested)
-        {
-            id: '6',
-            description: 'Vintage Filing Cabinet (Discontinued)',
-            sku: 'CAB-FILE-VINT-2',
-            qty: 5,
-            unitPrice: 180.00,
-            totalPrice: 900.00,
-            status: 'review',
-            issues: ['Discontinued: Manufacturer recalled'],
-            costCenter: 'CC-ADMIN',
-            warranty: 'Standard Warranty',
-            suggestion: {
-                sku: 'CAB-FILE-STEEL-X',
-                price: 195.00,
-                reason: 'Steelcase alternative selected per client substitution rules.',
-                confidence: 92
-            }
-        },
-        // MOCK DATA FOR FLOW 1: Discontinued Item 3 (Manual Selection Required)
-        {
-            id: '7',
-            description: 'Acoustic Panel System (Discontinued)',
-            sku: 'PNL-AC-SYS-OLD',
-            qty: 24,
-            unitPrice: 150.00,
-            totalPrice: 3600.00,
-            status: 'review',
-            issues: ['Discontinued: Out of Stock Indefinitely'],
-            costCenter: 'CC-OPEN',
-            warranty: 'Standard Warranty',
-            options: [
-                { sku: 'PNL-AC-SYS-NEW-A', name: 'Acoustic Panel Pro', price: 165.00, subText: 'Premium soundproofing' },
-                { sku: 'PNL-AC-SYS-NEW-B', name: 'Acoustic Panel Lite', price: 140.00, subText: 'Budget friendly' },
-                { sku: 'PNL-AC-SYS-COLOR', name: 'Acoustic Panel Vibrant', price: 170.00, subText: 'Custom color finish' }
-            ]
-        },
-        {
-            id: '5',
-            description: 'Ergonomic Office Chair',
-            sku: 'CHAIR-ERG-001',
-            qty: 85,
-            unitPrice: 425.00,
-            totalPrice: 36125.00,
-            status: 'validated',
-            warranty: 'Standard Warranty',
-            costCenter: 'CC-HR'
-        },
-        {
-            id: '8',
-            description: 'Steel Mobile Pedestal',
-            sku: 'PED-MOB-STL-01',
-            qty: 120,
-            unitPrice: 225.00,
-            totalPrice: 27000.00,
-            status: 'validated',
-            warranty: 'Standard Warranty',
-            costCenter: 'CC-101'
-        },
-        {
-            id: '9',
-            description: 'Dual Monitor Arm',
-            sku: 'ACC-MON-DUAL',
-            qty: 150,
-            unitPrice: 145.00,
-            totalPrice: 21750.00,
-            status: 'validated',
-            warranty: 'Standard Warranty',
-            costCenter: 'CC-101'
-        },
-        {
-            id: '10',
-            description: 'Lounge Seating Sofa',
-            sku: 'SOFA-LNG-3STR',
-            qty: 4,
-            unitPrice: 1200.00,
-            totalPrice: 4800.00,
-            status: 'validated',
-            warranty: '12-Year Standard',
-            costCenter: 'CC-LOBBY'
-        }
-    ]);
+    const [assets, setAssets] = useState<AssetType[]>(INITIAL_ASSETS);
 
     const [isWarrantyMenuOpen, setIsWarrantyMenuOpen] = useState(false);
     const [pricingStep, setPricingStep] = useState<'warranties' | 'discounts'>('warranties');
@@ -364,6 +272,8 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
 
     const handleSaveAsset = (updatedAsset: AssetType) => {
         setAssets(prev => prev.map(a => a.id === updatedAsset.id ? { ...updatedAsset, status: 'validated', issues: [] } : a));
+        // Track as manually edited by user
+        setManuallyEditedIds(prev => new Set([...prev, updatedAsset.id]));
     };
 
     const handleAcceptSuggestion = (assetId: string) => {
@@ -381,7 +291,9 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
             }
             return a;
         }));
-        setIsSuggestionModalOpen(false); // Close modal on accept
+        // Track as AI-changed
+        setAiChangedIds(prev => new Set([...prev, assetId]));
+        setIsSuggestionModalOpen(false);
     };
 
     const handleRejectSuggestion = (assetId: string) => {
@@ -460,10 +372,14 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
 
     const filteredAssets = assets.filter(a => {
         if (filter === 'all') return true;
-        if (filter === 'attention') return a.status === 'review' || a.status === 'suggestion';
-        if (filter === 'validated') return a.status === 'validated';
+        if (filter === 'ai_changes') return aiChangedIds.has(a.id);
+        if (filter === 'manual_edits') return manuallyEditedIds.has(a.id);
         return true;
     });
+
+    // Tab counts
+    const aiChangesCount = aiChangedIds.size;
+    const manualEditsCount = manuallyEditedIds.size;
 
     // Simulating 40 total items without rendering all 40 list items to keep DOM light
     const simulatedExtraItems = 33;
@@ -546,6 +462,17 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
             {/* Header / Status Bar */}
             <div className="shrink-0 bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                    {/* Back button */}
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700 mr-1"
+                            title="Back to Analysis"
+                        >
+                            <ArrowLeftIcon className="w-3.5 h-3.5" />
+                            Back
+                        </button>
+                    )}
                     <div className="p-2 bg-primary/20 dark:bg-primary/10 rounded-lg">
                         <SparklesIcon className="w-5 h-5 text-zinc-900 dark:text-primary" />
                     </div>
@@ -557,14 +484,12 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                         <p className="text-xs text-muted-foreground">
                             {totalIssues > 0
                                 ? `${totalIssues} items require human review`
-                                : "All assets validated. Ready for submission."}
+                                : 'Review completed — confirm changes before submitting'}
                         </p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-
-
                     <button className="flex items-center gap-2 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-xs font-medium transition-colors text-foreground">
                         <DocumentTextIcon className="w-4 h-4" />
                         Save Draft
@@ -588,7 +513,7 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                         ) : (
                             <>
                                 <TagIcon className="w-4 h-4" />
-                                Apply Discounts & Warranties
+                                Apply Discounts &amp; Warranties
                             </>
                         )}
                     </button>
@@ -647,73 +572,167 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                                     </button>
                                 )}
                             </div>
-                        </div>
 
-                        {/* AI Mappings / Context (Collapsible) */}
-                        <div className="mb-4">
-                            <button
-                                onClick={() => setIsMappingExpanded(!isMappingExpanded)}
-                                className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-2"
-                            >
-                                <ChevronDownIcon className={`w-3 h-3 transition-transform ${isMappingExpanded ? '' : '-rotate-90'}`} />
-                                Detected Context & Mappings
-                            </button>
-
-                            {isMappingExpanded && (
-                                <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 animate-in slide-in-from-top-2">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {mappingFields.slice(0, 4).map(field => (
-                                            <div key={field.label} className="flex flex-col gap-1">
-                                                <span className="text-[10px] uppercase font-bold text-muted-foreground">{field.value}</span>
-                                                <span className="text-sm font-medium text-foreground truncate" title={field.description}>{field.description}</span>
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded w-fit ${field.confidence > 80 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                                                    }`}>
-                                                    {field.confidence}% Confidence
-                                                </span>
+                            {/* Change Summary — visible when all issues resolved */}
+                            {totalIssues === 0 && (
+                                <div className="mt-4 p-3 bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Changes Applied in This Review</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {resolvedDocChanges.length > 0 && (
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-lg border border-amber-100 dark:border-amber-800/30 text-xs font-semibold">
+                                                <DocumentTextIcon className="w-3.5 h-3.5" />
+                                                {resolvedDocChanges.length} Document Field Fix{resolvedDocChanges.length > 1 ? 'es' : ''}
                                             </div>
-                                        ))}
+                                        )}
+                                        {aiChangesCount > 0 && (
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 rounded-lg border border-indigo-100 dark:border-indigo-800/30 text-xs font-semibold">
+                                                <SparklesIcon className="w-3.5 h-3.5" />
+                                                {aiChangesCount} AI Substitution{aiChangesCount > 1 ? 's' : ''}
+                                            </div>
+                                        )}
+                                        {manualEditsCount > 0 && (
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-100 dark:border-blue-800/30 text-xs font-semibold">
+                                                <PencilSquareIcon className="w-3.5 h-3.5" />
+                                                {manualEditsCount} Manual Selection{manualEditsCount > 1 ? 's' : ''}
+                                            </div>
+                                        )}
                                     </div>
+                                    <p className="text-[10px] text-muted-foreground mt-2">Click "Apply Discounts &amp; Warranties" above to confirm and continue, or use the Back button to re-review.</p>
                                 </div>
                             )}
                         </div>
 
-                        {/* Filter Tabs */}
-                        <div className="flex items-center gap-2 mb-4 border-b border-zinc-200 dark:border-zinc-800">
+                        {/* Document Changes — resolved discrepancies from Review Discrepancies step */}
+                        {resolvedDocChanges.length > 0 && (
+                            <div className="mb-3">
+                                <button
+                                    onClick={() => setIsMappingExpanded(!isMappingExpanded)}
+                                    className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-2"
+                                >
+                                    <ChevronDownIcon className={`w-3 h-3 transition-transform ${isMappingExpanded ? '' : '-rotate-90'}`} />
+                                    Detected Context &amp; Mappings
+                                </button>
+
+                                {isMappingExpanded && (
+                                    <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 animate-in slide-in-from-top-2 mb-3">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {mappingFields.slice(0, 4).map(field => (
+                                                <div key={field.label} className="flex flex-col gap-1">
+                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">{field.value}</span>
+                                                    <span className="text-sm font-medium text-foreground truncate" title={field.description}>{field.description}</span>
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded w-fit ${field.confidence > 80 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                        {field.confidence}% Confidence
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Document discrepancy cards */}
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                        <DocumentTextIcon className="w-3.5 h-3.5" />
+                                        Document Fixes ({resolvedDocChanges.length} resolved)
+                                    </p>
+                                    {resolvedDocChanges.map(change => (
+                                        <div key={change.id} className={`flex items-center gap-3 p-2.5 rounded-lg border text-xs ${change.type === 'header'
+                                                ? 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30'
+                                                : 'bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-800/30'
+                                            }`}>
+                                            <div className={`p-1.5 rounded-lg shrink-0 ${change.type === 'header' ? 'bg-amber-100 dark:bg-amber-900/20 text-amber-600' : 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600'
+                                                }`}>
+                                                {change.type === 'header' ? <DocumentTextIcon className="w-3 h-3" /> : <SparklesIcon className="w-3 h-3" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-semibold text-foreground">{change.title}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5 font-mono">
+                                                    <span className="line-through opacity-60 bg-red-50 dark:bg-red-900/20 px-1 rounded">{change.before}</span>
+                                                    <ArrowLongRightIcon className="w-3 h-3 text-muted-foreground shrink-0" />
+                                                    <span className="font-semibold bg-green-50 dark:bg-green-900/20 px-1 rounded text-green-700 dark:text-green-400">{change.after}</span>
+                                                </div>
+                                            </div>
+                                            <div className="shrink-0 text-right">
+                                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${change.action === 'accept' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-zinc-100 text-zinc-500'
+                                                    }`}>
+                                                    {change.action === 'accept' ? '✓ AI Applied' : '↩ Kept Original'}
+                                                </span>
+                                                <p className="text-[10px] text-muted-foreground mt-0.5">{change.confidence}% confidence</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Filter Tabs — Intelligent Change Tracking */}
+                        <div className="flex items-center gap-1 mb-4 border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto">
+                            {/* Line Items */}
                             <button
                                 onClick={() => setFilter('all')}
-                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'all'
+                                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${filter === 'all'
                                     ? 'border-zinc-900 text-zinc-900 dark:border-primary dark:text-primary'
                                     : 'border-transparent text-muted-foreground hover:text-foreground'
                                     }`}
                             >
-                                All Assets ({stats.total})
+                                Line Items ({stats.total})
                             </button>
+
+                            {/* AI Changes */}
                             <button
-                                onClick={() => setFilter('attention')}
-                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${filter === 'attention'
-                                    ? 'border-amber-500 text-amber-600'
+                                onClick={() => setFilter('ai_changes')}
+                                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap ${filter === 'ai_changes'
+                                    ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
                                     : 'border-transparent text-muted-foreground hover:text-foreground'
                                     }`}
                             >
-                                Needs Attention
-                                {stats.attention > 0 && (
-                                    <span className="bg-amber-100 text-amber-700 px-1.5 rounded-full text-xs">{stats.attention}</span>
+                                <SparklesIcon className="w-3.5 h-3.5" />
+                                AI Applied
+                                {aiChangesCount > 0 && (
+                                    <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-1.5 rounded-full text-xs font-bold">{aiChangesCount}</span>
                                 )}
                             </button>
+
+                            {/* Manual Edits */}
                             <button
-                                onClick={() => setFilter('validated')}
-                                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'validated'
-                                    ? 'border-green-500 text-green-600'
+                                onClick={() => setFilter('manual_edits')}
+                                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 whitespace-nowrap ${filter === 'manual_edits'
+                                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                                     : 'border-transparent text-muted-foreground hover:text-foreground'
                                     }`}
                             >
-                                Validated
+                                <PencilSquareIcon className="w-3.5 h-3.5" />
+                                Manual Edits
+                                {manualEditsCount > 0 && (
+                                    <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-1.5 rounded-full text-xs font-bold">{manualEditsCount}</span>
+                                )}
                             </button>
                         </div>
                     </div>
 
                     {/* Scrollable List */}
                     <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-3 scrollbar-micro">
+                        {/* Empty state for filtered tabs */}
+                        {filteredAssets.length === 0 && filter !== 'all' && (
+                            <div className="py-12 flex flex-col items-center justify-center text-center">
+                                {filter === 'ai_changes' && (
+                                    <>
+                                        <SparklesIcon className="w-10 h-10 text-indigo-300 mb-3" />
+                                        <p className="text-sm font-medium text-foreground">No AI changes yet</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Accept AI suggestions to track them here</p>
+                                    </>
+                                )}
+                                {filter === 'manual_edits' && (
+                                    <>
+                                        <PencilSquareIcon className="w-10 h-10 text-blue-300 mb-3" />
+                                        <p className="text-sm font-medium text-foreground">No manual edits yet</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Edit assets manually to track your changes here</p>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
                         {filteredAssets.map(asset => (
                             <div key={asset.id} className={`group bg-white dark:bg-zinc-800 rounded-xl border p-4 shadow-sm transition-all ${asset.status === 'review' || asset.status === 'suggestion'
                                 ? 'border-amber-200 dark:border-amber-800/30'
@@ -762,11 +781,41 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                                             <div className="text-right">
                                                 <div className="font-bold text-foreground text-sm">{formatCurrency(asset.totalPrice)}</div>
                                                 <div className="text-xs text-muted-foreground">{formatCurrency(asset.unitPrice)} ea</div>
+                                                {/* Price delta indicator for AI substitutions */}
+                                                {asset.changeOrigin === 'ai_substitution' && asset.basePrice && asset.unitPrice !== asset.basePrice && (
+                                                    <div className={`text-[10px] font-semibold mt-0.5 ${asset.unitPrice < asset.basePrice ? 'text-green-600' : 'text-amber-600'}`}>
+                                                        {asset.unitPrice < asset.basePrice ? '↓' : '↑'} {formatCurrency(Math.abs((asset.unitPrice - asset.basePrice) * asset.qty))} vs original
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
+                                        {/* Change Origin Badge — shown when on filtered tabs (AI Applied / Manual Edits) */}
+                                        {asset.changeOrigin && filter !== 'all' && (
+                                            <div className={`mt-2 flex flex-wrap items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold w-fit ${asset.changeOrigin === 'ai_substitution'
+                                                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/30'
+                                                : asset.changeOrigin === 'manual_selection'
+                                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/30'
+                                                    : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-800/30'
+                                                }`}>
+                                                {asset.changeOrigin === 'ai_substitution' && <SparklesIcon className="w-3 h-3" />}
+                                                {asset.changeOrigin === 'manual_selection' && <PencilSquareIcon className="w-3 h-3" />}
+                                                {asset.changeOrigin === 'document_field_fix' && <DocumentTextIcon className="w-3 h-3" />}
+                                                <span>{asset.changeLabel}</span>
+                                                {/* Before → After SKU pill */}
+                                                {asset.originalSku && (
+                                                    <span className="ml-1 font-mono opacity-80 flex items-center gap-0.5">
+                                                        <span className="line-through opacity-60">{asset.originalSku}</span>
+                                                        <ArrowLongRightIcon className="w-3 h-3 mx-0.5 opacity-50" />
+                                                        <span>{asset.sku}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+
                                         {/* Issues / Suggestions Bar */}
                                         {(asset.status === 'review' || asset.status === 'suggestion') && (
+
                                             <div className="mt-3 flex items-center justify-between p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
                                                 <div className="flex items-center gap-2 text-xs">
                                                     {asset.status === 'review' ? (
@@ -813,8 +862,8 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                             </div>
                         ))}
 
-                        {/* Pagination / Loading Mock */}
-                        {stats.total > assets.length && (
+                        {/* Pagination / Loading Mock — only shown on All Assets tab */}
+                        {filter === 'all' && stats.total > assets.length && (
                             <div className="py-8 flex flex-col items-center justify-center text-center animate-in fade-in duration-700">
                                 <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin mb-3"></div>
                                 <p className="text-sm font-medium text-muted-foreground">
@@ -898,89 +947,91 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
             </div>
 
             {/* Render 'Report' Step Overlay */}
-            {currentStep === 'report' && (
-                <div className="absolute inset-0 z-20 bg-zinc-50 dark:bg-zinc-800 flex flex-col p-8 items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="max-w-3xl w-full">
-                        <div className="text-center mb-10">
-                            <h2 className="text-3xl font-bold font-brand text-foreground mb-2">Analysis Complete</h2>
-                            <p className="text-muted-foreground">The AI has analyzed your document and found the following items requiring attention.</p>
-                        </div>
+            {
+                currentStep === 'report' && (
+                    <div className="absolute inset-0 z-20 bg-zinc-50 dark:bg-zinc-800 flex flex-col p-8 items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="max-w-3xl w-full">
+                            <div className="text-center mb-10">
+                                <h2 className="text-3xl font-bold font-brand text-foreground mb-2">Analysis Complete</h2>
+                                <p className="text-muted-foreground">The AI has analyzed your document and found the following items requiring attention.</p>
+                            </div>
 
-                        <div className="grid grid-cols-2 gap-6 mb-8">
-                            {/* Context & Rules Card */}
-                            <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-sm relative overflow-hidden group hover:border-amber-200 transition-colors">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                                <h3 className="text-lg font-bold flex items-center gap-2 mb-4 relative z-10">
-                                    <div className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-lg">
-                                        <ShieldCheckIcon className="w-5 h-5" />
-                                    </div>
-                                    Context & Rules
-                                </h3>
+                            <div className="grid grid-cols-2 gap-6 mb-8">
+                                {/* Context & Rules Card */}
+                                <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-sm relative overflow-hidden group hover:border-amber-200 transition-colors">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                                    <h3 className="text-lg font-bold flex items-center gap-2 mb-4 relative z-10">
+                                        <div className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-lg">
+                                            <ShieldCheckIcon className="w-5 h-5" />
+                                        </div>
+                                        Context & Rules
+                                    </h3>
 
-                                <div className="space-y-4 relative z-10">
-                                    <div className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                        <span className="text-sm font-medium">Header Discrepancies</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${headerIssues.length > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                                            {headerIssues.length} Issues
-                                        </span>
+                                    <div className="space-y-4 relative z-10">
+                                        <div className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                            <span className="text-sm font-medium">Header Discrepancies</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${headerIssues.length > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                                {headerIssues.length} Issues
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                            <span className="text-sm font-medium">Business Rule Alerts</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${ruleIssues.length > 0 ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>
+                                                {ruleIssues.length} Alerts
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                        <span className="text-sm font-medium">Business Rule Alerts</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${ruleIssues.length > 0 ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>
-                                            {ruleIssues.length} Alerts
-                                        </span>
+                                </div>
+
+                                {/* Line Items Card */}
+                                <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-sm relative overflow-hidden group hover:border-blue-200 transition-colors">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                                    <h3 className="text-lg font-bold flex items-center gap-2 mb-4 relative z-10">
+                                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">
+                                            <BoltIcon className="w-5 h-5" />
+                                        </div>
+                                        Line Items
+                                    </h3>
+
+                                    <div className="space-y-4 relative z-10">
+                                        <div className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                            <span className="text-sm font-medium">Confident Matches</span>
+                                            <span className="px-2 py-0.5 bg-green-100 text-green-600 rounded-full text-xs font-bold">
+                                                {stats.validated} Items
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                            <span className="text-sm font-medium">Needs Verification</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${stats.attention > 0 ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>
+                                                {stats.attention} Items
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Line Items Card */}
-                            <div className="bg-white dark:bg-zinc-800 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-sm relative overflow-hidden group hover:border-blue-200 transition-colors">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                                <h3 className="text-lg font-bold flex items-center gap-2 mb-4 relative z-10">
-                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">
-                                        <BoltIcon className="w-5 h-5" />
-                                    </div>
-                                    Line Items
-                                </h3>
-
-                                <div className="space-y-4 relative z-10">
-                                    <div className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                        <span className="text-sm font-medium">Confident Matches</span>
-                                        <span className="px-2 py-0.5 bg-green-100 text-green-600 rounded-full text-xs font-bold">
-                                            {stats.validated} Items
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                        <span className="text-sm font-medium">Needs Verification</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${stats.attention > 0 ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>
-                                            {stats.attention} Items
-                                        </span>
-                                    </div>
-                                </div>
+                            <div className="flex justify-center">
+                                {totalIssues > 0 ? (
+                                    <button
+                                        onClick={() => setIsResolverOpen(true)}
+                                        className="px-8 py-4 bg-primary text-primary-foreground text-lg font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform animate-pulse"
+                                    >
+                                        Resolve {totalIssues} Issues to Proceed
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setCurrentStep('discount')}
+                                        className="px-8 py-4 bg-green-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <CheckCircleIcon className="w-6 h-6" />
+                                        Proceed to Pricing
+                                    </button>
+                                )}
                             </div>
-                        </div>
-
-                        <div className="flex justify-center">
-                            {totalIssues > 0 ? (
-                                <button
-                                    onClick={() => setIsResolverOpen(true)}
-                                    className="px-8 py-4 bg-primary text-primary-foreground text-lg font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform animate-pulse"
-                                >
-                                    Resolve {totalIssues} Issues to Proceed
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => setCurrentStep('discount')}
-                                    className="px-8 py-4 bg-green-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                                >
-                                    <CheckCircleIcon className="w-6 h-6" />
-                                    Proceed to Pricing
-                                </button>
-                            )}
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Render 'Discount & Warranty' Step Overlay (Unified Pricing Step) */}
             {
@@ -1243,8 +1294,8 @@ export default function AssetReviewArtifact({ data, source = 'upload', onApprove
                         isOpen={isSuggestionModalOpen}
                         onClose={() => setIsSuggestionModalOpen(false)}
                         asset={selectedSuggestionAsset}
-                        onAccept={() => handleAcceptSuggestion(selectedSuggestionAsset.id)}
-                        onReject={() => handleRejectSuggestion(selectedSuggestionAsset.id)}
+                        onAccept={() => handleAcceptSuggestion(selectedSuggestionAsset!.id)}
+                        onReject={() => handleRejectSuggestion(selectedSuggestionAsset!.id)}
                     />
                 )
             }
