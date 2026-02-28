@@ -28,7 +28,8 @@ import {
 
     LightBulbIcon,
     Bars3BottomLeftIcon,
-    Bars3Icon
+    Bars3Icon,
+    CpuChipIcon
 } from '@heroicons/react/24/outline'
 import { Reorder } from 'framer-motion'
 import { useState, useMemo, useEffect, useRef } from 'react'
@@ -53,6 +54,8 @@ import { useGenUI } from './context/GenUIContext'
 import DashboardMetricsGrid from './components/DashboardMetricsGrid';
 import { Card } from 'strata-design-system';
 import { useDemo } from './context/DemoContext'
+import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
+import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
 
 // Urgent Actions Data (Dealer Persona)
 const urgentActions = [
@@ -270,7 +273,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     // const { theme, toggleTheme } = useTheme() // Removed - useTheme not available
     const { currentTenant } = useTenant()
     const { sendMessage, setStreamOpen, setShowTriggers } = useGenUI()
-    const { currentStep, nextStep } = useDemo()
+    const { currentStep, nextStep, isDemoActive } = useDemo()
 
     const handleGenUIAction = (prompt: string) => {
         setStreamOpen(true);
@@ -319,6 +322,51 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
         window.addEventListener('demo-highlight', handleHighlight as EventListener);
         return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
     }, []);
+
+    // Step 2.1 ERP Timeline Animation
+    const [erpTimelineEntries, setErpTimelineEntries] = useState(0)
+    useEffect(() => {
+        if (currentStep.id !== '2.1') { setErpTimelineEntries(0); return; }
+        let count = 0;
+        const interval = setInterval(() => {
+            count++;
+            setErpTimelineEntries(count);
+            if (count >= 3) clearInterval(interval);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [currentStep.id]);
+
+    // Step 2.7 Approval Chain Animation
+    const [approvalStates, setApprovalStates] = useState<('pending' | 'approved')[]>(['pending', 'pending', 'pending'])
+    const [notificationsVisible, setNotificationsVisible] = useState(false)
+    useEffect(() => {
+        if (currentStep.id !== '2.7') {
+            setApprovalStates(['pending', 'pending', 'pending']);
+            setNotificationsVisible(false);
+            return;
+        }
+        const timeouts: ReturnType<typeof setTimeout>[] = [];
+        timeouts.push(setTimeout(() => setApprovalStates(['approved', 'pending', 'pending']), 2000));
+        timeouts.push(setTimeout(() => setApprovalStates(['approved', 'approved', 'pending']), 4000));
+        timeouts.push(setTimeout(() => setApprovalStates(['approved', 'approved', 'approved']), 5000));
+        timeouts.push(setTimeout(() => setNotificationsVisible(true), 6000));
+        return () => timeouts.forEach(clearTimeout);
+    }, [currentStep.id]);
+
+    const approvedCount27 = approvalStates.filter(s => s === 'approved').length
+    const allApproved27 = approvedCount27 === 3
+
+    // Step 1.8 — Smart Notifications Animation
+    const [notifDelivered18, setNotifDelivered18] = useState<number[]>([])
+    useEffect(() => {
+        if (currentStep.id !== '1.8') { setNotifDelivered18([]); return; }
+        const timeouts: ReturnType<typeof setTimeout>[] = [];
+        timeouts.push(setTimeout(() => setNotifDelivered18([0]), 1500));
+        timeouts.push(setTimeout(() => setNotifDelivered18([0, 1]), 3000));
+        timeouts.push(setTimeout(() => setNotifDelivered18([0, 1, 2]), 4500));
+        return () => timeouts.forEach(clearTimeout);
+    }, [currentStep.id]);
+
     const [expandedActivityId, setExpandedActivityId] = useState<number | null>(null)
     const [performanceTimePeriod, setPerformanceTimePeriod] = useState<'Day' | 'Month' | 'Sem' | 'Year'>('Month')
     const [showCustomizeModal, setShowCustomizeModal] = useState(false);
@@ -451,6 +499,438 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
                 </div>
 
+                {/* ===== Step 2.1: ERP Connector Activity Panel ===== */}
+                {currentStep.id === '2.1' && (
+                    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* Header */}
+                        <div className="p-6 border-b border-border">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-blue-100 dark:bg-blue-500/15 rounded-xl">
+                                        <CpuChipIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-brand font-bold text-foreground">ERP Connector Activity</h2>
+                                        <p className="text-xs text-muted-foreground">EDI/855 Acknowledgment received and translated</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <ConfidenceScoreBadge score={97} label="Translation" size="md" />
+                                    <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-bold flex items-center gap-1">
+                                        <ComputerDesktopIcon className="w-3.5 h-3.5" />
+                                        eManage ONE
+                                    </span>
+                                </div>
+                            </div>
+                            <AgentPipelineStrip agents={[
+                                { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855 translated' },
+                                { id: 'norm', name: 'DataNorm', status: 'pending' },
+                                { id: 'ack', name: 'ACKIngestion', status: 'pending' },
+                                { id: 'comp', name: 'POvsACK', status: 'pending' },
+                                { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                                { id: 'bo', name: 'Backorder', status: 'pending' },
+                                { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                                { id: 'notif', name: 'Notification', status: 'pending' },
+                            ]} accentColor="blue" />
+                        </div>
+
+                        {/* Content: EDI Document + Translation Result */}
+                        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Left: Raw EDI Document */}
+                            <div>
+                                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                                    <DocumentTextIcon className="w-4 h-4 text-muted-foreground" />
+                                    EDI/855 Raw Document
+                                </h3>
+                                <div className="bg-zinc-900 dark:bg-zinc-950 rounded-xl p-4 font-mono text-xs text-green-400 leading-relaxed overflow-x-auto border border-zinc-800">
+                                    <div>ISA*00*          *00*          *ZZ*EMANAGEONE    *ZZ*STRATARECV    *240115*0914*U*00401</div>
+                                    <div>GS*FA*EMANAGEONE*STRATARECV*20240115*0914*1*X*004010</div>
+                                    <div>ST*855*0001</div>
+                                    <div className="text-amber-400">BAK*06*AC*ORD-2055*20240115</div>
+                                    <div>PO1*1*25*EA*89.00**VP*ERG-5100*BP*TaskChair-Ergo</div>
+                                    <div>PO1*2*30*EA*145.00**VP*DSK-2200*BP*StandDesk-Motor</div>
+                                    <div>PO1*3*10*EA*35.00**VP*ARM-4D10*BP*Armrest-4D</div>
+                                    <div className="text-red-400">PO1*4*1*EA*150.00**VP*FRT-0001*BP*FreightCharge</div>
+                                    <div>CTT*4</div>
+                                    <div>SE*8*0001</div>
+                                </div>
+                            </div>
+
+                            {/* Right: Translation Result */}
+                            <div>
+                                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                                    <LinkIcon className="w-4 h-4 text-muted-foreground" />
+                                    Translation Result
+                                </h3>
+                                <div className="rounded-xl border border-border overflow-hidden">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-muted/50">
+                                                <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Field</th>
+                                                <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">PO Reference</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">#ORD-2055</td></tr>
+                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">Vendor</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">eManage ONE</td></tr>
+                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">Document Type</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">855 — Purchase Order Acknowledgment</td></tr>
+                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">Line Items</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">4 lines (3 products + 1 freight)</td></tr>
+                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">Total Value</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">$8,225.00</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Animated Timeline */}
+                        <div className="px-6 pb-4">
+                            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                                <ClockIcon className="w-4 h-4 text-muted-foreground" />
+                                Connector Activity Log
+                            </h3>
+                            <div className="space-y-2">
+                                {[
+                                    { time: '09:14:02', msg: 'EDI/855 document received from eManage ONE', icon: ArrowDownTrayIcon },
+                                    { time: '09:14:03', msg: 'ERPConnectorAgent parsing ISA/GS/ST segments...', icon: CpuChipIcon },
+                                    { time: '09:14:04', msg: 'Translation complete — PO #ORD-2055 mapped to 4 line items', icon: CheckCircleIcon },
+                                ].slice(0, erpTimelineEntries).map((entry, i) => (
+                                    <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-muted/30 border border-border/50 animate-in fade-in slide-in-from-left-4 duration-300">
+                                        <entry.icon className="w-4 h-4 text-blue-500 shrink-0" />
+                                        <span className="font-mono text-[10px] text-muted-foreground shrink-0">{entry.time}</span>
+                                        <span className="text-xs text-foreground">{entry.msg}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* AI Attribution + CTA */}
+                        <div className="p-4 bg-muted/30 border-t border-border flex items-center justify-between">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                                <SparklesIcon className="w-4 h-4 text-indigo-500" />
+                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">AI Connector translated EDI/855 in 1.2s</span>
+                            </div>
+                            <button
+                                onClick={() => nextStep()}
+                                className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg shadow-sm hover:scale-[1.02] transition-transform flex items-center gap-2"
+                            >
+                                Continue to Normalization
+                                <ArrowRightIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ===== Step 2.7: Approval & Notifications ===== */}
+                {currentStep.id === '2.7' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* Full Pipeline - All Done */}
+                        <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-green-100 dark:bg-green-500/15 rounded-xl">
+                                    <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-brand font-bold text-foreground">Flow Complete — Approval & Notifications</h2>
+                                    <p className="text-xs text-muted-foreground">All 8 agents have completed processing for PO #ORD-2055</p>
+                                </div>
+                            </div>
+                            <AgentPipelineStrip agents={[
+                                { id: 'erp', name: 'ERPConnector', status: 'done' },
+                                { id: 'norm', name: 'DataNorm', status: 'done' },
+                                { id: 'ack', name: 'ACKIngestion', status: 'done' },
+                                { id: 'comp', name: 'POvsACK', status: 'done', detail: '2 exceptions' },
+                                { id: 'discrep', name: 'DiscrepResolver', status: 'done', detail: '1 auto, 1 manual' },
+                                { id: 'bo', name: 'Backorder', status: 'done', detail: '2 lines split' },
+                                { id: 'approval', name: 'ApprovalOrch', status: 'done' },
+                                { id: 'notif', name: 'Notification', status: 'done' },
+                            ]} accentColor="green" />
+                        </div>
+
+                        {/* Inline Approval Chain */}
+                        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                            <div className="p-6 border-b border-border">
+                                <h3 className="text-sm font-bold text-foreground mb-1">Approval Chain</h3>
+                                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-800 mt-3">
+                                    <div className="flex items-center gap-2">
+                                        <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Trigger: Freight increase +233% + Backorder delivery impact</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {/* Approver Chain */}
+                                <div className="space-y-0 relative">
+                                    {[
+                                        { name: 'Sarah Chen', role: 'Logistics Manager' },
+                                        { name: 'David Park', role: 'Finance Director' },
+                                        { name: 'System', role: 'Policy Engine' },
+                                    ].map((approver, i) => (
+                                        <div key={i} className="flex items-start gap-4 relative pb-6 last:pb-0">
+                                            {i < 2 && (
+                                                <div className={cn(
+                                                    'absolute left-[15px] top-8 w-0.5 h-[calc(100%-16px)]',
+                                                    approvalStates[i] === 'approved' ? 'bg-green-500' : 'bg-border'
+                                                )} />
+                                            )}
+                                            <div className={cn(
+                                                'w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all duration-500',
+                                                approvalStates[i] === 'approved' && 'bg-green-500 text-white',
+                                                approvalStates[i] === 'pending' && i === approvedCount27 && 'bg-amber-500 text-white animate-pulse',
+                                                approvalStates[i] === 'pending' && i !== approvedCount27 && 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400',
+                                            )}>
+                                                {approvalStates[i] === 'approved' ? (
+                                                    <CheckCircleIcon className="w-5 h-5" />
+                                                ) : i === approvedCount27 ? (
+                                                    <ClockIcon className="w-5 h-5" />
+                                                ) : (
+                                                    <span className="w-2 h-2 rounded-full bg-zinc-400" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className={cn(
+                                                        'text-sm font-bold',
+                                                        approvalStates[i] === 'approved' && 'text-green-700 dark:text-green-400',
+                                                        approvalStates[i] === 'pending' && i === approvedCount27 && 'text-amber-700 dark:text-amber-400',
+                                                        approvalStates[i] === 'pending' && i !== approvedCount27 && 'text-muted-foreground',
+                                                    )}>
+                                                        {approver.name}
+                                                    </span>
+                                                    {approvalStates[i] === 'approved' && (
+                                                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">Auto-approved</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">{approver.role}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Progress bar */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
+                                        <span className="text-[10px] font-bold text-foreground">{approvedCount27}/3</span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                        <div
+                                            className={cn('h-full rounded-full transition-all duration-500', allApproved27 ? 'bg-green-500' : 'bg-primary')}
+                                            style={{ width: `${(approvedCount27 / 3) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {allApproved27 && (
+                                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-800 text-center animate-in fade-in zoom-in duration-300">
+                                        <CheckCircleIcon className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+                                        <p className="text-sm font-bold text-green-700 dark:text-green-400">All Approvals Complete</p>
+                                        <p className="text-xs text-green-600 dark:text-green-500 mt-1">Order #ORD-2055 is fully approved for processing</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Smart Notifications Panel */}
+                        {notificationsVisible && (
+                            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="p-6 border-b border-border">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-100 dark:bg-indigo-500/15 rounded-xl">
+                                            <BellIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">Smart Notifications</h3>
+                                            <p className="text-xs text-muted-foreground">NotificationAgent generated persona-aware digests</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    {/* Dealer Notification */}
+                                    <div className="p-4 rounded-xl border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-500/5">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <BuildingStorefrontIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                            <span className="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Dealer Notification</span>
+                                        </div>
+                                        <p className="text-sm text-foreground font-medium">ACK received for PO #ORD-2055 — 2 exceptions resolved, backorder created for 23 units (ETA: Feb 28).</p>
+                                        <p className="text-xs text-muted-foreground mt-2">Sent to: Dealer Portal Dashboard + Email Digest</p>
+                                    </div>
+
+                                    {/* Expert Notification */}
+                                    <div className="p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-500/5">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <UsersIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                            <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Expert Notification</span>
+                                        </div>
+                                        <p className="text-sm text-foreground font-medium">Freight override approved. SKU substitution verified. Next queue: 3 pending ACKs awaiting review.</p>
+                                        <p className="text-xs text-muted-foreground mt-2">Sent to: Expert Hub Queue + Slack Channel</p>
+                                    </div>
+
+                                    {/* AI Note */}
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                                        <SparklesIcon className="w-4 h-4 text-indigo-500 shrink-0" />
+                                        <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Dealer receives full lifecycle summary. Expert receives only actionable items — reducing noise by 60%.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ===== Step 1.8: Smart Notifications ===== */}
+                {currentStep.id === '1.8' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* Full Pipeline - All Done */}
+                        <AgentPipelineStrip agents={[
+                            { id: 'email', name: 'EmailIntake', status: 'done' },
+                            { id: 'ocr', name: 'OCR/Parser', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'valid', name: 'Validator', status: 'done' },
+                            { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'done', detail: '3/3 approved' },
+                            { id: 'po', name: 'POBuilder', status: 'done', detail: 'PO-1029' },
+                            { id: 'notif', name: 'Notification', status: notifDelivered18.length === 3 ? 'done' : 'running', detail: `${notifDelivered18.length}/3 sent` },
+                        ]} accentColor="green" />
+
+                        <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
+                            {/* Header */}
+                            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                                        <BellIcon className="w-5 h-5 text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-foreground">Smart Notifications — Flow 1 Complete</h3>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">NotificationAgent delivering persona-aware digests</p>
+                                    </div>
+                                </div>
+                                <ConfidenceScoreBadge score={97} label="Relevance" />
+                            </div>
+
+                            <div className="p-6 space-y-5">
+                                {/* AI Attribution */}
+                                <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                                    <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                                    <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                        <span className="font-bold">NotificationAgent:</span> Generated 3 persona-specific digests from 8-agent pipeline results. Each recipient receives only information relevant to their role and action scope.
+                                    </div>
+                                </div>
+
+                                {/* Notification Cards */}
+                                <div className="space-y-3">
+                                    {[
+                                        {
+                                            recipient: 'Dealer — Apex Furniture',
+                                            icon: '🏢',
+                                            borderColor: 'border-green-300 dark:border-green-500/30',
+                                            bgColor: 'bg-green-50/50 dark:bg-green-500/5',
+                                            channel: 'Email + Portal',
+                                            summary: 'Your RFQ has been fully processed',
+                                            details: [
+                                                'RFQ received via email and parsed automatically',
+                                                'Quote QT-1025 generated: $134,256 (5 line items, 3 warranties)',
+                                                'Approval chain completed (3/3 levels approved)',
+                                                'Purchase Order PO-1029 generated and ready for confirmation',
+                                            ],
+                                            aiNote: 'Dealer receives end-to-end lifecycle summary. No internal escalation details exposed.',
+                                        },
+                                        {
+                                            recipient: 'Expert — Sarah Chen (Sales Manager)',
+                                            icon: '👩‍💼',
+                                            borderColor: 'border-blue-300 dark:border-blue-500/30',
+                                            bgColor: 'bg-blue-50/50 dark:bg-blue-500/5',
+                                            channel: 'In-App + Slack',
+                                            summary: 'PO-1029 approved — action items',
+                                            details: [
+                                                'Approval auto-completed (Level 1: value threshold)',
+                                                '2 non-standard discounts applied: Early Payment + Mixed Category',
+                                                'Extended warranties on 3 SKUs — margin impact: +$2,400',
+                                                'Next queue: 4 pending RFQs awaiting review',
+                                            ],
+                                            aiNote: 'Expert receives actionable items only. Routine steps filtered out.',
+                                        },
+                                        {
+                                            recipient: 'Finance — David Park (Director)',
+                                            icon: '📊',
+                                            borderColor: 'border-purple-300 dark:border-purple-500/30',
+                                            bgColor: 'bg-purple-50/50 dark:bg-purple-500/5',
+                                            channel: 'Email Digest',
+                                            summary: 'Approval summary — cost center impact',
+                                            details: [
+                                                'PO-1029 approved at $134,256 (within $100k-$250k bracket)',
+                                                'Discount authorization: 4% combined (within policy limits)',
+                                                'Budget impact: Marketing-101 cost center',
+                                                'Monthly approval trend: 12 POs, $890k total value',
+                                            ],
+                                            aiNote: 'Finance receives only cost and compliance data. Operational details omitted.',
+                                        },
+                                    ].map((notif, i) => (
+                                        <div
+                                            key={i}
+                                            className={`rounded-xl border ${notif.borderColor} ${notif.bgColor} overflow-hidden transition-all duration-700 ${
+                                                notifDelivered18.includes(i) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                                            }`}
+                                        >
+                                            <div className="px-4 py-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-2.5">
+                                                    <span className="text-lg">{notif.icon}</span>
+                                                    <div>
+                                                        <span className="text-xs font-bold text-foreground">{notif.recipient}</span>
+                                                        <span className="text-[10px] text-muted-foreground ml-2">via {notif.channel}</span>
+                                                    </div>
+                                                </div>
+                                                {notifDelivered18.includes(i) && (
+                                                    <span className="text-[10px] font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
+                                                        <CheckCircleIcon className="w-3.5 h-3.5" /> Delivered
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {notifDelivered18.includes(i) && (
+                                                <div className="px-4 pb-3 space-y-2">
+                                                    <p className="text-xs font-bold text-foreground">{notif.summary}</p>
+                                                    <ul className="space-y-1">
+                                                        {notif.details.map((detail, j) => (
+                                                            <li key={j} className="text-[10px] text-muted-foreground flex items-start gap-1.5">
+                                                                <span className="text-green-500 mt-0.5">•</span>
+                                                                {detail}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                    <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-border/30">
+                                                        <SparklesIcon className="w-3 h-3 text-indigo-500 mt-0.5 shrink-0" />
+                                                        <span className="text-[9px] text-indigo-600 dark:text-indigo-400 italic">{notif.aiNote}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Completion Summary */}
+                                {notifDelivered18.length === 3 && (
+                                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 space-y-3 animate-in fade-in duration-500">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                            <span className="text-sm font-bold text-green-700 dark:text-green-300">Flow 1 Complete — Email Intake to PO</span>
+                                        </div>
+                                        <div className="grid grid-cols-4 gap-3">
+                                            {[
+                                                { label: 'Total Time', value: '4m 12s' },
+                                                { label: 'Agents Used', value: '8/8' },
+                                                { label: 'Human Touchpoints', value: '2' },
+                                                { label: 'Auto-Resolved', value: '94%' },
+                                            ].map(stat => (
+                                                <div key={stat.label} className="text-center">
+                                                    <p className="text-[10px] text-green-600 dark:text-green-400">{stat.label}</p>
+                                                    <p className="text-sm font-bold text-green-700 dark:text-green-300">{stat.value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* KPI Cards / Executive Summary */}
                 {showMetrics ? (

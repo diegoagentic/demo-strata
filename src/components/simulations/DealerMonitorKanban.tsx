@@ -149,19 +149,23 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
             setAgentProgress(0);
             setAgentLogs(['Initializing ERP Normalization Pipeline...']);
             setPipelineAgents([
-                { id: 'erp', name: 'ERPConnector', status: 'running' },
-                { id: 'normalizer', name: 'Normalizer', status: 'pending' },
+                { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
+                { id: 'norm', name: 'DataNorm', status: 'running' },
                 { id: 'ack', name: 'ACKIngest', status: 'pending' },
-                { id: 'linker', name: 'EntityLinker', status: 'pending' },
+                { id: 'comp', name: 'POvsACK', status: 'pending' },
+                { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                { id: 'bo', name: 'Backorder', status: 'pending' },
+                { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                { id: 'notif', name: 'Notification', status: 'pending' },
             ]);
             setConfidenceFields([]);
 
             const timeline = [
-                { delay: 1000, log: 'ERPConnectorAgent: Ingesting eManage ONE ACK.' },
-                { delay: 2500, log: 'DataNormalizationAgent: Normalizing PO vs ACK formats...' },
-                { delay: 4000, log: 'ACKIngestAgent: Parsing acknowledgment line items.' },
-                { delay: 5500, log: 'EntityLinkerAgent: Linked PO #ORD-2055 ↔ ACK #ACK-2055.' },
-                { delay: 7000, log: 'Pipeline Complete. Ready for Delta Engine.' },
+                { delay: 1000, log: 'ERPConnectorAgent: ACK data received from eManage ONE (EDI/855).' },
+                { delay: 2500, log: 'DataNormalizationAgent: Mapping raw EDI fields to standard schema...' },
+                { delay: 4000, log: 'ACKIngestAgent: Parsing 4 acknowledgment line items.' },
+                { delay: 5500, log: 'DataNormalizationAgent: Unified 4 raw fields to standard model.' },
+                { delay: 7000, log: 'EntityLinker: Linked PO #ORD-2055 ↔ ACK #ACK-2055. Ready for Delta Engine.' },
             ];
 
             timeline.forEach(({ delay, log }, index) => {
@@ -169,50 +173,93 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                     setAgentProgress((index + 1) * 20);
                     setAgentLogs(prev => [...prev, log]);
 
-                    // Progressive pipeline status
-                    const statusMap: Record<number, AgentStep[]> = {
-                        0: [
-                            { id: 'erp', name: 'ERPConnector', status: 'done' },
-                            { id: 'normalizer', name: 'Normalizer', status: 'running' },
-                            { id: 'ack', name: 'ACKIngest', status: 'pending' },
-                            { id: 'linker', name: 'EntityLinker', status: 'pending' },
-                        ],
-                        2: [
-                            { id: 'erp', name: 'ERPConnector', status: 'done' },
-                            { id: 'normalizer', name: 'Normalizer', status: 'done' },
+                    // Progressive pipeline status with 8 agents
+                    if (index === 0) {
+                        setPipelineAgents([
+                            { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngest', status: 'running' },
+                            { id: 'comp', name: 'POvsACK', status: 'pending' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]);
+                    }
+                    if (index === 2) {
+                        setPipelineAgents([
+                            { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
                             { id: 'ack', name: 'ACKIngest', status: 'done' },
-                            { id: 'linker', name: 'EntityLinker', status: 'running' },
-                        ],
-                        3: [
-                            { id: 'erp', name: 'ERPConnector', status: 'done' },
-                            { id: 'normalizer', name: 'Normalizer', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'pending' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]);
+                    }
+                    if (index === 4) {
+                        setPipelineAgents([
+                            { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
+                            { id: 'norm', name: 'DataNorm', status: 'done', detail: '4 fields mapped' },
                             { id: 'ack', name: 'ACKIngest', status: 'done' },
-                            { id: 'linker', name: 'EntityLinker', status: 'done' },
-                        ],
-                    };
-                    if (statusMap[index]) setPipelineAgents(statusMap[index]);
+                            { id: 'comp', name: 'POvsACK', status: 'pending' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]);
+                        setConfidenceFields([
+                            { field: 'Product SKU', score: 96 },
+                            { field: 'Quantity', score: 100 },
+                            { field: 'Unit Price', score: 94 },
+                            { field: 'Freight', score: 72 },
+                        ]);
+                    }
                 }, delay);
             });
         } else if (currentStep.id === '2.3') {
-            // Delta Engine — comparison step
+            // Delta Engine — comparison step with line-by-line results
             setAgentProgress(0);
             setAgentLogs(['Initializing Delta Engine...']);
-            setPipelineAgents([]);
+            setPipelineAgents([
+                { id: 'erp', name: 'ERPConnector', status: 'done' },
+                { id: 'norm', name: 'DataNorm', status: 'done' },
+                { id: 'ack', name: 'ACKIngest', status: 'done' },
+                { id: 'comp', name: 'POvsACK', status: 'running' },
+                { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                { id: 'bo', name: 'Backorder', status: 'pending' },
+                { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                { id: 'notif', name: 'Notification', status: 'pending' },
+            ]);
             setConfidenceFields([]);
 
             const timeline = [
-                { delay: 1000, log: 'DeltaEngine: Loading PO #ORD-2055 (4 lines).' },
-                { delay: 2500, log: 'DeltaEngine: Loading ACK #ACK-2055 (4 lines).' },
-                { delay: 4000, log: 'DeltaEngine: Comparing line items...' },
-                { delay: 5500, log: 'DeltaEngine: EXCEPTION — Freight cost mismatch ($45 → $150).' },
-                { delay: 7000, log: 'DeltaEngine: EXCEPTION — Line 2 item substitution (SKU-A → SKU-B).' },
-                { delay: 8500, log: 'DiscrepancyResolver: 2 exceptions require Expert Review.' }
+                { delay: 1000, log: 'POvsACKAgent: Loading PO #ORD-2055 (4 lines).' },
+                { delay: 2500, log: 'POvsACKAgent: Loading ACK #ACK-2055 (4 lines).' },
+                { delay: 4000, log: 'POvsACKAgent: Line-by-line comparison in progress...' },
+                { delay: 5500, log: 'POvsACKAgent: EXCEPTION — Line 2 substitution SKU-B→SKU-C.' },
+                { delay: 7000, log: 'POvsACKAgent: EXCEPTION — Freight $45→$150 (+233%).' },
+                { delay: 8500, log: 'DiscrepancyResolver: 2 exceptions flagged. Escalating to Expert Hub.' }
             ];
 
             timeline.forEach(({ delay, log }, index) => {
                 setTimeout(() => {
                     setAgentProgress((index + 1) * 16.6);
                     setAgentLogs(prev => [...prev, log]);
+
+                    if (index === 3) {
+                        setPipelineAgents([
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngest', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '2 exceptions' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'running' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]);
+                    }
                 }, delay);
             });
         } else if (currentStep.id === '3.1') {
@@ -581,15 +628,22 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                                             {/* Step 2.2: Normalization/Linking for Card 5 */}
                                             {card.id === 5 && currentStep.id === '2.2' && (
                                                 <div className="mt-3 p-4 rounded-xl border border-zinc-700 bg-zinc-900 animate-in fade-in zoom-in duration-500">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <Cpu className={`text-blue-400 ${agentProgress < 100 ? 'animate-pulse' : ''}`} size={14} />
-                                                        <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-wider">
-                                                            {agentProgress < 100 ? 'ERP Normalization Pipeline...' : 'Normalization Complete'}
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <Cpu className={`text-blue-400 ${agentProgress < 100 ? 'animate-pulse' : ''}`} size={14} />
+                                                            <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-wider">
+                                                                {agentProgress < 100 ? 'ERP Normalization Pipeline...' : 'Normalization Complete'}
+                                                            </span>
+                                                            {agentProgress < 100 && <Loader2 size={12} className="text-zinc-500 animate-spin" />}
+                                                        </div>
+                                                        {/* Source Badge */}
+                                                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[9px] font-bold text-blue-400">
+                                                            <Cpu size={10} />
+                                                            eManage ONE (EDI/855)
                                                         </span>
-                                                        {agentProgress < 100 && <Loader2 size={12} className="text-zinc-500 animate-spin ml-auto" />}
                                                     </div>
 
-                                                    {/* Agent Pipeline Strip */}
+                                                    {/* Agent Pipeline Strip — 8 agents */}
                                                     <div className="mb-3">
                                                         <AgentPipelineStrip agents={pipelineAgents} accentColor="blue" />
                                                     </div>
@@ -603,7 +657,7 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                                                     </div>
 
                                                     {/* Agent Logs */}
-                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[100px] overflow-y-auto pr-1 scrollbar-micro">
+                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[80px] overflow-y-auto pr-1 scrollbar-micro">
                                                         {agentLogs.map((log, i) => (
                                                             <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-2 fade-in">
                                                                 <span className="text-zinc-600 mt-0.5">{'>'}</span>
@@ -613,11 +667,45 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                                                     </div>
 
                                                     {agentProgress === 100 && (
-                                                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                                                            <div className="flex items-center justify-between text-xs mb-2">
+                                                        <div className="mt-3 pt-3 border-t border-zinc-700 space-y-3 animate-in fade-in duration-300">
+                                                            {/* Entity Link */}
+                                                            <div className="flex items-center justify-between text-xs">
                                                                 <span className="text-zinc-500">Entity Link:</span>
                                                                 <span className="text-blue-400 font-medium">PO #ORD-2055 ↔ ACK #ACK-2055</span>
                                                             </div>
+
+                                                            {/* Schema Mapping Table */}
+                                                            <div className="rounded-lg border border-zinc-700 overflow-hidden">
+                                                                <div className="px-3 py-1.5 bg-zinc-800 border-b border-zinc-700">
+                                                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Schema Mapping (Raw → Normalized)</span>
+                                                                </div>
+                                                                <table className="w-full text-[10px]">
+                                                                    <tbody className="divide-y divide-zinc-800">
+                                                                        {[
+                                                                            { raw: 'PO1*VP*ERG-5100', normalized: 'product_sku: ERG-5100' },
+                                                                            { raw: 'PO1*25*EA', normalized: 'quantity: 25' },
+                                                                            { raw: 'PO1*89.00', normalized: 'unit_price: $89.00' },
+                                                                            { raw: 'PO1*FRT-0001*150', normalized: 'freight_charge: $150.00' },
+                                                                        ].map((row, i) => (
+                                                                            <tr key={i}>
+                                                                                <td className="px-3 py-1.5 font-mono text-zinc-500">{row.raw}</td>
+                                                                                <td className="px-2 text-zinc-600">→</td>
+                                                                                <td className="px-3 py-1.5 font-mono text-blue-400">{row.normalized}</td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+
+                                                            {/* Confidence + AI */}
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Sparkles size={12} className="text-indigo-400" />
+                                                                    <span className="text-[10px] text-indigo-400 font-medium">DataNormalizationAgent unified 4 raw fields to standard schema</span>
+                                                                </div>
+                                                                <ConfidenceScoreBadge score={94} label="Norm" />
+                                                            </div>
+
                                                             <button
                                                                 onClick={nextStep}
                                                                 className="w-full flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg transition-colors shadow-sm"
@@ -636,9 +724,14 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                                                     <div className="flex items-center gap-2 mb-3">
                                                         <Cpu className={`text-red-400 ${agentProgress < 100 ? 'animate-pulse' : ''}`} size={14} />
                                                         <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-wider">
-                                                            {agentProgress < 100 ? 'Delta Engine Processing...' : 'Exceptions Found'}
+                                                            {agentProgress < 100 ? 'Delta Engine Processing...' : 'Comparison Complete — 2 Exceptions'}
                                                         </span>
                                                         {agentProgress < 100 && <Loader2 size={12} className="text-zinc-500 animate-spin ml-auto" />}
+                                                    </div>
+
+                                                    {/* Agent Pipeline Strip — 8 agents */}
+                                                    <div className="mb-3">
+                                                        <AgentPipelineStrip agents={pipelineAgents} accentColor="amber" />
                                                     </div>
 
                                                     {/* Progress Bar */}
@@ -650,7 +743,7 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                                                     </div>
 
                                                     {/* Agent Logs */}
-                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[100px] overflow-y-auto pr-1 scrollbar-micro">
+                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[80px] overflow-y-auto pr-1 scrollbar-micro">
                                                         {agentLogs.map((log, i) => (
                                                             <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-2 fade-in">
                                                                 <span className="text-zinc-600 mt-0.5">{'>'}</span>
@@ -660,19 +753,67 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                                                     </div>
 
                                                     {agentProgress >= 99 && (
-                                                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                                                            {/* Flagged Deltas */}
-                                                            <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-2 block">Flagged Deltas</span>
-                                                            <div className="space-y-1.5 mb-3">
-                                                                <div className="flex items-center gap-2 text-[11px] bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5">
-                                                                    <div className="w-2 h-2 rounded-full bg-amber-500" />
-                                                                    <span className="text-zinc-300">Substitution: SKU-A → SKU-B (Line 2)</span>
+                                                        <div className="mt-3 pt-3 border-t border-zinc-700 space-y-3 animate-in fade-in duration-300">
+                                                            {/* Line-by-Line Comparison Table */}
+                                                            <div className="rounded-lg border border-zinc-700 overflow-hidden">
+                                                                <div className="px-3 py-1.5 bg-zinc-800 border-b border-zinc-700">
+                                                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Line-by-Line Comparison</span>
                                                                 </div>
-                                                                <div className="flex items-center gap-2 text-[11px] bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5">
-                                                                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                                                                    <span className="text-zinc-300">Price: Freight $45 → $150 (+233%)</span>
-                                                                </div>
+                                                                <table className="w-full text-[10px]">
+                                                                    <thead>
+                                                                        <tr className="border-b border-zinc-800">
+                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">Line</th>
+                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">Item</th>
+                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">PO</th>
+                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">ACK</th>
+                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">Status</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody className="divide-y divide-zinc-800">
+                                                                        <tr>
+                                                                            <td className="px-3 py-1.5 text-zinc-400">1</td>
+                                                                            <td className="px-3 py-1.5 text-zinc-300">Task Chair</td>
+                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">ERG-5100</td>
+                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">ERG-5100</td>
+                                                                            <td className="px-3 py-1.5"><span className="flex items-center gap-1 text-green-400"><CheckCircle2 size={10} /> Match</span></td>
+                                                                        </tr>
+                                                                        <tr className="bg-amber-500/5">
+                                                                            <td className="px-3 py-1.5 text-zinc-400">2</td>
+                                                                            <td className="px-3 py-1.5 text-amber-300 font-medium">Desk</td>
+                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">DSK-B</td>
+                                                                            <td className="px-3 py-1.5 font-mono text-amber-400">DSK-C</td>
+                                                                            <td className="px-3 py-1.5"><span className="text-amber-400 font-medium">Substitution</span></td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td className="px-3 py-1.5 text-zinc-400">3</td>
+                                                                            <td className="px-3 py-1.5 text-zinc-300">Armrest</td>
+                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">ARM-4D10</td>
+                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">ARM-4D10</td>
+                                                                            <td className="px-3 py-1.5"><span className="flex items-center gap-1 text-green-400"><CheckCircle2 size={10} /> Match</span></td>
+                                                                        </tr>
+                                                                        <tr className="bg-red-500/5">
+                                                                            <td className="px-3 py-1.5 text-zinc-400">4</td>
+                                                                            <td className="px-3 py-1.5 text-red-300 font-medium">Freight</td>
+                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">$45</td>
+                                                                            <td className="px-3 py-1.5 font-mono text-red-400">$150</td>
+                                                                            <td className="px-3 py-1.5"><span className="text-red-400 font-medium">+233%</span></td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
                                                             </div>
+
+                                                            {/* Delta Summary */}
+                                                            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700">
+                                                                <span className="text-[10px] text-zinc-400">4 lines compared: <span className="text-green-400 font-medium">2 matches</span>, <span className="text-red-400 font-medium">2 exceptions</span></span>
+                                                                <ConfidenceScoreBadge score={50} label="Match Rate" />
+                                                            </div>
+
+                                                            {/* AI Recommendation */}
+                                                            <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                                                                <Sparkles size={12} className="text-indigo-400 mt-0.5 shrink-0" />
+                                                                <span className="text-[10px] text-indigo-400">Substitution within catalog equivalents. Freight exceeds $50 guardrail — escalating to Expert Hub.</span>
+                                                            </div>
+
                                                             <button
                                                                 onClick={() => {
                                                                     nextStep();
@@ -680,7 +821,7 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                                                                 }}
                                                                 className="w-full flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg transition-colors shadow-sm"
                                                             >
-                                                                Route to Expert Hub
+                                                                Escalate 2 Exceptions to Expert Hub
                                                                 <ArrowUpRight size={14} />
                                                             </button>
                                                         </div>

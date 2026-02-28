@@ -18,6 +18,8 @@ import Breadcrumbs from './components/Breadcrumbs'
 import { useDemo } from './context/DemoContext'
 import BackorderTraceCard from './components/widgets/BackorderTraceCard'
 import type { BackorderLine } from './components/widgets/BackorderTraceCard'
+import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
+import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs))
@@ -468,6 +470,17 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
     const [resolutionMethod, setResolutionMethod] = useState<'local' | 'remote' | 'custom'>('remote')
     const [customValue, setCustomValue] = useState('')
 
+    // Step 1.7 — PO Generation Animation
+    const [poGenPhase, setPoGenPhase] = useState<'building' | 'mapping' | 'validating' | 'complete'>('building')
+    useEffect(() => {
+        if (currentStep?.id !== '1.7') { setPoGenPhase('building'); return; }
+        const timeouts: ReturnType<typeof setTimeout>[] = [];
+        timeouts.push(setTimeout(() => setPoGenPhase('mapping'), 1500));
+        timeouts.push(setTimeout(() => setPoGenPhase('validating'), 3000));
+        timeouts.push(setTimeout(() => setPoGenPhase('complete'), 4500));
+        return () => timeouts.forEach(clearTimeout);
+    }, [currentStep?.id]);
+
     const toggleSection = (key: keyof typeof sections) => {
         setSections(prev => ({ ...prev, [key]: !prev[key] }))
     }
@@ -508,9 +521,290 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
             </div>
 
             <div className="flex flex-col p-6 gap-6">
-                {/* Step 2.6: Backorder Trace Panel */}
+                {/* Step 2.6: Backorder Trace Panel + Agent Attribution */}
                 {currentStep?.id === '2.6' && (
-                    <BackorderTraceCard lines={BACKORDER_LINES} orderId="#ORD-2055" />
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* Pipeline Strip */}
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngest', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '2 exceptions' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'done', detail: '1 auto, 1 manual' },
+                            { id: 'bo', name: 'Backorder', status: 'done', detail: '2 lines split' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="blue" />
+
+                        {/* AI Attribution Header */}
+                        <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20">
+                            <div className="flex items-center gap-2">
+                                <SparklesIcon className="w-4 h-4 text-indigo-500" />
+                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">BackorderAgent split order into fulfilled/backordered from ACK data</span>
+                            </div>
+                            <ConfidenceScoreBadge score={98} label="Accuracy" size="md" />
+                        </div>
+
+                        {/* Backorder Trace Card */}
+                        <BackorderTraceCard lines={BACKORDER_LINES} orderId="#ORD-2055" />
+
+                        {/* Impact Summary Card */}
+                        <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+                            <h4 className="text-sm font-bold text-foreground mb-3">Impact Summary</h4>
+                            <div className="space-y-3">
+                                {/* Fulfillment Bar */}
+                                <div>
+                                    <div className="flex items-center justify-between text-xs mb-1.5">
+                                        <span className="text-muted-foreground">Fulfilled vs Backordered</span>
+                                        <span className="font-bold text-foreground">47/70 units (67%)</span>
+                                    </div>
+                                    <div className="flex h-3 rounded-full overflow-hidden bg-muted">
+                                        <div className="bg-green-500 transition-all" style={{ width: '67%' }} />
+                                        <div className="bg-amber-500 transition-all" style={{ width: '33%' }} />
+                                    </div>
+                                    <div className="flex items-center justify-between text-[9px] text-muted-foreground mt-1">
+                                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Fulfilled (47)</span>
+                                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> Backordered (23)</span>
+                                    </div>
+                                </div>
+
+                                {/* Timeline Impact */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold block mb-1">Zone A — HQ</span>
+                                        <span className="text-sm font-bold text-green-600 dark:text-green-400">On Schedule</span>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">25 chairs ready Feb 15</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold block mb-1">Zone B — Annex</span>
+                                        <span className="text-sm font-bold text-amber-600 dark:text-amber-400">Delayed +5 weeks</span>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">23 units ETA Mar 28</p>
+                                    </div>
+                                </div>
+
+                                {/* AI Suggestion */}
+                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                                    <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
+                                    <span className="text-[10px] text-indigo-700 dark:text-indigo-400">Consider alternative vendor for 15 chairs (2-week vs 5-week lead). Estimated savings: $1,200 in expedite fees.</span>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={nextStep}
+                                className="mt-4 w-full px-5 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg transition-all shadow-sm hover:scale-[1.01] flex items-center justify-center gap-2"
+                            >
+                                Proceed to Approval Chain
+                                <ChevronRightIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 1.7: PO Generation from Approved Quote */}
+                {currentStep?.id === '1.7' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* Pipeline Strip */}
+                        <AgentPipelineStrip agents={[
+                            { id: 'email', name: 'EmailIntake', status: 'done' },
+                            { id: 'ocr', name: 'OCR/Parser', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'valid', name: 'Validator', status: 'done' },
+                            { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'done', detail: '3/3 approved' },
+                            { id: 'po', name: 'POBuilder', status: poGenPhase === 'complete' ? 'done' : 'running', detail: poGenPhase === 'complete' ? 'PO-1029' : 'Generating...' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="green" />
+
+                        {/* AI Attribution */}
+                        <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20">
+                            <div className="flex items-center gap-2">
+                                <SparklesIcon className="w-4 h-4 text-indigo-500" />
+                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">POBuilderAgent generating Purchase Order from approved Quote QT-1025</span>
+                            </div>
+                            <ConfidenceScoreBadge score={99} label="Mapping" size="md" />
+                        </div>
+
+                        {/* PO Generation Progress Card */}
+                        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg">
+                            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center">
+                                        <DocumentTextIcon className="w-5 h-5 text-green-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-foreground">Purchase Order Generation</h3>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">Auto-converting Quote QT-1025 → PO-1029</p>
+                                    </div>
+                                </div>
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                                    poGenPhase === 'complete'
+                                        ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
+                                        : 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400'
+                                }`}>
+                                    {poGenPhase === 'building' && 'Building PO...'}
+                                    {poGenPhase === 'mapping' && 'Mapping Line Items...'}
+                                    {poGenPhase === 'validating' && 'Validating...'}
+                                    {poGenPhase === 'complete' && 'PO Generated'}
+                                </span>
+                            </div>
+
+                            <div className="p-6 space-y-5">
+                                {/* Generation Steps */}
+                                <div className="space-y-2">
+                                    {[
+                                        { phase: 'building' as const, label: 'Extracting approved quote structure', detail: '5 line items, 3 warranty options, 2 discounts' },
+                                        { phase: 'mapping' as const, label: 'Mapping quote fields to PO format', detail: 'SKUs, quantities, unit prices, shipping terms' },
+                                        { phase: 'validating' as const, label: 'Validating against vendor catalog & inventory', detail: 'Stock confirmed at distribution centers' },
+                                        { phase: 'complete' as const, label: 'PO finalized with compliance stamps', detail: 'Approval chain signatures embedded' },
+                                    ].map((step, i) => {
+                                        const phases = ['building', 'mapping', 'validating', 'complete'] as const;
+                                        const currentIdx = phases.indexOf(poGenPhase);
+                                        const stepIdx = phases.indexOf(step.phase);
+                                        const isDone = stepIdx < currentIdx || poGenPhase === 'complete';
+                                        const isActive = stepIdx === currentIdx && poGenPhase !== 'complete';
+
+                                        return (
+                                            <div key={i} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-500 ${
+                                                isDone ? 'bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20' :
+                                                isActive ? 'bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20' :
+                                                'bg-muted/20 border border-transparent'
+                                            }`}>
+                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${
+                                                    isDone ? 'bg-green-500 text-white' :
+                                                    isActive ? 'bg-blue-500 text-white' :
+                                                    'bg-muted text-muted-foreground'
+                                                }`}>
+                                                    {isDone ? <CheckIcon className="w-3.5 h-3.5" /> :
+                                                     isActive ? <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" /> :
+                                                     <span className="text-[9px] font-bold">{i + 1}</span>}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-xs font-medium ${isDone || isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{step.label}</p>
+                                                    <p className="text-[10px] text-muted-foreground">{step.detail}</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* PO Line Items Table (visible after mapping phase) */}
+                                {(poGenPhase === 'validating' || poGenPhase === 'complete') && (
+                                    <div className="rounded-xl border border-border overflow-hidden animate-in fade-in duration-500">
+                                        <div className="px-4 py-2.5 bg-muted/30 border-b border-border">
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">PO-1029 Line Items (from QT-1025)</span>
+                                        </div>
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-border/50 bg-muted/20">
+                                                    <th className="px-4 py-2 text-[10px] font-bold text-muted-foreground">Line</th>
+                                                    <th className="px-4 py-2 text-[10px] font-bold text-muted-foreground">SKU</th>
+                                                    <th className="px-4 py-2 text-[10px] font-bold text-muted-foreground">Description</th>
+                                                    <th className="px-4 py-2 text-[10px] font-bold text-muted-foreground text-right">Qty</th>
+                                                    <th className="px-4 py-2 text-[10px] font-bold text-muted-foreground text-right">Unit Price</th>
+                                                    <th className="px-4 py-2 text-[10px] font-bold text-muted-foreground text-right">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border/50">
+                                                {[
+                                                    { line: 1, sku: 'ERG-5100', desc: 'Ergonomic Task Chair', qty: 125, price: 350, warranty: '+5yr Extended' },
+                                                    { line: 2, sku: 'DSK-2200', desc: 'Height-Adjustable Desk', qty: 80, price: 580, warranty: '+3yr Standard' },
+                                                    { line: 3, sku: 'ARM-4D10', desc: 'Adjustable 4D Armrest', qty: 125, price: 18, warranty: null },
+                                                    { line: 4, sku: 'MON-3400', desc: 'Monitor Arm Dual', qty: 60, price: 145, warranty: '+2yr Extended' },
+                                                    { line: 5, sku: 'CAB-1100', desc: 'Mobile Pedestal Cabinet', qty: 40, price: 220, warranty: null },
+                                                ].map(item => (
+                                                    <tr key={item.line} className="text-xs">
+                                                        <td className="px-4 py-2 text-muted-foreground">{item.line}</td>
+                                                        <td className="px-4 py-2 font-mono text-foreground font-medium">{item.sku}</td>
+                                                        <td className="px-4 py-2 text-foreground">
+                                                            {item.desc}
+                                                            {item.warranty && (
+                                                                <span className="ml-1.5 text-[9px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded font-medium">{item.warranty}</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-foreground text-right">{item.qty}</td>
+                                                        <td className="px-4 py-2 text-foreground text-right">${item.price.toLocaleString()}</td>
+                                                        <td className="px-4 py-2 text-foreground text-right font-bold">${(item.qty * item.price).toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot>
+                                                <tr className="border-t border-border bg-muted/30">
+                                                    <td colSpan={4} className="px-4 py-2 text-[10px] text-muted-foreground">Discounts: Early Payment (2%) + Mixed Category (2%)</td>
+                                                    <td className="px-4 py-2 text-[10px] text-muted-foreground text-right">Subtotal</td>
+                                                    <td className="px-4 py-2 text-xs font-bold text-foreground text-right">$139,850</td>
+                                                </tr>
+                                                <tr className="border-t border-border">
+                                                    <td colSpan={4} />
+                                                    <td className="px-4 py-2 text-[10px] text-muted-foreground text-right">After Discounts (4%)</td>
+                                                    <td className="px-4 py-2 text-sm font-bold text-foreground text-right">$134,256</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {/* PO Summary (visible on complete) */}
+                                {poGenPhase === 'complete' && (
+                                    <div className="space-y-4 animate-in fade-in duration-500">
+                                        {/* Summary Grid */}
+                                        <div className="grid grid-cols-4 gap-3">
+                                            {[
+                                                { label: 'PO Number', value: 'PO-1029', color: 'text-foreground' },
+                                                { label: 'Source Quote', value: 'QT-1025', color: 'text-blue-600 dark:text-blue-400' },
+                                                { label: 'Vendor', value: 'Apex Furniture', color: 'text-foreground' },
+                                                { label: 'Total Value', value: '$134,256', color: 'text-green-600 dark:text-green-400' },
+                                            ].map(item => (
+                                                <div key={item.label} className="p-3 rounded-lg bg-muted/30 border border-border text-center">
+                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">{item.label}</p>
+                                                    <p className={`text-sm font-bold mt-1 ${item.color}`}>{item.value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Compliance Stamps */}
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                            {['Approval Chain ✓', 'Pricing Policy ✓', 'Inventory Reserved ✓', 'Compliance Validated ✓'].map(stamp => (
+                                                <span key={stamp} className="text-[10px] px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20 font-medium">
+                                                    {stamp}
+                                                </span>
+                                            ))}
+                                        </div>
+
+                                        {/* Success */}
+                                        <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 flex items-center gap-3">
+                                            <CheckCircleIcon className="w-5 h-5 text-green-500 shrink-0" />
+                                            <div className="flex-1">
+                                                <p className="text-xs font-bold text-green-700 dark:text-green-300">Purchase Order PO-1029 Generated Successfully</p>
+                                                <p className="text-[10px] text-green-600 dark:text-green-400 mt-0.5">5 line items mapped, 3 warranties applied, 2 discounts calculated. Ready for vendor submission.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CTA */}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={nextStep}
+                                        disabled={poGenPhase !== 'complete'}
+                                        className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all shadow-sm flex items-center gap-2 ${
+                                            poGenPhase === 'complete'
+                                                ? 'bg-primary text-primary-foreground hover:opacity-90'
+                                                : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                        }`}
+                                    >
+                                        Send Notifications
+                                        <ChevronRightIcon className="w-3.5 h-3.5" />
+                                    </button>
+                                    {poGenPhase === 'complete' && (
+                                        <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1">
+                                            <SparklesIcon className="w-3 h-3" />
+                                            NotificationAgent will deliver persona-aware digests
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* Step 3.3: Shipment Timeline */}

@@ -1,4 +1,4 @@
-import { Menu, MenuButton, MenuItem, MenuItems, Transition, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
+import { Menu, MenuButton, MenuItem, Transition, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { Fragment } from 'react'
 import {
     HomeIcon, CubeIcon, ClipboardDocumentListIcon, ArrowTrendingUpIcon,

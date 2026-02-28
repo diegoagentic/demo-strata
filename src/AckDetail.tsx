@@ -16,6 +16,7 @@ import { useTenant } from './TenantContext'
 import Navbar from './components/Navbar'
 import Breadcrumbs from './components/Breadcrumbs'
 import { useDemo } from './context/DemoContext'
+import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs))
@@ -76,6 +77,24 @@ const DiscrepancyResolutionFlow = () => {
                     Found 2 discrepancies against PO #ORD-2055.
                 </div>
 
+                {/* AI Recommendation Banner */}
+                <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                    <SparklesIcon className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                        <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-1">AI Analysis Complete — DiscrepancyResolverAgent pre-analyzed both exceptions</p>
+                        <div className="flex gap-4 mt-2">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-indigo-600 dark:text-indigo-400">Exception 1:</span>
+                                <ConfidenceScoreBadge score={91} label="Confidence" />
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-indigo-600 dark:text-indigo-400">Exception 2:</span>
+                                <ConfidenceScoreBadge score={76} label="Confidence" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Side-by-Side Comparison UI for Delta 1 */}
                 <div className="border border-zinc-200 dark:border-zinc-700/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-800/50 my-2">
                     <div className="px-3 py-2 bg-muted/30 border-b border-border text-xs font-bold text-foreground flex items-center gap-2">
@@ -99,6 +118,12 @@ const DiscrepancyResolutionFlow = () => {
                     </div>
                 </div>
 
+                {/* AI Note for Exception 1 */}
+                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-800 -mt-1">
+                    <SparklesIcon className="w-3.5 h-3.5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                    <span className="text-[10px] text-green-700 dark:text-green-400">Azure is catalog-equivalent to Navy. Same dimensions, price ($89/ea), and lead time. Confidence: 91%</span>
+                </div>
+
                 {/* Side-by-Side Comparison UI for Delta 2 */}
                 <div className="border border-zinc-200 dark:border-zinc-700/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-800/50 mb-2">
                     <div className="px-3 py-2 bg-muted/30 border-b border-border text-xs font-bold text-foreground flex items-center gap-2">
@@ -120,6 +145,12 @@ const DiscrepancyResolutionFlow = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* AI Note for Exception 2 */}
+                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-800 -mt-1">
+                    <SparklesIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <span className="text-[10px] text-amber-700 dark:text-amber-400">12-day slip impacts project timeline. Expedite available at +$800. Consider alternative vendor for faster delivery. Confidence: 76%</span>
                 </div>
 
                 <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 mt-2 mb-2">

@@ -25,6 +25,7 @@ import { twMerge } from 'tailwind-merge'
 import AcknowledgementUploadModal from '../AcknowledgementUploadModal'
 import { useDemo } from '../../context/DemoContext'
 import ConfidenceScoreBadge from '../widgets/ConfidenceScoreBadge'
+import AgentPipelineStrip from './AgentPipelineStrip'
 import Select from '../Select'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -179,6 +180,25 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     ]);
     const [discountPage, setDiscountPage] = useState(0);
 
+    // Step 1.6 — Approval Chain Animation
+    const [approvalStates16, setApprovalStates16] = useState<('pending' | 'approved')[]>(['pending', 'pending', 'pending'])
+    const [approvalChainComplete16, setApprovalChainComplete16] = useState(false)
+    useEffect(() => {
+        if (currentStep.id !== '1.6') {
+            setApprovalStates16(['pending', 'pending', 'pending']);
+            setApprovalChainComplete16(false);
+            return;
+        }
+        const timeouts: ReturnType<typeof setTimeout>[] = [];
+        timeouts.push(setTimeout(() => setApprovalStates16(['approved', 'pending', 'pending']), 2000));
+        timeouts.push(setTimeout(() => setApprovalStates16(['approved', 'approved', 'pending']), 4000));
+        timeouts.push(setTimeout(() => setApprovalStates16(['approved', 'approved', 'approved']), 5500));
+        timeouts.push(setTimeout(() => setApprovalChainComplete16(true), 6500));
+        return () => timeouts.forEach(clearTimeout);
+    }, [currentStep.id]);
+    const approvedCount16 = approvalStates16.filter(s => s === 'approved').length;
+    const allApproved16 = approvedCount16 === 3;
+
     const warrantyItems = [
         { sku: 'ERG-5100', name: 'Ergonomic Task Chair', base: '$350', qty: 125, current: 'Standard 5yr' },
         { sku: 'DSK-2200', name: 'Height-Adjustable Desk', base: '$580', qty: 80, current: 'Standard 3yr' },
@@ -313,6 +333,9 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
             setLifecycleTab('quotes');
             setSearchQuery('QT-1025');
             setExpandedIds(new Set(['QT-1025']));
+        } else if (currentStep.id === '1.6') {
+            setLifecycleTab('quotes');
+            setSearchQuery('');
         } else if (currentStep.id === '2.4') {
             setLifecycleTab('acknowledgments');
         }
@@ -1421,24 +1444,63 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                 {/* Step 2.4: Auto-Fix Branching for Acknowledgments */}
                 {currentStep.id === '2.4' && lifecycleTab === 'acknowledgments' && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* Pipeline Strip */}
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngest', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '2 exceptions' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'done', detail: '1 auto, 2 escalated' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="green" />
+
+                        {/* Auto-Resolved Card */}
                         <div className="p-4 rounded-2xl bg-card border border-border shadow-sm">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className="p-2.5 rounded-xl bg-green-50 dark:bg-green-500/10">
                                     <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                     <h3 className="text-sm font-medium text-foreground">Auto-Resolved (Within Guardrails)</h3>
-                                    <p className="text-xs text-muted-foreground">1 discrepancy auto-corrected by AI agents</p>
+                                    <p className="text-xs text-muted-foreground">1 discrepancy auto-corrected by DiscrepancyResolverAgent</p>
                                 </div>
+                                <ConfidenceScoreBadge score={96} label="Confidence" size="md" />
                             </div>
-                            <div className="ml-12 space-y-2">
-                                <div className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
-                                    <span className="text-foreground">Line 3: Date shift (Feb 20 → Feb 22)</span>
-                                    <span className="text-green-600 dark:text-green-400 font-medium">Auto-Accepted</span>
+                            <div className="ml-12 space-y-3">
+                                <div className="bg-muted/50 rounded-lg px-4 py-3">
+                                    <div className="flex items-center justify-between text-xs mb-2">
+                                        <span className="text-foreground font-medium">Line 3: Date shift (Feb 20 → Feb 22)</span>
+                                        <span className="text-green-600 dark:text-green-400 font-bold">Auto-Accepted</span>
+                                    </div>
+                                    {/* Guardrail Threshold Bar */}
+                                    <div className="mt-2">
+                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                                            <span>Delivery Shift</span>
+                                            <span>Threshold: 5 days</span>
+                                        </div>
+                                        <div className="relative h-3 bg-muted rounded-full overflow-hidden">
+                                            <div className="absolute inset-0 border-2 border-dashed border-green-500/30 rounded-full" />
+                                            <div className="h-full bg-green-500/60 rounded-full transition-all" style={{ width: '40%' }} />
+                                        </div>
+                                        <div className="flex items-center justify-between text-[9px] text-muted-foreground mt-1">
+                                            <span>0 days</span>
+                                            <span className="text-green-600 dark:text-green-400 font-bold">2 days (within limit)</span>
+                                            <span>5 days</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* AI Explanation */}
+                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                                    <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
+                                    <span className="text-[10px] text-indigo-700 dark:text-indigo-400">2-day delivery shift is within the 5-day guardrail threshold. Auto-accepted per policy.</span>
                                 </div>
                             </div>
                         </div>
+
+                        {/* Escalated Card */}
                         <div className="p-4 rounded-2xl bg-card border border-border shadow-sm">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-500/10">
@@ -1449,28 +1511,251 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                     <p className="text-xs text-muted-foreground">2 exceptions exceed guardrail thresholds</p>
                                 </div>
                             </div>
-                            <div className="ml-12 space-y-2">
-                                <div className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
-                                    <span className="text-foreground">Freight: $45 → $150 (+233%)</span>
-                                    <span className="text-red-600 dark:text-red-400 font-medium">Escalated</span>
+                            <div className="ml-12 space-y-3">
+                                {/* Freight Exception with Guardrail Bar */}
+                                <div className="bg-muted/50 rounded-lg px-4 py-3">
+                                    <div className="flex items-center justify-between text-xs mb-2">
+                                        <span className="text-foreground font-medium">Freight: $45 → $150 (+233%)</span>
+                                        <span className="text-red-600 dark:text-red-400 font-bold">Escalated</span>
+                                    </div>
+                                    <div className="mt-2">
+                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                                            <span>Price Increase</span>
+                                            <span>Threshold: +20% or +$50</span>
+                                        </div>
+                                        <div className="relative h-3 bg-muted rounded-full overflow-visible">
+                                            <div className="absolute h-full w-[20%] border-r-2 border-dashed border-red-500/50 rounded-l-full" />
+                                            <div className="h-full bg-red-500/60 rounded-full transition-all" style={{ width: '100%' }} />
+                                        </div>
+                                        <div className="flex items-center justify-between text-[9px] text-muted-foreground mt-1">
+                                            <span>0%</span>
+                                            <span className="text-red-600 dark:text-red-400 font-bold">+233% (exceeds +20% limit)</span>
+                                            <span>+233%</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
-                                    <span className="text-foreground">Line 2: SKU substitution (SKU-A → SKU-B)</span>
-                                    <span className="text-red-600 dark:text-red-400 font-medium">Escalated</span>
+
+                                {/* SKU Substitution */}
+                                <div className="bg-muted/50 rounded-lg px-4 py-3">
+                                    <div className="flex items-center justify-between text-xs mb-2">
+                                        <span className="text-foreground font-medium">Line 2: SKU substitution (DSK-B → DSK-C)</span>
+                                        <span className="text-red-600 dark:text-red-400 font-bold">Escalated</span>
+                                    </div>
+                                    <div className="mt-1 px-3 py-1.5 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-800">
+                                        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">SKU changes require Expert verification per policy — automatic resolution disabled.</span>
+                                    </div>
+                                </div>
+
+                                {/* AI Recommendation */}
+                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                                    <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
+                                    <span className="text-[10px] text-indigo-700 dark:text-indigo-400">Accept freight if carrier surcharge justified (check BOL). DSK-C is catalog-equivalent to DSK-B — verify dimensions match project specs.</span>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => onNavigateToDetail('ack-detail')}
-                                className="mt-3 ml-12 px-4 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg transition-colors shadow-sm"
-                            >
-                                Review Discrepancies
-                            </button>
+
+                            <div className="mt-4 ml-12 flex items-center gap-3">
+                                <button
+                                    onClick={() => onNavigateToDetail('ack-detail')}
+                                    className="px-5 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
+                                >
+                                    Open Guided Correction
+                                    <ArrowRightIcon className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1">
+                                    <SparklesIcon className="w-3 h-3" />
+                                    AI has pre-filled recommendations
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 1.6 — Approval Chain */}
+                {currentStep.id === '1.6' && (
+                    <div className="space-y-4">
+                        {/* Agent Pipeline */}
+                        <AgentPipelineStrip agents={[
+                            { id: 'email', name: 'EmailIntake', status: 'done' },
+                            { id: 'ocr', name: 'OCR/Parser', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'valid', name: 'Validator', status: 'done' },
+                            { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
+                            { id: 'approval', name: 'ApprovalOrch', status: allApproved16 ? 'done' : 'running', detail: allApproved16 ? '3/3 approved' : `${approvedCount16}/3` },
+                            { id: 'po', name: 'POBuilder', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="purple" />
+
+                        <div className="bg-card glass border border-border rounded-2xl overflow-hidden shadow-lg">
+                            {/* Header */}
+                            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                                        <ExclamationTriangleIcon className="w-5 h-5 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-foreground">Approval Chain Required</h3>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">Quote QT-1025 triggered policy-based approval workflow</p>
+                                    </div>
+                                </div>
+                                <ConfidenceScoreBadge score={94} label="Policy Match" />
+                            </div>
+
+                            <div className="p-6 space-y-5">
+                                {/* Trigger Reason */}
+                                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                                    <p className="text-[10px] font-bold text-amber-700 dark:text-amber-300 mb-1.5">Approval Trigger</p>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                                            <CurrencyDollarIcon className="w-3.5 h-3.5 shrink-0" />
+                                            <span>Quote total <span className="font-bold">$134,250</span> exceeds $100,000 threshold</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                                            <ExclamationCircleIcon className="w-3.5 h-3.5 shrink-0" />
+                                            <span>Non-standard discounts applied: <span className="font-bold">Early Payment (2%) + Mixed Category (2%)</span></span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                                            <ClipboardDocumentCheckIcon className="w-3.5 h-3.5 shrink-0" />
+                                            <span>Extended warranty options selected for 3 SKUs</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* AI Analysis */}
+                                <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                                    <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                                    <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                        <span className="font-bold">ApprovalOrchestratorAgent:</span> Identified 3 policy triggers. Routing to sequential 3-level approval chain based on quote value bracket ($100k-$250k) and discount policy.
+                                    </div>
+                                </div>
+
+                                {/* Approval Chain */}
+                                <div className="space-y-0">
+                                    {[
+                                        { name: 'Sarah Chen', role: 'Regional Sales Manager', reason: 'Quote value > $100k', level: 'Level 1' },
+                                        { name: 'David Park', role: 'Finance Director', reason: 'Non-standard discounts applied', level: 'Level 2' },
+                                        { name: 'System Policy Engine', role: 'Automated Compliance Check', reason: 'Warranty + pricing validation', level: 'Level 3' },
+                                    ].map((approver, i) => (
+                                        <div key={i}>
+                                            {i > 0 && (
+                                                <div className="ml-5 h-6 border-l-2 border-dashed border-border" />
+                                            )}
+                                            <div className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-500 ${
+                                                approvalStates16[i] === 'approved'
+                                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'
+                                                    : i === approvedCount16
+                                                        ? 'bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 animate-pulse'
+                                                        : 'bg-muted/30 border border-border/50'
+                                            }`}>
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${
+                                                    approvalStates16[i] === 'approved'
+                                                        ? 'bg-emerald-500 text-white'
+                                                        : i === approvedCount16
+                                                            ? 'bg-blue-500 text-white'
+                                                            : 'bg-muted text-muted-foreground'
+                                                }`}>
+                                                    {approvalStates16[i] === 'approved' ? (
+                                                        <CheckIcon className="w-5 h-5" />
+                                                    ) : i === approvedCount16 ? (
+                                                        <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                                                    ) : (
+                                                        <ClockIcon className="w-4 h-4" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-bold text-foreground">{approver.name}</span>
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">{approver.level}</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground">{approver.role}</p>
+                                                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">Trigger: {approver.reason}</p>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    {approvalStates16[i] === 'approved' ? (
+                                                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Approved</span>
+                                                    ) : i === approvedCount16 ? (
+                                                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">Reviewing...</span>
+                                                    ) : (
+                                                        <span className="text-[10px] text-muted-foreground">Pending</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Progress bar */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <span className="text-[10px] font-bold text-muted-foreground">Approval Progress</span>
+                                        <span className="text-[10px] font-bold text-foreground">{approvedCount16}/3</span>
+                                    </div>
+                                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full transition-all duration-700 ${allApproved16 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                            style={{ width: `${(approvedCount16 / 3) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Success banner */}
+                                {allApproved16 && (
+                                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center gap-3">
+                                        <CheckCircleIcon className="w-5 h-5 text-emerald-500 shrink-0" />
+                                        <div className="flex-1">
+                                            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">All Approvals Complete</p>
+                                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Quote QT-1025 ($134,250) approved through all 3 levels. Ready for PO generation.</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Quote Summary */}
+                                {approvalChainComplete16 && (
+                                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Approved Quote Summary</p>
+                                        <div className="grid grid-cols-4 gap-3">
+                                            {[
+                                                { label: 'Quote ID', value: 'QT-1025' },
+                                                { label: 'Total Value', value: '$134,250' },
+                                                { label: 'Line Items', value: '5 SKUs' },
+                                                { label: 'Discount Applied', value: '4% combined' },
+                                            ].map(item => (
+                                                <div key={item.label} className="text-center">
+                                                    <p className="text-[10px] text-muted-foreground">{item.label}</p>
+                                                    <p className="text-sm font-bold text-foreground">{item.value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CTA */}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={nextStep}
+                                        disabled={!approvalChainComplete16}
+                                        className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all shadow-sm flex items-center gap-2 ${
+                                            approvalChainComplete16
+                                                ? 'bg-primary text-primary-foreground hover:opacity-90'
+                                                : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                        }`}
+                                    >
+                                        Generate Purchase Order
+                                        <ArrowRightIcon className="w-3.5 h-3.5" />
+                                    </button>
+                                    {approvalChainComplete16 && (
+                                        <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1">
+                                            <SparklesIcon className="w-3 h-3" />
+                                            POBuilderAgent will auto-generate PO from approved quote
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* Hide table/pipeline when expert review panel is open */}
-                {!(currentStep.id === '1.5' && showExpertReview) && (viewMode === 'list' ? (
+                {!(currentStep.id === '1.5' && showExpertReview) && !(currentStep.id === '1.6') && (viewMode === 'list' ? (
                     <div className="bg-card glass border border-border rounded-2xl overflow-hidden shadow-xl shadow-black/5">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[1000px]">

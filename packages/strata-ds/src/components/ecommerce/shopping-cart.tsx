@@ -1,6 +1,5 @@
-import { SlideOver, SlideOverTitle, SlideOverDescription, SlideOverBody, SlideOverHeader } from '../../components/catalyst/slide-over'
+import { SlideOver, SlideOverTitle, SlideOverBody, SlideOverHeader } from '../../components/catalyst/slide-over'
 import { Button } from '../../components/catalyst/button';
-import { X } from 'lucide-react';
 import type { ComponentPropsWithoutRef } from 'react'
 
 interface CartItem {
@@ -14,7 +13,7 @@ interface CartItem {
     imageAlt: string
 }
 
-export function ShoppingCart({ open, onClose, items, ...props }: { open: boolean, onClose: (open: boolean) => void, items: CartItem[] } & ComponentPropsWithoutRef<'div'>) {
+export function ShoppingCart({ open, onClose, items }: { open: boolean, onClose: (open: boolean) => void, items: CartItem[] } & ComponentPropsWithoutRef<'div'>) {
     const subtotal = items.reduce((acc, item) => {
         const price = parseFloat(item.price.replace('$', ''))
         return acc + price * item.quantity

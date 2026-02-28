@@ -1,4 +1,3 @@
-import { Button } from '../../components/catalyst/button';
 import clsx from 'clsx'
 import { Check } from 'lucide-react'
 import type { ComponentPropsWithoutRef } from 'react'
