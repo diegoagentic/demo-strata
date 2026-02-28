@@ -2,7 +2,6 @@ packages/strata-ds/.storybook
 packages/strata-ds/src/app
 packages/strata-ds/src/stories
 packages/strata-ds/src/examples
-packages/strata-ds/scripts
 *.test.ts
 *.test.tsx
 *.spec.ts
