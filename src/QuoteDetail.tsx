@@ -15,20 +15,15 @@ import { useTheme } from 'strata-design-system'
 import { useTenant } from './TenantContext'
 import Navbar from './components/Navbar'
 import Breadcrumbs from './components/Breadcrumbs'
+import { useDemo } from '../src/context/DemoContext'
+import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs))
 }
 
 const items = [
-    { id: "SKU-OFF-2025-001", name: "Executive Chair Pro", category: "Premium Series", properties: "Leather / Black", stock: 285, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700", aiStatus: "info" },
-    { id: "SKU-OFF-2025-002", name: "Ergonomic Task Chair", category: "Standard Series", properties: "Mesh / Gray", stock: 520, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-003", name: "Conference Room Chair", category: "Meeting Series", properties: "Fabric / Navy", stock: 42, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
-    { id: "SKU-OFF-2025-004", name: "Visitor Stacking Chair", category: "Guest Series", properties: "Plastic / White", stock: 180, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-005", name: "Gaming Office Chair", category: "Sport Series", properties: "Leather / Red", stock: 0, status: "Out of Stock", statusColor: "bg-red-50 text-red-700 ring-red-600/20" },
-    { id: "SKU-OFF-2025-006", name: "Reception Lounge Chair", category: "Lobby Series", properties: "Velvet / Teal", stock: 95, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-007", name: "Drafting Stool High", category: "Studio Series", properties: "Mesh / Black", stock: 340, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-008", name: "Bench Seating 3-Seat", category: "Waiting Series", properties: "Metal / Chrome", stock: 28, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20" },
+    { id: "SKU-OFF-2025-002", name: "Ergonomic Task Chair", category: "Standard Series", properties: "Mesh / Gray", stock: 125, status: "Allocated", statusColor: "bg-brand-50 text-brand-700 ring-brand-600/20", aiStatus: "success" },
 ]
 
 interface Message {
@@ -68,24 +63,24 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
             id: 1,
             sender: "System",
             avatar: "",
-            content: "Quote #QT-1025 created from Opportunity #OP-882.",
-            time: "2 days ago",
+            content: "Quote #QT-1025 created from Apex Furniture RFQ #1029.",
+            time: "10 mins ago",
             type: "system",
         },
         {
             id: 3,
-            sender: "Sarah Chen",
-            avatar: "SC",
-            content: "Applying the suggested discount. Sending to client for review.",
-            time: "1 day ago",
-            type: "user",
+            sender: "System AI",
+            avatar: "AI",
+            content: "Extracted 125 Task Chairs from RFQ. Flagged freight calculation for Expert Review.",
+            time: "9 mins ago",
+            type: "ai",
         },
         {
             id: 4,
             sender: "System",
             avatar: "",
-            content: "Quote status updated to 'Negotiating'. Client viewed the quote.",
-            time: "4 hours ago",
+            content: "Freight calculated and validated by Expert Hub. Quote is ready for client review and PO generation.",
+            time: "1 min ago",
             type: "system",
         }
     ])
@@ -110,6 +105,8 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
 
     const { theme, toggleTheme } = useTheme()
     const { currentTenant } = useTenant()
+    const { currentStep, nextStep } = useDemo()
+    const [freightResolved, setFreightResolved] = useState(false)
 
     return (
         <div className="flex flex-col min-h-screen bg-background font-sans text-foreground transition-colors duration-200">
@@ -144,6 +141,54 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
             </div>
 
             <div className="flex flex-col p-6 gap-6">
+                {/* AI Review Required Block */}
+                {currentStep?.id === '1.5' && !freightResolved && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-in fade-in slide-in-from-top-4">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-amber-500/20 rounded-xl">
+                                <ExclamationTriangleIcon className="w-6 h-6 text-amber-600 dark:text-amber-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-amber-800 dark:text-amber-400">Expert Action Required: Missing Freight Calculation</h3>
+                                <p className="text-sm font-medium text-amber-700/80 dark:text-amber-500/80 max-w-2xl mt-1">
+                                    AI extracted 125 Task Chairs from RFQ but could not calculate freight rules for delivery to Austin, TX due to non-standard building restrictions. Please input the manual LTL freight rate.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">$</span>
+                                <input
+                                    type="number"
+                                    placeholder="0.00"
+                                    className="pl-7 pr-4 py-2.5 w-full sm:w-32 text-sm font-bold bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
+                                />
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setFreightResolved(true);
+                                    setTimeout(() => nextStep(), 1500);
+                                }}
+                                className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
+                            >
+                                Approve Corrections
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {freightResolved && (
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 flex items-center gap-4 animate-in fade-in zoom-in">
+                        <div className="p-2 bg-green-500/20 rounded-full">
+                            <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-bold text-green-800 dark:text-green-400">Freight Calculation Approved</h3>
+                            <p className="text-xs font-medium text-green-700/80 dark:text-green-500/80 mt-0.5">Automated workflow has resumed.</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Collapsible Summary */}
                 {isSummaryExpanded ? (
                     <>
@@ -155,11 +200,11 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 animate-in fade-in zoom-in duration-300">
                                 {[
-                                    { label: 'QUOTE VALUE', value: '$1,200,000' },
-                                    { label: 'NET MARGIN', value: '29.2%', color: 'text-green-600 dark:text-green-400' },
+                                    { label: 'QUOTE VALUE', value: '$43,750' },
+                                    { label: 'NET MARGIN', value: '35.4%', color: 'text-green-600 dark:text-green-400' },
                                     { label: 'PROBABILITY', value: 'High' },
                                     { label: 'VALID UNTIL', value: 'Feb 12' },
-                                    { label: 'STATUS', value: 'Negotiating', color: 'text-indigo-600 dark:text-indigo-400' },
+                                    { label: 'STATUS', value: 'Approved', color: 'text-brand-600 dark:text-brand-400' },
                                 ].map((stat, i) => (
                                     <div key={i} className="bg-zinc-50 dark:bg-card/50 p-4 rounded-xl border border-zinc-100 dark:border-white/5">
                                         <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-1">{stat.label}</p>
@@ -225,10 +270,10 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
                     <div className="bg-card p-4 rounded-xl shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
                         <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide">
                             {[
-                                { label: 'Quote Value', value: '$1.2M' },
-                                { label: 'Margin', value: '29.2%', color: 'text-green-600 dark:text-green-400' },
-                                { label: 'Probability', value: 'High', color: 'text-indigo-600 dark:text-indigo-400' },
-                                { label: 'Status', value: 'Negotiating', color: 'text-zinc-600 dark:text-zinc-400' },
+                                { label: 'Quote Value', value: '$43,750' },
+                                { label: 'Margin', value: '35.4%', color: 'text-green-600 dark:text-green-400' },
+                                { label: 'Probability', value: 'High', color: 'text-brand-600 dark:text-brand-400' },
+                                { label: 'Status', value: 'Approved', color: 'text-zinc-600 dark:text-zinc-400' },
                             ].map((stat, i) => (
                                 <Fragment key={i}>
                                     <div className="flex items-center gap-2 whitespace-nowrap">
@@ -343,6 +388,9 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Properties</th>
                                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock Level</th>
                                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                                        {currentStep?.id === '1.5' && (
+                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">AI Confidence</th>
+                                                        )}
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-card divide-y divide-border">
@@ -402,11 +450,67 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                                     {item.status}
                                                                 </span>
                                                             </td>
+                                                            {currentStep?.id === '1.5' && (
+                                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                                    <ConfidenceScoreBadge score={95} label="Product" size="sm" />
+                                                                </td>
+                                                            )}
                                                         </tr>
                                                     ))}
                                                 </tbody>
                                             </table>
                                         </div>
+
+                                        {/* AI Correction Cards — Step 1.5 */}
+                                        {currentStep?.id === '1.5' && (
+                                            <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-2">AI Suggested Corrections</h4>
+
+                                                {/* Correction 1: Freight */}
+                                                <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-500/10">
+                                                            <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-medium text-foreground">Freight Rate</p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="text-xs text-muted-foreground line-through">$0.00</span>
+                                                                <ChevronRightIcon className="w-3 h-3 text-muted-foreground" />
+                                                                <span className="text-xs font-medium text-foreground">$2,450.00 (LTL Austin)</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <ConfidenceScoreBadge score={42} label="Freight" size="sm" />
+                                                        <button className="px-3 py-1.5 bg-primary text-primary-foreground text-[10px] font-medium rounded-lg transition-colors">Accept</button>
+                                                        <button className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground text-[10px] font-medium rounded-lg transition-colors">Reject</button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Correction 2: Quantity */}
+                                                <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-500/10">
+                                                            <SparklesIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-medium text-foreground">Quantity (Task Chair)</p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="text-xs text-muted-foreground">200 (RFQ stated)</span>
+                                                                <ChevronRightIcon className="w-3 h-3 text-muted-foreground" />
+                                                                <span className="text-xs font-medium text-foreground">125 (AI verified from attachment)</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <ConfidenceScoreBadge score={88} label="Qty" size="sm" />
+                                                        <button className="px-3 py-1.5 bg-primary text-primary-foreground text-[10px] font-medium rounded-lg transition-colors">Accept</button>
+                                                        <button className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground text-[10px] font-medium rounded-lg transition-colors">Reject</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Right Panel: Details */}
@@ -916,7 +1020,7 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                 Order Document Preview
                                             </DialogTitle>
                                             <p className="text-sm text-muted-foreground mt-1">
-                                                Previewing Purchase Order #PO-2025-001
+                                                Previewing Purchase Order #PO-1029
                                             </p>
                                         </div>
                                         <button onClick={() => setIsDocumentModalOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -928,25 +1032,25 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                         <div className="flex justify-between items-end mb-6 pb-4 border-b-2 border-black">
                                             <h2 className="text-2xl font-bold uppercase">Purchase Order</h2>
                                             <div className="text-right">
-                                                <div className="font-bold text-lg">STRATA INC.</div>
-                                                <div className="text-sm">123 Innovation Dr., Tech City</div>
+                                                <div className="font-bold text-lg">APEX FURNITURE</div>
+                                                <div className="text-sm">PROCUREMENT DIVISION</div>
                                             </div>
                                         </div>
 
                                         <div className="flex justify-between mb-8">
                                             <div>
                                                 <div className="text-xs font-bold text-zinc-500 mb-1 uppercase">VENDOR</div>
-                                                <div className="font-bold">OfficeSupplies Co.</div>
-                                                <div className="text-sm">555 Supplier Lane</div>
+                                                <div className="font-bold">Strata Inc.</div>
+                                                <div className="text-sm">123 Innovation Dr., Tech City</div>
                                             </div>
                                             <div className="text-right space-y-1">
                                                 <div className="flex justify-between w-48">
                                                     <span className="text-sm font-bold text-zinc-500">PO #:</span>
-                                                    <span className="text-sm font-bold">PO-2025-001</span>
+                                                    <span className="text-sm font-bold">PO-1029</span>
                                                 </div>
                                                 <div className="flex justify-between w-48">
                                                     <span className="text-sm font-bold text-zinc-500">DATE:</span>
-                                                    <span className="text-sm">Jan 12, 2026</span>
+                                                    <span className="text-sm">Oct 24, 2024</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -963,9 +1067,9 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                     <div className="font-bold text-sm">{selectedItem.name}</div>
                                                     <div className="text-xs text-zinc-500">{selectedItem.id}</div>
                                                 </div>
-                                                <div className="flex-1 text-right text-sm">50</div>
-                                                <div className="flex-1 text-right text-sm">$45.00</div>
-                                                <div className="flex-1 text-right text-sm">$2,250.00</div>
+                                                <div className="flex-1 text-right text-sm">125</div>
+                                                <div className="flex-1 text-right text-sm">$350.00</div>
+                                                <div className="flex-1 text-right text-sm">$43,750.00</div>
                                             </div>
                                         </div>
 
@@ -973,11 +1077,11 @@ export default function QuoteDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                             <div className="w-64">
                                                 <div className="flex justify-between mb-2">
                                                     <span className="text-sm text-zinc-500">Subtotal:</span>
-                                                    <span className="text-sm font-bold">$2,250.00</span>
+                                                    <span className="text-sm font-bold">$43,750.00</span>
                                                 </div>
                                                 <div className="flex justify-between items-center mt-2 pt-2 border-t border-zinc-100">
                                                     <span className="text-lg font-bold">TOTAL:</span>
-                                                    <span className="text-xl font-bold text-foreground">$2,250.00</span>
+                                                    <span className="text-xl font-bold text-foreground">$43,750.00</span>
                                                 </div>
                                             </div>
                                         </div>

@@ -2,7 +2,9 @@
 @import './fonts.css';
 
 /* Tailwind v4 Setup */
-@import 'tailwindcss';
+@import 'tailwindcss/preflight';
+@import 'tailwindcss/theme';
+@import 'tailwindcss/utilities';
 
 @custom-variant dark (&:is(.dark *));
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import { useTenant } from './TenantContext';
+import { useDemo } from './context/DemoContext';
+import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge';
 import InventoryMovements from './components/InventoryMovements';
 import InventoryMaintenance from './components/InventoryMaintenance';
 import MACRequests from './components/MACRequests';
@@ -30,8 +32,16 @@ interface PageProps {
 
 export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspace, onNavigate }: PageProps) {
     const { currentTenant } = useTenant();
+    const { currentStep, nextStep } = useDemo();
     const [activeTab, setActiveTab] = useState<'movements' | 'maintenance' | 'requests' | 'punchlist'>('requests');
     const [highlightedTab, setHighlightedTab] = useState<string | null>(null);
+
+    // Auto-select requests tab for step 3.4
+    useEffect(() => {
+        if (currentStep?.id === '3.4') {
+            setActiveTab('requests');
+        }
+    }, [currentStep?.id]);
 
     useEffect(() => {
         const handleHighlight = (e: CustomEvent) => {
@@ -92,6 +102,37 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                         </button>
                     ))}
                 </div>
+
+                {/* Step 3.4: AI Validation Banner */}
+                {currentStep?.id === '3.4' && activeTab === 'requests' && (
+                    <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-green-500/20 rounded-xl">
+                                    <ClipboardDocumentCheckIcon className="w-5 h-5 text-green-500" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-sm font-bold text-green-700 dark:text-green-400">AI Validated MAC Requests</h3>
+                                        <span className="px-2 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 text-[10px] font-bold rounded-full uppercase tracking-wider">AI Validated</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <p className="text-xs text-green-600/80 dark:text-green-500/80">
+                                            3 requests validated against inventory and compliance rules
+                                        </p>
+                                        <ConfidenceScoreBadge score={94} label="Validation" size="sm" />
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => nextStep()}
+                                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
+                            >
+                                Continue to Warranty
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Content */}
                 <div className="min-h-[400px]">

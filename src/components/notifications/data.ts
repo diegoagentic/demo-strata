@@ -3,6 +3,19 @@ import type { Notification } from './types';
 export const mockNotifications: Notification[] = [
     {
         id: '1',
+        type: 'system',
+        priority: 'high',
+        title: 'PO Created from RFQ',
+        message: 'Order #PO-1029 generated for Apex Furniture',
+        meta: 'System Auto-PO',
+        timestamp: 'Just now',
+        unread: true,
+        actions: [
+            { label: 'View PO', primary: true }
+        ]
+    },
+    {
+        id: '2',
         type: 'discrepancy',
         priority: 'high',
         title: 'Quantity Mismatch',
@@ -157,5 +170,128 @@ export const mockNotifications: Notification[] = [
         actions: [
             { label: 'Reply', primary: true }
         ]
-    }
+    },
+    // Flow 1: Email Intake notifications
+    {
+        id: '13',
+        type: 'quote_update',
+        priority: 'medium',
+        title: 'RFQ Received',
+        message: 'Apex Furniture RFQ #1029 received. AI processing started.',
+        meta: 'System',
+        timestamp: 'Just now',
+        unread: true,
+        actions: [{ label: 'View Status', primary: true }],
+        persona: 'dealer'
+    },
+    {
+        id: '14',
+        type: 'quote_update',
+        priority: 'high',
+        title: 'Quote Needs Attention',
+        message: 'Quote #QT-1025: 3 fields below 70% confidence.',
+        meta: 'AI Engine',
+        timestamp: '2 min ago',
+        unread: true,
+        actions: [{ label: 'Review', primary: true }],
+        persona: 'expert'
+    },
+    {
+        id: '15',
+        type: 'po_created',
+        priority: 'medium',
+        title: 'PO Generated',
+        message: 'PO #PO-1029 created from Quote #QT-1025.',
+        meta: 'System Auto-PO',
+        timestamp: '5 min ago',
+        unread: true,
+        actions: [{ label: 'View PO', primary: true }],
+        persona: 'dealer'
+    },
+    // Flow 2: ERP Intake notifications
+    {
+        id: '16',
+        type: 'ack_received',
+        priority: 'medium',
+        title: 'ACK Received',
+        message: 'ACK for PO #ORD-2055 received from eManage ONE.',
+        meta: 'ERP Connector',
+        timestamp: '1 min ago',
+        unread: true,
+        actions: [{ label: 'View ACK', primary: true }],
+        persona: 'dealer'
+    },
+    {
+        id: '17',
+        type: 'backorder',
+        priority: 'medium',
+        title: 'Backorder Created',
+        message: 'Line 2 backordered: Conference Room Chair, ETA March 15.',
+        meta: 'BackorderAgent',
+        timestamp: '5 min ago',
+        unread: true,
+        actions: [{ label: 'View Details', primary: true }],
+        persona: 'dealer'
+    },
+    // Flow 3: Document Intake notifications
+    {
+        id: '18',
+        type: 'shipment',
+        priority: 'medium',
+        title: 'Shipment Update',
+        message: 'Tracking updated: Order #ORD-2055 shipped via FedEx.',
+        meta: 'ShipmentAgent',
+        timestamp: '10 min ago',
+        unread: true,
+        actions: [{ label: 'Track', primary: true }],
+        persona: 'dealer'
+    },
+    {
+        id: '19',
+        type: 'shipment',
+        priority: 'high',
+        title: 'Shipment Delayed',
+        message: 'Delivery delayed by 3 days. New ETA: April 2.',
+        meta: 'ShipmentAgent',
+        timestamp: '15 min ago',
+        unread: true,
+        actions: [{ label: 'View Timeline', primary: true }],
+        persona: 'dealer'
+    },
+    {
+        id: '20',
+        type: 'warranty',
+        priority: 'high',
+        title: 'Warranty Claim Ready',
+        message: 'Claim #W-442 assembled. Carrier liability: 78%.',
+        meta: 'WarrantyAgent',
+        timestamp: '20 min ago',
+        unread: true,
+        actions: [{ label: 'Review Claim', primary: true }],
+        persona: 'both'
+    },
+    {
+        id: '21',
+        type: 'mac',
+        priority: 'medium',
+        title: 'MAC Request Validated',
+        message: 'MAC plan created: 3 movements, $2,400 impact.',
+        meta: 'MACOrchestrator',
+        timestamp: '25 min ago',
+        unread: true,
+        actions: [{ label: 'Approve Plan', primary: true }],
+        persona: 'expert'
+    },
+    {
+        id: '22',
+        type: 'invoice',
+        priority: 'high',
+        title: '3-Way Match Failed',
+        message: 'Tax variance of $0.03 on Invoice #INV-9001.',
+        meta: 'MatchAgent',
+        timestamp: '30 min ago',
+        unread: true,
+        actions: [{ label: 'Resolve', primary: true }],
+        persona: 'expert'
+    },
 ];

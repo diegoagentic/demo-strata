@@ -15,6 +15,9 @@ import { useTheme, Table, TableHeader, TableBody, TableRow, TableHead, TableCell
 import { useTenant } from './TenantContext'
 import Navbar from './components/Navbar'
 import Breadcrumbs from './components/Breadcrumbs'
+import { useDemo } from './context/DemoContext'
+import BackorderTraceCard from './components/widgets/BackorderTraceCard'
+import type { BackorderLine } from './components/widgets/BackorderTraceCard'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs))
@@ -35,6 +38,10 @@ const demoItems = [
     { id: "AER-REM-2025-BLK", name: "Aeron Remastered", category: "Task Seating", properties: "Graphite / Size B", stock: 120, status: "In Stock", statusColor: "bg-green-50 text-green-700", aiStatus: "check" },
     { id: "EMB-CHR-2025-GRY", name: "Embody Chair", category: "Performance", properties: "Sync / Gray", stock: 45, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700" },
     { id: "NVI-DSK-2025-WAL", name: "Nevi Sit-Stand Desk", category: "Desking", properties: "Walnut / White", stock: 200, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" }
+];
+
+const flow1Items = [
+    { id: "SKU-OFF-2025-002", name: "Ergonomic Task Chair", category: "Standard Series", properties: "Mesh / Gray", stock: 125, status: "Allocated", statusColor: "bg-brand/10 text-brand ring-brand/20", aiStatus: "check" }
 ];
 
 interface Message {
@@ -347,8 +354,24 @@ interface DetailProps {
     onNavigate?: (page: string) => void;
 }
 
+const BACKORDER_LINES: BackorderLine[] = [
+    { sku: 'SKU-OFF-2025-003', name: 'Conference Room Chair', originalQty: 50, fulfilledQty: 35, backorderedQty: 15, eta: 'Mar 15, 2026', impact: 'Delayed delivery for 2nd floor conference rooms. Manufacturer backlog on Navy fabric.' },
+    { sku: 'SKU-OFF-2025-008', name: 'Bench Seating 3-Seat', originalQty: 20, fulfilledQty: 12, backorderedQty: 8, eta: 'Mar 22, 2026', impact: 'Lobby installation delayed. Chrome finish supplier capacity constraint.' },
+];
+
+const SHIPMENT_STEPS = [
+    { status: 'Order Placed', date: 'Jan 15, 2026', detail: 'PO #ORD-2055 confirmed', completed: true },
+    { status: 'In Production', date: 'Jan 22, 2026', detail: 'Manufacturing started at Plant B', completed: true },
+    { status: 'Ready to Ship', date: 'Feb 10, 2026', detail: '35 of 50 units packaged', completed: true },
+    { status: 'Shipped', date: 'Feb 12, 2026', detail: 'Tracking: FX-2026-887744', completed: true },
+    { status: 'In Transit', date: 'Feb 14, 2026', detail: 'FedEx Hub — Memphis, TN', completed: false, current: true },
+    { status: 'Delivered', date: 'Est. Feb 18', detail: 'Austin, TX Warehouse', completed: false },
+];
+
 export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, onNavigate }: DetailProps) {
+    const { currentStep, nextStep } = useDemo();
     const [isDemoOrder, setIsDemoOrder] = useState(false);
+    const [isFlow1Order, setIsFlow1Order] = useState(false);
 
     useEffect(() => {
         const demoId = localStorage.getItem('demo_view_order_id');
@@ -358,11 +381,14 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
         if ((demoId === 'ORD-7829') || (urlId === 'ORD-7829')) {
             setIsDemoOrder(true);
             setSelectedItem(demoItems[0]);
+        } else if ((demoId === 'PO-1029') || (urlId === 'PO-1029')) {
+            setIsFlow1Order(true);
+            setSelectedItem(flow1Items[0]);
         }
     }, []);
 
-    const currentItems = isDemoOrder ? demoItems : items;
-    const orderId = isDemoOrder ? '#ORD-7829' : '#ORD-2055';
+    const currentItems = isFlow1Order ? flow1Items : (isDemoOrder ? demoItems : items);
+    const orderId = isFlow1Order ? '#PO-1029' : (isDemoOrder ? '#ORD-7829' : '#ORD-2055');
 
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -405,8 +431,27 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                     type: "system",
                 }
             ]);
+        } else if (isFlow1Order) {
+            setMessages([
+                {
+                    id: 1,
+                    sender: "System",
+                    avatar: "",
+                    content: `Purchase Order ${orderId} auto-generated from approved Quote #QT-1025.`,
+                    time: "Just now",
+                    type: "system",
+                },
+                {
+                    id: 2,
+                    sender: "AI Assistant",
+                    avatar: "AI",
+                    content: "I've successfully received and allocated 125 units of Ergonomic Task Chairs for Apex Furniture. Total value confirmed at $43,750.",
+                    time: "Just now",
+                    type: "ai",
+                }
+            ]);
         }
-    }, [isDemoOrder, orderId]);
+    }, [isDemoOrder, isFlow1Order, orderId]);
 
     const [selectedItem, setSelectedItem] = useState(items[0])
     const [sections, setSections] = useState({
@@ -463,6 +508,55 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
             </div>
 
             <div className="flex flex-col p-6 gap-6">
+                {/* Step 2.6: Backorder Trace Panel */}
+                {currentStep?.id === '2.6' && (
+                    <BackorderTraceCard lines={BACKORDER_LINES} orderId="#ORD-2055" />
+                )}
+
+                {/* Step 3.3: Shipment Timeline */}
+                {currentStep?.id === '3.3' && (
+                    <div className="bg-card border border-border rounded-2xl p-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-sm font-bold text-foreground">Shipment Tracking — #ORD-2055</h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">FedEx — Tracking: FX-2026-887744</p>
+                            </div>
+                            <button
+                                onClick={nextStep}
+                                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                            >
+                                Continue to MAC
+                            </button>
+                        </div>
+                        <div className="space-y-0 relative before:absolute before:inset-y-0 before:left-3.5 before:w-px before:bg-zinc-200 dark:before:bg-zinc-700">
+                            {SHIPMENT_STEPS.map((step, idx) => (
+                                <div key={idx} className="flex gap-4 relative pb-6 last:pb-0">
+                                    <div className={cn(
+                                        "w-7 h-7 rounded-full flex items-center justify-center shrink-0 z-10 transition-all",
+                                        step.completed ? "bg-green-500 text-white shadow-lg shadow-green-500/20" :
+                                        (step as any).current ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20 animate-pulse" :
+                                        "bg-zinc-200 dark:bg-zinc-700 text-muted-foreground"
+                                    )}>
+                                        {step.completed ? <CheckIcon className="w-4 h-4" /> :
+                                         (step as any).current ? <ClockIcon className="w-4 h-4" /> :
+                                         <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <span className={cn(
+                                                "text-xs font-bold",
+                                                step.completed || (step as any).current ? "text-foreground" : "text-muted-foreground"
+                                            )}>{step.status}</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium">{step.date}</span>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">{step.detail}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Collapsible Summary */}
                 {isSummaryExpanded ? (
                     <>
@@ -474,9 +568,9 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 animate-in fade-in zoom-in duration-300">
                                 {[
-                                    { label: 'ORDER VALUE', value: '$45,200.00' },
-                                    { label: 'ITEMS', value: '12' },
-                                    { label: 'FULFILLMENT', value: 'Partial', color: 'text-amber-600 dark:text-amber-400' },
+                                    { label: 'ORDER VALUE', value: isFlow1Order ? '$43,750.00' : '$45,200.00' },
+                                    { label: 'ITEMS', value: isFlow1Order ? '125' : '12' },
+                                    { label: 'FULFILLMENT', value: isFlow1Order ? 'Allocated' : 'Partial', color: isFlow1Order ? 'text-brand' : 'text-amber-600 dark:text-amber-400' },
                                     { label: 'CARRIER', value: 'FedEx' },
                                     { label: 'STATUS', value: 'Processing', color: 'text-blue-600 dark:text-blue-400' },
                                 ].map((stat, i) => (
@@ -544,8 +638,8 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                     <div className="bg-card p-4 rounded-xl shadow-sm ring-1 ring-zinc-900/5 dark:ring-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
                         <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide">
                             {[
-                                { label: 'Order Value', value: '$45.2k' },
-                                { label: 'Fulfillment', value: 'Partial', color: 'text-amber-600 dark:text-amber-400' },
+                                { label: 'Order Value', value: isFlow1Order ? '$43.75k' : '$45.2k' },
+                                { label: 'Fulfillment', value: isFlow1Order ? 'Allocated' : 'Partial', color: isFlow1Order ? 'text-brand' : 'text-amber-600 dark:text-amber-400' },
                                 { label: 'Carrier', value: 'FedEx' },
                                 { label: 'Status', value: 'Processing', color: 'text-blue-600 dark:text-blue-400' },
                             ].map((stat, i) => (

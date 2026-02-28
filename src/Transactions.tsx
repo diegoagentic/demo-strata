@@ -23,6 +23,14 @@ import BatchAckModal from './components/BatchAckModal'
 import Breadcrumbs from './components/Breadcrumbs'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { useDemo } from './context/DemoContext'
+import ThreeWayMatchView from './components/widgets/ThreeWayMatchView'
+import type { MatchLine } from './components/widgets/ThreeWayMatchView'
+
+const THREE_WAY_MATCH_LINES: MatchLine[] = [
+    { lineItem: 'Ergonomic Task Chair x125', sku: 'SKU-OFF-2025-002', poValue: '$34,375.00', ackValue: '$34,375.00', invoiceValue: '$34,375.00', status: 'match' },
+    { lineItem: 'LTL Freight (Austin, TX)', sku: 'FREIGHT-LTL', poValue: '$2,450.00', ackValue: '$2,450.00', invoiceValue: '$2,450.03', status: 'mismatch', delta: '+$0.03' },
+];
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs))
@@ -136,6 +144,7 @@ interface TransactionsProps {
 }
 
 export default function Transactions({ onLogout, onNavigateToDetail, onNavigateToWorkspace, onNavigate }: TransactionsProps) {
+    const { currentStep, nextStep } = useDemo();
     const [viewMode, setViewMode] = useState<'list' | 'pipeline'>('pipeline');
     const [showMetrics, setShowMetrics] = useState(false);
     const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
@@ -362,6 +371,22 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                         ]}
                     />
                 </div>
+
+                {/* Step 3.2: 3-Way Match View */}
+                {currentStep?.id === '3.2' && (
+                    <ThreeWayMatchView
+                        orderId="#ORD-2055"
+                        lines={THREE_WAY_MATCH_LINES}
+                        onAutoFix={() => {
+                            // Simulate auto-fix of $0.03 rounding
+                            alert('Auto-fixing $0.03 tax rounding difference...');
+                        }}
+                        onResolve={() => {
+                            nextStep();
+                            onNavigate('order-detail');
+                        }}
+                    />
+                )}
 
                 {/* Lifecycle Tabs Navigation */}
                 <div className="flex items-center mb-6">

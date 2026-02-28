@@ -1,5 +1,5 @@
 import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react';
-import { BellIcon, MagnifyingGlassIcon, XMarkIcon, Squares2X2Icon, ExclamationTriangleIcon, CreditCardIcon, ClipboardDocumentCheckIcon, TruckIcon, MegaphoneIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { BellIcon, MagnifyingGlassIcon, XMarkIcon, Squares2X2Icon, ExclamationTriangleIcon, CreditCardIcon, ClipboardDocumentCheckIcon, TruckIcon, MegaphoneIcon, ChatBubbleLeftRightIcon, DocumentTextIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { Fragment, useState, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { mockNotifications } from './data';
@@ -7,8 +7,11 @@ import FilterTabs from './FilterTabs';
 import NotificationItem from './NotificationItem';
 import ChatView from './ChatView';
 import type { NotificationTab } from './types';
+import { useDemo } from '../../context/DemoContext';
 
 export default function ActionCenter() {
+    const { isDemoActive, isSidebarCollapsed } = useDemo();
+    const sidebarExpanded = isDemoActive && !isSidebarCollapsed;
     const [activeTab, setActiveTab] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentView, setCurrentView] = useState<'list' | 'chat'>('list');
@@ -73,7 +76,7 @@ export default function ActionCenter() {
         {
             id: 'shipping',
             label: 'Shipping',
-            count: 3, // Mock count for demo
+            count: mockNotifications.filter(n => (n.type === 'shipment' || n.type === 'backorder') && n.unread).length,
             icon: TruckIcon,
             colorTheme: {
                 activeBg: 'bg-green-500/15',
@@ -82,7 +85,7 @@ export default function ActionCenter() {
                 badgeBg: 'bg-green-500/20',
                 badgeText: 'text-green-500'
             },
-            filter: (n) => n.type === 'system' // Placeholder filter
+            filter: (n) => n.type === 'shipment' || n.type === 'backorder'
         },
         {
             id: 'announcement',
@@ -111,6 +114,34 @@ export default function ActionCenter() {
                 badgeText: 'text-indigo-500'
             },
             filter: (n) => n.type === 'live_chat'
+        },
+        {
+            id: 'quotes',
+            label: 'Quotes & POs',
+            count: mockNotifications.filter(n => (n.type === 'quote_update' || n.type === 'po_created' || n.type === 'ack_received') && n.unread).length,
+            icon: DocumentTextIcon,
+            colorTheme: {
+                activeBg: 'bg-blue-500/15',
+                activeText: 'text-blue-500',
+                activeBorder: 'border-blue-500/20',
+                badgeBg: 'bg-blue-500/20',
+                badgeText: 'text-blue-500'
+            },
+            filter: (n) => n.type === 'quote_update' || n.type === 'po_created' || n.type === 'ack_received'
+        },
+        {
+            id: 'warranty_mac',
+            label: 'Warranty & MAC',
+            count: mockNotifications.filter(n => (n.type === 'warranty' || n.type === 'mac') && n.unread).length,
+            icon: ShieldCheckIcon,
+            colorTheme: {
+                activeBg: 'bg-amber-500/15',
+                activeText: 'text-amber-500',
+                activeBorder: 'border-amber-500/20',
+                badgeBg: 'bg-amber-500/20',
+                badgeText: 'text-amber-500'
+            },
+            filter: (n) => n.type === 'warranty' || n.type === 'mac'
         },
     ];
 
@@ -151,7 +182,7 @@ export default function ActionCenter() {
                         leaveFrom="opacity-100 translate-y-0 scale-100"
                         leaveTo="opacity-0 translate-y-2 scale-95"
                     >
-                        <PopoverPanel className="fixed top-[90px] left-1/2 -translate-x-1/2 w-[95vw] max-h-[85vh] lg:w-[600px] lg:fixed lg:left-1/2 lg:-translate-x-1/2 p-0 z-50 focus:outline-none">
+                        <PopoverPanel className={clsx("fixed top-[90px] -translate-x-1/2 w-[95vw] max-h-[85vh] lg:w-[600px] p-0 z-50 focus:outline-none transition-all duration-300", sidebarExpanded ? 'left-[calc(50%+10rem)]' : 'left-1/2')}>
                             <div className="bg-zinc-100 dark:bg-zinc-900/85 backdrop-blur-xl border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[80vh]">
 
                                 {currentView === 'chat' ? (

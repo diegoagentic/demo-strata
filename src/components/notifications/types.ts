@@ -1,5 +1,11 @@
 export type Priority = 'high' | 'medium' | 'low';
-export type NotificationType = 'discrepancy' | 'invoice' | 'payment' | 'approval' | 'system' | 'announcement' | 'live_chat';
+export type NotificationType =
+    | 'discrepancy' | 'invoice' | 'payment' | 'approval'
+    | 'system' | 'announcement' | 'live_chat'
+    | 'quote_update' | 'po_created' | 'ack_received'
+    | 'backorder' | 'shipment' | 'warranty' | 'mac';
+
+export type NotificationPersona = 'dealer' | 'expert' | 'both';
 
 export interface Action {
     label: string;
@@ -17,6 +23,7 @@ export interface Notification {
     timestamp: string;
     unread: boolean;
     actions: Action[];
+    persona?: NotificationPersona;
 }
 
 export interface NotificationTab {

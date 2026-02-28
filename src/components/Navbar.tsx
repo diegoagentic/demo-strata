@@ -20,6 +20,7 @@ import {
 import { useTheme } from 'strata-design-system'
 import { useTenant } from '../TenantContext'
 import { useAuth } from '../context/AuthContext'
+import { useDemo } from '../context/DemoContext'
 
 import ActionCenter from './notifications/ActionCenter';
 
@@ -49,18 +50,30 @@ interface NavbarProps {
     onNavigateToWorkspace: () => void;
     onNavigate: (page: any) => void;
     onOpenDemoGuide?: () => void;
+    appName?: string;
+    customNavigation?: { name: string, page: string, icon: any }[];
 }
 
-export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToWorkspace, onNavigate, onOpenDemoGuide }: NavbarProps) {
+export default function Navbar({
+    onLogout,
+    activeTab = 'Overview',
+    onNavigateToWorkspace,
+    onNavigate,
+    onOpenDemoGuide,
+    appName,
+    customNavigation
+}: NavbarProps) {
     const { theme, toggleTheme } = useTheme()
     const { currentTenant, tenants, setTenant } = useTenant()
     const { user } = useAuth()
+    const { isDemoActive, isSidebarCollapsed } = useDemo()
+    const sidebarExpanded = isDemoActive && !isSidebarCollapsed
 
     const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
     const userInitials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     const userEmail = user?.email || ''
 
-    const navigation = [
+    const navigation = customNavigation || [
         { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
         { name: 'Catalogs', page: 'catalogs', icon: BookOpenIcon },
         { name: 'Inventory', page: 'inventory', icon: CubeTransparentIcon },
@@ -71,8 +84,8 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
     ];
 
     return (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 min-w-[60vw] max-w-fit lg:min-w-0 lg:max-w-7xl lg:w-[80vw]">
-            <div className="relative flex items-center lg:justify-between px-3 py-2 rounded-full gap-1 bg-card/80 backdrop-blur-xl border border-border shadow-lg dark:shadow-glow-md">
+        <div className={`fixed top-6 z-50 flex justify-center px-4 transition-all duration-300 ${sidebarExpanded ? 'left-80 right-0' : 'left-0 right-0'}`}>
+            <div className={`relative flex items-center lg:justify-between px-3 py-2 rounded-full gap-1 bg-card/80 backdrop-blur-xl border border-border shadow-lg dark:shadow-glow-md w-full transition-all duration-300 ${sidebarExpanded ? 'max-w-5xl' : 'max-w-7xl'}`}>
 
                 {/* Left Group (Logo + Tenant) */}
                 <div className="flex items-center gap-1">
@@ -88,7 +101,7 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
                     <Menu as="div" className="relative hidden lg:block">
                         <MenuButton className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors outline-none">
                             <div className="flex flex-col items-start text-left">
-                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">Tenant</span>
+                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">{appName || 'Tenant'}</span>
                                 <div className="flex items-center gap-1">
                                     <span className="text-sm font-bold text-foreground leading-tight">{currentTenant}</span>
                                     <ChevronDownIcon className="w-3 h-3 text-muted-foreground" />
@@ -160,7 +173,7 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
                             leaveFrom="opacity-100 translate-y-0"
                             leaveTo="opacity-0 translate-y-1"
                         >
-                            <PopoverPanel className="fixed top-[90px] left-1/2 -translate-x-1/2 w-[320px] max-h-[80vh] overflow-y-auto p-3 bg-card/95 backdrop-blur-xl border border-border shadow-2xl rounded-3xl z-[100] lg:fixed lg:top-[90px] lg:left-1/2 lg:-translate-x-1/2 lg:mt-4 scrollbar-minimal">
+                            <PopoverPanel className={`fixed top-[90px] w-[320px] max-h-[80vh] overflow-y-auto p-3 bg-card/95 backdrop-blur-xl border border-border shadow-2xl rounded-3xl z-[100] lg:mt-4 scrollbar-minimal transition-all duration-300 ${sidebarExpanded ? 'left-[calc(50%+10rem)] -translate-x-1/2' : 'left-1/2 -translate-x-1/2'}`}>
                                 <div className="space-y-4">
                                     {/* Mobile Navigation List - Hidden on Desktop */}
                                     <div className="lg:hidden space-y-1">
@@ -332,8 +345,8 @@ export default function Navbar({ onLogout, activeTab = 'Overview', onNavigateToW
                     <div className="relative group">
                         <button className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-muted transition-colors text-left outline-none">
                             <div className="flex flex-col items-end mr-1 hidden sm:flex lg:hidden max-w-[140px]">
-                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">Tenant</span>
-                                <span className="text-sm font-bold text-foreground leading-tight truncate w-full text-right">{currentTenant}</span>
+                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">{appName || 'Tenant'}</span>
+                                <span className="text-sm font-bold text-foreground leading-tight truncate w-full text-right">{appName ? 'Active' : currentTenant}</span>
                             </div>
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
                                 {userInitials}

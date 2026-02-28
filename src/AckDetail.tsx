@@ -15,6 +15,7 @@ import { useTheme } from 'strata-design-system'
 import { useTenant } from './TenantContext'
 import Navbar from './components/Navbar'
 import Breadcrumbs from './components/Breadcrumbs'
+import { useDemo } from './context/DemoContext'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs))
@@ -41,6 +42,7 @@ interface Message {
 }
 
 const DiscrepancyResolutionFlow = () => {
+    const { currentStep, nextStep } = useDemo()
     const [status, setStatus] = useState<'initial' | 'requesting' | 'pending' | 'approved' | 'sending' | 'sent'>('initial')
     const [requestText, setRequestText] = useState('')
     const [shipmentResolution, setShipmentResolution] = useState('accept')
@@ -58,7 +60,12 @@ const DiscrepancyResolutionFlow = () => {
 
     const handleSendUpdate = () => {
         setStatus('sending')
-        setTimeout(() => setStatus('sent'), 1500)
+        setTimeout(() => {
+            setStatus('sent')
+            if (currentStep.id === '2.3') {
+                setTimeout(nextStep, 2000)
+            }
+        }, 1500)
     }
 
     if (status === 'initial') {
@@ -1170,12 +1177,14 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                     {msg.type === 'action_success' ? (
                                                         <DiscrepancyActionCard msg={msg} />
                                                     ) : (
-                                                        <div className={cn(
-                                                            "p-4 rounded-2xl text-sm leading-relaxed shadow-sm",
-                                                            msg.type === 'user'
-                                                                ? "bg-brand-400 text-primary-foreground rounded-tr-sm"
-                                                                : "bg-card border border-border rounded-tl-sm text-foreground"
-                                                        )}>
+                                                        <div
+                                                            id={msg.id === 3 ? "discrepancy-resolver" : undefined}
+                                                            className={cn(
+                                                                "p-4 rounded-2xl text-sm leading-relaxed shadow-sm",
+                                                                msg.type === 'user'
+                                                                    ? "bg-brand-400 text-primary-foreground rounded-tr-sm"
+                                                                    : "bg-card border border-border rounded-tl-sm text-foreground"
+                                                            )}>
                                                             {msg.content}
                                                             {msg.type === 'action_processing' && (
                                                                 <div className="mt-3 flex items-center gap-2 text-zinc-900 dark:text-primary font-medium">

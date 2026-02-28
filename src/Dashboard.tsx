@@ -52,6 +52,7 @@ import QuoteGenerationFlow from './components/QuoteGenerationFlow';
 import { useGenUI } from './context/GenUIContext'
 import DashboardMetricsGrid from './components/DashboardMetricsGrid';
 import { Card } from 'strata-design-system';
+import { useDemo } from './context/DemoContext'
 
 // Urgent Actions Data (Dealer Persona)
 const urgentActions = [
@@ -269,6 +270,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     // const { theme, toggleTheme } = useTheme() // Removed - useTheme not available
     const { currentTenant } = useTenant()
     const { sendMessage, setStreamOpen, setShowTriggers } = useGenUI()
+    const { currentStep, nextStep } = useDemo()
 
     const handleGenUIAction = (prompt: string) => {
         setStreamOpen(true);
@@ -741,8 +743,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                         </span>
                                     </div>
                                     <div className="space-y-3">
-                                        {urgentActions.map((action) => (
-                                            <div key={action.id} className={`group border rounded-xl hover:border-zinc-400 transition-all duration-700 bg-zinc-50/50 dark:bg-zinc-800/50 ${highlightedAction === action.id
+                                        {urgentActions.filter(action => action.id !== 4 || currentStep.id === '2.1').map((action) => (
+                                            <div key={action.id} className={`group border rounded-xl hover:border-zinc-400 transition-all duration-700 bg-zinc-50/50 dark:bg-zinc-800/50 ${(highlightedAction === action.id || (action.id === 4 && currentStep.id === '2.1'))
                                                 ? 'ring-4 ring-brand-500 shadow-[0_0_30px_rgba(var(--brand-500),0.6)] animate-pulse border-brand-500'
                                                 : 'border-border'
                                                 }`}>
@@ -783,7 +785,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                         <button
                                                             onClick={() => {
                                                                 if (action.id === 4) {
-                                                                    onNavigate('ack-detail-ai')
+                                                                    nextStep()
                                                                 } else {
                                                                     handleGenUIAction(`${action.action} ${action.title}`)
                                                                 }
