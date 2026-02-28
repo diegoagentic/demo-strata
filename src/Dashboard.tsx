@@ -56,6 +56,9 @@ import { Card } from 'strata-design-system';
 import { useDemo } from './context/DemoContext'
 import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
 import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
+import NotificationItem from './components/notifications/NotificationItem'
+import FilterTabs from './components/notifications/FilterTabs'
+import type { Notification, NotificationTab } from './components/notifications/types'
 
 // Urgent Actions Data (Dealer Persona)
 const urgentActions = [
@@ -776,161 +779,181 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                     </div>
                 )}
 
-                {/* ===== Step 1.8: Smart Notifications ===== */}
-                {currentStep.id === '1.8' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                        {/* Full Pipeline - All Done */}
-                        <AgentPipelineStrip agents={[
-                            { id: 'email', name: 'EmailIntake', status: 'done' },
-                            { id: 'ocr', name: 'OCR/Parser', status: 'done' },
-                            { id: 'norm', name: 'DataNorm', status: 'done' },
-                            { id: 'valid', name: 'Validator', status: 'done' },
-                            { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
-                            { id: 'approval', name: 'ApprovalOrch', status: 'done', detail: '3/3 approved' },
-                            { id: 'po', name: 'POBuilder', status: 'done', detail: 'PO-1029' },
-                            { id: 'notif', name: 'Notification', status: notifDelivered18.length === 3 ? 'done' : 'running', detail: `${notifDelivered18.length}/3 sent` },
-                        ]} accentColor="green" />
+                {/* ===== Step 1.8: Smart Notifications via Action Center ===== */}
+                {currentStep.id === '1.8' && (() => {
+                    const flow1Notifications: Notification[] = [
+                        {
+                            id: 'f1-po',
+                            type: 'po_created',
+                            priority: 'high',
+                            title: 'PO-1029 Generated from Approved Quote',
+                            message: 'Apex Furniture — $134,256 (5 line items, 3 warranties, 2 discounts applied)',
+                            meta: 'POBuilderAgent',
+                            timestamp: 'Just now',
+                            unread: true,
+                            actions: [{ label: 'View PO', primary: true }],
+                            persona: 'dealer',
+                        },
+                        {
+                            id: 'f1-approval',
+                            type: 'approval',
+                            priority: 'high',
+                            title: 'Approval Chain Complete — 3/3 Levels',
+                            message: 'Quote QT-1025 approved: Sarah Chen (Sales) → David Park (Finance) → Policy Engine',
+                            meta: 'ApprovalOrchestratorAgent',
+                            timestamp: '1 min ago',
+                            unread: true,
+                            actions: [{ label: 'View Chain', primary: true }],
+                            persona: 'expert',
+                        },
+                        {
+                            id: 'f1-quote',
+                            type: 'quote_update',
+                            priority: 'medium',
+                            title: 'Quote QT-1025 — Warranties & Discounts Applied',
+                            message: 'Extended warranties on 3 SKUs (+$2,400 margin). Discounts: Early Payment 2% + Mixed Category 2%',
+                            meta: 'QuoteBuilderAgent',
+                            timestamp: '2 min ago',
+                            unread: true,
+                            actions: [{ label: 'Review', primary: true }],
+                            persona: 'expert',
+                        },
+                        {
+                            id: 'f1-rfq',
+                            type: 'system',
+                            priority: 'medium',
+                            title: 'RFQ Received & Parsed — Apex Furniture',
+                            message: 'Email intake → OCR → Normalization → Validation complete. 5 line items extracted.',
+                            meta: 'EmailIntakeAgent → OCR/Parser',
+                            timestamp: '4 min ago',
+                            unread: true,
+                            actions: [{ label: 'View RFQ', primary: false }],
+                            persona: 'dealer',
+                        },
+                        {
+                            id: 'f1-finance',
+                            type: 'approval',
+                            priority: 'low',
+                            title: 'Budget Impact — Marketing-101 Cost Center',
+                            message: 'PO-1029 at $134,256 within $100k-$250k bracket. Monthly trend: 12 POs, $890k total.',
+                            meta: 'Finance Digest',
+                            timestamp: '1 min ago',
+                            unread: true,
+                            actions: [{ label: 'Details', primary: false }],
+                            persona: 'both',
+                        },
+                    ];
 
-                        <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
-                            {/* Header */}
-                            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                                        <BellIcon className="w-5 h-5 text-blue-500" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-foreground">Smart Notifications — Flow 1 Complete</h3>
-                                        <p className="text-[10px] text-muted-foreground mt-0.5">NotificationAgent delivering persona-aware digests</p>
-                                    </div>
+                    const flow1Tabs: NotificationTab[] = [
+                        { id: 'all', label: 'All', count: flow1Notifications.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-zinc-800 dark:bg-white/10', activeText: 'text-white', activeBorder: 'border-white/10', badgeBg: 'bg-white/20', badgeText: 'text-white' }, filter: () => true },
+                        { id: 'quotes', label: 'Quotes & POs', count: flow1Notifications.filter(n => n.type === 'po_created' || n.type === 'quote_update').length, icon: DocumentTextIcon, colorTheme: { activeBg: 'bg-blue-500/15', activeText: 'text-blue-500', activeBorder: 'border-blue-500/20', badgeBg: 'bg-blue-500/20', badgeText: 'text-blue-500' }, filter: (n) => n.type === 'po_created' || n.type === 'quote_update' },
+                        { id: 'approval', label: 'Approvals', count: flow1Notifications.filter(n => n.type === 'approval').length, icon: ClipboardDocumentListIcon, colorTheme: { activeBg: 'bg-green-500/15', activeText: 'text-green-500', activeBorder: 'border-green-500/20', badgeBg: 'bg-green-500/20', badgeText: 'text-green-500' }, filter: (n) => n.type === 'approval' },
+                        { id: 'system', label: 'System', count: flow1Notifications.filter(n => n.type === 'system').length, icon: CpuChipIcon, colorTheme: { activeBg: 'bg-indigo-500/15', activeText: 'text-indigo-500', activeBorder: 'border-indigo-500/20', badgeBg: 'bg-indigo-500/20', badgeText: 'text-indigo-500' }, filter: (n) => n.type === 'system' },
+                    ];
+
+                    const visibleNotifications = flow1Notifications.filter((_, i) => notifDelivered18.includes(i) || i < 2);
+
+                    return (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                            {/* Pipeline Strip */}
+                            <AgentPipelineStrip agents={[
+                                { id: 'email', name: 'EmailIntake', status: 'done' },
+                                { id: 'ocr', name: 'OCR/Parser', status: 'done' },
+                                { id: 'norm', name: 'DataNorm', status: 'done' },
+                                { id: 'valid', name: 'Validator', status: 'done' },
+                                { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
+                                { id: 'approval', name: 'ApprovalOrch', status: 'done', detail: '3/3 approved' },
+                                { id: 'po', name: 'POBuilder', status: 'done', detail: 'PO-1029' },
+                                { id: 'notif', name: 'Notification', status: notifDelivered18.length === 3 ? 'done' : 'running', detail: `${notifDelivered18.length}/3 sent` },
+                            ]} accentColor="green" />
+
+                            {/* AI Attribution */}
+                            <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                                <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                                <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
+                                    <span className="font-bold">NotificationAgent:</span> Generated {notifDelivered18.length > 0 ? notifDelivered18.length + 2 : 2} persona-specific notifications from 8-agent pipeline. Each persona receives only role-relevant information.
                                 </div>
                                 <ConfidenceScoreBadge score={97} label="Relevance" />
                             </div>
 
-                            <div className="p-6 space-y-5">
-                                {/* AI Attribution */}
-                                <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                                    <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
-                                    <div className="text-xs text-indigo-700 dark:text-indigo-300">
-                                        <span className="font-bold">NotificationAgent:</span> Generated 3 persona-specific digests from 8-agent pipeline results. Each recipient receives only information relevant to their role and action scope.
+                            {/* Inline Action Center */}
+                            <div className="bg-zinc-100 dark:bg-zinc-900/85 backdrop-blur-xl border border-border shadow-lg rounded-3xl overflow-hidden flex flex-col max-h-[65vh]">
+                                {/* Header */}
+                                <div className="px-5 pt-5 pb-3 shrink-0">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <h3 className="text-lg font-bold text-foreground">Action Center</h3>
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-bold">Flow 1 Complete</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <MagnifyingGlassIcon className="w-4 h-4" />
+                                        </div>
                                     </div>
+                                    <FilterTabs
+                                        tabs={flow1Tabs}
+                                        activeTab="all"
+                                        onTabChange={() => {}}
+                                    />
                                 </div>
 
-                                {/* Notification Cards */}
-                                <div className="space-y-3">
-                                    {[
-                                        {
-                                            recipient: 'Dealer — Apex Furniture',
-                                            icon: '🏢',
-                                            borderColor: 'border-green-300 dark:border-green-500/30',
-                                            bgColor: 'bg-green-50/50 dark:bg-green-500/5',
-                                            channel: 'Email + Portal',
-                                            summary: 'Your RFQ has been fully processed',
-                                            details: [
-                                                'RFQ received via email and parsed automatically',
-                                                'Quote QT-1025 generated: $134,256 (5 line items, 3 warranties)',
-                                                'Approval chain completed (3/3 levels approved)',
-                                                'Purchase Order PO-1029 generated and ready for confirmation',
-                                            ],
-                                            aiNote: 'Dealer receives end-to-end lifecycle summary. No internal escalation details exposed.',
-                                        },
-                                        {
-                                            recipient: 'Expert — Sarah Chen (Sales Manager)',
-                                            icon: '👩‍💼',
-                                            borderColor: 'border-blue-300 dark:border-blue-500/30',
-                                            bgColor: 'bg-blue-50/50 dark:bg-blue-500/5',
-                                            channel: 'In-App + Slack',
-                                            summary: 'PO-1029 approved — action items',
-                                            details: [
-                                                'Approval auto-completed (Level 1: value threshold)',
-                                                '2 non-standard discounts applied: Early Payment + Mixed Category',
-                                                'Extended warranties on 3 SKUs — margin impact: +$2,400',
-                                                'Next queue: 4 pending RFQs awaiting review',
-                                            ],
-                                            aiNote: 'Expert receives actionable items only. Routine steps filtered out.',
-                                        },
-                                        {
-                                            recipient: 'Finance — David Park (Director)',
-                                            icon: '📊',
-                                            borderColor: 'border-purple-300 dark:border-purple-500/30',
-                                            bgColor: 'bg-purple-50/50 dark:bg-purple-500/5',
-                                            channel: 'Email Digest',
-                                            summary: 'Approval summary — cost center impact',
-                                            details: [
-                                                'PO-1029 approved at $134,256 (within $100k-$250k bracket)',
-                                                'Discount authorization: 4% combined (within policy limits)',
-                                                'Budget impact: Marketing-101 cost center',
-                                                'Monthly approval trend: 12 POs, $890k total value',
-                                            ],
-                                            aiNote: 'Finance receives only cost and compliance data. Operational details omitted.',
-                                        },
-                                    ].map((notif, i) => (
+                                {/* Notification List */}
+                                <div className="flex-1 overflow-y-auto min-h-0 px-5 pb-4 space-y-3 scrollbar-minimal">
+                                    {visibleNotifications.map((notification, i) => (
                                         <div
-                                            key={i}
-                                            className={`rounded-xl border ${notif.borderColor} ${notif.bgColor} overflow-hidden transition-all duration-700 ${
-                                                notifDelivered18.includes(i) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                                            key={notification.id}
+                                            className={`transition-all duration-700 ${
+                                                notifDelivered18.includes(i) || i < 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                                             }`}
                                         >
-                                            <div className="px-4 py-3 flex items-center justify-between">
-                                                <div className="flex items-center gap-2.5">
-                                                    <span className="text-lg">{notif.icon}</span>
-                                                    <div>
-                                                        <span className="text-xs font-bold text-foreground">{notif.recipient}</span>
-                                                        <span className="text-[10px] text-muted-foreground ml-2">via {notif.channel}</span>
-                                                    </div>
-                                                </div>
+                                            <div className="relative">
+                                                <NotificationItem notification={notification} />
                                                 {notifDelivered18.includes(i) && (
-                                                    <span className="text-[10px] font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
-                                                        <CheckCircleIcon className="w-3.5 h-3.5" /> Delivered
+                                                    <span className="absolute top-3 right-3 text-[9px] font-bold text-green-600 dark:text-green-400 flex items-center gap-1 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full">
+                                                        <CheckCircleIcon className="w-3 h-3" /> Delivered
                                                     </span>
                                                 )}
                                             </div>
-                                            {notifDelivered18.includes(i) && (
-                                                <div className="px-4 pb-3 space-y-2">
-                                                    <p className="text-xs font-bold text-foreground">{notif.summary}</p>
-                                                    <ul className="space-y-1">
-                                                        {notif.details.map((detail, j) => (
-                                                            <li key={j} className="text-[10px] text-muted-foreground flex items-start gap-1.5">
-                                                                <span className="text-green-500 mt-0.5">•</span>
-                                                                {detail}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                    <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-border/30">
-                                                        <SparklesIcon className="w-3 h-3 text-indigo-500 mt-0.5 shrink-0" />
-                                                        <span className="text-[9px] text-indigo-600 dark:text-indigo-400 italic">{notif.aiNote}</span>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Completion Summary */}
-                                {notifDelivered18.length === 3 && (
-                                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 space-y-3 animate-in fade-in duration-500">
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                                            <span className="text-sm font-bold text-green-700 dark:text-green-300">Flow 1 Complete — Email Intake to PO</span>
-                                        </div>
-                                        <div className="grid grid-cols-4 gap-3">
-                                            {[
-                                                { label: 'Total Time', value: '4m 12s' },
-                                                { label: 'Agents Used', value: '8/8' },
-                                                { label: 'Human Touchpoints', value: '2' },
-                                                { label: 'Auto-Resolved', value: '94%' },
-                                            ].map(stat => (
-                                                <div key={stat.label} className="text-center">
-                                                    <p className="text-[10px] text-green-600 dark:text-green-400">{stat.label}</p>
-                                                    <p className="text-sm font-bold text-green-700 dark:text-green-300">{stat.value}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Footer */}
+                                <div className="px-5 py-3 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 backdrop-blur-md flex items-center justify-between shrink-0">
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                        {visibleNotifications.length} actions from Flow 1
+                                    </p>
+                                    <p className="text-xs font-bold text-green-500 flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                        {notifDelivered18.length + 2} delivered
+                                    </p>
+                                </div>
                             </div>
+
+                            {/* Completion Summary */}
+                            {notifDelivered18.length === 3 && (
+                                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 space-y-3 animate-in fade-in duration-500">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                        <span className="text-sm font-bold text-green-700 dark:text-green-300">Flow 1 Complete — Email Intake to PO</span>
+                                    </div>
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {[
+                                            { label: 'Total Time', value: '4m 12s' },
+                                            { label: 'Agents Used', value: '8/8' },
+                                            { label: 'Human Touchpoints', value: '2' },
+                                            { label: 'Auto-Resolved', value: '94%' },
+                                        ].map(stat => (
+                                            <div key={stat.label} className="text-center">
+                                                <p className="text-[10px] text-green-600 dark:text-green-400">{stat.label}</p>
+                                                <p className="text-sm font-bold text-green-700 dark:text-green-300">{stat.value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
 
                 {/* KPI Cards / Executive Summary */}
                 {showMetrics ? (
