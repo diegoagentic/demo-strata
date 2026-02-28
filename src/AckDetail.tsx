@@ -8,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { Transition, TransitionChild, Popover, PopoverButton, PopoverPanel, Tab, TabGroup, TabList, TabPanel, TabPanels, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { Fragment } from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { useTheme } from 'strata-design-system'
@@ -17,6 +17,7 @@ import Navbar from './components/Navbar'
 import Breadcrumbs from './components/Breadcrumbs'
 import { useDemo } from './context/DemoContext'
 import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
+import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs))
@@ -63,7 +64,7 @@ const DiscrepancyResolutionFlow = () => {
         setStatus('sending')
         setTimeout(() => {
             setStatus('sent')
-            if (currentStep.id === '2.3') {
+            if (currentStep.id === '2.3' || currentStep.id === '2.5') {
                 setTimeout(nextStep, 2000)
             }
         }, 1500)
@@ -500,6 +501,16 @@ interface DetailProps {
 }
 
 export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onNavigate, initialTab }: DetailProps) {
+    const { currentStep } = useDemo()
+    const [activeTabIndex, setActiveTabIndex] = useState(initialTab || 0)
+
+    // Auto-switch to AI Assistant tab when entering step 2.5
+    useEffect(() => {
+        if (currentStep.id === '2.5') {
+            setActiveTabIndex(1);
+        }
+    }, [currentStep.id]);
+
     const [messages, setMessages] = useState<Message[]>([
         {
             id: 1,
@@ -719,9 +730,25 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
 
 
 
+                {/* Step 2.5: Agent Pipeline Strip */}
+                {currentStep.id === '2.5' && (
+                    <div className="px-4 pt-4">
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngest', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '2 exceptions' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'running', detail: 'Expert review' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="purple" />
+                    </div>
+                )}
+
                 {/* Main Content Area */}
                 <div className="flex flex-col">
-                    <TabGroup className="flex flex-col" defaultIndex={initialTab || 0}>
+                    <TabGroup className="flex flex-col" selectedIndex={activeTabIndex} onChange={setActiveTabIndex}>
                         <div className="px-4 border-b border-border flex items-center justify-between bg-background">
                             <TabList className="flex gap-6">
                                 <Tab

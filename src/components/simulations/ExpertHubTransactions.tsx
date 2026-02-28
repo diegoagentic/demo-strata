@@ -1555,7 +1555,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                             <div className="mt-4 ml-12 flex items-center gap-3">
                                 <button
-                                    onClick={() => onNavigateToDetail('ack-detail')}
+                                    onClick={() => { nextStep(); onNavigateToDetail('ack-detail-ai'); }}
                                     className="px-5 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
                                 >
                                     Open Guided Correction
