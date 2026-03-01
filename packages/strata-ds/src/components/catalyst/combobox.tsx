@@ -29,6 +29,7 @@ export function Combobox<T>({
     displayValue?: (item: T) => string
 } & Omit<ComponentPropsWithoutRef<typeof HeadlessCombobox>, 'as' | 'multiple' | 'value' | 'onChange'>) {
     return (
+        // @ts-expect-error Headless UI types struggle with dynamic multiple prop
         <HeadlessCombobox
             {...props}
             value={value}

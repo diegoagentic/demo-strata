@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     ExclamationTriangleIcon,
     CheckCircleIcon,
@@ -10,6 +10,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid';
 import TrackingModal, { type TrackingStep } from './TrackingModal';
+import { useDemo } from '../context/DemoContext';
+import LiabilityAnalysisPanel from './widgets/LiabilityAnalysisPanel';
+import ConfidenceScoreBadge from './widgets/ConfidenceScoreBadge';
 
 const DEMO_PUNCH_TRACKING_STEPS: TrackingStep[] = [
     {
@@ -50,9 +53,28 @@ const DEMO_PUNCH_TRACKING_STEPS: TrackingStep[] = [
 ];
 
 export default function MACPunchList() {
+    const { currentStep, nextStep } = useDemo();
     const [selectedItem, setSelectedItem] = useState<string | null>(null);
     const [resolutionStatus, setResolutionStatus] = useState<'initial' | 'assembling' | 'submitted' | 'acknowledged' | 'assigning' | 'assigned'>('initial');
     const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
+    const [showLiability, setShowLiability] = useState(false);
+
+    // Step 3.5: Auto-select item and progress through claim
+    useEffect(() => {
+        if (currentStep?.id !== '3.5') {
+            setShowLiability(false);
+            return;
+        }
+        setSelectedItem('item-1');
+        const timeouts: ReturnType<typeof setTimeout>[] = [];
+        timeouts.push(setTimeout(() => setResolutionStatus('assembling'), 2000));
+        timeouts.push(setTimeout(() => setResolutionStatus('submitted'), 3500));
+        timeouts.push(setTimeout(() => {
+            setResolutionStatus('acknowledged');
+            setShowLiability(true);
+        }, 5500));
+        return () => timeouts.forEach(clearTimeout);
+    }, [currentStep?.id]);
 
     const handleAssembleClaim = () => {
         setResolutionStatus('assembling');
@@ -135,6 +157,47 @@ export default function MACPunchList() {
                         </div>
 
                         <div className="p-4 flex-1 space-y-4 overflow-y-auto bg-zinc-50/50 dark:bg-zinc-900/20">
+                            {/* Step 3.5: Evidence Photos + OCR */}
+                            {currentStep?.id === '3.5' && (
+                                <>
+                                    <div className="p-4 bg-card border border-border rounded-xl animate-in fade-in slide-in-from-top-2 duration-500">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Evidence Photos — Auto-Captured</p>
+                                            <ConfidenceScoreBadge score={94} label="Match" size="sm" />
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {['Front panel crack', 'Serial number label', 'Packaging damage'].map((label, i) => (
+                                                <div key={i} className="bg-muted/50 border border-border rounded-lg p-3 flex flex-col items-center gap-2 aspect-square justify-center">
+                                                    <CameraIcon className="w-8 h-8 text-muted-foreground/50" />
+                                                    <span className="text-[10px] font-medium text-muted-foreground text-center">{label}</span>
+                                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-500/10 text-green-600 dark:text-green-400 font-bold">Verified</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-card border border-border rounded-xl animate-in fade-in slide-in-from-top-2 duration-500 delay-300">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <DocumentTextIcon className="w-4 h-4 text-blue-500" />
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">OCR Extraction Results</p>
+                                            <ConfidenceScoreBadge score={96} label="OCR" size="sm" />
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {[
+                                                { label: 'Serial Number', value: 'SN-2025-88712' },
+                                                { label: 'Model', value: 'Conference Chair Azure' },
+                                                { label: 'Damage Type', value: 'Freight Handling' },
+                                            ].map((item, i) => (
+                                                <div key={i} className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-lg p-3">
+                                                    <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-0.5">{item.label}</p>
+                                                    <p className="text-xs font-bold text-foreground">{item.value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
                             {/* AI Suggestion */}
                             <div className="flex items-start gap-3">
                                 <div className="p-2 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400">
@@ -284,6 +347,28 @@ export default function MACPunchList() {
                                         )}
                                     </div>
                                 </div>
+                            )}
+
+                            {/* Step 3.5: Liability Analysis + CTA */}
+                            {currentStep?.id === '3.5' && showLiability && (
+                                <>
+                                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <LiabilityAnalysisPanel
+                                            carrierLiability={65}
+                                            mfgLiability={35}
+                                            reasoning="Based on photo evidence: upholstery damage pattern consistent with impact during transit (65% carrier). Packaging analysis shows insufficient protective wrapping around chair arms, suggesting partial manufacturer responsibility (35%). Serial SN-2025-88712 confirmed within warranty period."
+                                        />
+                                    </div>
+                                    <div className="flex justify-end pt-2">
+                                        <button
+                                            onClick={() => nextStep()}
+                                            className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
+                                        >
+                                            <CheckCircleIcon className="w-4 h-4" />
+                                            Complete Flow 3
+                                        </button>
+                                    </div>
+                                </>
                             )}
 
                         </div>

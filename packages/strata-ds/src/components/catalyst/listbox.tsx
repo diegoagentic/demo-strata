@@ -34,21 +34,13 @@ export function Listbox({
             >
                 <HeadlessListboxSelectedOption
                     as={Fragment}
+                    options={options}
                     placeholder={
                         placeholder && (
                             <span className="block truncate text-zinc-500 dark:text-zinc-400">{placeholder}</span>
                         )
                     }
-                >
-                    {({ selectedOption }) => {
-                        if (selectedOption) {
-                            return <span className="block truncate">{selectedOption.props.children}</span>
-                        }
-                        return placeholder && (
-                            <span className="block truncate text-zinc-500 dark:text-zinc-400">{placeholder}</span>
-                        )
-                    }}
-                </HeadlessListboxSelectedOption>
+                />
                 <span className="pointer-events-none absolute top-2.5 right-2.5 size-4">
                     <ChevronDown className="size-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300" />
                 </span>

@@ -225,7 +225,7 @@ const DEMO_STEPS: DemoStep[] = [
         groupTitle: 'Flow 3: Document Intake',
         title: 'Warranty Claims',
         description: 'Evidence photos + text. OCR extracts serials. Claim assembled with carrier vs mfg liability recommendation.',
-        app: 'service-now',
+        app: 'mac',
         role: 'Dealer',
         highlightId: 'warranty-claim-package'
     },

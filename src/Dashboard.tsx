@@ -56,9 +56,6 @@ import { Card } from 'strata-design-system';
 import { useDemo } from './context/DemoContext'
 import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
 import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
-import NotificationItem from './components/notifications/NotificationItem'
-import FilterTabs from './components/notifications/FilterTabs'
-import type { Notification, NotificationTab } from './components/notifications/types'
 
 // Urgent Actions Data (Dealer Persona)
 const urgentActions = [
@@ -779,181 +776,54 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                     </div>
                 )}
 
-                {/* ===== Step 1.8: Smart Notifications via Action Center ===== */}
-                {currentStep.id === '1.8' && (() => {
-                    const flow1Notifications: Notification[] = [
-                        {
-                            id: 'f1-po',
-                            type: 'po_created',
-                            priority: 'high',
-                            title: 'PO-1029 Generated from Approved Quote',
-                            message: 'Apex Furniture — $134,256 (5 line items, 3 warranties, 2 discounts applied)',
-                            meta: 'POBuilderAgent',
-                            timestamp: 'Just now',
-                            unread: true,
-                            actions: [{ label: 'View PO', primary: true }],
-                            persona: 'dealer',
-                        },
-                        {
-                            id: 'f1-approval',
-                            type: 'approval',
-                            priority: 'high',
-                            title: 'Approval Chain Complete — 3/3 Levels',
-                            message: 'Quote QT-1025 approved: Sarah Chen (Sales) → David Park (Finance) → Policy Engine',
-                            meta: 'ApprovalOrchestratorAgent',
-                            timestamp: '1 min ago',
-                            unread: true,
-                            actions: [{ label: 'View Chain', primary: true }],
-                            persona: 'expert',
-                        },
-                        {
-                            id: 'f1-quote',
-                            type: 'quote_update',
-                            priority: 'medium',
-                            title: 'Quote QT-1025 — Warranties & Discounts Applied',
-                            message: 'Extended warranties on 3 SKUs (+$2,400 margin). Discounts: Early Payment 2% + Mixed Category 2%',
-                            meta: 'QuoteBuilderAgent',
-                            timestamp: '2 min ago',
-                            unread: true,
-                            actions: [{ label: 'Review', primary: true }],
-                            persona: 'expert',
-                        },
-                        {
-                            id: 'f1-rfq',
-                            type: 'system',
-                            priority: 'medium',
-                            title: 'RFQ Received & Parsed — Apex Furniture',
-                            message: 'Email intake → OCR → Normalization → Validation complete. 5 line items extracted.',
-                            meta: 'EmailIntakeAgent → OCR/Parser',
-                            timestamp: '4 min ago',
-                            unread: true,
-                            actions: [{ label: 'View RFQ', primary: false }],
-                            persona: 'dealer',
-                        },
-                        {
-                            id: 'f1-finance',
-                            type: 'approval',
-                            priority: 'low',
-                            title: 'Budget Impact — Marketing-101 Cost Center',
-                            message: 'PO-1029 at $134,256 within $100k-$250k bracket. Monthly trend: 12 POs, $890k total.',
-                            meta: 'Finance Digest',
-                            timestamp: '1 min ago',
-                            unread: true,
-                            actions: [{ label: 'Details', primary: false }],
-                            persona: 'both',
-                        },
-                    ];
+                {/* ===== Step 1.8: Smart Notifications (Action Center opens in Navbar) ===== */}
+                {currentStep.id === '1.8' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* Pipeline Strip */}
+                        <AgentPipelineStrip agents={[
+                            { id: 'email', name: 'EmailIntake', status: 'done' },
+                            { id: 'ocr', name: 'OCR/Parser', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'valid', name: 'Validator', status: 'done' },
+                            { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'done', detail: '3/3 approved' },
+                            { id: 'po', name: 'POBuilder', status: 'done', detail: 'PO-1029' },
+                            { id: 'notif', name: 'Notification', status: notifDelivered18.length === 3 ? 'done' : 'running', detail: `${notifDelivered18.length}/3 sent` },
+                        ]} accentColor="green" />
 
-                    const flow1Tabs: NotificationTab[] = [
-                        { id: 'all', label: 'All', count: flow1Notifications.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-zinc-800 dark:bg-white/10', activeText: 'text-white', activeBorder: 'border-white/10', badgeBg: 'bg-white/20', badgeText: 'text-white' }, filter: () => true },
-                        { id: 'quotes', label: 'Quotes & POs', count: flow1Notifications.filter(n => n.type === 'po_created' || n.type === 'quote_update').length, icon: DocumentTextIcon, colorTheme: { activeBg: 'bg-blue-500/15', activeText: 'text-blue-500', activeBorder: 'border-blue-500/20', badgeBg: 'bg-blue-500/20', badgeText: 'text-blue-500' }, filter: (n) => n.type === 'po_created' || n.type === 'quote_update' },
-                        { id: 'approval', label: 'Approvals', count: flow1Notifications.filter(n => n.type === 'approval').length, icon: ClipboardDocumentListIcon, colorTheme: { activeBg: 'bg-green-500/15', activeText: 'text-green-500', activeBorder: 'border-green-500/20', badgeBg: 'bg-green-500/20', badgeText: 'text-green-500' }, filter: (n) => n.type === 'approval' },
-                        { id: 'system', label: 'System', count: flow1Notifications.filter(n => n.type === 'system').length, icon: CpuChipIcon, colorTheme: { activeBg: 'bg-indigo-500/15', activeText: 'text-indigo-500', activeBorder: 'border-indigo-500/20', badgeBg: 'bg-indigo-500/20', badgeText: 'text-indigo-500' }, filter: (n) => n.type === 'system' },
-                    ];
-
-                    const visibleNotifications = flow1Notifications.filter((_, i) => notifDelivered18.includes(i) || i < 2);
-
-                    return (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                            {/* Pipeline Strip */}
-                            <AgentPipelineStrip agents={[
-                                { id: 'email', name: 'EmailIntake', status: 'done' },
-                                { id: 'ocr', name: 'OCR/Parser', status: 'done' },
-                                { id: 'norm', name: 'DataNorm', status: 'done' },
-                                { id: 'valid', name: 'Validator', status: 'done' },
-                                { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
-                                { id: 'approval', name: 'ApprovalOrch', status: 'done', detail: '3/3 approved' },
-                                { id: 'po', name: 'POBuilder', status: 'done', detail: 'PO-1029' },
-                                { id: 'notif', name: 'Notification', status: notifDelivered18.length === 3 ? 'done' : 'running', detail: `${notifDelivered18.length}/3 sent` },
-                            ]} accentColor="green" />
-
-                            {/* AI Attribution */}
-                            <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                                <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
-                                <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
-                                    <span className="font-bold">NotificationAgent:</span> Generated {notifDelivered18.length > 0 ? notifDelivered18.length + 2 : 2} persona-specific notifications from 8-agent pipeline. Each persona receives only role-relevant information.
-                                </div>
-                                <ConfidenceScoreBadge score={97} label="Relevance" />
+                        {/* AI Attribution */}
+                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                            <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
+                                <span className="font-bold">NotificationAgent:</span> Generated {notifDelivered18.length > 0 ? notifDelivered18.length + 2 : 2} persona-specific notifications from 8-agent pipeline. Each persona receives only role-relevant information.
                             </div>
+                            <ConfidenceScoreBadge score={97} label="Relevance" />
+                        </div>
 
-                            {/* Inline Action Center */}
-                            <div className="bg-zinc-100 dark:bg-zinc-900/85 backdrop-blur-xl border border-border shadow-lg rounded-3xl overflow-hidden flex flex-col max-h-[65vh]">
-                                {/* Header */}
-                                <div className="px-5 pt-5 pb-3 shrink-0">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <h3 className="text-lg font-bold text-foreground">Action Center</h3>
-                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-bold">Flow 1 Complete</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <MagnifyingGlassIcon className="w-4 h-4" />
-                                        </div>
-                                    </div>
-                                    <FilterTabs
-                                        tabs={flow1Tabs}
-                                        activeTab="all"
-                                        onTabChange={() => {}}
-                                    />
+                        {/* Completion Summary */}
+                        {notifDelivered18.length === 3 && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 space-y-3 animate-in fade-in duration-500">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                    <span className="text-sm font-bold text-green-700 dark:text-green-300">Flow 1 Complete — Email Intake to PO</span>
                                 </div>
-
-                                {/* Notification List */}
-                                <div className="flex-1 overflow-y-auto min-h-0 px-5 pb-4 space-y-3 scrollbar-minimal">
-                                    {visibleNotifications.map((notification, i) => (
-                                        <div
-                                            key={notification.id}
-                                            className={`transition-all duration-700 ${
-                                                notifDelivered18.includes(i) || i < 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                                            }`}
-                                        >
-                                            <div className="relative">
-                                                <NotificationItem notification={notification} />
-                                                {notifDelivered18.includes(i) && (
-                                                    <span className="absolute top-3 right-3 text-[9px] font-bold text-green-600 dark:text-green-400 flex items-center gap-1 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full">
-                                                        <CheckCircleIcon className="w-3 h-3" /> Delivered
-                                                    </span>
-                                                )}
-                                            </div>
+                                <div className="grid grid-cols-4 gap-3">
+                                    {[
+                                        { label: 'Total Time', value: '4m 12s' },
+                                        { label: 'Agents Used', value: '8/8' },
+                                        { label: 'Human Touchpoints', value: '2' },
+                                        { label: 'Auto-Resolved', value: '94%' },
+                                    ].map(stat => (
+                                        <div key={stat.label} className="text-center">
+                                            <p className="text-[10px] text-green-600 dark:text-green-400">{stat.label}</p>
+                                            <p className="text-sm font-bold text-green-700 dark:text-green-300">{stat.value}</p>
                                         </div>
                                     ))}
                                 </div>
-
-                                {/* Footer */}
-                                <div className="px-5 py-3 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 backdrop-blur-md flex items-center justify-between shrink-0">
-                                    <p className="text-xs font-medium text-muted-foreground">
-                                        {visibleNotifications.length} actions from Flow 1
-                                    </p>
-                                    <p className="text-xs font-bold text-green-500 flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                        {notifDelivered18.length + 2} delivered
-                                    </p>
-                                </div>
                             </div>
-
-                            {/* Completion Summary */}
-                            {notifDelivered18.length === 3 && (
-                                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 space-y-3 animate-in fade-in duration-500">
-                                    <div className="flex items-center gap-2">
-                                        <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                                        <span className="text-sm font-bold text-green-700 dark:text-green-300">Flow 1 Complete — Email Intake to PO</span>
-                                    </div>
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {[
-                                            { label: 'Total Time', value: '4m 12s' },
-                                            { label: 'Agents Used', value: '8/8' },
-                                            { label: 'Human Touchpoints', value: '2' },
-                                            { label: 'Auto-Resolved', value: '94%' },
-                                        ].map(stat => (
-                                            <div key={stat.label} className="text-center">
-                                                <p className="text-[10px] text-green-600 dark:text-green-400">{stat.label}</p>
-                                                <p className="text-sm font-bold text-green-700 dark:text-green-300">{stat.value}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })()}
+                        )}
+                    </div>
+                )}
 
                 {/* KPI Cards / Executive Summary */}
                 {showMetrics ? (

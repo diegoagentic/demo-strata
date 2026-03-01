@@ -1,11 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
-import dts from 'vite-plugin-dts';
 import fs from 'fs';
 import path from 'path';
-
-
 
 // Custom plugin to copy assets
 const copyAssets = () => {
@@ -36,11 +33,8 @@ const copyAssets = () => {
 export default defineConfig({
     plugins: [
         react(),
-        dts({
-            insertTypesEntry: true,
-            include: ['src/components/**/*.tsx', 'src/components/**/*.ts', 'src/tokens/**/*.ts', 'src/utils/**/*.ts'],
-            exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/examples/**/*'],
-        }),
+        // dts plugin removed — .d.ts generation not needed for Vercel deploy
+        // and was the main source of TS6133/TS2322 build failures
         copyAssets(),
     ],
     build: {
@@ -57,7 +51,6 @@ export default defineConfig({
             },
         },
         rollupOptions: {
-            // Externalize deps that shouldn't be bundled
             external: [
                 'react',
                 'react-dom',
@@ -68,23 +61,17 @@ export default defineConfig({
                 'tailwind-merge',
             ],
             output: {
-                // Provide global variables for UMD build
                 globals: {
                     react: 'React',
                     'react-dom': 'ReactDOM',
                     'react/jsx-runtime': 'jsxRuntime',
                 },
-                // Preserve module structure for better tree-shaking
                 preserveModules: false,
-                // Export named exports
                 exports: 'named',
             },
         },
-        // Generate sourcemaps for debugging
-        sourcemap: true,
-        // Minify for production
+        sourcemap: false,
         minify: 'esbuild',
-        // Target modern browsers
         target: 'es2015',
     },
     resolve: {

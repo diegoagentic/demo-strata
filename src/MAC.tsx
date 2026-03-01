@@ -7,6 +7,7 @@ import InventoryMovements from './components/InventoryMovements';
 import InventoryMaintenance from './components/InventoryMaintenance';
 import MACRequests from './components/MACRequests';
 import MACPunchList from './components/MACPunchList';
+import AgentPipelineStrip from './components/simulations/AgentPipelineStrip';
 import {
     Squares2X2Icon,
     WrenchScrewdriverIcon,
@@ -36,10 +37,12 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
     const [activeTab, setActiveTab] = useState<'movements' | 'maintenance' | 'requests' | 'punchlist'>('requests');
     const [highlightedTab, setHighlightedTab] = useState<string | null>(null);
 
-    // Auto-select requests tab for step 3.4
+    // Auto-select tab based on step
     useEffect(() => {
         if (currentStep?.id === '3.4') {
             setActiveTab('requests');
+        } else if (currentStep?.id === '3.5') {
+            setActiveTab('punchlist');
         }
     }, [currentStep?.id]);
 
@@ -67,6 +70,20 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                         <p className="text-muted-foreground mt-1">Moves, Adds, and Changes management.</p>
                     </div>
                 </div>
+
+                {/* Step 3.5: Warranty Claims Pipeline */}
+                {currentStep?.id === '3.5' && (
+                    <AgentPipelineStrip agents={[
+                        { id: 'doc-class', name: 'DocClassifier', status: 'done' },
+                        { id: 'ocr', name: 'OCR/Extract', status: 'done' },
+                        { id: 'data-norm', name: 'DataNorm', status: 'done' },
+                        { id: 'match', name: '3-WayMatch', status: 'done' },
+                        { id: 'mac', name: 'MACOrch', status: 'done' },
+                        { id: 'warranty', name: 'WarrantyAgent', status: 'running', detail: 'Claim assembly' },
+                        { id: 'liability', name: 'LiabilityAI', status: 'pending' },
+                        { id: 'notif', name: 'Notification', status: 'pending' },
+                    ]} accentColor="amber" />
+                )}
 
                 {/* Tabs */}
                 <div className="flex gap-1 bg-card/50 p-1 rounded-lg w-fit overflow-x-auto max-w-full border border-zinc-200 dark:border-zinc-800">
