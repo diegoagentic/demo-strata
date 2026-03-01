@@ -1,25 +1,46 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
 import {
   isAllowedDomain,
   getDomainError,
   validatePassword,
-  getAuthErrorMessage,
-  SESSION_WARNING_MINUTES,
-  getTimeUntilExpiry,
 } from '../lib/auth-utils';
+
+// --- Mock User Type (mirrors Supabase User shape used by consumers) ---
+
+interface MockUser {
+  id: string;
+  email: string;
+  user_metadata: { full_name: string };
+}
+
+// --- Demo Credentials ---
+
+const DEMO_ACCOUNTS: Record<string, { password: string; fullName: string }> = {
+  'demo@agenticdream.com': { password: 'StrataDemo2026!', fullName: 'Demo User' },
+  'test@goavanto.com': { password: 'StrataDemo2026!', fullName: 'Test User' },
+};
+
+const STORAGE_KEY = 'strata-demo-auth';
+
+function createMockUser(email: string): MockUser {
+  const account = DEMO_ACCOUNTS[email.toLowerCase()];
+  return {
+    id: `demo-${email.replace(/[@.]/g, '-')}`,
+    email: email.toLowerCase(),
+    user_metadata: { full_name: account?.fullName ?? email.split('@')[0] },
+  };
+}
 
 // --- Types ---
 
 interface AuthState {
-  session: Session | null;
-  user: User | null;
-  initialLoading: boolean; // Only true during initial session check
+  session: { user: MockUser } | null;
+  user: MockUser | null;
+  initialLoading: boolean;
   error: string | null;
   showSessionWarning: boolean;
-  authEvent: AuthChangeEvent | null;
+  authEvent: string | null;
 }
 
 interface AuthActions {
@@ -42,83 +63,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // --- Provider ---
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<MockUser | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showSessionWarning, setShowSessionWarning] = useState(false);
-  const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
-  const sessionCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // --- Session Expiry Check ---
-  const startSessionExpiryCheck = useCallback((currentSession: Session | null) => {
-    if (sessionCheckIntervalRef.current) {
-      clearInterval(sessionCheckIntervalRef.current);
-    }
-
-    if (!currentSession?.expires_at) return;
-
-    sessionCheckIntervalRef.current = setInterval(() => {
-      const msRemaining = getTimeUntilExpiry(currentSession);
-
-      if (msRemaining <= 0) {
-        setShowSessionWarning(false);
-        supabase.auth.signOut();
-        return;
-      }
-
-      if (msRemaining <= SESSION_WARNING_MINUTES * 60 * 1000) {
-        setShowSessionWarning(true);
-      }
-    }, 30_000);
-  }, []);
-
-  // --- Initialize Auth ---
+  // Restore session from localStorage on mount
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setInitialLoading(false);
-      if (session) startSessionExpiryCheck(session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Post-OAuth domain validation safety layer
-      if (event === 'SIGNED_IN' && session?.user) {
-        const email = session.user.email;
-        if (email && !isAllowedDomain(email)) {
-          await supabase.auth.signOut();
-          setError('Access restricted to authorized organization domains only.');
-          return;
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as MockUser;
+        if (parsed?.email) {
+          setUser(parsed);
         }
       }
-
-      setSession(session);
-      setUser(session?.user ?? null);
-      setAuthEvent(event);
-
-      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
-        setShowSessionWarning(false);
-        if (session) startSessionExpiryCheck(session);
-      }
-
-      if (event === 'SIGNED_OUT') {
-        setShowSessionWarning(false);
-        if (sessionCheckIntervalRef.current) {
-          clearInterval(sessionCheckIntervalRef.current);
-        }
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-      }
-    };
-  }, [startSessionExpiryCheck]);
-
-  // --- Auth Actions ---
+    } catch {
+      // Corrupted storage — ignore
+    }
+    setInitialLoading(false);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     setError(null);
@@ -129,14 +92,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: domainError };
     }
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (authError) {
-      const msg = getAuthErrorMessage(authError);
+    const account = DEMO_ACCOUNTS[email.toLowerCase()];
+    if (!account || account.password !== password) {
+      const msg = 'Invalid email or password. Please try again.';
       setError(msg);
       return { success: false, error: msg };
     }
 
+    const mockUser = createMockUser(email);
+    setUser(mockUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
     return { success: true };
   };
 
@@ -156,86 +121,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, error: msg };
     }
 
-    const { error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}`,
-      },
-    });
-
-    if (authError) {
-      const msg = getAuthErrorMessage(authError);
-      setError(msg);
-      return { success: false, error: msg };
-    }
-
-    return { success: true, needsVerification: true };
+    // In demo mode, just log them in directly
+    const mockUser: MockUser = {
+      id: `demo-${email.replace(/[@.]/g, '-')}`,
+      email: email.toLowerCase(),
+      user_metadata: { full_name: fullName },
+    };
+    setUser(mockUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+    return { success: true, needsVerification: false };
   };
 
   const signInWithMicrosoft = async () => {
-    setError(null);
-    const { data, error: authError } = await supabase.auth.signInWithOAuth({
-      provider: 'azure',
-      options: {
-        scopes: 'openid email profile',
-        redirectTo: `${window.location.origin}`,
-        skipBrowserRedirect: true,
-      },
-    });
-
-    if (authError) {
-      const msg = getAuthErrorMessage(authError);
-      setError(msg);
-      return { success: false, error: msg };
-    }
-
-    if (data?.url) {
-      window.location.href = data.url;
-    } else {
-      const msg = 'Microsoft login is not available. Please contact your administrator to configure Azure AD.';
-      setError(msg);
-      return { success: false, error: msg };
-    }
-
+    // Simulate Microsoft login — auto-login as goavanto user
+    const mockUser = createMockUser('test@goavanto.com');
+    setUser(mockUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
     return { success: true };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    setUser(null);
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   const refreshSession = async () => {
-    const { error: refreshError } = await supabase.auth.refreshSession();
-    if (refreshError) {
-      setError(getAuthErrorMessage(refreshError));
-    } else {
-      setShowSessionWarning(false);
-    }
+    // No-op for demo — session doesn't expire
   };
 
-  const dismissSessionWarning = useCallback(() => setShowSessionWarning(false), []);
+  const dismissSessionWarning = useCallback(() => {}, []);
   const clearError = useCallback(() => setError(null), []);
 
   const resetPassword = async (email: string) => {
     setError(null);
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}`,
-    });
-
-    if (resetError) {
-      const msg = getAuthErrorMessage(resetError);
+    if (!email || !isAllowedDomain(email)) {
+      const msg = 'Access is restricted to authorized organization emails only.';
       setError(msg);
       return { success: false, error: msg };
     }
-
     return { success: true };
   };
 
   return (
     <AuthContext.Provider value={{
-      session, user, initialLoading, error, showSessionWarning, authEvent,
+      session: user ? { user } : null,
+      user,
+      initialLoading,
+      error,
+      showSessionWarning: false,
+      authEvent: null,
       signIn, signUp, signInWithMicrosoft, signOut, refreshSession,
       dismissSessionWarning, clearError, resetPassword,
     }}>
