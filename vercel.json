@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install",
+  "installCommand": "node -e \"const f=require('fs'),p=require('path'),pkg=JSON.parse(f.readFileSync(p.resolve('packages/strata-ds/package.json'),'utf8'));const keep=['@tailwindcss/postcss','@tailwindcss/vite','@vitejs/plugin-react','postcss','tailwindcss','vite','@types/react','@types/react-dom','typescript'];pkg.devDependencies=Object.fromEntries(Object.entries(pkg.devDependencies||{}).filter(([k])=>keep.includes(k)));f.writeFileSync(p.resolve('packages/strata-ds/package.json'),JSON.stringify(pkg,null,2))\" && npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist"
 }
