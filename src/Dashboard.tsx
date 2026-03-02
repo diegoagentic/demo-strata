@@ -487,12 +487,14 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                             <h1 className="text-3xl font-brand font-bold tracking-tight text-foreground">
                                 {currentTenant} Overview
                             </h1>
+                            {!isDemoActive && (
                             <button
                                 onClick={() => onNavigate('tenant-settings')}
                                 className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline transition-colors"
                             >
                                 View Full Profile
                             </button>
+                            )}
                         </div>
                     </div>
 

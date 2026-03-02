@@ -104,7 +104,7 @@ export default function Navbar({
     const userInitials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     const userEmail = user?.email || ''
 
-    const navigation = customNavigation || [
+    const allNavigation = customNavigation || [
         { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
         { name: 'Catalogs', page: 'catalogs', icon: BookOpenIcon },
         { name: 'Inventory', page: 'inventory', icon: CubeTransparentIcon },
@@ -113,6 +113,10 @@ export default function Navbar({
         { name: 'CRM', page: 'crm', icon: UserGroupIcon },
         { name: 'Pricing', page: 'pricing', icon: CurrencyDollarIcon },
     ];
+
+    // During demo, only show pages that appear in the demo flow
+    const DEMO_NAV_PAGES = ['dashboard', 'transactions', 'mac'];
+    const navigation = isDemoActive ? allNavigation.filter(n => DEMO_NAV_PAGES.includes(n.page)) : allNavigation;
 
     return (
         <div className={`fixed top-6 z-50 flex justify-center px-4 transition-all duration-300 ${sidebarExpanded ? 'left-80 right-0' : 'left-0 right-0'}`}>
