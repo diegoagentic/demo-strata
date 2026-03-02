@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     Settings,
     Search,
@@ -34,9 +35,24 @@ const CARD1_PANEL_STEPS = ['1.2', '1.3', '1.4'];
 const CARD5_PANEL_STEPS = ['2.2', '2.3'];
 const CARD6_PANEL_STEPS = ['3.1'];
 
+// Must match PANEL_REVEAL_DELAY in DemoProcessPanel
+const PANEL_REVEAL_DELAY = 1500;
+
 export default function DealerMonitorKanban(_props: { onNavigate?: (page: string) => void }) {
     const { theme } = useTheme();
     const { currentStep } = useDemo();
+
+    // Delay showing the "See Detail Panel" indicator to match panel reveal
+    const [showPanelIndicator, setShowPanelIndicator] = useState(false);
+    useEffect(() => {
+        const isPanel =
+            CARD1_PANEL_STEPS.includes(currentStep.id) ||
+            CARD5_PANEL_STEPS.includes(currentStep.id) ||
+            CARD6_PANEL_STEPS.includes(currentStep.id);
+        if (!isPanel) { setShowPanelIndicator(false); return; }
+        const timer = setTimeout(() => setShowPanelIndicator(true), PANEL_REVEAL_DELAY);
+        return () => { clearTimeout(timer); setShowPanelIndicator(false); };
+    }, [currentStep.id]);
 
     const displayCards = CARDS.filter(c => {
         if (c.id === 5 && !['2.2', '2.3'].includes(currentStep.id)) return false;
@@ -119,7 +135,7 @@ export default function DealerMonitorKanban(_props: { onNavigate?: (page: string
                                         <div
                                             key={card.id}
                                             data-demo-target={demoTarget}
-                                            className={`bg-zinc-800 border border-zinc-700 p-4 rounded-2xl hover:border-zinc-600 transition-all cursor-pointer group shadow-sm ${card.priority === 'critical' ? 'ring-1 ring-red-500/20' : ''} ${hasPanel ? 'ring-1 ring-indigo-500/30 border-indigo-500/20' : ''}`}
+                                            className={`bg-zinc-800 border border-zinc-700 p-4 rounded-2xl hover:border-zinc-600 transition-all cursor-pointer group shadow-sm ${card.priority === 'critical' ? 'ring-1 ring-red-500/20' : ''} ${hasPanel && showPanelIndicator ? 'ring-1 ring-indigo-500/30 border-indigo-500/20' : ''}`}
                                         >
                                             <div className="flex flex-col gap-3">
                                                 <div className="flex items-start justify-between">
@@ -155,8 +171,8 @@ export default function DealerMonitorKanban(_props: { onNavigate?: (page: string
                                                     </div>
                                                 </div>
 
-                                                {/* Minimal panel indicator — replaces all step-specific content */}
-                                                {hasPanel && (
+                                                {/* Minimal panel indicator — appears after delay when lupa panel zooms in */}
+                                                {hasPanel && showPanelIndicator && (
                                                     <div className="mt-2 pt-2 border-t border-zinc-700/50">
                                                         <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
                                                             <Sparkles size={12} className="text-indigo-400 animate-pulse" />

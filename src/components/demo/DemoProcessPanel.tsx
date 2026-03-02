@@ -26,15 +26,29 @@ interface DemoProcessPanelProps {
     onNavigate?: (page: string) => void;
 }
 
+// Delay before the lupa panel appears (audience sees the normal page first)
+const PANEL_REVEAL_DELAY = 1500;
+
 export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) {
     const { currentStep, nextStep, isDemoActive } = useDemo();
 
+    const [panelVisible, setPanelVisible] = useState(false);
     const [agentProgress, setAgentProgress] = useState(0);
     const [agentLogs, setAgentLogs] = useState<string[]>([]);
     const [pipelineAgents, setPipelineAgents] = useState<AgentStep[]>([]);
     const [confidenceFields, setConfidenceFields] = useState<{ field: string; score: number }[]>([]);
 
-    // Reset + run timeline for each step
+    // Delayed panel reveal — audience sees the kanban first, then the lupa zooms in
+    useEffect(() => {
+        if (!isDemoActive || !PANEL_STEPS.includes(currentStep.id)) {
+            setPanelVisible(false);
+            return;
+        }
+        const revealTimer = setTimeout(() => setPanelVisible(true), PANEL_REVEAL_DELAY);
+        return () => { clearTimeout(revealTimer); setPanelVisible(false); };
+    }, [isDemoActive, currentStep.id]);
+
+    // Reset + run timeline for each step (timelines shifted by PANEL_REVEAL_DELAY)
     useEffect(() => {
         if (!isDemoActive || !PANEL_STEPS.includes(currentStep.id)) return;
 
@@ -45,40 +59,46 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
         setConfidenceFields([]);
 
         const timers: ReturnType<typeof setTimeout>[] = [];
+        // All timeline delays are offset so animations start after the panel appears
+        const D = PANEL_REVEAL_DELAY;
 
         if (currentStep.id === '1.2') {
-            // Show completed state immediately (processing happened in modal at 1.1)
-            setAgentProgress(100);
-            setPipelineAgents([
-                { id: 'intake', name: 'EmailIntake', status: 'done' },
-                { id: 'ocr', name: 'OCR/TextExtract', status: 'done', detail: '2 files' },
-                { id: 'parser', name: 'DataParser', status: 'done', detail: '200 items' },
-                { id: 'normalizer', name: 'Normalizer', status: 'done' },
-                { id: 'validator', name: 'Validator', status: 'done', detail: '82% confidence' },
-            ]);
-            setConfidenceFields([
-                { field: 'Product', score: 95 },
-                { field: 'Quantity', score: 88 },
-                { field: 'Ship-To', score: 92 },
-                { field: 'Freight', score: 42 },
-            ]);
-            // Auto-advance after 7s
-            timers.push(setTimeout(() => nextStep(), 7000));
+            // Show completed state when panel appears (processing happened in modal at 1.1)
+            timers.push(setTimeout(() => {
+                setAgentProgress(100);
+                setPipelineAgents([
+                    { id: 'intake', name: 'EmailIntake', status: 'done' },
+                    { id: 'ocr', name: 'OCR/TextExtract', status: 'done', detail: '2 files' },
+                    { id: 'parser', name: 'DataParser', status: 'done', detail: '200 items' },
+                    { id: 'normalizer', name: 'Normalizer', status: 'done' },
+                    { id: 'validator', name: 'Validator', status: 'done', detail: '82% confidence' },
+                ]);
+                setConfidenceFields([
+                    { field: 'Product', score: 95 },
+                    { field: 'Quantity', score: 88 },
+                    { field: 'Ship-To', score: 92 },
+                    { field: 'Freight', score: 42 },
+                ]);
+            }, D));
+            // Auto-advance after panel is visible for 7s
+            timers.push(setTimeout(() => nextStep(), D + 7000));
 
         } else if (currentStep.id === '1.3') {
-            setAgentLogs(['Initializing Normalization Pipeline...']);
-            setPipelineAgents([
-                { id: 'email', name: 'EmailIntake', status: 'done' },
-                { id: 'ocr', name: 'OCR Extract', status: 'done' },
-                { id: 'parser', name: 'Parser', status: 'running' },
-                { id: 'normalizer', name: 'Normalizer', status: 'pending' },
-            ]);
+            timers.push(setTimeout(() => {
+                setAgentLogs(['Initializing Normalization Pipeline...']);
+                setPipelineAgents([
+                    { id: 'email', name: 'EmailIntake', status: 'done' },
+                    { id: 'ocr', name: 'OCR Extract', status: 'done' },
+                    { id: 'parser', name: 'Parser', status: 'running' },
+                    { id: 'normalizer', name: 'Normalizer', status: 'pending' },
+                ]);
+            }, D));
 
             const timeline = [
-                { delay: 1200, log: 'Parser: Tokenizing extracted text fields...' },
-                { delay: 2800, log: 'Parser: Mapped 200 line items to catalog schema.' },
-                { delay: 4200, log: 'Normalizer: Resolving product codes against master catalog...' },
-                { delay: 6000, log: 'Normalizer: Complete. Field confidence scores generated.' },
+                { delay: D + 1200, log: 'Parser: Tokenizing extracted text fields...' },
+                { delay: D + 2800, log: 'Parser: Mapped 200 line items to catalog schema.' },
+                { delay: D + 4200, log: 'Normalizer: Resolving product codes against master catalog...' },
+                { delay: D + 6000, log: 'Normalizer: Complete. Field confidence scores generated.' },
             ];
 
             timeline.forEach(({ delay, log }, index) => {
@@ -107,19 +127,21 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             });
 
         } else if (currentStep.id === '1.4') {
-            setAgentLogs(['Initializing QuoteBuilder Agent...']);
-            setPipelineAgents([
-                { id: 'email', name: 'EmailIntake', status: 'done' },
-                { id: 'ocr', name: 'OCR Extract', status: 'done' },
-                { id: 'normalizer', name: 'Normalizer', status: 'done' },
-                { id: 'quotebuilder', name: 'QuoteBuilder', status: 'running' },
-            ]);
+            timers.push(setTimeout(() => {
+                setAgentLogs(['Initializing QuoteBuilder Agent...']);
+                setPipelineAgents([
+                    { id: 'email', name: 'EmailIntake', status: 'done' },
+                    { id: 'ocr', name: 'OCR Extract', status: 'done' },
+                    { id: 'normalizer', name: 'Normalizer', status: 'done' },
+                    { id: 'quotebuilder', name: 'QuoteBuilder', status: 'running' },
+                ]);
+            }, D));
 
             const timeline = [
-                { delay: 1000, log: 'QuoteBuilder: Loading normalized line items...' },
-                { delay: 2500, log: 'QuoteBuilder: Applying pricing rules and discounts...' },
-                { delay: 4000, log: 'QuoteBuilder: Freight zone routing failed — multi-zone delivery.' },
-                { delay: 5500, log: 'QuoteBuilder: Draft complete. Flagged for Expert Attention.' },
+                { delay: D + 1000, log: 'QuoteBuilder: Loading normalized line items...' },
+                { delay: D + 2500, log: 'QuoteBuilder: Applying pricing rules and discounts...' },
+                { delay: D + 4000, log: 'QuoteBuilder: Freight zone routing failed — multi-zone delivery.' },
+                { delay: D + 5500, log: 'QuoteBuilder: Draft complete. Flagged for Expert Attention.' },
             ];
 
             timeline.forEach(({ delay, log }, index) => {
@@ -136,24 +158,26 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             });
 
         } else if (currentStep.id === '2.2') {
-            setAgentLogs(['Initializing ERP Normalization Pipeline...']);
-            setPipelineAgents([
-                { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
-                { id: 'norm', name: 'DataNorm', status: 'running' },
-                { id: 'ack', name: 'ACKIngest', status: 'pending' },
-                { id: 'comp', name: 'POvsACK', status: 'pending' },
-                { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
-                { id: 'bo', name: 'Backorder', status: 'pending' },
-                { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                { id: 'notif', name: 'Notification', status: 'pending' },
-            ]);
+            timers.push(setTimeout(() => {
+                setAgentLogs(['Initializing ERP Normalization Pipeline...']);
+                setPipelineAgents([
+                    { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
+                    { id: 'norm', name: 'DataNorm', status: 'running' },
+                    { id: 'ack', name: 'ACKIngest', status: 'pending' },
+                    { id: 'comp', name: 'POvsACK', status: 'pending' },
+                    { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                    { id: 'bo', name: 'Backorder', status: 'pending' },
+                    { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                    { id: 'notif', name: 'Notification', status: 'pending' },
+                ]);
+            }, D));
 
             const timeline = [
-                { delay: 1000, log: 'ERPConnectorAgent: ACK data received from eManage ONE (EDI/855).' },
-                { delay: 2500, log: 'DataNormalizationAgent: Mapping raw EDI fields to standard schema...' },
-                { delay: 4000, log: 'ACKIngestAgent: Parsing 4 acknowledgment line items.' },
-                { delay: 5500, log: 'DataNormalizationAgent: Unified 4 raw fields to standard model.' },
-                { delay: 7000, log: 'EntityLinker: Linked PO #ORD-2055 ↔ ACK #ACK-2055. Ready for Delta Engine.' },
+                { delay: D + 1000, log: 'ERPConnectorAgent: ACK data received from eManage ONE (EDI/855).' },
+                { delay: D + 2500, log: 'DataNormalizationAgent: Mapping raw EDI fields to standard schema...' },
+                { delay: D + 4000, log: 'ACKIngestAgent: Parsing 4 acknowledgment line items.' },
+                { delay: D + 5500, log: 'DataNormalizationAgent: Unified 4 raw fields to standard model.' },
+                { delay: D + 7000, log: 'EntityLinker: Linked PO #ORD-2055 ↔ ACK #ACK-2055. Ready for Delta Engine.' },
             ];
 
             timeline.forEach(({ delay, log }, index) => {
@@ -207,25 +231,27 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             });
 
         } else if (currentStep.id === '2.3') {
-            setAgentLogs(['Initializing Delta Engine...']);
-            setPipelineAgents([
-                { id: 'erp', name: 'ERPConnector', status: 'done' },
-                { id: 'norm', name: 'DataNorm', status: 'done' },
-                { id: 'ack', name: 'ACKIngest', status: 'done' },
-                { id: 'comp', name: 'POvsACK', status: 'running' },
-                { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
-                { id: 'bo', name: 'Backorder', status: 'pending' },
-                { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                { id: 'notif', name: 'Notification', status: 'pending' },
-            ]);
+            timers.push(setTimeout(() => {
+                setAgentLogs(['Initializing Delta Engine...']);
+                setPipelineAgents([
+                    { id: 'erp', name: 'ERPConnector', status: 'done' },
+                    { id: 'norm', name: 'DataNorm', status: 'done' },
+                    { id: 'ack', name: 'ACKIngest', status: 'done' },
+                    { id: 'comp', name: 'POvsACK', status: 'running' },
+                    { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                    { id: 'bo', name: 'Backorder', status: 'pending' },
+                    { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                    { id: 'notif', name: 'Notification', status: 'pending' },
+                ]);
+            }, D));
 
             const timeline = [
-                { delay: 1000, log: 'POvsACKAgent: Loading PO #ORD-2055 (4 lines).' },
-                { delay: 2500, log: 'POvsACKAgent: Loading ACK #ACK-2055 (4 lines).' },
-                { delay: 4000, log: 'POvsACKAgent: Line-by-line comparison in progress...' },
-                { delay: 5500, log: 'POvsACKAgent: EXCEPTION — Line 2 substitution SKU-B→SKU-C.' },
-                { delay: 7000, log: 'POvsACKAgent: EXCEPTION — Freight $45→$150 (+233%).' },
-                { delay: 8500, log: 'DiscrepancyResolver: 2 exceptions flagged. Escalating to Expert Hub.' },
+                { delay: D + 1000, log: 'POvsACKAgent: Loading PO #ORD-2055 (4 lines).' },
+                { delay: D + 2500, log: 'POvsACKAgent: Loading ACK #ACK-2055 (4 lines).' },
+                { delay: D + 4000, log: 'POvsACKAgent: Line-by-line comparison in progress...' },
+                { delay: D + 5500, log: 'POvsACKAgent: EXCEPTION — Line 2 substitution SKU-B→SKU-C.' },
+                { delay: D + 7000, log: 'POvsACKAgent: EXCEPTION — Freight $45→$150 (+233%).' },
+                { delay: D + 8500, log: 'DiscrepancyResolver: 2 exceptions flagged. Escalating to Expert Hub.' },
             ];
 
             timeline.forEach(({ delay, log }, index) => {
@@ -249,22 +275,24 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             });
 
         } else if (currentStep.id === '3.1') {
-            setAgentLogs(['Initializing Document Intake Pipeline...']);
-            setPipelineAgents([
-                { id: 'docintake', name: 'DocIntake', status: 'running' },
-                { id: 'ocr', name: 'OCR', status: 'pending' },
-                { id: 'parser', name: 'Parser', status: 'pending' },
-                { id: 'classifier', name: 'Classifier', status: 'pending' },
-                { id: 'linker', name: 'EntityLinker', status: 'pending' },
-            ]);
+            timers.push(setTimeout(() => {
+                setAgentLogs(['Initializing Document Intake Pipeline...']);
+                setPipelineAgents([
+                    { id: 'docintake', name: 'DocIntake', status: 'running' },
+                    { id: 'ocr', name: 'OCR', status: 'pending' },
+                    { id: 'parser', name: 'Parser', status: 'pending' },
+                    { id: 'classifier', name: 'Classifier', status: 'pending' },
+                    { id: 'linker', name: 'EntityLinker', status: 'pending' },
+                ]);
+            }, D));
 
             const timeline = [
-                { delay: 1000, log: 'DocIntakeAgent: Received document upload (PDF, 3 pages).' },
-                { delay: 2200, log: 'OCRAgent: Extracting text from scanned invoice...' },
-                { delay: 3500, log: 'ParserAgent: Structured 12 fields from invoice text.' },
-                { delay: 5000, log: 'ClassifierAgent: Document TYPE → INVOICE (confidence: 97%).' },
-                { delay: 6500, log: 'EntityLinkerAgent: Linked to PO #ORD-2055 and ACK #ACK-2055.' },
-                { delay: 8000, log: 'Router: Routed to 3-Way Match Engine.' },
+                { delay: D + 1000, log: 'DocIntakeAgent: Received document upload (PDF, 3 pages).' },
+                { delay: D + 2200, log: 'OCRAgent: Extracting text from scanned invoice...' },
+                { delay: D + 3500, log: 'ParserAgent: Structured 12 fields from invoice text.' },
+                { delay: D + 5000, log: 'ClassifierAgent: Document TYPE → INVOICE (confidence: 97%).' },
+                { delay: D + 6500, log: 'EntityLinkerAgent: Linked to PO #ORD-2055 and ACK #ACK-2055.' },
+                { delay: D + 8000, log: 'Router: Routed to 3-Way Match Engine.' },
             ];
 
             timeline.forEach(({ delay, log }, index) => {
@@ -303,7 +331,10 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
         return () => timers.forEach(clearTimeout);
     }, [isDemoActive, currentStep.id, nextStep]);
 
+    // Don't render at all if not in a panel step
     if (!isDemoActive || !PANEL_STEPS.includes(currentStep.id)) return null;
+    // Don't render until the reveal delay has passed — audience sees normal page first
+    if (!panelVisible) return null;
 
     // ─── Step-specific config ───
     const stepConfig: Record<string, {
@@ -362,11 +393,11 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
 
     return (
         <div className="fixed inset-0 z-[95] flex items-center justify-end pointer-events-none">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] pointer-events-auto animate-in fade-in duration-300" />
+            {/* Backdrop — fades in */}
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] pointer-events-auto animate-in fade-in duration-500" />
 
-            {/* Floating Panel — Lupa Effect */}
-            <div className="relative w-full max-w-2xl mx-4 mr-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl shadow-2xl shadow-indigo-500/10 pointer-events-auto animate-in slide-in-from-right-4 fade-in duration-500 overflow-hidden max-h-[calc(100vh-8rem)]  overflow-y-auto scrollbar-micro">
+            {/* Floating Panel — Lupa zoom-in effect */}
+            <div className="relative w-full max-w-2xl mx-4 mr-8 bg-zinc-900 border border-zinc-700/50 rounded-2xl shadow-2xl shadow-indigo-500/10 pointer-events-auto animate-in zoom-in-90 slide-in-from-right-8 fade-in duration-700 overflow-hidden max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-micro" style={{ transformOrigin: 'right center' }}>
                 {/* Top glow bar */}
                 <div className={`absolute top-0 left-0 right-0 h-1 ${isDone ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-500' : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500'}`} />
 
