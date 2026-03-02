@@ -50,18 +50,17 @@ export default function EmailSimulation() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showProcessingModal, setShowProcessingModal] = useState(false);
 
-    // Auto-open RFQ email during demo step 1.1 (processing is triggered manually)
+    // Auto-open RFQ email and auto-start processing during demo step 1.1
     useEffect(() => {
         if (!isDemoActive || currentStep.id !== '1.1') return;
 
+        const timers: ReturnType<typeof setTimeout>[] = [];
         // Auto-click on email #1 after a short delay
-        const openTimer = setTimeout(() => {
-            setSelectedEmail(1);
-        }, 800);
+        timers.push(setTimeout(() => setSelectedEmail(1), 800));
+        // Auto-start processing after email opens
+        timers.push(setTimeout(() => setShowProcessingModal(true), 3000));
 
-        return () => {
-            clearTimeout(openTimer);
-        };
+        return () => timers.forEach(clearTimeout);
     }, [isDemoActive, currentStep.id]);
 
     const handleProcessingComplete = useCallback(() => {
@@ -314,15 +313,14 @@ export default function EmailSimulation() {
                                             <p>Thanks,<br />Apex Furniture</p>
                                         </div>
 
-                                        {/* AI Monitoring Strip — click to start processing */}
-                                        <button
+                                        {/* AI Monitoring Strip — auto-starts processing */}
+                                        <div
                                             id="email-rfq-incoming"
-                                            onClick={() => setShowProcessingModal(true)}
-                                            className="w-full bg-indigo-500/5 dark:bg-indigo-500/5 border border-indigo-200/50 dark:border-indigo-500/20 p-5 rounded-2xl flex items-center gap-5 overflow-hidden relative group shadow-sm transition-all hover:border-indigo-400/50 hover:shadow-md hover:shadow-indigo-500/10 cursor-pointer active:scale-[0.99] text-left"
+                                            className="w-full bg-indigo-500/5 dark:bg-indigo-500/5 border border-indigo-200/50 dark:border-indigo-500/20 p-5 rounded-2xl flex items-center gap-5 overflow-hidden relative shadow-sm"
                                         >
-                                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-transparent to-purple-500/5 animate-pulse group-hover:from-indigo-500/10 group-hover:to-purple-500/10 transition-all" />
+                                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-transparent to-purple-500/5 animate-pulse transition-all" />
                                             <div className="relative shrink-0">
-                                                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 dark:border-indigo-500/30 flex items-center justify-center group-hover:scale-105 transition-transform">
+                                                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 dark:border-indigo-500/30 flex items-center justify-center">
                                                     <SparklesIcon className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
                                                 </div>
                                                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full animate-pulse" />
@@ -330,17 +328,17 @@ export default function EmailSimulation() {
                                             <div className="relative z-10 flex-1">
                                                 <div className="flex items-center gap-2">
                                                     <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-100">AI Agent Monitoring</h4>
-                                                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 rounded-full border border-indigo-500/20">Ready</span>
+                                                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 rounded-full border border-indigo-500/20">Active</span>
                                                 </div>
                                                 <p className="text-[11px] text-indigo-700/60 dark:text-indigo-300/60 mt-0.5">
-                                                    EmailIntakeAgent detected RFQ with attachments — <span className="text-indigo-600 dark:text-indigo-300 font-semibold">click to start processing</span>
+                                                    EmailIntakeAgent detected RFQ with attachments — <span className="text-indigo-600 dark:text-indigo-300 font-semibold">auto-processing initiated</span>
                                                 </p>
                                             </div>
-                                            <div className="relative z-10 flex items-center gap-2 shrink-0 px-4 py-2 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-xl border border-indigo-500/20 group-hover:bg-indigo-500/20 dark:group-hover:bg-indigo-500/30 transition-all">
-                                                <ArrowRightIcon className="w-4 h-4 text-indigo-500 dark:text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
-                                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-300">Start</span>
+                                            <div className="relative z-10 flex items-center gap-2 shrink-0 px-4 py-2 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-xl border border-indigo-500/20">
+                                                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-300">Processing</span>
                                             </div>
-                                        </button>
+                                        </div>
 
                                         {/* Refined Attachments */}
                                         <div className="pt-6">

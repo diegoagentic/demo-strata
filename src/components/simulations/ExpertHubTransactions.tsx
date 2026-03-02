@@ -86,6 +86,46 @@ const recentAcknowledgments = [
     { id: "ACK-8841", relatedPo: "PO-2026-003", vendor: "Knoll", status: "Partial", date: "Jan 12, 2026", expShipDate: "Mar 01, 2026", discrepancy: "Backordered Items", initials: "KN", statusColor: "bg-amber-50 text-amber-700", location: "East Greenville" },
 ]
 
+// ═══════════════════════════════════════════
+// FLOW 2 DATA: Real ACK data from AIS PDF + HAT vendor email
+// ═══════════════════════════════════════════
+const ACK_AIS = {
+    id: 'ACK-7842', relatedPo: 'PO-1064B', vendor: 'AIS', vendorFull: 'AIS (Adaptive Interior Solutions)',
+    status: 'Discrepancy', date: 'Feb 18, 2026', lineItems: 50, total: '$65,439.09', discrepancies: 3,
+    project: 'Premier Underground Design', customer: 'Corporate Interior Systems',
+    shipTo: '135 E Watkins St, Phoenix, AZ 85004', initials: 'AI', statusColor: 'bg-red-50 text-red-700',
+    location: 'Leominster, MA',
+};
+
+const ACK_HAT = {
+    id: 'ACK-7841', relatedPo: 'PO-1064', vendor: 'HAT', vendorFull: 'HAT Contract',
+    status: 'Confirmed', date: 'Feb 18, 2026', lineItems: 5, total: '$8,220.00', discrepancies: 0,
+    project: 'Premier Underground Design', customer: 'Corporate Interior Systems',
+    initials: 'HC', statusColor: 'bg-green-50 text-green-700', location: 'Holland, MI',
+};
+
+const HAT_COMPARISON_LINES = [
+    { line: 1, partPO: 'HAT-FL2448', partACK: 'HAT-FL2448', colorPO: 'Warm Grey 4', colorACK: 'Folkstone Grey', descPO: 'Flat Panel 24x48', descACK: 'Flat Panel 24x48', match: true, aiReason: 'Part number matches — color variation accepted per client directive' },
+    { line: 2, partPO: 'HAT-TL3060', partACK: 'HAT-TL3060', colorPO: 'N/A', colorACK: 'N/A', descPO: 'Tile Panel 30x60', descACK: 'Acoustical Tile 30x60', match: true, aiReason: 'Part number matches — description variation accepted per client directive' },
+];
+
+const ACK_LINE_ITEMS_50 = [
+    { line: 1, sku: 'X-TS6030', desc: 'CB Table Shell 60x30', qty: 4, qtyAck: 4, price: '$1,284.00', status: 'match' as const },
+    { line: 8, sku: 'X-PNL2460', desc: 'CB Privacy Panel 24x60', qty: 6, qtyAck: 6, price: '$468.00', status: 'match' as const },
+    { line: 12, sku: 'X-W3060', desc: 'CB Wardrobe 30x60', qty: 3, qtyAck: 3, price: '$2,154.00', dateShift: '+14 days', status: 'date-shift' as const },
+    { line: 23, sku: 'X-P2460', desc: 'CB Pedestal 24x60', qty: 8, qtyAck: 6, price: '$1,092.00', shortfall: 2, status: 'qty-short' as const },
+    { line: 34, sku: 'X-BK4818', desc: 'CB Bookcase 48x18', qty: 5, qtyAck: 5, price: '$1,680.00', dateShift: '+11 days', status: 'date-shift' as const },
+    { line: 41, sku: 'X-DS6030', desc: 'CB Desk Shell 60x30', qty: 2, qtyAck: 2, price: '$2,568.00', grommetPO: 'No Grommet', grommetACK: 'Grommet Option C - Left Rear Corner #2', status: 'grommet-error' as const },
+    { line: 47, sku: 'X-QUADALDR', desc: 'CB Quad Alder Table', qty: 4, qtyAck: 2, price: '$3,440.00', shortfall: 2, status: 'qty-short' as const },
+    { line: 68, sku: 'X-DSFM9624', desc: 'CB Desk Shell FM 96x24', qty: 1, qtyAck: 1, price: '$1,812.00', grommetACK: 'No Grommet', status: 'match' as const },
+];
+
+const FLOW2_BACKORDER_LINES = [
+    { sku: 'X-W3060', desc: 'CB Wardrobe 30x60', qtyShort: 0, qtyBackorder: 3, reason: 'Full line backorder — vendor capacity' },
+    { sku: 'X-P2460', desc: 'CB Pedestal 24x60', qtyShort: 2, qtyBackorder: 2, reason: 'Partial — 6 of 8 acknowledged' },
+    { sku: 'X-QUADALDR', desc: 'CB Quad Alder Table', qtyShort: 2, qtyBackorder: 2, reason: 'Partial — 2 of 4 acknowledged' },
+];
+
 // Pipeline stages
 const pipelineStages = ['Order Received', 'In Production', 'Ready to Ship', 'In Transit', 'Delivered']
 const quoteStages = ['Draft', 'Sent', 'Negotiating', 'Approved', 'Lost']
@@ -230,12 +270,6 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     }, [currentStep.id]);
     const approvedCount16 = approvalStates16.filter(s => s === 'approved').length;
 
-    // Step 1.7 — Manager Approval (interactive)
-    const [managerApproved17, setManagerApproved17] = useState(false)
-    useEffect(() => {
-        if (currentStep.id !== '1.7') { setManagerApproved17(false); }
-    }, [currentStep.id]);
-
     // Step 1.8 — PO Generation + Order Approval Chain (fully automated)
     const [phase18, setPhase18] = useState<'showing-approvals' | 'po-generating' | 'po-complete' | 'order-chain' | 'order-complete' | 'done'>('showing-approvals')
     const [poGenPhase18, setPoGenPhase18] = useState<'building' | 'mapping' | 'validating' | 'complete'>('building')
@@ -262,11 +296,11 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     }, [currentStep.id]);
     const orderApprovedCount18 = orderApprovalStates18.filter(s => s === 'approved').length;
 
-    // Step 1.9 — Pipeline View with animated card
+    // Step 1.10 — Pipeline View with animated card
     const [pipelineNotifShown19, setPipelineNotifShown19] = useState(false)
     const [cardAnimationStage19, setCardAnimationStage19] = useState<'hidden' | 'appearing' | 'arrived'>('hidden')
     useEffect(() => {
-        if (currentStep.id !== '1.9') {
+        if (currentStep.id !== '1.10') {
             setPipelineNotifShown19(false);
             setCardAnimationStage19('hidden');
             return;
@@ -275,6 +309,92 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
         t.push(setTimeout(() => setPipelineNotifShown19(true), 500));
         t.push(setTimeout(() => setCardAnimationStage19('appearing'), 1500));
         t.push(setTimeout(() => setCardAnimationStage19('arrived'), 3000));
+        return () => t.forEach(clearTimeout);
+    }, [currentStep.id]);
+
+    // ═══════════════════════════════════════════
+    // FLOW 2 STATE + EFFECTS
+    // ═══════════════════════════════════════════
+
+    // Step 2.1 — Pipeline arrival (both ACK cards appear)
+    const [ackArrival21, setAckArrival21] = useState<Record<string, 'hidden' | 'appearing' | 'placed'>>({ AIS: 'hidden', HAT: 'hidden' });
+    useEffect(() => {
+        if (currentStep.id !== '2.1') { setAckArrival21({ AIS: 'hidden', HAT: 'hidden' }); return; }
+        const t: ReturnType<typeof setTimeout>[] = [];
+        t.push(setTimeout(() => setAckArrival21(p => ({ ...p, HAT: 'appearing' })), 1000));
+        t.push(setTimeout(() => setAckArrival21(p => ({ ...p, HAT: 'placed' })), 2000));
+        t.push(setTimeout(() => setAckArrival21(p => ({ ...p, AIS: 'appearing' })), 2500));
+        t.push(setTimeout(() => setAckArrival21(p => ({ ...p, AIS: 'placed' })), 3500));
+        t.push(setTimeout(() => nextStep(), 6000));
+        return () => t.forEach(clearTimeout);
+    }, [currentStep.id]);
+
+    // Step 2.2 — Normalization & smart comparison
+    const [normPhase22, setNormPhase22] = useState<'idle' | 'norm-hat' | 'comparing-hat' | 'hat-ai-rule' | 'hat-confirmed' | 'norm-ais' | 'comparing-ais' | 'ais-flagged'>('idle');
+    useEffect(() => {
+        if (currentStep.id !== '2.2') { setNormPhase22('idle'); return; }
+        const t: ReturnType<typeof setTimeout>[] = [];
+        t.push(setTimeout(() => setNormPhase22('norm-hat'), 1000));
+        t.push(setTimeout(() => setNormPhase22('comparing-hat'), 3000));
+        t.push(setTimeout(() => setNormPhase22('hat-ai-rule'), 5000));
+        t.push(setTimeout(() => setNormPhase22('hat-confirmed'), 6500));
+        t.push(setTimeout(() => setNormPhase22('norm-ais'), 8000));
+        t.push(setTimeout(() => setNormPhase22('comparing-ais'), 10000));
+        t.push(setTimeout(() => setNormPhase22('ais-flagged'), 12000));
+        t.push(setTimeout(() => nextStep(), 14000));
+        return () => t.forEach(clearTimeout);
+    }, [currentStep.id]);
+
+    // Step 2.3 — Delta engine (3 discrepancy cards) — interactive: user clicks "Generate Backorder"
+    const [deltaPhase23, setDeltaPhase23] = useState<'idle' | 'scanning' | 'grommet-found' | 'grommet-fixed' | 'dates-found' | 'dates-fixed' | 'qty-found' | 'complete'>('idle');
+    const [backorderTriggered23, setBackorderTriggered23] = useState(false);
+    useEffect(() => {
+        if (currentStep.id !== '2.3') { setDeltaPhase23('idle'); setBackorderTriggered23(false); return; }
+        const t: ReturnType<typeof setTimeout>[] = [];
+        t.push(setTimeout(() => setDeltaPhase23('scanning'), 1000));
+        t.push(setTimeout(() => setDeltaPhase23('grommet-found'), 3000));
+        t.push(setTimeout(() => setDeltaPhase23('grommet-fixed'), 5000));
+        t.push(setTimeout(() => setDeltaPhase23('dates-found'), 7000));
+        t.push(setTimeout(() => setDeltaPhase23('dates-fixed'), 9000));
+        t.push(setTimeout(() => setDeltaPhase23('qty-found'), 11000));
+        t.push(setTimeout(() => setDeltaPhase23('complete'), 13000));
+        // No auto-advance — user clicks "Generate Backorder" on qty card
+        return () => t.forEach(clearTimeout);
+    }, [currentStep.id]);
+
+    // Step 2.4 — Expert review table (auto-advance since backorder already triggered in 2.3)
+    useEffect(() => {
+        if (currentStep.id !== '2.4') return;
+        const t = setTimeout(() => nextStep(), 6000);
+        return () => clearTimeout(t);
+    }, [currentStep.id]);
+
+    // Step 2.5 — Backorder & approval chain
+    const [boPhase25, setBoPhase25] = useState<'generating' | 'generated' | 'approval' | 'complete'>('generating');
+    const [approvalStates25, setApprovalStates25] = useState<('pending' | 'approved')[]>(['pending', 'pending', 'pending']);
+    useEffect(() => {
+        if (currentStep.id !== '2.5') { setBoPhase25('generating'); setApprovalStates25(['pending', 'pending', 'pending']); return; }
+        const t: ReturnType<typeof setTimeout>[] = [];
+        t.push(setTimeout(() => setBoPhase25('generated'), 2000));
+        t.push(setTimeout(() => setBoPhase25('approval'), 3500));
+        t.push(setTimeout(() => setApprovalStates25(['approved', 'pending', 'pending']), 5000));
+        t.push(setTimeout(() => setApprovalStates25(['approved', 'approved', 'pending']), 7000));
+        t.push(setTimeout(() => setApprovalStates25(['approved', 'approved', 'approved']), 9000));
+        t.push(setTimeout(() => setBoPhase25('complete'), 10000));
+        t.push(setTimeout(() => nextStep(), 12000));
+        return () => t.forEach(clearTimeout);
+    }, [currentStep.id]);
+    const approvedCount25 = approvalStates25.filter(s => s === 'approved').length;
+
+    // Step 2.6 — Pipeline resolution
+    const [resolvedCards26, setResolvedCards26] = useState<Record<string, 'hidden' | 'appearing' | 'placed'>>({ AIS: 'hidden', HAT: 'hidden' });
+    useEffect(() => {
+        if (currentStep.id !== '2.6') { setResolvedCards26({ AIS: 'hidden', HAT: 'hidden' }); return; }
+        const t: ReturnType<typeof setTimeout>[] = [];
+        t.push(setTimeout(() => setResolvedCards26(p => ({ ...p, HAT: 'appearing' })), 500));
+        t.push(setTimeout(() => setResolvedCards26(p => ({ ...p, HAT: 'placed' })), 1500));
+        t.push(setTimeout(() => setResolvedCards26(p => ({ ...p, AIS: 'appearing' })), 2500));
+        t.push(setTimeout(() => setResolvedCards26(p => ({ ...p, AIS: 'placed' })), 3500));
         return () => t.forEach(clearTimeout);
     }, [currentStep.id]);
 
@@ -412,15 +532,19 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
             setLifecycleTab('quotes');
             setSearchQuery('QT-1025');
             setExpandedIds(new Set(['QT-1025']));
-        } else if (['1.6', '1.7', '1.8'].includes(currentStep.id)) {
+        } else if (['1.6', '1.8'].includes(currentStep.id)) {
             setLifecycleTab('quotes');
             setSearchQuery('');
-        } else if (currentStep.id === '1.9') {
+        } else if (currentStep.id === '1.10') {
             setLifecycleTab('orders');
             setViewMode('pipeline');
             setSearchQuery('');
-        } else if (currentStep.id === '2.4') {
+        } else if (['2.1', '2.2', '2.3', '2.4', '2.5', '2.6'].includes(currentStep.id)) {
             setLifecycleTab('acknowledgments');
+            setSearchQuery('');
+            if (currentStep.id === '2.1' || currentStep.id === '2.6') {
+                setViewMode('pipeline');
+            }
         }
     }, [currentStep.id]);
 
@@ -1763,130 +1887,663 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                     </div>
                 )}
 
-                {/* Step 2.4: Auto-Fix Branching for Acknowledgments */}
-                {currentStep.id === '2.4' && lifecycleTab === 'acknowledgments' && (
-                    <div data-demo-target="expert-ack-autofix" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                        {/* Pipeline Strip */}
+                {/* ═══════════════════════════════════════════ */}
+                {/* FLOW 2: Steps 2.1 through 2.6 */}
+                {/* ═══════════════════════════════════════════ */}
+
+                {/* Step 2.1 — ACK Intake Pipeline */}
+                {currentStep.id === '2.1' && (
+                    <div data-demo-target="ack-pipeline-intake" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done', detail: '2 ACKs received' },
+                            { id: 'norm', name: 'DataNorm', status: 'pending' },
+                            { id: 'ack', name: 'ACKIngestion', status: 'pending' },
+                            { id: 'comp', name: 'POvsACK', status: 'pending' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="blue" />
+
+                        {/* ACK Pipeline Kanban */}
+                        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                            <div className="p-4 border-b border-border">
+                                <h3 className="text-sm font-bold text-foreground">ACK Pipeline — Incoming</h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">2 new acknowledgments received from ERPConnector</p>
+                            </div>
+                            <div className="p-4 grid grid-cols-4 gap-3">
+                                {ackStages.map((stage, si) => (
+                                    <div key={stage} className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stage}</span>
+                                            <span className="text-[10px] text-muted-foreground">
+                                                {si === 0 ? (
+                                                    (ackArrival21.HAT !== 'hidden' ? 1 : 0) + (ackArrival21.AIS !== 'hidden' ? 1 : 0)
+                                                ) : stage === 'Confirmed' ? recentAcknowledgments.filter(a => a.status === 'Confirmed').length
+                                                  : stage === 'Discrepancy' ? recentAcknowledgments.filter(a => a.status === 'Discrepancy').length
+                                                  : stage === 'Partial' ? recentAcknowledgments.filter(a => a.status === 'Partial').length
+                                                  : 0}
+                                            </span>
+                                        </div>
+                                        <div className="min-h-[120px] space-y-2">
+                                            {/* New ACK cards in Pending column */}
+                                            {si === 0 && ackArrival21.HAT !== 'hidden' && (
+                                                <div className={cn(
+                                                    'p-3 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-500/5 transition-all duration-500',
+                                                    ackArrival21.HAT === 'appearing' && 'opacity-70 scale-95',
+                                                    ackArrival21.HAT === 'placed' && 'opacity-100 scale-100',
+                                                )}>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">HC</span>
+                                                        <span className="text-xs font-bold text-foreground">{ACK_HAT.id}</span>
+                                                        <span className="ml-auto px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-[9px] font-bold text-blue-700 dark:text-blue-400">HAT</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground">{ACK_HAT.lineItems} lines · {ACK_HAT.total}</p>
+                                                    <p className="text-[10px] text-muted-foreground truncate">{ACK_HAT.project}</p>
+                                                </div>
+                                            )}
+                                            {si === 0 && ackArrival21.AIS !== 'hidden' && (
+                                                <div className={cn(
+                                                    'p-3 rounded-xl border-2 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-500/5 transition-all duration-500',
+                                                    ackArrival21.AIS === 'appearing' && 'opacity-70 scale-95',
+                                                    ackArrival21.AIS === 'placed' && 'opacity-100 scale-100',
+                                                )}>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center">AI</span>
+                                                        <span className="text-xs font-bold text-foreground">{ACK_AIS.id}</span>
+                                                        <span className="ml-auto px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-500/20 text-[9px] font-bold text-purple-700 dark:text-purple-400">AIS</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground">{ACK_AIS.lineItems} lines · {ACK_AIS.total}</p>
+                                                    <p className="text-[10px] text-muted-foreground truncate">{ACK_AIS.project}</p>
+                                                </div>
+                                            )}
+                                            {/* Existing ACK cards in their columns */}
+                                            {recentAcknowledgments.filter(a => a.status === stage).map(ack => (
+                                                <div key={ack.id} className="p-2.5 rounded-lg border border-border bg-card">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={cn('w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center', ack.statusColor)}>{ack.initials}</span>
+                                                        <span className="text-[10px] font-bold text-foreground">{ack.id}</span>
+                                                    </div>
+                                                    <p className="text-[9px] text-muted-foreground">{ack.vendor}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 2.2 — Normalization & Smart Comparison */}
+                {currentStep.id === '2.2' && (
+                    <div data-demo-target="ack-dual-normalization" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: ['norm-hat', 'norm-ais'].includes(normPhase22) ? 'running' : (normPhase22 !== 'idle' ? 'done' : 'pending'), detail: normPhase22 === 'norm-hat' ? 'HAT...' : normPhase22 === 'norm-ais' ? 'AIS...' : undefined },
+                            { id: 'ack', name: 'ACKIngestion', status: ['comparing-hat', 'hat-ai-rule', 'comparing-ais'].includes(normPhase22) ? 'running' : (['hat-confirmed', 'norm-ais', 'ais-flagged'].includes(normPhase22) ? 'done' : 'pending') },
+                            { id: 'comp', name: 'POvsACK', status: normPhase22 === 'ais-flagged' ? 'done' : 'pending', detail: normPhase22 === 'ais-flagged' ? '1 flagged' : undefined },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="blue" />
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {/* HAT Comparison Card */}
+                            <div className={cn(
+                                'p-4 rounded-2xl border shadow-sm transition-all duration-500',
+                                normPhase22 === 'idle' ? 'border-border bg-card opacity-50' :
+                                ['hat-confirmed', 'norm-ais', 'comparing-ais', 'ais-flagged'].includes(normPhase22) ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-500/5' :
+                                'border-blue-300 dark:border-blue-700 bg-card'
+                            )}>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="w-7 h-7 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">HC</span>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground">{ACK_HAT.id} — HAT Contract</h4>
+                                        <p className="text-[10px] text-muted-foreground">{ACK_HAT.lineItems} lines · {ACK_HAT.total}</p>
+                                    </div>
+                                    {['hat-confirmed', 'norm-ais', 'comparing-ais', 'ais-flagged'].includes(normPhase22) && (
+                                        <span className="ml-auto px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/20 text-[10px] font-bold text-green-700 dark:text-green-400 flex items-center gap-1">
+                                            <CheckCircleIcon className="w-3 h-3" /> Confirmed
+                                        </span>
+                                    )}
+                                </div>
+
+                                {normPhase22 !== 'idle' && (
+                                    <>
+                                        {/* PO vs ACK comparison table */}
+                                        <div className="rounded-lg border border-border overflow-hidden mb-3">
+                                            <table className="w-full text-[10px]">
+                                                <thead>
+                                                    <tr className="bg-muted/50">
+                                                        <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">Line</th>
+                                                        <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">Part#</th>
+                                                        <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">PO</th>
+                                                        <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">ACK</th>
+                                                        <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-border">
+                                                    {HAT_COMPARISON_LINES.map(ln => (
+                                                        <tr key={ln.line} className={ln.line === 1 ? 'bg-amber-50/50 dark:bg-amber-500/5' : 'bg-amber-50/50 dark:bg-amber-500/5'}>
+                                                            <td className="px-2 py-1.5 font-mono">{ln.line}</td>
+                                                            <td className="px-2 py-1.5 font-bold text-foreground">{ln.partPO}</td>
+                                                            <td className="px-2 py-1.5 text-muted-foreground">{ln.line === 1 ? ln.colorPO : ln.descPO}</td>
+                                                            <td className="px-2 py-1.5">
+                                                                <span className="text-amber-700 dark:text-amber-400 font-medium">{ln.line === 1 ? ln.colorACK : ln.descACK}</span>
+                                                            </td>
+                                                            <td className="px-2 py-1.5">
+                                                                {['hat-ai-rule', 'hat-confirmed', 'norm-ais', 'comparing-ais', 'ais-flagged'].includes(normPhase22) ? (
+                                                                    <span className="text-green-600 dark:text-green-400 font-bold">✓ OK</span>
+                                                                ) : (
+                                                                    <span className="text-amber-600 dark:text-amber-400 font-bold">Mismatch</span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* AI Training Badge */}
+                                        {['hat-ai-rule', 'hat-confirmed', 'norm-ais', 'comparing-ais', 'ais-flagged'].includes(normPhase22) && (
+                                            <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 animate-in fade-in duration-300">
+                                                <div className="flex items-start gap-2">
+                                                    <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400">AI Vendor Rule: HAT Contract</p>
+                                                        <p className="text-[10px] text-indigo-600 dark:text-indigo-300 mt-0.5">Part number match is sufficient per client directive. Color and description variations accepted.</p>
+                                                    </div>
+                                                    <ConfidenceScoreBadge score={99} label="Match" size="sm" />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* AIS Comparison Card */}
+                            <div className={cn(
+                                'p-4 rounded-2xl border shadow-sm transition-all duration-500',
+                                ['idle', 'norm-hat', 'comparing-hat', 'hat-ai-rule', 'hat-confirmed'].includes(normPhase22) ? 'border-border bg-card opacity-50' :
+                                normPhase22 === 'ais-flagged' ? 'border-red-300 dark:border-red-700 bg-red-50/30 dark:bg-red-500/5' :
+                                'border-purple-300 dark:border-purple-700 bg-card'
+                            )}>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center">AI</span>
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground">{ACK_AIS.id} — AIS</h4>
+                                        <p className="text-[10px] text-muted-foreground">{ACK_AIS.lineItems} lines · {ACK_AIS.total}</p>
+                                    </div>
+                                    {normPhase22 === 'ais-flagged' && (
+                                        <span className="ml-auto px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-[10px] font-bold text-red-700 dark:text-red-400 flex items-center gap-1">
+                                            <ExclamationTriangleIcon className="w-3 h-3" /> Discrepancy
+                                        </span>
+                                    )}
+                                </div>
+
+                                {['norm-ais', 'comparing-ais', 'ais-flagged'].includes(normPhase22) && (
+                                    <>
+                                        <div className="space-y-2">
+                                            <div className="px-3 py-2 rounded-lg bg-muted/50 flex items-center justify-between">
+                                                <span className="text-[10px] text-foreground">Scanning {ACK_AIS.lineItems} line items...</span>
+                                                {normPhase22 === 'comparing-ais' && <span className="text-[10px] text-blue-600 dark:text-blue-400 animate-pulse">Comparing...</span>}
+                                                {normPhase22 === 'ais-flagged' && <span className="text-[10px] text-red-600 dark:text-red-400 font-bold">3 discrepancies found</span>}
+                                            </div>
+                                            {normPhase22 === 'ais-flagged' && (
+                                                <div className="p-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-500/5 animate-in fade-in duration-300">
+                                                    <p className="text-[10px] font-bold text-red-700 dark:text-red-400 mb-1">Line 41: Grommet Configuration Error</p>
+                                                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                                        <div><span className="text-muted-foreground">PO spec:</span> <span className="font-medium text-foreground">No Grommet</span></div>
+                                                        <div><span className="text-muted-foreground">ACK:</span> <span className="font-medium text-red-600 dark:text-red-400">Grommet Option C - Left Rear Corner #2</span></div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 2.3 — AIS ACK Delta Engine */}
+                {currentStep.id === '2.3' && (
+                    <div data-demo-target="ack-delta-results" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         <AgentPipelineStrip agents={[
                             { id: 'erp', name: 'ERPConnector', status: 'done' },
                             { id: 'norm', name: 'DataNorm', status: 'done' },
-                            { id: 'ack', name: 'ACKIngest', status: 'done' },
-                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '2 exceptions' },
-                            { id: 'discrep', name: 'DiscrepResolver', status: 'done', detail: '1 auto, 2 escalated' },
+                            { id: 'ack', name: 'ACKIngestion', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '3 exceptions' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: deltaPhase23 === 'complete' ? 'done' : 'running', detail: deltaPhase23 === 'complete' ? '2 auto, 1 escalated' : 'analyzing...' },
+                            { id: 'bo', name: 'Backorder', status: 'pending' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="blue" />
+
+                        <div className="space-y-3">
+                            {/* Grommet Config Error */}
+                            {['grommet-found', 'grommet-fixed', 'dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) && (
+                                <div className={cn(
+                                    'p-4 rounded-2xl border shadow-sm animate-in fade-in slide-in-from-left-4 duration-300',
+                                    ['grommet-fixed', 'dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) ? 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-500/5' : 'border-red-200 dark:border-red-800 bg-red-50/30 dark:bg-red-500/5'
+                                )}>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className={cn('p-2 rounded-xl', ['grommet-fixed', 'dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) ? 'bg-green-100 dark:bg-green-500/15' : 'bg-red-100 dark:bg-red-500/15')}>
+                                            {['grommet-fixed', 'dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) ? <CheckCircleIcon className="w-4 h-4 text-green-600 dark:text-green-400" /> : <ExclamationTriangleIcon className="w-4 h-4 text-red-600 dark:text-red-400" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="text-xs font-bold text-foreground">Grommet Config Error — Line 41</h4>
+                                            <p className="text-[10px] text-muted-foreground">X-DS6030 CB Desk Shell 60x30</p>
+                                        </div>
+                                        {['grommet-fixed', 'dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) && <ConfidenceScoreBadge score={97} label="Fix" size="sm" />}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 text-[10px] ml-11">
+                                        <div className="p-2 rounded-lg bg-card border border-border">
+                                            <span className="text-muted-foreground block">PO Spec:</span>
+                                            <span className="font-bold text-foreground">Calibrate Grommet Choice: No Grommet</span>
+                                        </div>
+                                        <div className="p-2 rounded-lg bg-card border border-red-200 dark:border-red-800">
+                                            <span className="text-muted-foreground block">ACK Value:</span>
+                                            <span className="font-bold text-red-600 dark:text-red-400 line-through">Grommet Option C - Left Rear Corner #2</span>
+                                        </div>
+                                    </div>
+                                    {['grommet-fixed', 'dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) && (
+                                        <div className="mt-2 ml-11 flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                                            <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
+                                            <span className="text-[10px] text-indigo-700 dark:text-indigo-400">Cross-referenced Line 68 (X-DSFM9624) — correct spec is "No Grommet". Auto-corrected ACK line 41.</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Date Shifts */}
+                            {['dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) && (
+                                <div className={cn(
+                                    'p-4 rounded-2xl border shadow-sm animate-in fade-in slide-in-from-left-4 duration-300',
+                                    ['dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) ? 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-500/5' : 'border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-500/5'
+                                )}>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className={cn('p-2 rounded-xl', ['dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) ? 'bg-green-100 dark:bg-green-500/15' : 'bg-amber-100 dark:bg-amber-500/15')}>
+                                            {['dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) ? <CheckCircleIcon className="w-4 h-4 text-green-600 dark:text-green-400" /> : <ClockIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="text-xs font-bold text-foreground">Date Shifts — 2 Items</h4>
+                                            <p className="text-[10px] text-muted-foreground">Within 21-day guardrail threshold</p>
+                                        </div>
+                                        {['dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) && (
+                                            <span className="text-[10px] font-bold text-green-600 dark:text-green-400">Auto-Accepted</span>
+                                        )}
+                                    </div>
+                                    <div className="ml-11 space-y-1.5 text-[10px]">
+                                        <div className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/50">
+                                            <span>Line 12: X-W3060 CB Wardrobe</span>
+                                            <span className="font-bold text-amber-600 dark:text-amber-400">+14 days</span>
+                                        </div>
+                                        <div className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/50">
+                                            <span>Line 34: X-BK4818 CB Bookcase</span>
+                                            <span className="font-bold text-amber-600 dark:text-amber-400">+11 days</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Quantity Shortfall */}
+                            {['qty-found', 'complete'].includes(deltaPhase23) && (
+                                <div className="p-4 rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50/30 dark:bg-amber-500/5 shadow-sm animate-in fade-in slide-in-from-left-4 duration-300">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-500/15">
+                                            <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="text-xs font-bold text-foreground">Quantity Shortfall — 3 Items</h4>
+                                            <p className="text-[10px] text-muted-foreground">Exceeds auto-fix threshold → Expert must review</p>
+                                        </div>
+                                        <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-[10px] font-bold text-amber-700 dark:text-amber-400">Escalated</span>
+                                    </div>
+                                    <div className="ml-11 space-y-1.5 text-[10px]">
+                                        {[
+                                            { line: 23, sku: 'X-P2460', ordered: 8, acked: 6 },
+                                            { line: 34, sku: 'X-BK4818', ordered: 5, acked: 5 },
+                                            { line: 47, sku: 'X-QUADALDR', ordered: 4, acked: 2 },
+                                        ].filter(l => l.ordered !== l.acked).map(l => (
+                                            <div key={l.line} className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/50">
+                                                <span>Line {l.line}: {l.sku}</span>
+                                                <span><span className="text-muted-foreground">Ordered: {l.ordered}</span> → <span className="font-bold text-amber-600 dark:text-amber-400">ACK: {l.acked}</span></span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {/* Generate Backorder button — inside qty shortfall card */}
+                                    {deltaPhase23 === 'complete' && (
+                                        <div className="mt-3 ml-11 flex items-center gap-3 animate-in fade-in duration-300">
+                                            <button
+                                                onClick={() => { setBackorderTriggered23(true); setTimeout(() => nextStep(), 1500); }}
+                                                disabled={backorderTriggered23}
+                                                className={cn(
+                                                    'px-4 py-2 text-xs font-bold rounded-lg shadow-sm flex items-center gap-2 transition-all',
+                                                    backorderTriggered23 ? 'bg-green-600 text-white' : 'bg-primary text-primary-foreground hover:scale-[1.02]'
+                                                )}
+                                            >
+                                                {backorderTriggered23 ? (
+                                                    <><CheckCircleIcon className="w-4 h-4" /> Backorder Initiated</>
+                                                ) : (
+                                                    <><PlusIcon className="w-4 h-4" /> Generate Backorder</>
+                                                )}
+                                            </button>
+                                            {backorderTriggered23 && (
+                                                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium animate-pulse">Creating BO-1064B...</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Summary Banner */}
+                            {deltaPhase23 === 'complete' && (
+                                <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center gap-3 animate-in fade-in duration-300">
+                                    <SparklesIcon className="w-4 h-4 text-indigo-500 shrink-0" />
+                                    <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">3 discrepancies analyzed: 2 auto-resolved (grommet corrected, dates accepted), 1 requires expert action (quantity shortfall).</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 2.4 — Expert Review (50 Line Items) */}
+                {currentStep.id === '2.4' && (
+                    <div data-demo-target="expert-ack-review" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngestion', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '3 exceptions' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'done', detail: '2 auto, 1 escalated' },
                             { id: 'bo', name: 'Backorder', status: 'pending' },
                             { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
                             { id: 'notif', name: 'Notification', status: 'pending' },
                         ]} accentColor="green" />
 
-                        {/* Auto-Resolved Card */}
-                        <div className="p-4 rounded-2xl bg-card border border-border shadow-sm">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2.5 rounded-xl bg-green-50 dark:bg-green-500/10">
-                                    <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        {/* ACK Summary Header */}
+                        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                            <div className="p-4 border-b border-border">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="w-8 h-8 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">AI</span>
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">ACK-7842 — Expert Review</h3>
+                                            <p className="text-[10px] text-muted-foreground">{ACK_AIS.vendorFull} · {ACK_AIS.project}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2 py-1 rounded-lg bg-muted text-[10px] font-bold text-foreground">{ACK_AIS.lineItems} lines</span>
+                                        <span className="px-2 py-1 rounded-lg bg-muted text-[10px] font-bold text-foreground">{ACK_AIS.total}</span>
+                                    </div>
                                 </div>
-                                <div className="flex-1">
-                                    <h3 className="text-sm font-medium text-foreground">Auto-Resolved (Within Guardrails)</h3>
-                                    <p className="text-xs text-muted-foreground">1 discrepancy auto-corrected by DiscrepancyResolverAgent</p>
+                                {/* Resolution status badges */}
+                                <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/20 text-[9px] font-bold text-green-700 dark:text-green-400">✓ Grommet corrected</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/20 text-[9px] font-bold text-green-700 dark:text-green-400">✓ Dates accepted</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-[9px] font-bold text-amber-700 dark:text-amber-400">⚠ Qty shortfall</span>
                                 </div>
-                                <ConfidenceScoreBadge score={96} label="Confidence" size="md" />
                             </div>
-                            <div className="ml-12 space-y-3">
-                                <div className="bg-muted/50 rounded-lg px-4 py-3">
-                                    <div className="flex items-center justify-between text-xs mb-2">
-                                        <span className="text-foreground font-medium">Line 3: Date shift (Feb 20 → Feb 22)</span>
-                                        <span className="text-green-600 dark:text-green-400 font-bold">Auto-Accepted</span>
-                                    </div>
-                                    {/* Guardrail Threshold Bar */}
-                                    <div className="mt-2">
-                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
-                                            <span>Delivery Shift</span>
-                                            <span>Threshold: 5 days</span>
-                                        </div>
-                                        <div className="relative h-3 bg-muted rounded-full overflow-hidden">
-                                            <div className="absolute inset-0 border-2 border-dashed border-green-500/30 rounded-full" />
-                                            <div className="h-full bg-green-500/60 rounded-full transition-all" style={{ width: '40%' }} />
-                                        </div>
-                                        <div className="flex items-center justify-between text-[9px] text-muted-foreground mt-1">
-                                            <span>0 days</span>
-                                            <span className="text-green-600 dark:text-green-400 font-bold">2 days (within limit)</span>
-                                            <span>5 days</span>
-                                        </div>
-                                    </div>
+
+                            {/* Line Items Table */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-xs">
+                                    <thead>
+                                        <tr className="bg-muted/50 border-b border-border">
+                                            <th className="text-left px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Line</th>
+                                            <th className="text-left px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">SKU</th>
+                                            <th className="text-left px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Description</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Qty</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">ACK Qty</th>
+                                            <th className="text-right px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Price</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border">
+                                        {ACK_LINE_ITEMS_50.map(item => (
+                                            <tr key={item.line} className={cn(
+                                                'transition-colors',
+                                                item.status === 'grommet-error' && 'bg-green-50/50 dark:bg-green-500/5',
+                                                item.status === 'qty-short' && 'bg-amber-50/50 dark:bg-amber-500/5',
+                                                item.status === 'date-shift' && 'bg-blue-50/50 dark:bg-blue-500/5',
+                                            )}>
+                                                <td className="px-3 py-2 font-mono text-muted-foreground">{item.line}</td>
+                                                <td className="px-3 py-2 font-bold text-foreground">{item.sku}</td>
+                                                <td className="px-3 py-2 text-foreground">{item.desc}</td>
+                                                <td className="px-3 py-2 text-center">{item.qty}</td>
+                                                <td className={cn('px-3 py-2 text-center font-bold', item.status === 'qty-short' ? 'text-amber-600 dark:text-amber-400' : 'text-foreground')}>{item.qtyAck}</td>
+                                                <td className="px-3 py-2 text-right text-muted-foreground">{item.price}</td>
+                                                <td className="px-3 py-2 text-center">
+                                                    {item.status === 'match' && <span className="text-green-600 dark:text-green-400 font-bold">✓</span>}
+                                                    {item.status === 'grommet-error' && <span className="px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/20 text-[9px] font-bold text-green-700 dark:text-green-400">AI Fixed</span>}
+                                                    {item.status === 'date-shift' && <span className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-[9px] font-bold text-blue-700 dark:text-blue-400">{item.dateShift}</span>}
+                                                    {item.status === 'qty-short' && <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-[9px] font-bold text-amber-700 dark:text-amber-400">-{item.shortfall}</span>}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="px-3 py-2 bg-muted/30 border-t border-border text-[10px] text-muted-foreground">
+                                Showing 8 of {ACK_AIS.lineItems} line items (flagged items highlighted)
+                            </div>
+                        </div>
+
+                        {/* Backorder initiated badge */}
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-800">
+                            <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
+                            <div>
+                                <p className="text-xs font-bold text-green-700 dark:text-green-400">Backorder BO-1064B Initiated</p>
+                                <p className="text-[10px] text-green-600 dark:text-green-500">3 SKUs, 6 units — awaiting approval chain</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 2.5 — Backorder & Approval Chain */}
+                {currentStep.id === '2.5' && (
+                    <div data-demo-target="backorder-approval-chain" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngestion', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'done' },
+                            { id: 'bo', name: 'Backorder', status: boPhase25 === 'generating' ? 'running' : 'done', detail: boPhase25 !== 'generating' ? 'BO-1064B' : 'creating...' },
+                            { id: 'approval', name: 'ApprovalOrch', status: boPhase25 === 'complete' ? 'done' : (boPhase25 === 'approval' ? 'running' : 'pending'), detail: boPhase25 === 'approval' ? `${approvedCount25}/3` : undefined },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="green" />
+
+                        {/* Backorder Card */}
+                        <div className={cn('p-4 rounded-2xl border shadow-sm transition-all duration-500', boPhase25 === 'generating' ? 'border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-500/5' : 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-500/5')}>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className={cn('p-2 rounded-xl', boPhase25 === 'generating' ? 'bg-blue-100 dark:bg-blue-500/15' : 'bg-green-100 dark:bg-green-500/15')}>
+                                    {boPhase25 === 'generating' ? <ClockIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" /> : <CheckCircleIcon className="w-4 h-4 text-green-600 dark:text-green-400" />}
                                 </div>
-                                {/* AI Explanation */}
-                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
-                                    <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
-                                    <span className="text-[10px] text-indigo-700 dark:text-indigo-400">2-day delivery shift is within the 5-day guardrail threshold. Auto-accepted per policy.</span>
+                                <div>
+                                    <h4 className="text-xs font-bold text-foreground">Backorder BO-1064B</h4>
+                                    <p className="text-[10px] text-muted-foreground">3 SKUs · 6 units · From ACK-7842</p>
+                                </div>
+                            </div>
+                            <div className="rounded-lg border border-border overflow-hidden">
+                                <table className="w-full text-[10px]">
+                                    <thead>
+                                        <tr className="bg-muted/50">
+                                            <th className="text-left px-3 py-1.5 font-bold text-muted-foreground">SKU</th>
+                                            <th className="text-left px-3 py-1.5 font-bold text-muted-foreground">Description</th>
+                                            <th className="text-center px-3 py-1.5 font-bold text-muted-foreground">Qty</th>
+                                            <th className="text-left px-3 py-1.5 font-bold text-muted-foreground">Reason</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border">
+                                        {FLOW2_BACKORDER_LINES.map(ln => (
+                                            <tr key={ln.sku}>
+                                                <td className="px-3 py-1.5 font-bold text-foreground">{ln.sku}</td>
+                                                <td className="px-3 py-1.5 text-foreground">{ln.desc}</td>
+                                                <td className="px-3 py-1.5 text-center font-bold text-amber-600 dark:text-amber-400">{ln.qtyBackorder}</td>
+                                                <td className="px-3 py-1.5 text-muted-foreground">{ln.reason}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Approval Chain */}
+                        {['approval', 'complete'].includes(boPhase25) && (
+                            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+                                <div className="p-4 border-b border-border">
+                                    <h3 className="text-sm font-bold text-foreground">Approval Chain — Backorder BO-1064B</h3>
+                                </div>
+                                <div className="p-4 space-y-4">
+                                    <div className="space-y-0 relative">
+                                        {[
+                                            { name: 'System Policy Engine', role: 'Auto-approval' },
+                                            { name: 'Sarah Chen', role: 'Regional Sales Manager' },
+                                            { name: 'David Park', role: 'Finance Director' },
+                                        ].map((approver, i) => (
+                                            <div key={i} className="flex items-start gap-4 relative pb-5 last:pb-0">
+                                                {i < 2 && (
+                                                    <div className={cn('absolute left-[15px] top-8 w-0.5 h-[calc(100%-16px)]', approvalStates25[i] === 'approved' ? 'bg-green-500' : 'bg-border')} />
+                                                )}
+                                                <div className={cn(
+                                                    'w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all duration-500',
+                                                    approvalStates25[i] === 'approved' && 'bg-green-500 text-white',
+                                                    approvalStates25[i] === 'pending' && i === approvedCount25 && 'bg-amber-500 text-white animate-pulse',
+                                                    approvalStates25[i] === 'pending' && i !== approvedCount25 && 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400',
+                                                )}>
+                                                    {approvalStates25[i] === 'approved' ? <CheckCircleIcon className="w-5 h-5" /> : i === approvedCount25 ? <ClockIcon className="w-5 h-5" /> : <span className="w-2 h-2 rounded-full bg-zinc-400" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className={cn('text-sm font-bold', approvalStates25[i] === 'approved' && 'text-green-700 dark:text-green-400', approvalStates25[i] === 'pending' && i === approvedCount25 && 'text-amber-700 dark:text-amber-400', approvalStates25[i] === 'pending' && i !== approvedCount25 && 'text-muted-foreground')}>{approver.name}</span>
+                                                        {approvalStates25[i] === 'approved' && <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">Approved</span>}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">{approver.role}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {/* Progress bar */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
+                                            <span className="text-[10px] font-bold text-foreground">{approvedCount25}/3</span>
+                                        </div>
+                                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                                            <div className={cn('h-full rounded-full transition-all duration-500', approvedCount25 === 3 ? 'bg-green-500' : 'bg-primary')} style={{ width: `${(approvedCount25 / 3) * 100}%` }} />
+                                        </div>
+                                    </div>
+                                    {approvedCount25 === 3 && (
+                                        <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-800 text-center animate-in fade-in zoom-in duration-300">
+                                            <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400 mx-auto mb-1" />
+                                            <p className="text-xs font-bold text-green-700 dark:text-green-400">All Approvals Complete</p>
+                                            <p className="text-[10px] text-green-600 dark:text-green-500">Backorder BO-1064B approved for processing</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Step 2.6 — Pipeline Resolution */}
+                {currentStep.id === '2.6' && (
+                    <div data-demo-target="ack-pipeline-resolved" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngestion', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'done' },
+                            { id: 'bo', name: 'Backorder', status: 'done', detail: 'BO-1064B' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'done', detail: '3/3' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="green" />
+
+                        {/* Success Banner */}
+                        <div className="p-4 rounded-2xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
+                            <div className="flex items-center gap-3">
+                                <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-bold text-green-700 dark:text-green-400">Both ACKs Resolved</p>
+                                    <p className="text-xs text-green-600 dark:text-green-500">HAT: 5 lines confirmed (AI vendor rule) · AIS: 50 lines, 3 exceptions resolved, backorder BO-1064B approved</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Escalated Card */}
-                        <div className="p-4 rounded-2xl bg-card border border-border shadow-sm">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2.5 rounded-xl bg-red-50 dark:bg-red-500/10">
-                                    <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-medium text-foreground">Requires Expert Review</h3>
-                                    <p className="text-xs text-muted-foreground">2 exceptions exceed guardrail thresholds</p>
-                                </div>
+                        {/* Pipeline Kanban */}
+                        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                            <div className="p-4 border-b border-border">
+                                <h3 className="text-sm font-bold text-foreground">ACK Pipeline — Resolved</h3>
                             </div>
-                            <div className="ml-12 space-y-3">
-                                {/* Freight Exception with Guardrail Bar */}
-                                <div className="bg-muted/50 rounded-lg px-4 py-3">
-                                    <div className="flex items-center justify-between text-xs mb-2">
-                                        <span className="text-foreground font-medium">Freight: $45 → $150 (+233%)</span>
-                                        <span className="text-red-600 dark:text-red-400 font-bold">Escalated</span>
-                                    </div>
-                                    <div className="mt-2">
-                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
-                                            <span>Price Increase</span>
-                                            <span>Threshold: +20% or +$50</span>
+                            <div className="p-4 grid grid-cols-4 gap-3">
+                                {ackStages.map((stage) => (
+                                    <div key={stage} className="space-y-2">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stage}</span>
+                                        <div className="min-h-[100px] space-y-2">
+                                            {/* HAT in Confirmed */}
+                                            {stage === 'Confirmed' && resolvedCards26.HAT !== 'hidden' && (
+                                                <div className={cn(
+                                                    'p-3 rounded-xl border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-500/5 transition-all duration-500',
+                                                    resolvedCards26.HAT === 'appearing' && 'opacity-70 scale-95',
+                                                    resolvedCards26.HAT === 'placed' && 'opacity-100 scale-100',
+                                                )}>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">HC</span>
+                                                        <span className="text-xs font-bold text-foreground">{ACK_HAT.id}</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground">HAT · {ACK_HAT.lineItems} lines</p>
+                                                    <span className="text-[9px] text-green-600 dark:text-green-400 font-medium">AI vendor rule applied</span>
+                                                </div>
+                                            )}
+                                            {/* AIS in Partial */}
+                                            {stage === 'Partial' && resolvedCards26.AIS !== 'hidden' && (
+                                                <div className={cn(
+                                                    'p-3 rounded-xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-500/5 transition-all duration-500',
+                                                    resolvedCards26.AIS === 'appearing' && 'opacity-70 scale-95',
+                                                    resolvedCards26.AIS === 'placed' && 'opacity-100 scale-100',
+                                                )}>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center">AI</span>
+                                                        <span className="text-xs font-bold text-foreground">{ACK_AIS.id}</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground">AIS · {ACK_AIS.lineItems} lines</p>
+                                                    <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-[8px] font-bold text-amber-700 dark:text-amber-400">Backorder BO-1064B</span>
+                                                </div>
+                                            )}
+                                            {/* Existing ACK cards */}
+                                            {recentAcknowledgments.filter(a => a.status === stage).map(ack => (
+                                                <div key={ack.id} className="p-2.5 rounded-lg border border-border bg-card">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={cn('w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center', ack.statusColor)}>{ack.initials}</span>
+                                                        <span className="text-[10px] font-bold text-foreground">{ack.id}</span>
+                                                    </div>
+                                                    <p className="text-[9px] text-muted-foreground">{ack.vendor}</p>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <div className="relative h-3 bg-muted rounded-full overflow-visible">
-                                            <div className="absolute h-full w-[20%] border-r-2 border-dashed border-red-500/50 rounded-l-full" />
-                                            <div className="h-full bg-red-500/60 rounded-full transition-all" style={{ width: '100%' }} />
-                                        </div>
-                                        <div className="flex items-center justify-between text-[9px] text-muted-foreground mt-1">
-                                            <span>0%</span>
-                                            <span className="text-red-600 dark:text-red-400 font-bold">+233% (exceeds +20% limit)</span>
-                                            <span>+233%</span>
-                                        </div>
                                     </div>
-                                </div>
-
-                                {/* SKU Substitution */}
-                                <div className="bg-muted/50 rounded-lg px-4 py-3">
-                                    <div className="flex items-center justify-between text-xs mb-2">
-                                        <span className="text-foreground font-medium">Line 2: SKU substitution (DSK-B → DSK-C)</span>
-                                        <span className="text-red-600 dark:text-red-400 font-bold">Escalated</span>
-                                    </div>
-                                    <div className="mt-1 px-3 py-1.5 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-800">
-                                        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">SKU changes require Expert verification per policy — automatic resolution disabled.</span>
-                                    </div>
-                                </div>
-
-                                {/* AI Recommendation */}
-                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
-                                    <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
-                                    <span className="text-[10px] text-indigo-700 dark:text-indigo-400">Accept freight if carrier surcharge justified (check BOL). DSK-C is catalog-equivalent to DSK-B — verify dimensions match project specs.</span>
-                                </div>
+                                ))}
                             </div>
+                        </div>
 
-                            <div className="mt-4 ml-12 flex items-center gap-3">
-                                <button
-                                    onClick={() => { nextStep(); onNavigateToDetail('ack-detail-ai'); }}
-                                    className="px-5 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
-                                >
-                                    Open Guided Correction
-                                    <ArrowRightIcon className="w-3.5 h-3.5" />
-                                </button>
-                                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1">
-                                    <SparklesIcon className="w-3 h-3" />
-                                    AI has pre-filled recommendations
-                                </span>
+                        {/* Send Notifications Button */}
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <SparklesIcon className="w-4 h-4 text-indigo-500" />
+                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">NotificationAgent ready — persona-aware digests for both ACKs</span>
                             </div>
+                            <button
+                                onClick={() => nextStep()}
+                                className="px-5 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg shadow-sm hover:scale-[1.02] transition-transform flex items-center gap-2"
+                            >
+                                Send Notifications
+                                <ArrowRightIcon className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
                 )}
@@ -1981,120 +2638,6 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                 <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center gap-2">
                                     <ClockIcon className="w-4 h-4 text-amber-500 shrink-0" />
                                     <span className="text-[10px] text-amber-700 dark:text-amber-300">Awaiting manager approval — notification sent to Sarah Chen</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 1.7 — Manager Approval (Sarah Chen's perspective) */}
-                {currentStep.id === '1.7' && (
-                    <div data-demo-target="manager-approval-view" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                        <AgentPipelineStrip agents={[
-                            { id: 'email', name: 'EmailIntake', status: 'done' },
-                            { id: 'ocr', name: 'OCR/Parser', status: 'done' },
-                            { id: 'norm', name: 'DataNorm', status: 'done' },
-                            { id: 'valid', name: 'Validator', status: 'done' },
-                            { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
-                            { id: 'approval', name: 'ApprovalOrch', status: 'running', detail: '1/2 approved' },
-                            { id: 'po', name: 'POBuilder', status: 'pending' },
-                            { id: 'notif', name: 'Notification', status: 'pending' },
-                        ]} accentColor="purple" />
-
-                        {/* Notification banner */}
-                        <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <BellIcon className="w-5 h-5 text-blue-500 shrink-0" />
-                            <div className="flex-1">
-                                <p className="text-xs font-bold text-blue-700 dark:text-blue-300">New Quote Approval Request</p>
-                                <p className="text-[10px] text-blue-600 dark:text-blue-400">Quote QT-1025 ($134,250) requires your review — System Policy Engine has pre-approved compliance checks</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-card glass border border-border rounded-2xl overflow-hidden shadow-lg">
-                            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center">
-                                        <UserIcon className="w-5 h-5 text-indigo-500" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold text-foreground">Quote Review — Sarah Chen</h3>
-                                        <p className="text-[10px] text-muted-foreground mt-0.5">Regional Sales Manager · Level 2 Approval</p>
-                                    </div>
-                                </div>
-                                <ConfidenceScoreBadge score={94} label="Policy Match" />
-                            </div>
-
-                            <div className="p-6 space-y-5">
-                                {/* Quote summary */}
-                                <div className="grid grid-cols-4 gap-3">
-                                    {[
-                                        { label: 'Quote ID', value: 'QT-1025' },
-                                        { label: 'Total Value', value: '$134,250' },
-                                        { label: 'Line Items', value: '5 SKUs' },
-                                        { label: 'Discount Applied', value: '4% combined' },
-                                    ].map(item => (
-                                        <div key={item.label} className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
-                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{item.label}</p>
-                                            <p className="text-sm font-bold text-foreground mt-1">{item.value}</p>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Approval trigger */}
-                                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
-                                    <p className="text-[10px] font-bold text-amber-700 dark:text-amber-300 mb-1.5">Approval Triggers</p>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
-                                            <CurrencyDollarIcon className="w-3.5 h-3.5 shrink-0" />
-                                            <span>Quote total <span className="font-bold">$134,250</span> exceeds $100,000 threshold</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
-                                            <ExclamationCircleIcon className="w-3.5 h-3.5 shrink-0" />
-                                            <span>Non-standard discounts: <span className="font-bold">Early Payment (2%) + Mixed Category (2%)</span></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* AI Analysis */}
-                                <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                                    <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
-                                    <div className="text-xs text-indigo-700 dark:text-indigo-300 space-y-1">
-                                        <p><span className="font-bold">AI Analysis:</span> All line items validated against catalog pricing. Discounts within authorized bracket for client tier. Substitution approved per policy guidelines.</p>
-                                        <p>Recommendation: <span className="font-bold text-green-600 dark:text-green-400">Approve</span> — no anomalies detected.</p>
-                                    </div>
-                                </div>
-
-                                {/* Resolved Discrepancies */}
-                                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
-                                    <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 mb-2">Resolved Discrepancies (Expert Review)</p>
-                                    <div className="space-y-1">
-                                        {[
-                                            'Freight rate adjusted: $0 → $2,450 (multi-zone LTL calculation)',
-                                            'Quantity confirmed: 125 units (PDF spec overrides email body)',
-                                            'Armrest substitution: Fixed → 4D Adjustable (+$750, eliminates 3-week lead)',
-                                        ].map((item, i) => (
-                                            <div key={i} className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
-                                                <CheckCircleIcon className="w-3.5 h-3.5 shrink-0" />
-                                                <span>{item}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Approve button */}
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => { setManagerApproved17(true); setTimeout(() => nextStep(), 1000); }}
-                                        disabled={managerApproved17}
-                                        className={`px-5 py-2.5 text-xs font-bold rounded-lg transition-all shadow-sm flex items-center gap-2 ${
-                                            managerApproved17 ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground hover:opacity-90'
-                                        }`}
-                                    >
-                                        {managerApproved17 ? <><CheckIcon className="w-3.5 h-3.5" /> Quote Approved</> : <><CheckBadgeIcon className="w-3.5 h-3.5" /> Approve Quote</>}
-                                    </button>
-                                    {managerApproved17 && (
-                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium animate-pulse">Advancing to PO generation...</span>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -2240,8 +2783,8 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                     </div>
                 )}
 
-                {/* Step 1.9 — Pipeline View with animated order card */}
-                {currentStep.id === '1.9' && (
+                {/* Step 1.10 — Pipeline View with animated order card */}
+                {currentStep.id === '1.10' && (
                     <div data-demo-target="order-pipeline-view" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         <AgentPipelineStrip agents={[
                             { id: 'email', name: 'EmailIntake', status: 'done' },
@@ -2350,7 +2893,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                 )}
 
                 {/* Hide table/pipeline when expert review panel or demo steps are active */}
-                {!(currentStep.id === '1.5' && showExpertReview) && !['1.6', '1.7', '1.8', '1.9'].includes(currentStep.id) && (viewMode === 'list' ? (
+                {!(currentStep.id === '1.5' && showExpertReview) && !['1.6', '1.8', '1.10', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6'].includes(currentStep.id) && (viewMode === 'list' ? (
                     <div className="bg-card glass border border-border rounded-2xl overflow-hidden shadow-xl shadow-black/5">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[1000px]">

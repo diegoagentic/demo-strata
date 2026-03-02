@@ -29,7 +29,8 @@ import {
     LightBulbIcon,
     Bars3BottomLeftIcon,
     Bars3Icon,
-    CpuChipIcon
+    CpuChipIcon,
+    CheckBadgeIcon
 } from '@heroicons/react/24/outline'
 import { Reorder } from 'framer-motion'
 import { useState, useMemo, useEffect, useRef } from 'react'
@@ -323,43 +324,22 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
         return () => window.removeEventListener('demo-highlight', handleHighlight as EventListener);
     }, []);
 
-    // Step 2.1 ERP Timeline Animation
-    const [erpTimelineEntries, setErpTimelineEntries] = useState(0)
+    // Step 1.7 — Manager Approval (Sara's dashboard view)
+    const [managerApproved17, setManagerApproved17] = useState(false)
+    const [notifArrived17, setNotifArrived17] = useState(false)
+    const [contentVisible17, setContentVisible17] = useState(false)
     useEffect(() => {
-        if (currentStep.id !== '2.1') { setErpTimelineEntries(0); return; }
-        let count = 0;
-        const interval = setInterval(() => {
-            count++;
-            setErpTimelineEntries(count);
-            if (count >= 3) clearInterval(interval);
-        }, 1000);
-        return () => clearInterval(interval);
+        if (currentStep.id !== '1.7') { setManagerApproved17(false); setNotifArrived17(false); setContentVisible17(false); return; }
+        const t: ReturnType<typeof setTimeout>[] = [];
+        t.push(setTimeout(() => setNotifArrived17(true), 800));
+        t.push(setTimeout(() => setContentVisible17(true), 2000));
+        return () => t.forEach(clearTimeout);
     }, [currentStep.id]);
 
-    // Step 2.7 Approval Chain Animation
-    const [approvalStates, setApprovalStates] = useState<('pending' | 'approved')[]>(['pending', 'pending', 'pending'])
-    const [notificationsVisible, setNotificationsVisible] = useState(false)
-    useEffect(() => {
-        if (currentStep.id !== '2.7') {
-            setApprovalStates(['pending', 'pending', 'pending']);
-            setNotificationsVisible(false);
-            return;
-        }
-        const timeouts: ReturnType<typeof setTimeout>[] = [];
-        timeouts.push(setTimeout(() => setApprovalStates(['approved', 'pending', 'pending']), 2000));
-        timeouts.push(setTimeout(() => setApprovalStates(['approved', 'approved', 'pending']), 4000));
-        timeouts.push(setTimeout(() => setApprovalStates(['approved', 'approved', 'approved']), 5000));
-        timeouts.push(setTimeout(() => setNotificationsVisible(true), 6000));
-        return () => timeouts.forEach(clearTimeout);
-    }, [currentStep.id]);
-
-    const approvedCount27 = approvalStates.filter(s => s === 'approved').length
-    const allApproved27 = approvedCount27 === 3
-
-    // Step 1.10 — Smart Notifications Animation (renumbered from old 1.8)
+    // Step 1.9 — Smart Notifications Animation
     const [notifDelivered18, setNotifDelivered18] = useState<number[]>([])
     useEffect(() => {
-        if (currentStep.id !== '1.10') { setNotifDelivered18([]); return; }
+        if (currentStep.id !== '1.9') { setNotifDelivered18([]); return; }
         const timeouts: ReturnType<typeof setTimeout>[] = [];
         timeouts.push(setTimeout(() => setNotifDelivered18([0]), 1500));
         timeouts.push(setTimeout(() => setNotifDelivered18([0, 1]), 3000));
@@ -501,276 +481,167 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
                 </div>
 
-                {/* ===== Step 2.1: ERP Connector Activity Panel ===== */}
-                {currentStep.id === '2.1' && (
-                    <div data-demo-target="erp-ack-event" className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
-                        {/* Header */}
-                        <div className="p-6 border-b border-border">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-blue-100 dark:bg-blue-500/15 rounded-xl">
-                                        <CpuChipIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                {/* ===== Step 1.7: Manager Approval (Sara's Dashboard) ===== */}
+                {currentStep.id === '1.7' && (
+                    <div data-demo-target="manager-approval-view" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <AgentPipelineStrip agents={[
+                            { id: 'email', name: 'EmailIntake', status: 'done' },
+                            { id: 'ocr', name: 'OCR/Parser', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'valid', name: 'Validator', status: 'done' },
+                            { id: 'quote', name: 'QuoteBuilder', status: 'done', detail: 'QT-1025' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'running', detail: '1/2 approved' },
+                            { id: 'po', name: 'POBuilder', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="purple" />
+
+                        {/* Notification arrival toast */}
+                        {notifArrived17 && (
+                            <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-300 dark:border-blue-500/30 shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-full bg-blue-500 text-white shrink-0 animate-bounce">
+                                        <BellIcon className="w-5 h-5" />
                                     </div>
-                                    <div>
-                                        <h2 className="text-lg font-brand font-bold text-foreground">ERP Connector Activity</h2>
-                                        <p className="text-xs text-muted-foreground">EDI/855 Acknowledgment received and translated</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <ConfidenceScoreBadge score={97} label="Translation" size="md" />
-                                    <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-bold flex items-center gap-1">
-                                        <ComputerDesktopIcon className="w-3.5 h-3.5" />
-                                        eManage ONE
-                                    </span>
-                                </div>
-                            </div>
-                            <AgentPipelineStrip agents={[
-                                { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855 translated' },
-                                { id: 'norm', name: 'DataNorm', status: 'pending' },
-                                { id: 'ack', name: 'ACKIngestion', status: 'pending' },
-                                { id: 'comp', name: 'POvsACK', status: 'pending' },
-                                { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
-                                { id: 'bo', name: 'Backorder', status: 'pending' },
-                                { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                                { id: 'notif', name: 'Notification', status: 'pending' },
-                            ]} accentColor="blue" />
-                        </div>
-
-                        {/* Content: EDI Document + Translation Result */}
-                        <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Left: Raw EDI Document */}
-                            <div>
-                                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                                    <DocumentTextIcon className="w-4 h-4 text-muted-foreground" />
-                                    EDI/855 Raw Document
-                                </h3>
-                                <div className="bg-zinc-900 dark:bg-zinc-950 rounded-xl p-4 font-mono text-xs text-green-400 leading-relaxed overflow-x-auto border border-zinc-800">
-                                    <div>ISA*00*          *00*          *ZZ*EMANAGEONE    *ZZ*STRATARECV    *240115*0914*U*00401</div>
-                                    <div>GS*FA*EMANAGEONE*STRATARECV*20240115*0914*1*X*004010</div>
-                                    <div>ST*855*0001</div>
-                                    <div className="text-amber-400">BAK*06*AC*ORD-2055*20240115</div>
-                                    <div>PO1*1*25*EA*89.00**VP*ERG-5100*BP*TaskChair-Ergo</div>
-                                    <div>PO1*2*30*EA*145.00**VP*DSK-2200*BP*StandDesk-Motor</div>
-                                    <div>PO1*3*10*EA*35.00**VP*ARM-4D10*BP*Armrest-4D</div>
-                                    <div className="text-red-400">PO1*4*1*EA*150.00**VP*FRT-0001*BP*FreightCharge</div>
-                                    <div>CTT*4</div>
-                                    <div>SE*8*0001</div>
-                                </div>
-                            </div>
-
-                            {/* Right: Translation Result */}
-                            <div>
-                                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                                    <LinkIcon className="w-4 h-4 text-muted-foreground" />
-                                    Translation Result
-                                </h3>
-                                <div className="rounded-xl border border-border overflow-hidden">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="bg-muted/50">
-                                                <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Field</th>
-                                                <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Value</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-border">
-                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">PO Reference</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">#ORD-2055</td></tr>
-                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">Vendor</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">eManage ONE</td></tr>
-                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">Document Type</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">855 — Purchase Order Acknowledgment</td></tr>
-                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">Line Items</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">4 lines (3 products + 1 freight)</td></tr>
-                                            <tr><td className="px-4 py-2.5 text-xs text-muted-foreground">Total Value</td><td className="px-4 py-2.5 text-xs font-bold text-foreground">$8,225.00</td></tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Animated Timeline */}
-                        <div className="px-6 pb-4">
-                            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                                <ClockIcon className="w-4 h-4 text-muted-foreground" />
-                                Connector Activity Log
-                            </h3>
-                            <div className="space-y-2">
-                                {[
-                                    { time: '09:14:02', msg: 'EDI/855 document received from eManage ONE', icon: ArrowDownTrayIcon },
-                                    { time: '09:14:03', msg: 'ERPConnectorAgent parsing ISA/GS/ST segments...', icon: CpuChipIcon },
-                                    { time: '09:14:04', msg: 'Translation complete — PO #ORD-2055 mapped to 4 line items', icon: CheckCircleIcon },
-                                ].slice(0, erpTimelineEntries).map((entry, i) => (
-                                    <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-muted/30 border border-border/50 animate-in fade-in slide-in-from-left-4 duration-300">
-                                        <entry.icon className="w-4 h-4 text-blue-500 shrink-0" />
-                                        <span className="font-mono text-[10px] text-muted-foreground shrink-0">{entry.time}</span>
-                                        <span className="text-xs text-foreground">{entry.msg}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* AI Attribution + CTA */}
-                        <div className="p-4 bg-muted/30 border-t border-border flex items-center justify-between">
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
-                                <SparklesIcon className="w-4 h-4 text-indigo-500" />
-                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">AI Connector translated EDI/855 in 1.2s</span>
-                            </div>
-                            <button
-                                onClick={() => nextStep()}
-                                className="px-6 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg shadow-sm hover:scale-[1.02] transition-transform flex items-center gap-2"
-                            >
-                                Continue to Normalization
-                                <ArrowRightIcon className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* ===== Step 2.7: Approval & Notifications ===== */}
-                {currentStep.id === '2.7' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                        {/* Full Pipeline - All Done */}
-                        <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-green-100 dark:bg-green-500/15 rounded-xl">
-                                    <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-brand font-bold text-foreground">Flow Complete — Approval & Notifications</h2>
-                                    <p className="text-xs text-muted-foreground">All 8 agents have completed processing for PO #ORD-2055</p>
-                                </div>
-                            </div>
-                            <AgentPipelineStrip agents={[
-                                { id: 'erp', name: 'ERPConnector', status: 'done' },
-                                { id: 'norm', name: 'DataNorm', status: 'done' },
-                                { id: 'ack', name: 'ACKIngestion', status: 'done' },
-                                { id: 'comp', name: 'POvsACK', status: 'done', detail: '2 exceptions' },
-                                { id: 'discrep', name: 'DiscrepResolver', status: 'done', detail: '1 auto, 1 manual' },
-                                { id: 'bo', name: 'Backorder', status: 'done', detail: '2 lines split' },
-                                { id: 'approval', name: 'ApprovalOrch', status: 'done' },
-                                { id: 'notif', name: 'Notification', status: 'done' },
-                            ]} accentColor="green" />
-                        </div>
-
-                        {/* Inline Approval Chain */}
-                        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-border">
-                                <h3 className="text-sm font-bold text-foreground mb-1">Approval Chain</h3>
-                                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-800 mt-3">
-                                    <div className="flex items-center gap-2">
-                                        <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Trigger: Freight increase +233% + Backorder delivery impact</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="p-6 space-y-6">
-                                {/* Approver Chain */}
-                                <div className="space-y-0 relative">
-                                    {[
-                                        { name: 'Sarah Chen', role: 'Logistics Manager' },
-                                        { name: 'David Park', role: 'Finance Director' },
-                                        { name: 'System', role: 'Policy Engine' },
-                                    ].map((approver, i) => (
-                                        <div key={i} className="flex items-start gap-4 relative pb-6 last:pb-0">
-                                            {i < 2 && (
-                                                <div className={cn(
-                                                    'absolute left-[15px] top-8 w-0.5 h-[calc(100%-16px)]',
-                                                    approvalStates[i] === 'approved' ? 'bg-green-500' : 'bg-border'
-                                                )} />
-                                            )}
-                                            <div className={cn(
-                                                'w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all duration-500',
-                                                approvalStates[i] === 'approved' && 'bg-green-500 text-white',
-                                                approvalStates[i] === 'pending' && i === approvedCount27 && 'bg-amber-500 text-white animate-pulse',
-                                                approvalStates[i] === 'pending' && i !== approvedCount27 && 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400',
-                                            )}>
-                                                {approvalStates[i] === 'approved' ? (
-                                                    <CheckCircleIcon className="w-5 h-5" />
-                                                ) : i === approvedCount27 ? (
-                                                    <ClockIcon className="w-5 h-5" />
-                                                ) : (
-                                                    <span className="w-2 h-2 rounded-full bg-zinc-400" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <span className={cn(
-                                                        'text-sm font-bold',
-                                                        approvalStates[i] === 'approved' && 'text-green-700 dark:text-green-400',
-                                                        approvalStates[i] === 'pending' && i === approvedCount27 && 'text-amber-700 dark:text-amber-400',
-                                                        approvalStates[i] === 'pending' && i !== approvedCount27 && 'text-muted-foreground',
-                                                    )}>
-                                                        {approver.name}
-                                                    </span>
-                                                    {approvalStates[i] === 'approved' && (
-                                                        <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">Auto-approved</span>
-                                                    )}
-                                                </div>
-                                                <p className="text-xs text-muted-foreground">{approver.role}</p>
-                                            </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="text-sm font-bold text-blue-700 dark:text-blue-300">New Quote Approval Request</p>
+                                            <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold">NEW</span>
                                         </div>
-                                    ))}
+                                        <p className="text-xs text-blue-600 dark:text-blue-400">Quote <span className="font-bold">QT-1025</span> from <span className="font-bold">Apex Furniture</span> — <span className="font-bold">$134,250</span></p>
+                                        <p className="text-[10px] text-blue-500 dark:text-blue-400 mt-1">System Policy Engine pre-approved · Awaiting your Level 2 authorization</p>
+                                    </div>
+                                    <span className="text-[10px] text-blue-500 dark:text-blue-400 font-medium shrink-0">Just now</span>
                                 </div>
-
-                                {/* Progress bar */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
-                                        <span className="text-[10px] font-bold text-foreground">{approvedCount27}/3</span>
-                                    </div>
-                                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                        <div
-                                            className={cn('h-full rounded-full transition-all duration-500', allApproved27 ? 'bg-green-500' : 'bg-primary')}
-                                            style={{ width: `${(approvedCount27 / 3) * 100}%` }}
-                                        />
-                                    </div>
-                                </div>
-
-                                {allApproved27 && (
-                                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-800 text-center animate-in fade-in zoom-in duration-300">
-                                        <CheckCircleIcon className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                                        <p className="text-sm font-bold text-green-700 dark:text-green-400">All Approvals Complete</p>
-                                        <p className="text-xs text-green-600 dark:text-green-500 mt-1">Order #ORD-2055 is fully approved for processing</p>
-                                    </div>
-                                )}
                             </div>
-                        </div>
+                        )}
 
-                        {/* Smart Notifications Panel */}
-                        {notificationsVisible && (
-                            <div data-demo-target={currentStep.id === '1.10' ? 'action-center-notifications' : 'action-center-ack-notify'} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="p-6 border-b border-border">
+                        {/* Main approval card — appears after notification */}
+                        {contentVisible17 && (
+                            <div className="bg-card glass border border-border rounded-2xl overflow-hidden shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between bg-indigo-50/50 dark:bg-indigo-500/5">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-indigo-100 dark:bg-indigo-500/15 rounded-xl">
-                                            <BellIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                                        </div>
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center text-sm font-bold">SC</div>
                                         <div>
-                                            <h3 className="text-sm font-bold text-foreground">Smart Notifications</h3>
-                                            <p className="text-xs text-muted-foreground">NotificationAgent generated persona-aware digests</p>
+                                            <h3 className="text-sm font-bold text-foreground">Approval Request — Sarah Chen</h3>
+                                            <p className="text-[10px] text-muted-foreground mt-0.5">Regional Sales Manager · Level 2 Authorization</p>
                                         </div>
                                     </div>
+                                    <ConfidenceScoreBadge score={94} label="Policy Match" />
                                 </div>
-                                <div className="p-6 space-y-4">
-                                    {/* Dealer Notification */}
-                                    <div className="p-4 rounded-xl border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-500/5">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <BuildingStorefrontIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
-                                            <span className="text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Dealer Notification</span>
+
+                                <div className="p-6 space-y-5">
+                                    {/* Quote summary — enhanced with customer info */}
+                                    <div>
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                                            {[
+                                                { label: 'Quote ID', value: 'QT-1025' },
+                                                { label: 'Customer', value: 'Apex Furniture' },
+                                                { label: 'Total Value', value: '$134,250' },
+                                                { label: 'Delivery Est.', value: 'Mar 15, 2026' },
+                                            ].map(item => (
+                                                <div key={item.label} className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
+                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{item.label}</p>
+                                                    <p className="text-sm font-bold text-foreground mt-1">{item.value}</p>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <p className="text-sm text-foreground font-medium">ACK received for PO #ORD-2055 — 2 exceptions resolved, backorder created for 23 units (ETA: Feb 28).</p>
-                                        <p className="text-xs text-muted-foreground mt-2">Sent to: Dealer Portal Dashboard + Email Digest</p>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="p-2.5 rounded-lg bg-muted/20 border border-border/50">
+                                                <p className="text-[10px] text-muted-foreground">Project</p>
+                                                <p className="text-xs font-bold text-foreground">New HQ RFQ — Austin, TX</p>
+                                            </div>
+                                            <div className="p-2.5 rounded-lg bg-muted/20 border border-border/50">
+                                                <p className="text-[10px] text-muted-foreground">Payment Terms</p>
+                                                <p className="text-xs font-bold text-foreground">Net 30 (2% early pay)</p>
+                                            </div>
+                                            <div className="p-2.5 rounded-lg bg-muted/20 border border-border/50">
+                                                <p className="text-[10px] text-muted-foreground">Discount</p>
+                                                <p className="text-xs font-bold text-foreground">4% combined ($5,370)</p>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    {/* Expert Notification */}
-                                    <div className="p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-500/5">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <UsersIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                            <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Expert Notification</span>
+                                    {/* Line item breakdown */}
+                                    <div className="rounded-xl border border-border overflow-hidden">
+                                        <div className="px-3 py-2 bg-muted/50 border-b border-border">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Line Item Summary — 5 SKUs</p>
                                         </div>
-                                        <p className="text-sm text-foreground font-medium">Freight override approved. SKU substitution verified. Next queue: 3 pending ACKs awaiting review.</p>
-                                        <p className="text-xs text-muted-foreground mt-2">Sent to: Expert Hub Queue + Slack Channel</p>
+                                        <table className="w-full text-xs">
+                                            <tbody className="divide-y divide-border">
+                                                {[
+                                                    { sku: 'ERG-5100', name: 'Ergonomic Task Chair', qty: 125, subtotal: '$43,750' },
+                                                    { sku: 'DSK-2200', name: 'Height-Adjustable Desk', qty: 80, subtotal: '$46,400' },
+                                                    { sku: 'ARM-4D10', name: '4D Adjustable Armrest', qty: 125, subtotal: '$2,250' },
+                                                    { sku: 'MON-3400', name: 'Monitor Arm Dual', qty: 60, subtotal: '$8,700' },
+                                                    { sku: 'CAB-1100', name: 'Mobile Pedestal Cabinet', qty: 40, subtotal: '$8,800' },
+                                                ].map(ln => (
+                                                    <tr key={ln.sku}>
+                                                        <td className="px-3 py-2 font-mono text-[10px] text-muted-foreground w-20">{ln.sku}</td>
+                                                        <td className="px-3 py-2 text-foreground">{ln.name}</td>
+                                                        <td className="px-3 py-2 text-center text-muted-foreground w-16">×{ln.qty}</td>
+                                                        <td className="px-3 py-2 text-right font-bold text-foreground w-24">{ln.subtotal}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
 
-                                    {/* AI Note */}
-                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
-                                        <SparklesIcon className="w-4 h-4 text-indigo-500 shrink-0" />
-                                        <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Dealer receives full lifecycle summary. Expert receives only actionable items — reducing noise by 60%.</span>
+                                    {/* Approval triggers */}
+                                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+                                        <p className="text-[10px] font-bold text-amber-700 dark:text-amber-300 mb-1.5">Why This Requires Approval</p>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                                                <CurrencyDollarIcon className="w-3.5 h-3.5 shrink-0" />
+                                                <span>Quote total <span className="font-bold">$134,250</span> exceeds $100,000 threshold</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+                                                <ExclamationCircleIcon className="w-3.5 h-3.5 shrink-0" />
+                                                <span>Non-standard discounts: <span className="font-bold">Early Payment (2%) + Mixed Category (2%)</span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* AI Analysis */}
+                                    <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                                        <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                                        <div className="text-xs text-indigo-700 dark:text-indigo-300 space-y-1">
+                                            <p><span className="font-bold">AI Analysis:</span> All line items validated against catalog pricing. Discounts within authorized bracket for client tier. Armrest substitution eliminates 3-week lead time.</p>
+                                            <p>Recommendation: <span className="font-bold text-green-600 dark:text-green-400">Approve</span> — no anomalies detected.</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Resolved Discrepancies */}
+                                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20">
+                                        <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 mb-2">Resolved by Expert (Step 1.5)</p>
+                                        <div className="space-y-1">
+                                            {[
+                                                'Freight rate adjusted: $0 → $2,450 (multi-zone LTL calculation)',
+                                                'Quantity confirmed: 125 units (PDF spec overrides email body)',
+                                                'Armrest substitution: Fixed → 4D Adjustable (+$750, eliminates 3-week lead)',
+                                            ].map((item, i) => (
+                                                <div key={i} className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
+                                                    <CheckCircleIcon className="w-3.5 h-3.5 shrink-0" />
+                                                    <span>{item}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Approve button */}
+                                    <div className="flex items-center gap-3 pt-1">
+                                        <button
+                                            onClick={() => { setManagerApproved17(true); setTimeout(() => nextStep(), 1000); }}
+                                            disabled={managerApproved17}
+                                            className={cn(
+                                                'px-6 py-3 text-sm font-bold rounded-xl transition-all shadow-sm flex items-center gap-2',
+                                                managerApproved17 ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground hover:opacity-90 hover:scale-[1.02]'
+                                            )}
+                                        >
+                                            {managerApproved17 ? <><CheckIcon className="w-4 h-4" /> Quote Approved</> : <><CheckBadgeIcon className="w-4 h-4" /> Approve Quote</>}
+                                        </button>
+                                        {managerApproved17 && (
+                                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium animate-pulse">Advancing to PO generation...</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -778,8 +649,42 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                     </div>
                 )}
 
+                {/* ===== Step 2.7: Smart Notifications (Action Center opens in Navbar) ===== */}
+                {currentStep.id === '2.7' && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* Pipeline Strip */}
+                        <AgentPipelineStrip agents={[
+                            { id: 'erp', name: 'ERPConnector', status: 'done' },
+                            { id: 'norm', name: 'DataNorm', status: 'done' },
+                            { id: 'ack', name: 'ACKIngestion', status: 'done' },
+                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '3 exceptions' },
+                            { id: 'discrep', name: 'DiscrepResolver', status: 'done', detail: '2 auto, 1 manual' },
+                            { id: 'bo', name: 'Backorder', status: 'done', detail: 'BO-1064B' },
+                            { id: 'approval', name: 'ApprovalOrch', status: 'done' },
+                            { id: 'notif', name: 'Notification', status: 'done' },
+                        ]} accentColor="green" />
+
+                        {/* AI Attribution */}
+                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                            <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
+                                <span className="font-bold">NotificationAgent:</span> Generated 4 persona-specific notifications from 8-agent ACK pipeline. Dealer receives full lifecycle summary. Expert receives only actionable items — reducing noise by 60%.
+                            </div>
+                        </div>
+
+                        {/* Completion Summary */}
+                        <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 space-y-2">
+                            <div className="flex items-center gap-2">
+                                <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                <h3 className="text-sm font-bold text-green-700 dark:text-green-400">Flow 2 Complete — ACK Processing</h3>
+                            </div>
+                            <p className="text-xs text-green-600 dark:text-green-500 ml-7">2 ACKs processed for Premier Underground Design. HAT: 5 lines confirmed (AI vendor rule). AIS: 50 lines, 3 exceptions resolved, backorder BO-1064B approved.</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* ===== Step 1.10: Smart Notifications (Action Center opens in Navbar) ===== */}
-                {currentStep.id === '1.10' && (
+                {currentStep.id === '1.9' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Pipeline Strip */}
                         <AgentPipelineStrip agents={[
@@ -807,7 +712,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                             <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 space-y-3 animate-in fade-in duration-500">
                                 <div className="flex items-center gap-2">
                                     <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                                    <span className="text-sm font-bold text-green-700 dark:text-green-300">Flow 1 Complete — Email Intake to PO</span>
+                                    <span className="text-sm font-bold text-green-700 dark:text-green-300">Flow 1 Complete — RFQ to PO Processing</span>
                                 </div>
                                 <div className="grid grid-cols-4 gap-3">
                                     {[

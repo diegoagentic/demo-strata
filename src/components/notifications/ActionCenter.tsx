@@ -9,6 +9,38 @@ import ChatView from './ChatView';
 import type { Notification, NotificationTab } from './types';
 import { useDemo } from '../../context/DemoContext';
 
+// Flow 2 notifications for Step 2.7
+const FLOW2_NOTIFICATIONS: Notification[] = [
+    {
+        id: 'f2-hat-confirmed', type: 'ack_received', priority: 'low',
+        title: 'ACK-7841 (HAT) — Confirmed',
+        message: '5 lines confirmed. AI vendor rule applied: part number match is sufficient per client directive.',
+        meta: 'ACKIngestionAgent', timestamp: 'Just now', unread: true,
+        actions: [{ label: 'View ACK', primary: true }], persona: 'dealer',
+    },
+    {
+        id: 'f2-ais-resolved', type: 'ack_received', priority: 'high',
+        title: 'ACK-7842 (AIS) — 3 Exceptions Resolved',
+        message: '50 lines processed. Grommet corrected (Line 41), dates accepted (+14/+11 days), backorder BO-1064B created for 6 units.',
+        meta: 'DiscrepResolverAgent', timestamp: 'Just now', unread: true,
+        actions: [{ label: 'View Details', primary: true }], persona: 'dealer',
+    },
+    {
+        id: 'f2-backorder', type: 'backorder', priority: 'high',
+        title: 'Backorder BO-1064B Approved',
+        message: '3 SKUs, 6 units. All 3 approvers confirmed. Processing initiated.',
+        meta: 'BackorderAgent', timestamp: '1 min ago', unread: true,
+        actions: [{ label: 'Track', primary: true }], persona: 'dealer',
+    },
+    {
+        id: 'f2-expert-queue', type: 'system', priority: 'medium',
+        title: 'Expert Queue Update',
+        message: 'ACK-7842 grommet auto-corrected (Line 41, X-DS6030 CB). Next queue: 2 pending ACKs.',
+        meta: 'NotificationAgent', timestamp: '2 min ago', unread: true,
+        actions: [{ label: 'View Queue', primary: true }], persona: 'expert',
+    },
+];
+
 // Flow 1 notifications for Step 1.8
 const FLOW1_NOTIFICATIONS: Notification[] = [
     {
@@ -49,24 +81,38 @@ const FLOW1_NOTIFICATIONS: Notification[] = [
 ];
 
 export default function ActionCenter() {
-    const { isDemoActive, isSidebarCollapsed, currentStep } = useDemo();
+    const { isDemoActive, isSidebarCollapsed, currentStep, nextStep } = useDemo();
     const sidebarExpanded = isDemoActive && !isSidebarCollapsed;
     const [activeTab, setActiveTab] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentView, setCurrentView] = useState<'list' | 'chat'>('list');
 
-    // Step 1.10: Auto-open with animated delivery (renumbered from old 1.8)
-    const isStep18 = isDemoActive && currentStep?.id === '1.10';
+    // Step 1.9: Auto-open with animated delivery
+    const isStep19 = isDemoActive && currentStep?.id === '1.9';
     const [notifDelivered, setNotifDelivered] = useState<number[]>([]);
 
     useEffect(() => {
-        if (!isStep18) { setNotifDelivered([]); return; }
+        if (!isStep19) { setNotifDelivered([]); return; }
         const timeouts: ReturnType<typeof setTimeout>[] = [];
         timeouts.push(setTimeout(() => setNotifDelivered([0]), 1500));
         timeouts.push(setTimeout(() => setNotifDelivered([0, 1]), 3000));
         timeouts.push(setTimeout(() => setNotifDelivered([0, 1, 2]), 4500));
         return () => timeouts.forEach(clearTimeout);
-    }, [isStep18]);
+    }, [isStep19]);
+
+    // Step 2.7: Auto-open with animated delivery for Flow 2 ACK notifications
+    const isStep27 = isDemoActive && currentStep?.id === '2.7';
+    const [notifDelivered27, setNotifDelivered27] = useState<number[]>([]);
+
+    useEffect(() => {
+        if (!isStep27) { setNotifDelivered27([]); return; }
+        const timeouts: ReturnType<typeof setTimeout>[] = [];
+        timeouts.push(setTimeout(() => setNotifDelivered27([0]), 1500));
+        timeouts.push(setTimeout(() => setNotifDelivered27([0, 1]), 3000));
+        timeouts.push(setTimeout(() => setNotifDelivered27([0, 1, 2]), 4500));
+        timeouts.push(setTimeout(() => setNotifDelivered27([0, 1, 2, 3]), 6000));
+        return () => timeouts.forEach(clearTimeout);
+    }, [isStep27]);
 
     const tabs: NotificationTab[] = [
         {
@@ -211,13 +257,23 @@ export default function ActionCenter() {
     const urgentCount = mockNotifications.filter(n => n.priority === 'high').length;
     const totalCount = mockNotifications.filter(n => n.unread).length;
 
-    // Flow 1 tabs for step 1.8
+    // Flow 1 tabs for step 1.9
     const flow1Tabs: NotificationTab[] = [
         { id: 'all', label: 'All', count: FLOW1_NOTIFICATIONS.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-zinc-800 dark:bg-white/10', activeText: 'text-white', activeBorder: 'border-white/10', badgeBg: 'bg-white/20', badgeText: 'text-white' }, filter: () => true },
         { id: 'discrepancy', label: 'Discrepancies', count: FLOW1_NOTIFICATIONS.filter(n => n.type === 'discrepancy').length, icon: ExclamationTriangleIcon, colorTheme: { activeBg: 'bg-red-500/15', activeText: 'text-red-500', activeBorder: 'border-red-500/20', badgeBg: 'bg-red-500/20', badgeText: 'text-red-500' }, filter: (n) => n.type === 'discrepancy' },
         { id: 'quotes', label: 'Quotes & POs', count: FLOW1_NOTIFICATIONS.filter(n => n.type === 'po_created' || n.type === 'quote_update').length, icon: DocumentTextIcon, colorTheme: { activeBg: 'bg-blue-500/15', activeText: 'text-blue-500', activeBorder: 'border-blue-500/20', badgeBg: 'bg-blue-500/20', badgeText: 'text-blue-500' }, filter: (n) => n.type === 'po_created' || n.type === 'quote_update' },
         { id: 'approval', label: 'Approvals', count: FLOW1_NOTIFICATIONS.filter(n => n.type === 'approval').length, icon: ClipboardDocumentCheckIcon, colorTheme: { activeBg: 'bg-green-500/15', activeText: 'text-green-500', activeBorder: 'border-green-500/20', badgeBg: 'bg-green-500/20', badgeText: 'text-green-500' }, filter: (n) => n.type === 'approval' },
     ];
+
+    // Flow 2 tabs for step 2.7
+    const flow2Tabs: NotificationTab[] = [
+        { id: 'all', label: 'All', count: FLOW2_NOTIFICATIONS.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-zinc-800 dark:bg-white/10', activeText: 'text-white', activeBorder: 'border-white/10', badgeBg: 'bg-white/20', badgeText: 'text-white' }, filter: () => true },
+        { id: 'acks', label: 'ACKs', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'ack_received').length, icon: DocumentTextIcon, colorTheme: { activeBg: 'bg-blue-500/15', activeText: 'text-blue-500', activeBorder: 'border-blue-500/20', badgeBg: 'bg-blue-500/20', badgeText: 'text-blue-500' }, filter: (n) => n.type === 'ack_received' },
+        { id: 'shipping', label: 'Backorders', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'backorder').length, icon: TruckIcon, colorTheme: { activeBg: 'bg-green-500/15', activeText: 'text-green-500', activeBorder: 'border-green-500/20', badgeBg: 'bg-green-500/20', badgeText: 'text-green-500' }, filter: (n) => n.type === 'backorder' },
+        { id: 'system', label: 'System', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'system').length, icon: CpuChipIcon, colorTheme: { activeBg: 'bg-indigo-500/15', activeText: 'text-indigo-500', activeBorder: 'border-indigo-500/20', badgeBg: 'bg-indigo-500/20', badgeText: 'text-indigo-500' }, filter: (n) => n.type === 'system' },
+    ];
+
+    const isStepAutoOpen = isStep19 || isStep27;
 
     return (
         <>
@@ -226,10 +282,10 @@ export default function ActionCenter() {
                 <>
                     <PopoverButton className={clsx(
                         "relative p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors outline-none",
-                        (open || isStep18) ? "bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        (open || isStepAutoOpen) ? "bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white" : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     )}>
                         <BellIcon className="w-5 h-5" />
-                        {isStep18 && (
+                        {isStepAutoOpen && (
                             <span className="absolute inset-0 rounded-full ring-2 ring-green-500 animate-pulse" />
                         )}
                         {totalCount > 0 && (
@@ -237,8 +293,8 @@ export default function ActionCenter() {
                         )}
                     </PopoverButton>
 
-                    {/* Normal popover - hidden when step 1.8 to avoid duplication */}
-                    {!isStep18 && <Transition
+                    {/* Normal popover - hidden when auto-open steps to avoid duplication */}
+                    {!isStepAutoOpen && <Transition
                         as={Fragment}
                         enter="transition ease-out duration-200"
                         enterFrom="opacity-0 translate-y-2 scale-95"
@@ -320,8 +376,8 @@ export default function ActionCenter() {
             )}
         </Popover>
 
-        {/* Step 1.8: Always-visible Action Center with Flow 1 notifications */}
-        {isStep18 && (
+        {/* Step 1.9: Always-visible Action Center with Flow 1 notifications */}
+        {isStep19 && (
             <div className={clsx("fixed top-[90px] -translate-x-1/2 w-[95vw] max-h-[85vh] lg:w-[600px] p-0 z-50 animate-in fade-in slide-in-from-top-2 duration-300", sidebarExpanded ? 'left-[calc(50%+10rem)]' : 'left-1/2')}>
                 <div className="bg-zinc-100 dark:bg-zinc-900/85 backdrop-blur-xl border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[80vh]">
                     {/* Header */}
@@ -356,7 +412,12 @@ export default function ActionCenter() {
                                 )}
                             >
                                 <div className="relative">
-                                    <NotificationItem notification={notification} />
+                                    <NotificationItem
+                                        notification={notification}
+                                        onActionClick={(action) => {
+                                            if (action === 'View PO') nextStep();
+                                        }}
+                                    />
                                     {i >= 2 && notifDelivered.includes(i - 2) && (
                                         <span className="absolute top-3 right-3 text-[9px] font-bold text-green-600 dark:text-green-400 flex items-center gap-1 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full">
                                             <CheckCircleIcon className="w-3 h-3" /> Delivered
@@ -375,6 +436,67 @@ export default function ActionCenter() {
                         <p className="text-xs font-bold text-red-500 flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
                             {FLOW1_NOTIFICATIONS.filter(n => n.priority === 'high').length} urgent
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Step 2.7: Always-visible Action Center with Flow 2 ACK notifications */}
+        {isStep27 && (
+            <div className={clsx("fixed top-[90px] -translate-x-1/2 w-[95vw] max-h-[85vh] lg:w-[600px] p-0 z-50 animate-in fade-in slide-in-from-top-2 duration-300", sidebarExpanded ? 'left-[calc(50%+10rem)]' : 'left-1/2')}>
+                <div className="bg-zinc-100 dark:bg-zinc-900/85 backdrop-blur-xl border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[80vh]">
+                    {/* Header */}
+                    <div className="px-5 pt-5 pb-3 shrink-0">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Action Center</h3>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 font-bold">Flow 2</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-colors">
+                                    <MagnifyingGlassIcon className="w-5 h-5" />
+                                </button>
+                                <button className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 transition-colors">
+                                    <XMarkIcon className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                        <FilterTabs tabs={flow2Tabs} activeTab="all" onTabChange={() => {}} />
+                    </div>
+
+                    {/* Flow 2 Notifications */}
+                    <div className="flex-1 overflow-y-auto min-h-0 px-5 pb-4 space-y-3 scrollbar-minimal">
+                        {FLOW2_NOTIFICATIONS.map((notification, i) => (
+                            <div
+                                key={notification.id}
+                                className={clsx(
+                                    "transition-all duration-700",
+                                    notifDelivered27.includes(i)
+                                        ? 'opacity-100 translate-y-0'
+                                        : 'opacity-0 translate-y-4 h-0 overflow-hidden'
+                                )}
+                            >
+                                <div className="relative">
+                                    <NotificationItem notification={notification} />
+                                    {notifDelivered27.includes(i) && (
+                                        <span className="absolute top-3 right-3 text-[9px] font-bold text-green-600 dark:text-green-400 flex items-center gap-1 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full">
+                                            <CheckCircleIcon className="w-3 h-3" /> Delivered
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-5 py-3 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 backdrop-blur-md flex items-center justify-between shrink-0">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                            {notifDelivered27.length} actions
+                        </p>
+                        <p className="text-xs font-bold text-red-500 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            {FLOW2_NOTIFICATIONS.filter(n => n.priority === 'high').length} urgent
                         </p>
                     </div>
                 </div>

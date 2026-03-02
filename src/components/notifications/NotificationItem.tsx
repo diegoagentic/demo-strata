@@ -52,8 +52,7 @@ export default function NotificationItem({ notification, onActionClick }: { noti
     const [actionState, setActionState] = useState<Record<number, string>>({});
 
     const handleActionClick = (actionLabel: string, index: number) => {
-        // Fix: Use callback for Reply action if available
-        if (actionLabel === 'Reply' && onActionClick) {
+        if (onActionClick) {
             onActionClick(actionLabel);
             return;
         }

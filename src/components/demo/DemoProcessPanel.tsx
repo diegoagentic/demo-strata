@@ -20,7 +20,7 @@ import type { AgentStep } from '../simulations/AgentPipelineStrip';
 import ConfidenceScoreBadge from '../widgets/ConfidenceScoreBadge';
 
 // Steps that show the floating lupa panel
-const PANEL_STEPS = ['1.2', '1.3', '1.4', '2.2', '2.3', '3.1'];
+const PANEL_STEPS = ['1.2', '1.3', '1.4', '3.1'];
 
 interface DemoProcessPanelProps {
     onNavigate?: (page: string) => void;
