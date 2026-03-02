@@ -72,7 +72,7 @@ const DiscrepancyResolutionFlow = () => {
 
     if (status === 'initial') {
         return (
-            <div className="flex flex-col gap-3">
+            <div data-demo-target="expert-ack-fix" className="flex flex-col gap-3">
                 <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium tracking-tight">
                     <SparklesIcon className="w-5 h-5 text-primary" />
                     Found 2 discrepancies against PO #ORD-2055.

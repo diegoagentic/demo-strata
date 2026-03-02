@@ -73,16 +73,18 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
 
                 {/* Step 3.5: Warranty Claims Pipeline */}
                 {currentStep?.id === '3.5' && (
-                    <AgentPipelineStrip agents={[
-                        { id: 'doc-class', name: 'DocClassifier', status: 'done' },
-                        { id: 'ocr', name: 'OCR/Extract', status: 'done' },
-                        { id: 'data-norm', name: 'DataNorm', status: 'done' },
-                        { id: 'match', name: '3-WayMatch', status: 'done' },
-                        { id: 'mac', name: 'MACOrch', status: 'done' },
-                        { id: 'warranty', name: 'WarrantyAgent', status: 'running', detail: 'Claim assembly' },
-                        { id: 'liability', name: 'LiabilityAI', status: 'pending' },
-                        { id: 'notif', name: 'Notification', status: 'pending' },
-                    ]} accentColor="amber" />
+                    <div data-demo-target="warranty-claim-package">
+                        <AgentPipelineStrip agents={[
+                            { id: 'doc-class', name: 'DocClassifier', status: 'done' },
+                            { id: 'ocr', name: 'OCR/Extract', status: 'done' },
+                            { id: 'data-norm', name: 'DataNorm', status: 'done' },
+                            { id: 'match', name: '3-WayMatch', status: 'done' },
+                            { id: 'mac', name: 'MACOrch', status: 'done' },
+                            { id: 'warranty', name: 'WarrantyAgent', status: 'running', detail: 'Claim assembly' },
+                            { id: 'liability', name: 'LiabilityAI', status: 'pending' },
+                            { id: 'notif', name: 'Notification', status: 'pending' },
+                        ]} accentColor="amber" />
+                    </div>
                 )}
 
                 {/* Tabs */}
@@ -122,7 +124,7 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
 
                 {/* Step 3.4: AI Validation Banner */}
                 {currentStep?.id === '3.4' && activeTab === 'requests' && (
-                    <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div data-demo-target="mac-orchestrator" className="p-4 rounded-2xl bg-green-500/10 border border-green-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-green-500/20 rounded-xl">

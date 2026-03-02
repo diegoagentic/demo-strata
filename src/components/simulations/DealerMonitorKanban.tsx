@@ -1,9 +1,5 @@
-import React from 'react';
 import {
-    BarChart3,
-    Users,
     Settings,
-    Bell,
     Search,
     Filter,
     Plus,
@@ -14,16 +10,9 @@ import {
     Clock,
     ArrowUpRight,
     Bot,
-    Loader2,
-    FileText,
-    BrainCircuit,
-    Cpu
 } from 'lucide-react';
 import { useDemo } from '../../context/DemoContext';
 import { useTheme } from 'strata-design-system';
-import AgentPipelineStrip from './AgentPipelineStrip';
-import type { AgentStep } from './AgentPipelineStrip';
-import ConfidenceScoreBadge from '../widgets/ConfidenceScoreBadge';
 
 const COLUMNS = [
     { id: 'awaiting', title: 'Awaiting Validation', count: 12 },
@@ -40,295 +29,14 @@ const CARDS = [
     { id: 6, title: 'Invoice #INV-9001', dealer: 'AutoManufacture Co.', status: 'Document Processing', column: 'active', priority: 'high', aiInsight: 'AI classified as INVOICE. Routed to 3-Way Match Engine for PO/ACK/Invoice reconciliation.' }
 ];
 
-export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page: string) => void }) {
+// Steps where each card gets a minimal "processing" indicator (detail is in DemoProcessPanel)
+const CARD1_PANEL_STEPS = ['1.2', '1.3', '1.4'];
+const CARD5_PANEL_STEPS = ['2.2', '2.3'];
+const CARD6_PANEL_STEPS = ['3.1'];
+
+export default function DealerMonitorKanban(_props: { onNavigate?: (page: string) => void }) {
     const { theme } = useTheme();
-    const { currentStep, nextStep } = useDemo();
-    const [agentProgress, setAgentProgress] = React.useState(0);
-    const [agentLogs, setAgentLogs] = React.useState<string[]>([]);
-    const [pipelineAgents, setPipelineAgents] = React.useState<AgentStep[]>([]);
-    const [confidenceFields, setConfidenceFields] = React.useState<{ field: string; score: number }[]>([]);
-    const [autoClickHighlight, setAutoClickHighlight] = React.useState(false);
-
-    // Auto-advance from step 1.2 after 6s with simulated card click
-    React.useEffect(() => {
-        if (currentStep.id !== '1.2') {
-            setAutoClickHighlight(false);
-            return;
-        }
-        const highlightTimer = setTimeout(() => setAutoClickHighlight(true), 6000);
-        const advanceTimer = setTimeout(() => nextStep(), 7000);
-        return () => {
-            clearTimeout(highlightTimer);
-            clearTimeout(advanceTimer);
-        };
-    }, [currentStep.id, nextStep]);
-
-    React.useEffect(() => {
-        if (currentStep.id === '1.2') {
-            // Step 1.2 now shows completed state (processing happened in modal at step 1.1)
-            setAgentProgress(100);
-            setAgentLogs([]);
-            setPipelineAgents([
-                { id: 'intake', name: 'EmailIntake', status: 'done' },
-                { id: 'ocr', name: 'OCR/TextExtract', status: 'done', detail: '2 files' },
-                { id: 'parser', name: 'DataParser', status: 'done', detail: '200 items' },
-                { id: 'normalizer', name: 'Normalizer', status: 'done' },
-                { id: 'validator', name: 'Validator', status: 'done', detail: '82% confidence' },
-            ]);
-            setConfidenceFields([
-                { field: 'Product', score: 95 },
-                { field: 'Quantity', score: 88 },
-                { field: 'Ship-To', score: 92 },
-                { field: 'Freight', score: 42 },
-            ]);
-        } else if (currentStep.id === '1.3') {
-            // Normalization step — shows agent pipeline strip + field confidence
-            setAgentProgress(0);
-            setAgentLogs(['Initializing Normalization Pipeline...']);
-            setConfidenceFields([]);
-            setPipelineAgents([
-                { id: 'email', name: 'EmailIntake', status: 'done' },
-                { id: 'ocr', name: 'OCR Extract', status: 'done' },
-                { id: 'parser', name: 'Parser', status: 'running' },
-                { id: 'normalizer', name: 'Normalizer', status: 'pending' },
-            ]);
-
-            const timeline = [
-                { delay: 1200, log: 'Parser: Tokenizing extracted text fields...' },
-                { delay: 2800, log: 'Parser: Mapped 200 line items to catalog schema.' },
-                { delay: 4200, log: 'Normalizer: Resolving product codes against master catalog...' },
-                { delay: 6000, log: 'Normalizer: Complete. Field confidence scores generated.' },
-            ];
-
-            timeline.forEach(({ delay, log }, index) => {
-                setTimeout(() => {
-                    setAgentProgress((index + 1) * 25);
-                    setAgentLogs(prev => [...prev, log]);
-
-                    // Update pipeline agent statuses progressively
-                    if (index === 1) {
-                        setPipelineAgents(prev => prev.map(a =>
-                            a.id === 'parser' ? { ...a, status: 'done' as const } :
-                            a.id === 'normalizer' ? { ...a, status: 'running' as const } : a
-                        ));
-                    }
-                    if (index === 3) {
-                        setPipelineAgents(prev => prev.map(a =>
-                            a.id === 'normalizer' ? { ...a, status: 'done' as const } : a
-                        ));
-                        setConfidenceFields([
-                            { field: 'Product', score: 95 },
-                            { field: 'Quantity', score: 88 },
-                            { field: 'Ship-To', score: 92 },
-                            { field: 'Freight', score: 42 },
-                        ]);
-                    }
-                }, delay);
-            });
-        } else if (currentStep.id === '1.4') {
-            // Quote Draft step — shows QuoteBuilderAgent branching
-            setAgentProgress(0);
-            setAgentLogs(['Initializing QuoteBuilder Agent...']);
-            setPipelineAgents([
-                { id: 'email', name: 'EmailIntake', status: 'done' },
-                { id: 'ocr', name: 'OCR Extract', status: 'done' },
-                { id: 'normalizer', name: 'Normalizer', status: 'done' },
-                { id: 'quotebuilder', name: 'QuoteBuilder', status: 'running' },
-            ]);
-            setConfidenceFields([]);
-
-            const timeline = [
-                { delay: 1000, log: 'QuoteBuilder: Loading normalized line items...' },
-                { delay: 2500, log: 'QuoteBuilder: Applying pricing rules and discounts...' },
-                { delay: 4000, log: 'QuoteBuilder: Freight zone routing failed — multi-zone delivery.' },
-                { delay: 5500, log: 'QuoteBuilder: Draft complete. Flagged for Expert Attention.' },
-            ];
-
-            timeline.forEach(({ delay, log }, index) => {
-                setTimeout(() => {
-                    setAgentProgress((index + 1) * 25);
-                    setAgentLogs(prev => [...prev, log]);
-
-                    if (index === 3) {
-                        setPipelineAgents(prev => prev.map(a =>
-                            a.id === 'quotebuilder' ? { ...a, status: 'done' as const, detail: 'Needs Attention' } : a
-                        ));
-                    }
-                }, delay);
-            });
-        } else if (currentStep.id === '2.2') {
-            // Normalization/Linking for Flow 2
-            setAgentProgress(0);
-            setAgentLogs(['Initializing ERP Normalization Pipeline...']);
-            setPipelineAgents([
-                { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
-                { id: 'norm', name: 'DataNorm', status: 'running' },
-                { id: 'ack', name: 'ACKIngest', status: 'pending' },
-                { id: 'comp', name: 'POvsACK', status: 'pending' },
-                { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
-                { id: 'bo', name: 'Backorder', status: 'pending' },
-                { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                { id: 'notif', name: 'Notification', status: 'pending' },
-            ]);
-            setConfidenceFields([]);
-
-            const timeline = [
-                { delay: 1000, log: 'ERPConnectorAgent: ACK data received from eManage ONE (EDI/855).' },
-                { delay: 2500, log: 'DataNormalizationAgent: Mapping raw EDI fields to standard schema...' },
-                { delay: 4000, log: 'ACKIngestAgent: Parsing 4 acknowledgment line items.' },
-                { delay: 5500, log: 'DataNormalizationAgent: Unified 4 raw fields to standard model.' },
-                { delay: 7000, log: 'EntityLinker: Linked PO #ORD-2055 ↔ ACK #ACK-2055. Ready for Delta Engine.' },
-            ];
-
-            timeline.forEach(({ delay, log }, index) => {
-                setTimeout(() => {
-                    setAgentProgress((index + 1) * 20);
-                    setAgentLogs(prev => [...prev, log]);
-
-                    // Progressive pipeline status with 8 agents
-                    if (index === 0) {
-                        setPipelineAgents([
-                            { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
-                            { id: 'norm', name: 'DataNorm', status: 'done' },
-                            { id: 'ack', name: 'ACKIngest', status: 'running' },
-                            { id: 'comp', name: 'POvsACK', status: 'pending' },
-                            { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
-                            { id: 'bo', name: 'Backorder', status: 'pending' },
-                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                            { id: 'notif', name: 'Notification', status: 'pending' },
-                        ]);
-                    }
-                    if (index === 2) {
-                        setPipelineAgents([
-                            { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
-                            { id: 'norm', name: 'DataNorm', status: 'done' },
-                            { id: 'ack', name: 'ACKIngest', status: 'done' },
-                            { id: 'comp', name: 'POvsACK', status: 'pending' },
-                            { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
-                            { id: 'bo', name: 'Backorder', status: 'pending' },
-                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                            { id: 'notif', name: 'Notification', status: 'pending' },
-                        ]);
-                    }
-                    if (index === 4) {
-                        setPipelineAgents([
-                            { id: 'erp', name: 'ERPConnector', status: 'done', detail: 'EDI/855' },
-                            { id: 'norm', name: 'DataNorm', status: 'done', detail: '4 fields mapped' },
-                            { id: 'ack', name: 'ACKIngest', status: 'done' },
-                            { id: 'comp', name: 'POvsACK', status: 'pending' },
-                            { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
-                            { id: 'bo', name: 'Backorder', status: 'pending' },
-                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                            { id: 'notif', name: 'Notification', status: 'pending' },
-                        ]);
-                        setConfidenceFields([
-                            { field: 'Product SKU', score: 96 },
-                            { field: 'Quantity', score: 100 },
-                            { field: 'Unit Price', score: 94 },
-                            { field: 'Freight', score: 72 },
-                        ]);
-                    }
-                }, delay);
-            });
-        } else if (currentStep.id === '2.3') {
-            // Delta Engine — comparison step with line-by-line results
-            setAgentProgress(0);
-            setAgentLogs(['Initializing Delta Engine...']);
-            setPipelineAgents([
-                { id: 'erp', name: 'ERPConnector', status: 'done' },
-                { id: 'norm', name: 'DataNorm', status: 'done' },
-                { id: 'ack', name: 'ACKIngest', status: 'done' },
-                { id: 'comp', name: 'POvsACK', status: 'running' },
-                { id: 'discrep', name: 'DiscrepResolver', status: 'pending' },
-                { id: 'bo', name: 'Backorder', status: 'pending' },
-                { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                { id: 'notif', name: 'Notification', status: 'pending' },
-            ]);
-            setConfidenceFields([]);
-
-            const timeline = [
-                { delay: 1000, log: 'POvsACKAgent: Loading PO #ORD-2055 (4 lines).' },
-                { delay: 2500, log: 'POvsACKAgent: Loading ACK #ACK-2055 (4 lines).' },
-                { delay: 4000, log: 'POvsACKAgent: Line-by-line comparison in progress...' },
-                { delay: 5500, log: 'POvsACKAgent: EXCEPTION — Line 2 substitution SKU-B→SKU-C.' },
-                { delay: 7000, log: 'POvsACKAgent: EXCEPTION — Freight $45→$150 (+233%).' },
-                { delay: 8500, log: 'DiscrepancyResolver: 2 exceptions flagged. Escalating to Expert Hub.' }
-            ];
-
-            timeline.forEach(({ delay, log }, index) => {
-                setTimeout(() => {
-                    setAgentProgress((index + 1) * 16.6);
-                    setAgentLogs(prev => [...prev, log]);
-
-                    if (index === 3) {
-                        setPipelineAgents([
-                            { id: 'erp', name: 'ERPConnector', status: 'done' },
-                            { id: 'norm', name: 'DataNorm', status: 'done' },
-                            { id: 'ack', name: 'ACKIngest', status: 'done' },
-                            { id: 'comp', name: 'POvsACK', status: 'done', detail: '2 exceptions' },
-                            { id: 'discrep', name: 'DiscrepResolver', status: 'running' },
-                            { id: 'bo', name: 'Backorder', status: 'pending' },
-                            { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
-                            { id: 'notif', name: 'Notification', status: 'pending' },
-                        ]);
-                    }
-                }, delay);
-            });
-        } else if (currentStep.id === '3.1') {
-            // Document classification — Flow 3
-            setAgentProgress(0);
-            setAgentLogs(['Initializing Document Intake Pipeline...']);
-            setPipelineAgents([
-                { id: 'docintake', name: 'DocIntake', status: 'running' },
-                { id: 'ocr', name: 'OCR', status: 'pending' },
-                { id: 'parser', name: 'Parser', status: 'pending' },
-                { id: 'classifier', name: 'Classifier', status: 'pending' },
-                { id: 'linker', name: 'EntityLinker', status: 'pending' },
-            ]);
-            setConfidenceFields([]);
-
-            const timeline = [
-                { delay: 1000, log: 'DocIntakeAgent: Received document upload (PDF, 3 pages).' },
-                { delay: 2200, log: 'OCRAgent: Extracting text from scanned invoice...' },
-                { delay: 3500, log: 'ParserAgent: Structured 12 fields from invoice text.' },
-                { delay: 5000, log: 'ClassifierAgent: Document TYPE → INVOICE (confidence: 97%).' },
-                { delay: 6500, log: 'EntityLinkerAgent: Linked to PO #ORD-2055 and ACK #ACK-2055.' },
-                { delay: 8000, log: 'Router: Routed to 3-Way Match Engine.' },
-            ];
-
-            timeline.forEach(({ delay, log }, index) => {
-                setTimeout(() => {
-                    setAgentProgress((index + 1) * 16.6);
-                    setAgentLogs(prev => [...prev, log]);
-
-                    const statusMap: Record<number, AgentStep[]> = {
-                        0: [
-                            { id: 'docintake', name: 'DocIntake', status: 'done' },
-                            { id: 'ocr', name: 'OCR', status: 'running' },
-                            { id: 'parser', name: 'Parser', status: 'pending' },
-                            { id: 'classifier', name: 'Classifier', status: 'pending' },
-                            { id: 'linker', name: 'EntityLinker', status: 'pending' },
-                        ],
-                        2: [
-                            { id: 'docintake', name: 'DocIntake', status: 'done' },
-                            { id: 'ocr', name: 'OCR', status: 'done' },
-                            { id: 'parser', name: 'Parser', status: 'done' },
-                            { id: 'classifier', name: 'Classifier', status: 'running' },
-                            { id: 'linker', name: 'EntityLinker', status: 'pending' },
-                        ],
-                        4: [
-                            { id: 'docintake', name: 'DocIntake', status: 'done' },
-                            { id: 'ocr', name: 'OCR', status: 'done' },
-                            { id: 'parser', name: 'Parser', status: 'done' },
-                            { id: 'classifier', name: 'Classifier', status: 'done' },
-                            { id: 'linker', name: 'EntityLinker', status: 'done' },
-                        ],
-                    };
-                    if (statusMap[index]) setPipelineAgents(statusMap[index]);
-                }, delay);
-            });
-        }
-    }, [currentStep.id]);
+    const { currentStep } = useDemo();
 
     const displayCards = CARDS.filter(c => {
         if (c.id === 5 && !['2.2', '2.3'].includes(currentStep.id)) return false;
@@ -339,7 +47,7 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
     return (
         <div className="bg-zinc-950 text-zinc-100 font-sans selection:bg-primary selection:text-primary-foreground">
             <main className="p-6 space-y-6 flex flex-col">
-                {/* Summary Bar — Adapted from Transactions collapsed KPI */}
+                {/* Summary Bar */}
                 <div className="bg-zinc-900 backdrop-blur-md rounded-2xl p-4 border border-zinc-800 shadow-sm flex flex-col xl:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-8 overflow-x-auto w-full scrollbar-hide px-2 scroll-smooth">
                         {[
@@ -393,575 +101,90 @@ export default function DealerMonitorKanban({ onNavigate }: { onNavigate?: (page
                             </div>
 
                             <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-micro bg-zinc-900/50 rounded-2xl p-3 border border-zinc-800/50">
-                                {displayCards.filter(card => card.column === column.id).map(card => (
-                                    <div key={card.id} className={`bg-zinc-800 border border-zinc-700 p-4 rounded-2xl hover:border-zinc-600 transition-all cursor-pointer group shadow-sm ${card.priority === 'critical' ? 'ring-1 ring-red-500/20' : ''} ${card.id === 1 && autoClickHighlight && currentStep.id === '1.2' ? 'ring-2 ring-primary/60 scale-[0.97] border-primary/40 shadow-lg shadow-primary/10' : ''}`}>
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex items-start justify-between">
-                                                <span className={`text-[10px] font-medium uppercase px-2 py-0.5 rounded-full ring-1 ring-inset ${card.priority === 'critical' ? 'bg-red-500/10 text-red-400 ring-red-500/30' :
-                                                    card.priority === 'high' ? 'bg-amber-500/10 text-amber-400 ring-amber-500/30' :
-                                                        'bg-zinc-700 text-zinc-400 ring-zinc-600'
-                                                    }`}>
-                                                    {card.priority}
-                                                </span>
-                                                <div className="flex items-center gap-1.5">
-                                                    <Clock size={12} className="text-zinc-500" />
-                                                    <span className="text-[10px] text-zinc-500 font-medium">4h ago</span>
+                                {displayCards.filter(card => card.column === column.id).map(card => {
+                                    // Determine data-demo-target for spotlight
+                                    const demoTarget =
+                                        card.id === 1 && CARD1_PANEL_STEPS.includes(currentStep.id) ? 'kanban-ai-extraction' :
+                                        card.id === 5 && CARD5_PANEL_STEPS.includes(currentStep.id) ? 'kanban-ack-normalize' :
+                                        card.id === 6 && CARD6_PANEL_STEPS.includes(currentStep.id) ? 'doc-classification' :
+                                        undefined;
+
+                                    // Is this card currently showing a panel?
+                                    const hasPanel =
+                                        (card.id === 1 && CARD1_PANEL_STEPS.includes(currentStep.id)) ||
+                                        (card.id === 5 && CARD5_PANEL_STEPS.includes(currentStep.id)) ||
+                                        (card.id === 6 && CARD6_PANEL_STEPS.includes(currentStep.id));
+
+                                    return (
+                                        <div
+                                            key={card.id}
+                                            data-demo-target={demoTarget}
+                                            className={`bg-zinc-800 border border-zinc-700 p-4 rounded-2xl hover:border-zinc-600 transition-all cursor-pointer group shadow-sm ${card.priority === 'critical' ? 'ring-1 ring-red-500/20' : ''} ${hasPanel ? 'ring-1 ring-indigo-500/30 border-indigo-500/20' : ''}`}
+                                        >
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex items-start justify-between">
+                                                    <span className={`text-[10px] font-medium uppercase px-2 py-0.5 rounded-full ring-1 ring-inset ${card.priority === 'critical' ? 'bg-red-500/10 text-red-400 ring-red-500/30' :
+                                                        card.priority === 'high' ? 'bg-amber-500/10 text-amber-400 ring-amber-500/30' :
+                                                            'bg-zinc-700 text-zinc-400 ring-zinc-600'
+                                                        }`}>
+                                                        {card.priority}
+                                                    </span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Clock size={12} className="text-zinc-500" />
+                                                        <span className="text-[10px] text-zinc-500 font-medium">4h ago</span>
+                                                    </div>
                                                 </div>
+
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-semibold text-zinc-100 group-hover:text-primary transition-colors">{card.title}</h4>
+                                                    <p className="text-xs text-zinc-500 font-medium">{card.dealer}</p>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex -space-x-2">
+                                                        {[1, 2].map(i => (
+                                                            <div key={i} className="w-6 h-6 rounded-full border-2 border-zinc-800 bg-zinc-700 flex items-center justify-center text-[10px] font-medium text-zinc-300">
+                                                                {i === 1 ? 'AI' : 'JD'}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="flex-1" />
+                                                    <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-medium">
+                                                        <CheckCircle2 size={12} className="text-green-400" />
+                                                        <span>4 items ready</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Minimal panel indicator — replaces all step-specific content */}
+                                                {hasPanel && (
+                                                    <div className="mt-2 pt-2 border-t border-zinc-700/50">
+                                                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
+                                                            <Sparkles size={12} className="text-indigo-400 animate-pulse" />
+                                                            <span className="text-[10px] text-indigo-300 font-medium">Processing — See Detail Panel →</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* AI Insight — only for cards not currently in panel mode */}
+                                                {!hasPanel && card.aiInsight && (
+                                                    <div className="mt-2 pt-3 border-t border-zinc-700/50 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                                        <div className="flex items-center gap-2 text-indigo-400">
+                                                            <Sparkles size={12} />
+                                                            <span className="text-[10px] font-medium uppercase tracking-wider">AI Insight</span>
+                                                        </div>
+                                                        <p className="text-[11px] leading-relaxed text-zinc-400 italic bg-zinc-900 p-3 rounded-xl border border-zinc-700/50">
+                                                            "{card.aiInsight}"
+                                                        </p>
+                                                        <button className="w-full flex items-center justify-center gap-2 text-xs font-medium text-primary hover:underline group/btn">
+                                                            {card.id === 1 ? 'Route to Expert Hub' : 'Apply Recommendation'}
+                                                            <ArrowUpRight size={14} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
-
-                                            <div id={card.aiInsight ? "kanban-ai-card" : ""} className="space-y-1">
-                                                <h4 className="text-sm font-semibold text-zinc-100 group-hover:text-primary transition-colors">{card.title}</h4>
-                                                <p className="text-xs text-zinc-500 font-medium">{card.dealer}</p>
-                                            </div>
-
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex -space-x-2">
-                                                    {[1, 2].map(i => (
-                                                        <div key={i} className="w-6 h-6 rounded-full border-2 border-zinc-800 bg-zinc-700 flex items-center justify-center text-[10px] font-medium text-zinc-300">
-                                                            {i === 1 ? 'AI' : 'JD'}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="flex-1" />
-                                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-medium">
-                                                    <CheckCircle2 size={12} className="text-green-400" />
-                                                    <span>4 items ready</span>
-                                                </div>
-                                            </div>
-
-                                            {card.aiInsight && card.id !== 1 && (
-                                                <div className="mt-2 pt-3 border-t border-zinc-700/50 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                                    <div className="flex items-center gap-2 text-indigo-400">
-                                                        <Sparkles size={12} />
-                                                        <span className="text-[10px] font-medium uppercase tracking-wider">AI Insight</span>
-                                                    </div>
-                                                    <p className="text-[11px] leading-relaxed text-zinc-400 italic bg-zinc-900 p-3 rounded-xl border border-zinc-700/50">
-                                                        "{card.aiInsight}"
-                                                    </p>
-                                                    <button onClick={() => card.id === 1 ? alert("Routing to Expert Hub for manual review...") : undefined} className="w-full flex items-center justify-center gap-2 text-xs font-medium text-primary hover:underline group/btn">
-                                                        {card.id === 1 ? 'Route to Expert Hub' : 'Apply Recommendation'}
-                                                        <ArrowUpRight size={14} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {/* Step 1.2: Completed Extraction Summary + Flow Diagram */}
-                                            {card.id === 1 && currentStep.id === '1.2' && (
-                                                <div className="mt-3 space-y-3 animate-in fade-in zoom-in duration-500">
-                                                    {/* Completed Header */}
-                                                    <div className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <CheckCircle2 className="text-emerald-400" size={14} />
-                                                            <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Extraction Complete</span>
-                                                            <ConfidenceScoreBadge score={82} label="Overall" size="sm" />
-                                                        </div>
-                                                        <AgentPipelineStrip agents={pipelineAgents} accentColor="green" />
-                                                    </div>
-
-                                                    {/* Extracted Items Summary */}
-                                                    <div className="p-3 rounded-xl border border-zinc-700 bg-zinc-900">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <FileText className="text-zinc-400" size={12} />
-                                                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Extracted Data</span>
-                                                        </div>
-                                                        <div className="space-y-1.5">
-                                                            {[
-                                                                { label: 'Products', value: '200 Executive Task Chairs', badge: '200 items' },
-                                                                { label: 'Specs', value: 'Ergonomic features from PDF', badge: 'Parsed' },
-                                                                { label: 'Ship-To', value: '4 delivery zones mapped', badge: '4 zones' },
-                                                                { label: 'Freight', value: 'Multi-zone routing required', badge: 'Needs Review' },
-                                                            ].map((item, i) => (
-                                                                <div key={i} className="flex items-center justify-between bg-zinc-800/60 rounded-lg px-2.5 py-1.5">
-                                                                    <div className="flex items-center gap-2 min-w-0">
-                                                                        <span className="text-[10px] font-bold text-zinc-500 w-14 shrink-0">{item.label}</span>
-                                                                        <span className="text-[11px] text-zinc-300 truncate">{item.value}</span>
-                                                                    </div>
-                                                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0 ${
-                                                                        item.badge === 'Needs Review'
-                                                                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                                                            : 'bg-zinc-700 text-zinc-400'
-                                                                    }`}>{item.badge}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                        {/* Field Confidence */}
-                                                        <div className="mt-2 grid grid-cols-2 gap-1.5">
-                                                            {confidenceFields.map(f => (
-                                                                <div key={f.field} className="flex items-center justify-between bg-zinc-800 rounded-lg px-2.5 py-1">
-                                                                    <span className="text-[10px] text-zinc-500">{f.field}</span>
-                                                                    <ConfidenceScoreBadge score={f.score} size="sm" />
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Automation Flow Diagram */}
-                                                    <div className="p-3 rounded-xl border border-zinc-700 bg-zinc-900">
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <Sparkles className="text-indigo-400" size={12} />
-                                                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Automation Flow</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-micro">
-                                                            {[
-                                                                { icon: '📧', label: 'Email RFQ', sub: 'Detected', color: 'border-blue-500/30 bg-blue-500/5' },
-                                                                { icon: '📄', label: 'OCR Extract', sub: '2 files', color: 'border-purple-500/30 bg-purple-500/5' },
-                                                                { icon: '🔍', label: 'Data Parse', sub: '200 items', color: 'border-indigo-500/30 bg-indigo-500/5' },
-                                                                { icon: '🔗', label: 'Normalize', sub: 'Mapped', color: 'border-cyan-500/30 bg-cyan-500/5' },
-                                                                { icon: '⚡', label: 'Validate', sub: '82%', color: 'border-amber-500/30 bg-amber-500/5' },
-                                                            ].map((step, i, arr) => (
-                                                                <React.Fragment key={i}>
-                                                                    <div className={`flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg border ${step.color} min-w-[64px] shrink-0`}>
-                                                                        <span className="text-sm">{step.icon}</span>
-                                                                        <span className="text-[9px] font-bold text-zinc-300 text-center leading-tight">{step.label}</span>
-                                                                        <span className="text-[8px] text-zinc-500">{step.sub}</span>
-                                                                    </div>
-                                                                    {i < arr.length - 1 && (
-                                                                        <div className="flex items-center shrink-0 px-0.5">
-                                                                            <div className="w-3 h-px bg-zinc-600" />
-                                                                            <div className="w-0 h-0 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent border-l-[4px] border-l-zinc-600" />
-                                                                        </div>
-                                                                    )}
-                                                                </React.Fragment>
-                                                            ))}
-                                                        </div>
-                                                        {/* AI Attribution */}
-                                                        <div className="mt-2 flex items-start gap-2 px-2.5 py-2 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
-                                                            <Sparkles size={10} className="text-indigo-400 mt-0.5 shrink-0" />
-                                                            <p className="text-[10px] text-indigo-300/80 leading-relaxed">
-                                                                5 AI agents processed this RFQ in 8.2s. Freight routing flagged for Expert review due to multi-zone complexity.
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                </div>
-                                            )}
-
-                                            {/* Step 1.3: Normalization Pipeline for Card 1 */}
-                                            {card.id === 1 && currentStep.id === '1.3' && (
-                                                <div className="mt-3 p-4 rounded-xl border border-zinc-700 bg-zinc-900 animate-in fade-in zoom-in duration-500">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <BrainCircuit className={`text-green-400 ${agentProgress < 100 ? 'animate-pulse' : ''}`} size={14} />
-                                                        <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-wider">
-                                                            {agentProgress < 100 ? 'Normalization Pipeline...' : 'Normalization Complete'}
-                                                        </span>
-                                                        {agentProgress < 100 && <Loader2 size={12} className="text-zinc-500 animate-spin ml-auto" />}
-                                                    </div>
-
-                                                    {/* Agent Pipeline Strip */}
-                                                    <div className="mb-3">
-                                                        <AgentPipelineStrip agents={pipelineAgents} accentColor="green" />
-                                                    </div>
-
-                                                    {/* Progress Bar */}
-                                                    <div className="h-1 w-full bg-zinc-700 rounded-full overflow-hidden mb-3">
-                                                        <div
-                                                            className="h-full bg-green-500 transition-all duration-500 ease-out"
-                                                            style={{ width: `${agentProgress}%` }}
-                                                        />
-                                                    </div>
-
-                                                    {/* Agent Logs */}
-                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[80px] overflow-y-auto pr-1 scrollbar-micro">
-                                                        {agentLogs.map((log, i) => (
-                                                            <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-2 fade-in">
-                                                                <span className="text-zinc-600 mt-0.5">{'>'}</span>
-                                                                <span className={i === agentLogs.length - 1 && agentProgress < 100 ? 'text-zinc-300 animate-pulse' : ''}>{log}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    {/* Field Confidence Grid */}
-                                                    {confidenceFields.length > 0 && (
-                                                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                                                            <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-2 block">Field Confidence</span>
-                                                            <div className="grid grid-cols-2 gap-2">
-                                                                {confidenceFields.map(f => (
-                                                                    <div key={f.field} className="flex items-center justify-between bg-zinc-800 rounded-lg px-3 py-1.5">
-                                                                        <span className="text-[11px] text-zinc-400">{f.field}</span>
-                                                                        <ConfidenceScoreBadge score={f.score} size="sm" />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                            {/* Handoff Indicator */}
-                                                            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700/50">
-                                                                <div className="flex items-center -space-x-1.5">
-                                                                    <div className="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
-                                                                        <Bot size={10} className="text-indigo-400" />
-                                                                    </div>
-                                                                    <div className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
-                                                                        <Users size={10} className="text-amber-400" />
-                                                                    </div>
-                                                                </div>
-                                                                <span className="text-[10px] text-zinc-400">AI Agent + Expert will draft the quote</span>
-                                                            </div>
-
-                                                            <button
-                                                                onClick={nextStep}
-                                                                className="mt-2 w-full flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg transition-colors shadow-sm"
-                                                            >
-                                                                Continue to Quote Draft
-                                                                <ArrowUpRight size={14} />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Step 1.4: Quote Builder Agent for Card 1 */}
-                                            {card.id === 1 && currentStep.id === '1.4' && (
-                                                <div className="mt-3 p-4 rounded-xl border border-zinc-700 bg-zinc-900 animate-in fade-in zoom-in duration-500">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <FileText className={`text-amber-400 ${agentProgress < 100 ? 'animate-pulse' : ''}`} size={14} />
-                                                        <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-wider">
-                                                            {agentProgress < 100 ? 'QuoteBuilder Agent...' : 'Quote Draft Ready'}
-                                                        </span>
-                                                        {agentProgress < 100 && <Loader2 size={12} className="text-zinc-500 animate-spin ml-auto" />}
-                                                    </div>
-
-                                                    {/* Agent Pipeline Strip */}
-                                                    <div className="mb-3">
-                                                        <AgentPipelineStrip agents={pipelineAgents} accentColor="amber" />
-                                                    </div>
-
-                                                    {/* Progress Bar */}
-                                                    <div className="h-1 w-full bg-zinc-700 rounded-full overflow-hidden mb-3">
-                                                        <div
-                                                            className="h-full bg-amber-500 transition-all duration-500 ease-out"
-                                                            style={{ width: `${agentProgress}%` }}
-                                                        />
-                                                    </div>
-
-                                                    {/* Agent Logs */}
-                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[80px] overflow-y-auto pr-1 scrollbar-micro">
-                                                        {agentLogs.map((log, i) => (
-                                                            <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-2 fade-in">
-                                                                <span className="text-zinc-600 mt-0.5">{'>'}</span>
-                                                                <span className={i === agentLogs.length - 1 && agentProgress < 100 ? 'text-zinc-300 animate-pulse' : ''}>{log}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    {agentProgress === 100 && (
-                                                        <div className="mt-3 pt-3 border-t border-zinc-700 space-y-3">
-                                                            {/* Branching result */}
-                                                            <div className="flex gap-2">
-                                                                <div className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 p-3">
-                                                                    <div className="flex items-center gap-1.5 mb-1">
-                                                                        <div className="w-2 h-2 rounded-full bg-amber-500" />
-                                                                        <span className="text-[10px] font-medium text-amber-400 uppercase tracking-wider">Needs Attention</span>
-                                                                    </div>
-                                                                    <p className="text-[10px] text-zinc-500">Multi-zone freight routing requires manual approval</p>
-                                                                </div>
-                                                            </div>
-                                                            {/* Handoff Indicator */}
-                                                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700/50">
-                                                                <div className="flex items-center -space-x-1.5">
-                                                                    <div className="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
-                                                                        <Bot size={10} className="text-indigo-400" />
-                                                                    </div>
-                                                                    <div className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
-                                                                        <Users size={10} className="text-amber-400" />
-                                                                    </div>
-                                                                </div>
-                                                                <span className="text-[10px] text-zinc-400">Expert + AI Agent will resolve discrepancies</span>
-                                                            </div>
-
-                                                            <button
-                                                                onClick={nextStep}
-                                                                className="w-full flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg transition-colors shadow-sm"
-                                                            >
-                                                                Route to Expert Hub (HITL)
-                                                                <ArrowUpRight size={14} />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Step 2.2: Normalization/Linking for Card 5 */}
-                                            {card.id === 5 && currentStep.id === '2.2' && (
-                                                <div className="mt-3 p-4 rounded-xl border border-zinc-700 bg-zinc-900 animate-in fade-in zoom-in duration-500">
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <Cpu className={`text-blue-400 ${agentProgress < 100 ? 'animate-pulse' : ''}`} size={14} />
-                                                            <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-wider">
-                                                                {agentProgress < 100 ? 'ERP Normalization Pipeline...' : 'Normalization Complete'}
-                                                            </span>
-                                                            {agentProgress < 100 && <Loader2 size={12} className="text-zinc-500 animate-spin" />}
-                                                        </div>
-                                                        {/* Source Badge */}
-                                                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[9px] font-bold text-blue-400">
-                                                            <Cpu size={10} />
-                                                            eManage ONE (EDI/855)
-                                                        </span>
-                                                    </div>
-
-                                                    {/* Agent Pipeline Strip — 8 agents */}
-                                                    <div className="mb-3">
-                                                        <AgentPipelineStrip agents={pipelineAgents} accentColor="blue" />
-                                                    </div>
-
-                                                    {/* Progress Bar */}
-                                                    <div className="h-1 w-full bg-zinc-700 rounded-full overflow-hidden mb-3">
-                                                        <div
-                                                            className="h-full bg-blue-500 transition-all duration-500 ease-out"
-                                                            style={{ width: `${Math.min(agentProgress, 100)}%` }}
-                                                        />
-                                                    </div>
-
-                                                    {/* Agent Logs */}
-                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[80px] overflow-y-auto pr-1 scrollbar-micro">
-                                                        {agentLogs.map((log, i) => (
-                                                            <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-2 fade-in">
-                                                                <span className="text-zinc-600 mt-0.5">{'>'}</span>
-                                                                <span className={i === agentLogs.length - 1 && agentProgress < 100 ? 'text-zinc-300 animate-pulse' : ''}>{log}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    {agentProgress === 100 && (
-                                                        <div className="mt-3 pt-3 border-t border-zinc-700 space-y-3 animate-in fade-in duration-300">
-                                                            {/* Entity Link */}
-                                                            <div className="flex items-center justify-between text-xs">
-                                                                <span className="text-zinc-500">Entity Link:</span>
-                                                                <span className="text-blue-400 font-medium">PO #ORD-2055 ↔ ACK #ACK-2055</span>
-                                                            </div>
-
-                                                            {/* Schema Mapping Table */}
-                                                            <div className="rounded-lg border border-zinc-700 overflow-hidden">
-                                                                <div className="px-3 py-1.5 bg-zinc-800 border-b border-zinc-700">
-                                                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Schema Mapping (Raw → Normalized)</span>
-                                                                </div>
-                                                                <table className="w-full text-[10px]">
-                                                                    <tbody className="divide-y divide-zinc-800">
-                                                                        {[
-                                                                            { raw: 'PO1*VP*ERG-5100', normalized: 'product_sku: ERG-5100' },
-                                                                            { raw: 'PO1*25*EA', normalized: 'quantity: 25' },
-                                                                            { raw: 'PO1*89.00', normalized: 'unit_price: $89.00' },
-                                                                            { raw: 'PO1*FRT-0001*150', normalized: 'freight_charge: $150.00' },
-                                                                        ].map((row, i) => (
-                                                                            <tr key={i}>
-                                                                                <td className="px-3 py-1.5 font-mono text-zinc-500">{row.raw}</td>
-                                                                                <td className="px-2 text-zinc-600">→</td>
-                                                                                <td className="px-3 py-1.5 font-mono text-blue-400">{row.normalized}</td>
-                                                                            </tr>
-                                                                        ))}
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-
-                                                            {/* Confidence + AI */}
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <Sparkles size={12} className="text-indigo-400" />
-                                                                    <span className="text-[10px] text-indigo-400 font-medium">DataNormalizationAgent unified 4 raw fields to standard schema</span>
-                                                                </div>
-                                                                <ConfidenceScoreBadge score={94} label="Norm" />
-                                                            </div>
-
-                                                            <button
-                                                                onClick={nextStep}
-                                                                className="w-full flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg transition-colors shadow-sm"
-                                                            >
-                                                                Run Delta Engine
-                                                                <ArrowUpRight size={14} />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Step 2.3: Delta Engine Comparison for Card 5 */}
-                                            {card.id === 5 && currentStep.id === '2.3' && (
-                                                <div className="mt-3 p-4 rounded-xl border border-zinc-700 bg-zinc-900 animate-in fade-in zoom-in duration-500">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <Cpu className={`text-red-400 ${agentProgress < 100 ? 'animate-pulse' : ''}`} size={14} />
-                                                        <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-wider">
-                                                            {agentProgress < 100 ? 'Delta Engine Processing...' : 'Comparison Complete — 2 Exceptions'}
-                                                        </span>
-                                                        {agentProgress < 100 && <Loader2 size={12} className="text-zinc-500 animate-spin ml-auto" />}
-                                                    </div>
-
-                                                    {/* Agent Pipeline Strip — 8 agents */}
-                                                    <div className="mb-3">
-                                                        <AgentPipelineStrip agents={pipelineAgents} accentColor="amber" />
-                                                    </div>
-
-                                                    {/* Progress Bar */}
-                                                    <div className="h-1 w-full bg-zinc-700 rounded-full overflow-hidden mb-3">
-                                                        <div
-                                                            className="h-full bg-red-500 transition-all duration-500 ease-out"
-                                                            style={{ width: `${Math.min(agentProgress, 100)}%` }}
-                                                        />
-                                                    </div>
-
-                                                    {/* Agent Logs */}
-                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[80px] overflow-y-auto pr-1 scrollbar-micro">
-                                                        {agentLogs.map((log, i) => (
-                                                            <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-2 fade-in">
-                                                                <span className="text-zinc-600 mt-0.5">{'>'}</span>
-                                                                <span className={i === agentLogs.length - 1 && agentProgress < 100 ? 'text-zinc-300 animate-pulse' : ''}>{log}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    {agentProgress >= 99 && (
-                                                        <div className="mt-3 pt-3 border-t border-zinc-700 space-y-3 animate-in fade-in duration-300">
-                                                            {/* Line-by-Line Comparison Table */}
-                                                            <div className="rounded-lg border border-zinc-700 overflow-hidden">
-                                                                <div className="px-3 py-1.5 bg-zinc-800 border-b border-zinc-700">
-                                                                    <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Line-by-Line Comparison</span>
-                                                                </div>
-                                                                <table className="w-full text-[10px]">
-                                                                    <thead>
-                                                                        <tr className="border-b border-zinc-800">
-                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">Line</th>
-                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">Item</th>
-                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">PO</th>
-                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">ACK</th>
-                                                                            <th className="text-left px-3 py-1 text-zinc-500 font-medium">Status</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody className="divide-y divide-zinc-800">
-                                                                        <tr>
-                                                                            <td className="px-3 py-1.5 text-zinc-400">1</td>
-                                                                            <td className="px-3 py-1.5 text-zinc-300">Task Chair</td>
-                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">ERG-5100</td>
-                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">ERG-5100</td>
-                                                                            <td className="px-3 py-1.5"><span className="flex items-center gap-1 text-green-400"><CheckCircle2 size={10} /> Match</span></td>
-                                                                        </tr>
-                                                                        <tr className="bg-amber-500/5">
-                                                                            <td className="px-3 py-1.5 text-zinc-400">2</td>
-                                                                            <td className="px-3 py-1.5 text-amber-300 font-medium">Desk</td>
-                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">DSK-B</td>
-                                                                            <td className="px-3 py-1.5 font-mono text-amber-400">DSK-C</td>
-                                                                            <td className="px-3 py-1.5"><span className="text-amber-400 font-medium">Substitution</span></td>
-                                                                        </tr>
-                                                                        <tr>
-                                                                            <td className="px-3 py-1.5 text-zinc-400">3</td>
-                                                                            <td className="px-3 py-1.5 text-zinc-300">Armrest</td>
-                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">ARM-4D10</td>
-                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">ARM-4D10</td>
-                                                                            <td className="px-3 py-1.5"><span className="flex items-center gap-1 text-green-400"><CheckCircle2 size={10} /> Match</span></td>
-                                                                        </tr>
-                                                                        <tr className="bg-red-500/5">
-                                                                            <td className="px-3 py-1.5 text-zinc-400">4</td>
-                                                                            <td className="px-3 py-1.5 text-red-300 font-medium">Freight</td>
-                                                                            <td className="px-3 py-1.5 font-mono text-zinc-400">$45</td>
-                                                                            <td className="px-3 py-1.5 font-mono text-red-400">$150</td>
-                                                                            <td className="px-3 py-1.5"><span className="text-red-400 font-medium">+233%</span></td>
-                                                                        </tr>
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-
-                                                            {/* Delta Summary */}
-                                                            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700">
-                                                                <span className="text-[10px] text-zinc-400">4 lines compared: <span className="text-green-400 font-medium">2 matches</span>, <span className="text-red-400 font-medium">2 exceptions</span></span>
-                                                                <ConfidenceScoreBadge score={50} label="Match Rate" />
-                                                            </div>
-
-                                                            {/* AI Recommendation */}
-                                                            <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                                                                <Sparkles size={12} className="text-indigo-400 mt-0.5 shrink-0" />
-                                                                <span className="text-[10px] text-indigo-400">Substitution within catalog equivalents. Freight exceeds $50 guardrail — escalating to Expert Hub.</span>
-                                                            </div>
-
-                                                            <button
-                                                                onClick={() => {
-                                                                    nextStep();
-                                                                    onNavigate?.('ack-detail');
-                                                                }}
-                                                                className="w-full flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg transition-colors shadow-sm"
-                                                            >
-                                                                Escalate 2 Exceptions to Expert Hub
-                                                                <ArrowUpRight size={14} />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Step 3.1: Document Classification for Card 6 */}
-                                            {card.id === 6 && currentStep.id === '3.1' && (
-                                                <div className="mt-3 p-4 rounded-xl border border-zinc-700 bg-zinc-900 animate-in fade-in zoom-in duration-500">
-                                                    <div className="flex items-center gap-2 mb-3">
-                                                        <FileText className={`text-indigo-400 ${agentProgress < 100 ? 'animate-pulse' : ''}`} size={14} />
-                                                        <span className="text-[10px] font-medium text-zinc-300 uppercase tracking-wider">
-                                                            {agentProgress < 100 ? 'Document Intake Pipeline...' : 'Classification Complete'}
-                                                        </span>
-                                                        {agentProgress < 100 && <Loader2 size={12} className="text-zinc-500 animate-spin ml-auto" />}
-                                                    </div>
-
-                                                    {/* Agent Pipeline Strip */}
-                                                    <div className="mb-3">
-                                                        <AgentPipelineStrip agents={pipelineAgents} accentColor="purple" />
-                                                    </div>
-
-                                                    {/* Progress Bar */}
-                                                    <div className="h-1 w-full bg-zinc-700 rounded-full overflow-hidden mb-3">
-                                                        <div
-                                                            className="h-full bg-indigo-500 transition-all duration-500 ease-out"
-                                                            style={{ width: `${Math.min(agentProgress, 100)}%` }}
-                                                        />
-                                                    </div>
-
-                                                    {/* Agent Logs */}
-                                                    <div className="space-y-1.5 text-[10px] font-mono text-zinc-500 max-h-[100px] overflow-y-auto pr-1 scrollbar-micro">
-                                                        {agentLogs.map((log, i) => (
-                                                            <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-2 fade-in">
-                                                                <span className="text-zinc-600 mt-0.5">{'>'}</span>
-                                                                <span className={i === agentLogs.length - 1 && agentProgress < 100 ? 'text-zinc-300 animate-pulse' : ''}>{log}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    {agentProgress >= 99 && (
-                                                        <div className="mt-3 pt-3 border-t border-zinc-700">
-                                                            {/* Classification Result Badge */}
-                                                            <div className="flex items-center gap-3 mb-3">
-                                                                <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 flex items-center gap-2">
-                                                                    <span className="text-[10px] font-medium text-zinc-500 uppercase">Type:</span>
-                                                                    <span className="text-[11px] font-medium text-indigo-400">INVOICE</span>
-                                                                </div>
-                                                                <ConfidenceScoreBadge score={97} label="Classification" size="sm" />
-                                                            </div>
-                                                            <p className="text-[11px] text-zinc-500 mb-3">
-                                                                Routed to 3-Way Match Engine (PO + ACK + Invoice)
-                                                            </p>
-                                                            <button
-                                                                onClick={() => {
-                                                                    nextStep();
-                                                                    onNavigate?.('transactions');
-                                                                }}
-                                                                className="w-full flex items-center justify-center gap-2 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg transition-colors shadow-sm"
-                                                            >
-                                                                View 3-Way Match
-                                                                <ArrowUpRight size={14} />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {card.id !== 1 && card.id !== 5 && card.id !== 6 && card.aiInsight && (
-                                                <div className="mt-2 pt-3 border-t border-zinc-700/50 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                                    <div className="flex items-center gap-2 text-indigo-400">
-                                                        <Sparkles size={12} />
-                                                        <span className="text-[10px] font-medium uppercase tracking-wider">AI Insight</span>
-                                                    </div>
-                                                    <p className="text-[11px] leading-relaxed text-zinc-400 italic bg-zinc-900 p-3 rounded-xl border border-zinc-700/50">
-                                                        "{card.aiInsight}"
-                                                    </p>
-                                                    <button onClick={() => alert("Routing to Expert Hub for manual review...")} className="w-full flex items-center justify-center gap-2 text-xs font-medium text-primary hover:underline group/btn">
-                                                        Route to Expert Hub
-                                                        <ArrowUpRight size={14} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-                                                    </button>
-                                                </div>
-                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
 
                                 <button className="w-full py-3 border border-dashed border-zinc-700 rounded-2xl text-zinc-600 hover:border-zinc-600 hover:text-zinc-400 transition-all text-xs font-medium">
                                     + Add Item

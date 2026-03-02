@@ -19,6 +19,8 @@ import Navbar from "./components/Navbar"
 import DemoGuide from "./components/DemoGuide"
 import SessionExpiryModal from "./components/SessionExpiryModal"
 import DemoSidebar from "./components/demo/DemoSidebar"
+import DemoSpotlight from "./components/demo/DemoSpotlight"
+import DemoProcessPanel from "./components/demo/DemoProcessPanel"
 
 // Simulations
 import ExpertHubTransactions from "./components/simulations/ExpertHubTransactions"
@@ -343,6 +345,8 @@ function App() {
 
       {/* Demo UI Elements */}
       <DemoSidebar />
+      <DemoSpotlight />
+      <DemoProcessPanel onNavigate={handleNavigate} />
 
       {/* FIXED NAVBAR (Unified) — hidden for email simulation & workspace/detail */}
       {(isDemoActive

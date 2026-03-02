@@ -501,7 +501,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
                 {/* ===== Step 2.1: ERP Connector Activity Panel ===== */}
                 {currentStep.id === '2.1' && (
-                    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div data-demo-target="erp-ack-event" className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Header */}
                         <div className="p-6 border-b border-border">
                             <div className="flex items-center justify-between mb-4">
@@ -732,7 +732,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
                         {/* Smart Notifications Panel */}
                         {notificationsVisible && (
-                            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div data-demo-target={currentStep.id === '1.8' ? 'action-center-notifications' : 'action-center-ack-notify'} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="p-6 border-b border-border">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-indigo-100 dark:bg-indigo-500/15 rounded-xl">

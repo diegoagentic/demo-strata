@@ -932,7 +932,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                 {/* Step 1.5: Full Expert Review Module — replaces table when active */}
                 {currentStep.id === '1.5' && showExpertReview && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div data-demo-target="expert-validation-row" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Quote Context Header */}
                         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
                             <div className="flex items-center justify-between mb-4">
@@ -1444,7 +1444,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                 {/* Step 2.4: Auto-Fix Branching for Acknowledgments */}
                 {currentStep.id === '2.4' && lifecycleTab === 'acknowledgments' && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div data-demo-target="expert-ack-autofix" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Pipeline Strip */}
                         <AgentPipelineStrip agents={[
                             { id: 'erp', name: 'ERPConnector', status: 'done' },
@@ -1572,7 +1572,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                 {/* Step 1.6 — Approval Chain */}
                 {currentStep.id === '1.6' && (
-                    <div className="space-y-4">
+                    <div data-demo-target="approval-chain-progress" className="space-y-4">
                         {/* Agent Pipeline */}
                         <AgentPipelineStrip agents={[
                             { id: 'email', name: 'EmailIntake', status: 'done' },

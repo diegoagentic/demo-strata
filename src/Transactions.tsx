@@ -374,18 +374,20 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
 
                 {/* Step 3.2: 3-Way Match View */}
                 {currentStep?.id === '3.2' && (
-                    <ThreeWayMatchView
-                        orderId="#ORD-2055"
-                        lines={THREE_WAY_MATCH_LINES}
-                        onAutoFix={() => {
-                            // Simulate auto-fix of $0.03 rounding
-                            alert('Auto-fixing $0.03 tax rounding difference...');
-                        }}
-                        onResolve={() => {
-                            nextStep();
-                            onNavigate('order-detail');
-                        }}
-                    />
+                    <div data-demo-target="three-way-match">
+                        <ThreeWayMatchView
+                            orderId="#ORD-2055"
+                            lines={THREE_WAY_MATCH_LINES}
+                            onAutoFix={() => {
+                                // Simulate auto-fix of $0.03 rounding
+                                alert('Auto-fixing $0.03 tax rounding difference...');
+                            }}
+                            onResolve={() => {
+                                nextStep();
+                                onNavigate('order-detail');
+                            }}
+                        />
+                    </div>
                 )}
 
                 {/* Lifecycle Tabs Navigation */}

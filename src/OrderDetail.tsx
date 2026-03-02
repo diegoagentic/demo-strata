@@ -523,7 +523,7 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
             <div className="flex flex-col p-6 gap-6">
                 {/* Step 2.6: Backorder Trace Panel + Agent Attribution */}
                 {currentStep?.id === '2.6' && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div data-demo-target="backorder-split" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Pipeline Strip */}
                         <AgentPipelineStrip agents={[
                             { id: 'erp', name: 'ERPConnector', status: 'done' },
@@ -602,7 +602,7 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
 
                 {/* Step 1.7: PO Generation from Approved Quote */}
                 {currentStep?.id === '1.7' && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div data-demo-target="po-generation" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Pipeline Strip */}
                         <AgentPipelineStrip agents={[
                             { id: 'email', name: 'EmailIntake', status: 'done' },
@@ -809,7 +809,7 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
 
                 {/* Step 3.3: Shipment Timeline */}
                 {currentStep?.id === '3.3' && (
-                    <div className="bg-card border border-border rounded-2xl p-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div data-demo-target="shipment-timeline" className="bg-card border border-border rounded-2xl p-6 animate-in fade-in slide-in-from-top-4 duration-500">
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="text-sm font-bold text-foreground">Shipment Tracking — #ORD-2055</h3>
