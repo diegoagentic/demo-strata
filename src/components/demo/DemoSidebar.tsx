@@ -12,6 +12,16 @@ import {
     Play
 } from 'lucide-react';
 
+// Apps belonging to Expert Hub — System steps in these show as "Expert"
+const EXPERT_HUB_APPS = ['expert-hub', 'ack-detail', 'transactions', 'mac', 'quote-detail'];
+
+function resolveRoleLabel(role: string, app: string): string {
+    if (role === 'System') {
+        return EXPERT_HUB_APPS.includes(app) ? 'Expert' : 'Dealer';
+    }
+    return role;
+}
+
 export default function DemoSidebar() {
     const { currentStepIndex, steps, nextStep, prevStep, goToStep, isDemoActive, setIsDemoActive, isSidebarCollapsed, setIsSidebarCollapsed } = useDemo();
 
@@ -115,12 +125,16 @@ export default function DemoSidebar() {
                                             }`}>
                                             STEP {step.id}
                                         </span>
-                                        <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-sm border ${step.role === 'Dealer' ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400' :
-                                                step.role === 'Expert' ? 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/50 dark:bg-purple-900/20 dark:text-purple-400' :
-                                                    'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-400'
-                                            }`}>
-                                            {step.role}
-                                        </span>
+                                        {(() => {
+                                            const label = resolveRoleLabel(step.role, step.app);
+                                            return (
+                                                <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-sm border ${label === 'Dealer' ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-400' :
+                                                        'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/50 dark:bg-purple-900/20 dark:text-purple-400'
+                                                    }`}>
+                                                    {label}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                     <h3 className={`font-bold text-sm ${isActive ? 'text-primary' : 'text-foreground/70'}`}>
                                         {step.title}

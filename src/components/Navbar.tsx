@@ -27,6 +27,32 @@ import ActionCenter from './notifications/ActionCenter';
 import logoLightBrand from '../assets/logo-light-brand.png';
 import logoDarkBrand from '../assets/logo-dark-brand.png';
 
+// --- Demo Role Profiles ---
+const DEMO_PROFILES: Record<string, { name: string; role: string; photo: string }> = {
+    Dealer: {
+        name: 'Sarah Mitchell',
+        role: 'Account Manager',
+        photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
+    },
+    Expert: {
+        name: 'James Carter',
+        role: 'Operations Specialist',
+        photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
+    },
+};
+
+// Apps that belong to Expert Hub — everything else is Dealer Experience
+const EXPERT_HUB_APPS = ['expert-hub', 'ack-detail', 'transactions', 'mac', 'quote-detail'];
+
+function resolveProfileKey(role: string | undefined, app: string | undefined): string {
+    if (role === 'Expert') return 'Expert';
+    if (role === 'System') {
+        // System steps inherit the human profile of their parent app
+        return EXPERT_HUB_APPS.includes(app || '') ? 'Expert' : 'Dealer';
+    }
+    return 'Dealer';
+}
+
 // Update supported tabs
 export type NavTab = 'Overview' | 'Inventory' | 'Catalogs' | 'MAC' | 'Transactions' | 'CRM' | 'Pricing';
 
@@ -46,11 +72,12 @@ function NavItem({ icon, label, active = false, onClick }: { icon: React.ReactNo
 
 interface NavbarProps {
     onLogout: () => void;
-    activeTab?: NavTab | string; // Allow string for flexibility
+    activeTab?: NavTab | string;
     onNavigateToWorkspace: () => void;
     onNavigate: (page: any) => void;
     onOpenDemoGuide?: () => void;
     appName?: string;
+    companyName?: string;
     customNavigation?: { name: string, page: string, icon: any }[];
 }
 
@@ -61,15 +88,19 @@ export default function Navbar({
     onNavigate,
     onOpenDemoGuide,
     appName,
+    companyName,
     customNavigation
 }: NavbarProps) {
     const { theme, toggleTheme } = useTheme()
     const { currentTenant, tenants, setTenant } = useTenant()
     const { user } = useAuth()
-    const { isDemoActive, isSidebarCollapsed } = useDemo()
+    const { isDemoActive, currentStep, isSidebarCollapsed } = useDemo()
     const sidebarExpanded = isDemoActive && !isSidebarCollapsed
 
-    const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
+    // Demo profile — System steps inherit the human of their parent app
+    const demoProfile = isDemoActive ? DEMO_PROFILES[resolveProfileKey(currentStep?.role, currentStep?.app)] : null;
+
+    const displayName = demoProfile?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'
     const userInitials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     const userEmail = user?.email || ''
 
@@ -97,43 +128,50 @@ export default function Navbar({
 
                     <div className="h-6 w-px bg-border mx-1 hidden lg:block"></div>
 
-                    {/* Tenant Selector - Desktop Only */}
-                    <Menu as="div" className="relative hidden lg:block">
-                        <MenuButton className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors outline-none">
-                            <div className="flex flex-col items-start text-left">
-                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">{appName || 'Tenant'}</span>
-                                <div className="flex items-center gap-1">
-                                    <span className="text-sm font-bold text-foreground leading-tight">{currentTenant}</span>
-                                    <ChevronDownIcon className="w-3 h-3 text-muted-foreground" />
+                    {/* App Name + Company — static during demo, tenant selector otherwise */}
+                    {isDemoActive ? (
+                        <div className="hidden lg:flex flex-col items-start text-left px-2 py-1.5">
+                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">{appName || 'Application'}</span>
+                            <span className="text-sm font-bold text-foreground leading-tight">{companyName || currentTenant}</span>
+                        </div>
+                    ) : (
+                        <Menu as="div" className="relative hidden lg:block">
+                            <MenuButton className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors outline-none">
+                                <div className="flex flex-col items-start text-left">
+                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">Tenant</span>
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-sm font-bold text-foreground leading-tight">{currentTenant}</span>
+                                        <ChevronDownIcon className="w-3 h-3 text-muted-foreground" />
+                                    </div>
                                 </div>
-                            </div>
-                        </MenuButton>
-                        <Transition
-                            as={Fragment}
-                            enter="transition ease-out duration-100"
-                            enterFrom="transform opacity-0 scale-95"
-                            enterTo="transform opacity-100 scale-100"
-                            leave="transition ease-in duration-75"
-                            leaveFrom="transform opacity-100 scale-100"
-                            leaveTo="transform opacity-0 scale-95"
-                        >
-                            <MenuItems className="absolute left-0 top-full mt-2 w-48 origin-top-left rounded-xl bg-popover shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-border p-1 z-50">
-                                {tenants.map((tenant) => (
-                                    <MenuItem key={tenant}>
-                                        {({ focus }) => (
-                                            <button
-                                                onClick={() => setTenant(tenant)}
-                                                className={`${focus ? 'bg-accent' : ''} group flex w-full items-center px-4 py-2 text-sm text-foreground rounded-lg transition-colors hover:bg-accent`}
-                                            >
-                                                {tenant}
-                                                {currentTenant === tenant && <CheckIcon className="ml-auto w-4 h-4 text-foreground" />}
-                                            </button>
-                                        )}
-                                    </MenuItem>
-                                ))}
-                            </MenuItems>
-                        </Transition>
-                    </Menu>
+                            </MenuButton>
+                            <Transition
+                                as={Fragment}
+                                enter="transition ease-out duration-100"
+                                enterFrom="transform opacity-0 scale-95"
+                                enterTo="transform opacity-100 scale-100"
+                                leave="transition ease-in duration-75"
+                                leaveFrom="transform opacity-100 scale-100"
+                                leaveTo="transform opacity-0 scale-95"
+                            >
+                                <MenuItems className="absolute left-0 top-full mt-2 w-48 origin-top-left rounded-xl bg-popover shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-border p-1 z-50">
+                                    {tenants.map((tenant) => (
+                                        <MenuItem key={tenant}>
+                                            {({ focus }) => (
+                                                <button
+                                                    onClick={() => setTenant(tenant)}
+                                                    className={`${focus ? 'bg-accent' : ''} group flex w-full items-center px-4 py-2 text-sm text-foreground rounded-lg transition-colors hover:bg-accent`}
+                                                >
+                                                    {tenant}
+                                                    {currentTenant === tenant && <CheckIcon className="ml-auto w-4 h-4 text-foreground" />}
+                                                </button>
+                                            )}
+                                        </MenuItem>
+                                    ))}
+                                </MenuItems>
+                            </Transition>
+                        </Menu>
+                    )}
                 </div>
 
 
@@ -160,7 +198,8 @@ export default function Navbar({
 
                     <div className="h-4 w-px bg-border mx-1"></div>
 
-                    <Popover className="relative">
+                    {/* My Apps - Hidden during demo */}
+                    {!isDemoActive && <Popover className="relative">
                         <PopoverButton className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors outline-none">
                             <Squares2X2Icon className="w-5 h-5" />
                         </PopoverButton>
@@ -326,9 +365,10 @@ export default function Navbar({
                                 </div>
                             </PopoverPanel>
                         </Transition>
-                    </Popover>
+                    </Popover>}
 
-                    {onOpenDemoGuide && (
+                    {/* Demo Guide - Hidden during demo */}
+                    {!isDemoActive && onOpenDemoGuide && (
                         <button
                             onClick={onOpenDemoGuide}
                             className="flex p-2 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-500/30 transition-colors animate-pulse ring-2 ring-purple-500/60 ring-offset-2 ring-offset-background shadow-sm"
@@ -344,13 +384,26 @@ export default function Navbar({
 
                     <div className="relative group">
                         <button className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-muted transition-colors text-left outline-none">
-                            <div className="flex flex-col items-end mr-1 hidden sm:flex lg:hidden max-w-[140px]">
-                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">{appName || 'Tenant'}</span>
-                                <span className="text-sm font-bold text-foreground leading-tight truncate w-full text-right">{appName ? 'Active' : currentTenant}</span>
-                            </div>
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
-                                {userInitials}
-                            </div>
+                            {/* Demo mode: photo + name + role */}
+                            {demoProfile ? (
+                                <>
+                                    <img
+                                        src={demoProfile.photo}
+                                        alt={demoProfile.name}
+                                        className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/40 shrink-0"
+                                    />
+                                    <div className="hidden sm:flex flex-col items-start max-w-[140px]">
+                                        <span className="text-xs font-semibold text-foreground leading-tight truncate w-full">{demoProfile.name}</span>
+                                        <span className="text-[10px] text-muted-foreground leading-none">{demoProfile.role}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
+                                        {userInitials}
+                                    </div>
+                                </>
+                            )}
                             <ChevronDownIcon className="w-3 h-3 text-muted-foreground" />
                         </button>
                         {/* User Dropdown */}

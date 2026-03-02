@@ -91,12 +91,21 @@ function App() {
 
   // --- SIMULATION CONFIGURATIONS ---
   const getSimulationConfig = () => {
-    if (!isDemoActive) return { appName: undefined, customNavigation: undefined };
+    if (!isDemoActive) return { appName: undefined, companyName: undefined, customNavigation: undefined };
+
+    // Standardized app names and company per role
+    const isExpert = ['expert-hub', 'ack-detail', 'transactions', 'mac', 'quote-detail'].includes(currentStep.app);
+    const resolvedAppName = currentStep.app === 'email-marketplace' ? 'Wells Fargo Mail'
+      : currentStep.app === 'catalog' ? 'Marketplace'
+      : currentStep.app === 'service-now' ? 'ServiceNow'
+      : isExpert ? 'Expert Hub'
+      : 'Dealer Experience';
+    const resolvedCompany = isExpert ? 'Strata Services' : 'Acme Corp';
 
     switch (currentStep.app) {
       case 'expert-hub':
         return {
-          appName: 'Expert Hub',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Home', page: 'dashboard', icon: HomeIcon },
             { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
@@ -107,7 +116,7 @@ function App() {
         };
       case 'service-now':
         return {
-          appName: 'ServiceNow',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Service Portal', page: 'dashboard', icon: HomeIcon },
             { name: 'IT Desk', page: '_sim_itdesk', icon: WrenchScrewdriverIcon },
@@ -118,7 +127,7 @@ function App() {
         };
       case 'dealer-kanban':
         return {
-          appName: 'Dealer',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Kanban Board', page: 'dashboard', icon: Squares2X2Icon },
             { name: 'Automated Agents', page: '_sim_agents', icon: CubeTransparentIcon },
@@ -128,7 +137,7 @@ function App() {
         };
       case 'catalog':
         return {
-          appName: 'Marketplace',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Product Catalog', page: 'dashboard', icon: BookOpenIcon },
             { name: 'AI Assistant', page: '_sim_ai', icon: SparklesIcon },
@@ -138,7 +147,7 @@ function App() {
         };
       case 'email-marketplace':
         return {
-          appName: 'Wells Fargo Mail',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Inbox', page: 'dashboard', icon: EnvelopeIcon },
             { name: 'Archive', page: '_sim_archive', icon: FolderIcon },
@@ -147,7 +156,7 @@ function App() {
         };
       case 'quote-po':
         return {
-          appName: 'Strata Dealer Portal',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
             { name: 'Inventory', page: 'inventory', icon: CubeTransparentIcon },
@@ -157,7 +166,7 @@ function App() {
         };
       case 'dashboard':
         return {
-          appName: 'Strata Dealer Portal',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
             { name: 'Inventory', page: 'inventory', icon: CubeTransparentIcon },
@@ -167,7 +176,7 @@ function App() {
         };
       case 'ack-detail':
         return {
-          appName: 'Expert Hub',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Home', page: 'dashboard', icon: HomeIcon },
             { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
@@ -178,7 +187,7 @@ function App() {
         };
       case 'transactions':
         return {
-          appName: 'Expert Hub',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Home', page: '_sim_home', icon: HomeIcon },
             { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
@@ -188,7 +197,7 @@ function App() {
         };
       case 'mac':
         return {
-          appName: 'Expert Hub',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Home', page: 'dashboard', icon: HomeIcon },
             { name: 'MAC Requests', page: 'mac', icon: WrenchScrewdriverIcon },
@@ -198,7 +207,7 @@ function App() {
         };
       case 'quote-detail':
         return {
-          appName: 'Expert Hub',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Home', page: '_sim_home', icon: HomeIcon },
             { name: 'Quotes', page: 'quote-detail', icon: DocumentTextIcon },
@@ -208,7 +217,7 @@ function App() {
         };
       case 'inventory':
         return {
-          appName: 'Strata Dealer Portal',
+          appName: resolvedAppName, companyName: resolvedCompany,
           customNavigation: [
             { name: 'Dashboard', page: '_sim_home', icon: HomeIcon },
             { name: 'Inventory', page: 'inventory', icon: CubeTransparentIcon },
@@ -217,11 +226,11 @@ function App() {
           ]
         };
       default:
-        return { appName: undefined, customNavigation: undefined };
+        return { appName: undefined, companyName: undefined, customNavigation: undefined };
     }
   };
 
-  const { appName, customNavigation } = getSimulationConfig();
+  const { appName, companyName, customNavigation } = getSimulationConfig();
 
   // Determine the correct active nav tab during demo mode
   const getActiveTab = () => {
@@ -348,6 +357,7 @@ function App() {
             activeTab={getActiveTab()}
             onNavigate={handleNavigate}
             appName={appName}
+            companyName={companyName}
             customNavigation={customNavigation}
           />
         </div>
