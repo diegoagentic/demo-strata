@@ -256,7 +256,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     ]);
     const [discountPage, setDiscountPage] = useState(0);
 
-    // Step 1.6 — Quote Approval Chain (2 approvers: System Policy auto → Sarah Chen pending → auto-advance)
+    // Step 1.6 — Quote Approval Chain (2 approvers: System Policy auto → Sarah Chen → auto-advance)
     const [approvalStates16, setApprovalStates16] = useState<('pending' | 'approved')[]>(['pending', 'pending'])
     useEffect(() => {
         if (currentStep.id !== '1.6') {
@@ -264,8 +264,12 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
             return;
         }
         const timeouts: ReturnType<typeof setTimeout>[] = [];
-        timeouts.push(setTimeout(() => setApprovalStates16(['approved', 'pending']), 1500));
-        timeouts.push(setTimeout(() => nextStep(), 3500));
+        // T+3s: System Policy Engine finishes compliance review
+        timeouts.push(setTimeout(() => setApprovalStates16(['approved', 'pending']), 3000));
+        // T+6s: Sarah Chen approves after reviewing
+        timeouts.push(setTimeout(() => setApprovalStates16(['approved', 'approved']), 6000));
+        // T+9s: advance to next step (3s to see both approved)
+        timeouts.push(setTimeout(() => nextStep(), 9000));
         return () => timeouts.forEach(clearTimeout);
     }, [currentStep.id]);
     const approvedCount16 = approvalStates16.filter(s => s === 'approved').length;
@@ -282,16 +286,19 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
             return;
         }
         const t: ReturnType<typeof setTimeout>[] = [];
+        // PO Generation phase (0-6s)
         t.push(setTimeout(() => setPhase18('po-generating'), 1500));
-        t.push(setTimeout(() => setPoGenPhase18('mapping'), 2500));
-        t.push(setTimeout(() => setPoGenPhase18('validating'), 3500));
-        t.push(setTimeout(() => { setPoGenPhase18('complete'); setPhase18('po-complete'); }, 4500));
-        t.push(setTimeout(() => setPhase18('order-chain'), 5500));
-        t.push(setTimeout(() => setOrderApprovalStates18(['approved', 'pending', 'pending']), 6000));
-        t.push(setTimeout(() => setOrderApprovalStates18(['approved', 'approved', 'pending']), 7000));
-        t.push(setTimeout(() => setOrderApprovalStates18(['approved', 'approved', 'approved']), 8000));
-        t.push(setTimeout(() => setPhase18('order-complete'), 8500));
-        t.push(setTimeout(() => { setPhase18('done'); nextStep(); }, 10000));
+        t.push(setTimeout(() => setPoGenPhase18('mapping'), 3000));
+        t.push(setTimeout(() => setPoGenPhase18('validating'), 4500));
+        t.push(setTimeout(() => { setPoGenPhase18('complete'); setPhase18('po-complete'); }, 6000));
+        // Order Approval Chain (8s-19s) — 3s per approver for readability
+        t.push(setTimeout(() => setPhase18('order-chain'), 8000));
+        t.push(setTimeout(() => setOrderApprovalStates18(['approved', 'pending', 'pending']), 11000));
+        t.push(setTimeout(() => setOrderApprovalStates18(['approved', 'approved', 'pending']), 14000));
+        t.push(setTimeout(() => setOrderApprovalStates18(['approved', 'approved', 'approved']), 17000));
+        // Completion (19s) + advance (22s)
+        t.push(setTimeout(() => setPhase18('order-complete'), 19000));
+        t.push(setTimeout(() => { setPhase18('done'); nextStep(); }, 22000));
         return () => t.forEach(clearTimeout);
     }, [currentStep.id]);
     const orderApprovedCount18 = orderApprovalStates18.filter(s => s === 'approved').length;
@@ -365,7 +372,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     // Step 2.4 — Expert review table (auto-advance since backorder already triggered in 2.3)
     useEffect(() => {
         if (currentStep.id !== '2.4') return;
-        const t = setTimeout(() => nextStep(), 6000);
+        const t = setTimeout(() => nextStep(), 8000);
         return () => clearTimeout(t);
     }, [currentStep.id]);
 
@@ -375,13 +382,16 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     useEffect(() => {
         if (currentStep.id !== '2.5') { setBoPhase25('generating'); setApprovalStates25(['pending', 'pending', 'pending']); return; }
         const t: ReturnType<typeof setTimeout>[] = [];
+        // Backorder generation (0-2s)
         t.push(setTimeout(() => setBoPhase25('generated'), 2000));
-        t.push(setTimeout(() => setBoPhase25('approval'), 3500));
-        t.push(setTimeout(() => setApprovalStates25(['approved', 'pending', 'pending']), 5000));
-        t.push(setTimeout(() => setApprovalStates25(['approved', 'approved', 'pending']), 7000));
-        t.push(setTimeout(() => setApprovalStates25(['approved', 'approved', 'approved']), 9000));
-        t.push(setTimeout(() => setBoPhase25('complete'), 10000));
-        t.push(setTimeout(() => nextStep(), 12000));
+        // Approval chain begins (4s) — 3s per approver for readability
+        t.push(setTimeout(() => setBoPhase25('approval'), 4000));
+        t.push(setTimeout(() => setApprovalStates25(['approved', 'pending', 'pending']), 7000));
+        t.push(setTimeout(() => setApprovalStates25(['approved', 'approved', 'pending']), 10000));
+        t.push(setTimeout(() => setApprovalStates25(['approved', 'approved', 'approved']), 13000));
+        // Completion (15s) + advance (18s)
+        t.push(setTimeout(() => setBoPhase25('complete'), 15000));
+        t.push(setTimeout(() => nextStep(), 18000));
         return () => t.forEach(clearTimeout);
     }, [currentStep.id]);
     const approvedCount25 = approvalStates25.filter(s => s === 'approved').length;
@@ -2631,14 +2641,23 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                         <span className="text-[10px] font-bold text-foreground">{approvedCount16}/2</span>
                                     </div>
                                     <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                        <div className="h-full rounded-full transition-all duration-700 bg-blue-500" style={{ width: `${(approvedCount16 / 2) * 100}%` }} />
+                                        <div className={cn("h-full rounded-full transition-all duration-700", approvedCount16 === 2 ? 'bg-emerald-500' : 'bg-blue-500')} style={{ width: `${(approvedCount16 / 2) * 100}%` }} />
                                     </div>
                                 </div>
 
-                                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center gap-2">
-                                    <ClockIcon className="w-4 h-4 text-amber-500 shrink-0" />
-                                    <span className="text-[10px] text-amber-700 dark:text-amber-300">Awaiting manager approval — notification sent to Sarah Chen</span>
-                                </div>
+                                {approvedCount16 === 2 ? (
+                                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center gap-2 animate-in fade-in duration-500">
+                                        <CheckCircleIcon className="w-4 h-4 text-emerald-500 shrink-0" />
+                                        <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">All approvals complete — advancing to PO generation</span>
+                                    </div>
+                                ) : (
+                                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center gap-2">
+                                        <ClockIcon className="w-4 h-4 text-amber-500 shrink-0" />
+                                        <span className="text-[10px] text-amber-700 dark:text-amber-300">
+                                            {approvedCount16 === 0 ? 'System Policy Engine running compliance check...' : 'Awaiting manager approval — notification sent to Sarah Chen'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
