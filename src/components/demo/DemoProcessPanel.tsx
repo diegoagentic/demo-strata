@@ -411,20 +411,20 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] pointer-events-auto animate-in fade-in duration-500" />
 
             {/* Floating Panel — Lupa zoom-in effect (no slide — feels like zoom, not modal) */}
-            <div className="relative w-full max-w-2xl mx-4 mr-8 bg-zinc-800 border border-indigo-500/30 ring-2 ring-indigo-500/50 rounded-2xl shadow-2xl shadow-indigo-500/15 pointer-events-auto animate-in zoom-in-95 fade-in duration-1000 overflow-hidden max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-micro" style={{ transformOrigin: 'center center' }}>
+            <div className="relative w-full max-w-2xl mx-4 mr-8 bg-white dark:bg-zinc-800 border border-indigo-500/30 ring-2 ring-indigo-500/50 rounded-2xl shadow-2xl shadow-indigo-500/15 pointer-events-auto animate-in zoom-in-95 fade-in duration-1000 overflow-hidden max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-micro" style={{ transformOrigin: 'center center' }}>
                 {/* Top glow bar */}
                 <div className={`absolute top-0 left-0 right-0 h-1 ${isDone ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-500' : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500'}`} />
 
                 {/* Lupa badge */}
-                <div className="absolute top-3 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/80 border border-zinc-700/50 backdrop-blur-sm">
-                    <SearchIcon size={12} className="text-zinc-400" />
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Detail View</span>
+                <div className="absolute top-3 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100/80 dark:bg-zinc-800/80 border border-gray-200/50 dark:border-zinc-700/50 backdrop-blur-sm">
+                    <SearchIcon size={12} className="text-zinc-500 dark:text-zinc-400" />
+                    <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Detail View</span>
                 </div>
 
                 {/* Header */}
                 <div className="flex items-center gap-3 px-6 pt-5 pb-3">
                     <div className="relative">
-                        <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 flex items-center justify-center">
                             {config.icon}
                         </div>
                         {!isDone && (
@@ -435,10 +435,10 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         )}
                     </div>
                     <div>
-                        <h3 className="text-sm font-bold text-white">
+                        <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
                             {isDone ? config.titleDone : config.title}
                         </h3>
-                        <p className="text-[11px] text-zinc-400">
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                             Step {currentStep.id} — {currentStep.title}
                         </p>
                     </div>
@@ -464,12 +464,12 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                 {/* Progress Bar */}
                 <div className="px-6 pb-4">
                     <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
+                        <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                             {isDone ? 'All agents completed' : 'Processing...'}
                         </span>
-                        <span className="text-[10px] font-bold text-zinc-400">{Math.min(Math.round(agentProgress), 100)}%</span>
+                        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">{Math.min(Math.round(agentProgress), 100)}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-white dark:bg-zinc-800 rounded-full overflow-hidden">
                         <div
                             className={`h-full rounded-full transition-all duration-700 ease-out ${isDone ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' : config.progressColor}`}
                             style={{ width: `${Math.min(agentProgress, 100)}%` }}
@@ -480,12 +480,12 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                 {/* Agent Logs */}
                 {agentLogs.length > 0 && (
                     <div className="px-6 pb-4">
-                        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 max-h-[200px] overflow-y-auto scrollbar-micro">
+                        <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 max-h-[200px] overflow-y-auto scrollbar-micro">
                             <div className="space-y-2">
                                 {agentLogs.map((log, i) => (
                                     <div key={i} className="flex items-start gap-2 animate-in slide-in-from-left-4 fade-in duration-300">
                                         <span className="text-zinc-600 font-mono text-[11px] mt-0.5 select-none">{'>'}</span>
-                                        <span className={`text-[12px] font-mono ${i === agentLogs.length - 1 && !isDone ? 'text-zinc-200 animate-pulse' : 'text-zinc-500'}`}>
+                                        <span className={`text-[12px] font-mono ${i === agentLogs.length - 1 && !isDone ? 'text-zinc-200 animate-pulse' : 'text-zinc-400 dark:text-zinc-500'}`}>
                                             {log}
                                         </span>
                                     </div>
@@ -511,10 +511,10 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                 {currentStep.id === '1.2' && (
                     <div className="px-6 pb-5 space-y-4">
                         {/* Extracted Data Table */}
-                        <div className="p-4 rounded-xl border border-zinc-700 bg-zinc-900">
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900">
                             <div className="flex items-center gap-2 mb-3">
-                                <FileText className="text-zinc-400" size={14} />
-                                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Extracted Data</span>
+                                <FileText className="text-zinc-500 dark:text-zinc-400" size={14} />
+                                <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Extracted Data</span>
                             </div>
                             <div className="space-y-2">
                                 {[
@@ -523,15 +523,15 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                                     { label: 'Ship-To', value: '4 delivery zones mapped', badge: '4 zones' },
                                     { label: 'Freight', value: 'Multi-zone routing required', badge: 'Needs Review' },
                                 ].map((item, i) => (
-                                    <div key={i} className="flex items-center justify-between bg-zinc-800/60 rounded-lg px-3 py-2">
+                                    <div key={i} className="flex items-center justify-between bg-gray-100/60 dark:bg-zinc-800/60 rounded-lg px-3 py-2">
                                         <div className="flex items-center gap-3 min-w-0">
-                                            <span className="text-[11px] font-bold text-zinc-500 w-16 shrink-0">{item.label}</span>
-                                            <span className="text-[12px] text-zinc-300 truncate">{item.value}</span>
+                                            <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 w-16 shrink-0">{item.label}</span>
+                                            <span className="text-[12px] text-zinc-600 dark:text-zinc-300 truncate">{item.value}</span>
                                         </div>
                                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 ${
                                             item.badge === 'Needs Review'
                                                 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                                : 'bg-zinc-700 text-zinc-400'
+                                                : 'bg-zinc-700 text-zinc-500 dark:text-zinc-400'
                                         }`}>{item.badge}</span>
                                     </div>
                                 ))}
@@ -540,8 +540,8 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                             {/* Field Confidence Grid */}
                             <div className="mt-3 grid grid-cols-2 gap-2">
                                 {confidenceFields.map(f => (
-                                    <div key={f.field} className="flex items-center justify-between bg-zinc-800 rounded-lg px-3 py-1.5">
-                                        <span className="text-[11px] text-zinc-400">{f.field}</span>
+                                    <div key={f.field} className="flex items-center justify-between bg-white dark:bg-zinc-800 rounded-lg px-3 py-1.5">
+                                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400">{f.field}</span>
                                         <ConfidenceScoreBadge score={f.score} size="sm" />
                                     </div>
                                 ))}
@@ -549,10 +549,10 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         </div>
 
                         {/* Automation Flow Diagram */}
-                        <div className="p-4 rounded-xl border border-zinc-700 bg-zinc-900">
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900">
                             <div className="flex items-center gap-2 mb-3">
                                 <Sparkles className="text-indigo-400" size={14} />
-                                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Automation Flow</span>
+                                <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Automation Flow</span>
                             </div>
                             <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-micro">
                                 {[
@@ -565,8 +565,8 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                                     <React.Fragment key={i}>
                                         <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg border ${step.color} min-w-[72px] shrink-0`}>
                                             <span className="text-base">{step.icon}</span>
-                                            <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight">{step.label}</span>
-                                            <span className="text-[9px] text-zinc-500">{step.sub}</span>
+                                            <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 text-center leading-tight">{step.label}</span>
+                                            <span className="text-[9px] text-zinc-400 dark:text-zinc-500">{step.sub}</span>
                                         </div>
                                         {i < arr.length - 1 && (
                                             <div className="flex items-center shrink-0 px-0.5">
@@ -601,15 +601,15 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         {/* Field Confidence Grid */}
                         <div className="grid grid-cols-2 gap-2">
                             {confidenceFields.map(f => (
-                                <div key={f.field} className="flex items-center justify-between bg-zinc-800 rounded-lg px-3 py-2">
-                                    <span className="text-[12px] text-zinc-400">{f.field}</span>
+                                <div key={f.field} className="flex items-center justify-between bg-white dark:bg-zinc-800 rounded-lg px-3 py-2">
+                                    <span className="text-[12px] text-zinc-500 dark:text-zinc-400">{f.field}</span>
                                     <ConfidenceScoreBadge score={f.score} size="sm" />
                                 </div>
                             ))}
                         </div>
 
                         {/* Handoff Indicator */}
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700/50">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200/50 dark:border-zinc-700/50">
                             <div className="flex items-center -space-x-1.5">
                                 <div className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
                                     <Bot size={12} className="text-indigo-400" />
@@ -618,7 +618,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                                     <Users size={12} className="text-amber-400" />
                                 </div>
                             </div>
-                            <span className="text-[11px] text-zinc-400">AI Agent + Expert will draft the quote</span>
+                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">AI Agent + Expert will draft the quote</span>
                         </div>
 
                         <button
@@ -635,16 +635,16 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                 {currentStep.id === '1.4' && isDone && (
                     <div className="px-6 pb-5 space-y-4 animate-in fade-in duration-300">
                         {/* Branching Result */}
-                        <div className="rounded-lg border border-zinc-700 bg-zinc-800 p-4">
+                        <div className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4">
                             <div className="flex items-center gap-2 mb-1.5">
                                 <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                                 <span className="text-[11px] font-medium text-amber-400 uppercase tracking-wider">Needs Attention</span>
                             </div>
-                            <p className="text-[12px] text-zinc-400">Multi-zone freight routing requires manual approval</p>
+                            <p className="text-[12px] text-zinc-500 dark:text-zinc-400">Multi-zone freight routing requires manual approval</p>
                         </div>
 
                         {/* Handoff */}
-                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700/50">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200/50 dark:border-zinc-700/50">
                             <div className="flex items-center -space-x-1.5">
                                 <div className="w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
                                     <Bot size={12} className="text-indigo-400" />
@@ -653,7 +653,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                                     <Users size={12} className="text-amber-400" />
                                 </div>
                             </div>
-                            <span className="text-[11px] text-zinc-400">Expert + AI Agent will resolve discrepancies</span>
+                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Expert + AI Agent will resolve discrepancies</span>
                         </div>
 
                         <button
@@ -670,15 +670,15 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                 {currentStep.id === '2.2' && isDone && (
                     <div className="px-6 pb-5 space-y-4 animate-in fade-in duration-300">
                         {/* Entity Link */}
-                        <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700">
-                            <span className="text-zinc-500">Entity Link:</span>
+                        <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
+                            <span className="text-zinc-400 dark:text-zinc-500">Entity Link:</span>
                             <span className="text-blue-400 font-medium">PO #ORD-2055 ↔ ACK #ACK-2055</span>
                         </div>
 
                         {/* Schema Mapping Table */}
-                        <div className="rounded-xl border border-zinc-700 overflow-hidden">
-                            <div className="px-4 py-2 bg-zinc-800 border-b border-zinc-700">
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Schema Mapping (Raw → Normalized)</span>
+                        <div className="rounded-xl border border-gray-200 dark:border-zinc-700 overflow-hidden">
+                            <div className="px-4 py-2 bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
+                                <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Schema Mapping (Raw → Normalized)</span>
                             </div>
                             <table className="w-full text-[12px]">
                                 <tbody className="divide-y divide-zinc-800">
@@ -689,7 +689,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                                         { raw: 'PO1*FRT-0001*150', normalized: 'freight_charge: $150.00' },
                                     ].map((row, i) => (
                                         <tr key={i}>
-                                            <td className="px-4 py-2 font-mono text-zinc-500">{row.raw}</td>
+                                            <td className="px-4 py-2 font-mono text-zinc-400 dark:text-zinc-500">{row.raw}</td>
                                             <td className="px-2 text-zinc-600">→</td>
                                             <td className="px-4 py-2 font-mono text-blue-400">{row.normalized}</td>
                                         </tr>
@@ -699,7 +699,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         </div>
 
                         {/* Confidence + AI */}
-                        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700">
+                        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
                             <div className="flex items-center gap-1.5">
                                 <Sparkles size={12} className="text-indigo-400" />
                                 <span className="text-[11px] text-indigo-400 font-medium">DataNormalizationAgent unified 4 raw fields to standard schema</span>
@@ -721,46 +721,46 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                 {currentStep.id === '2.3' && isDone && (
                     <div className="px-6 pb-5 space-y-4 animate-in fade-in duration-300">
                         {/* Line-by-Line Comparison Table */}
-                        <div className="rounded-xl border border-zinc-700 overflow-hidden">
-                            <div className="px-4 py-2 bg-zinc-800 border-b border-zinc-700">
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Line-by-Line Comparison</span>
+                        <div className="rounded-xl border border-gray-200 dark:border-zinc-700 overflow-hidden">
+                            <div className="px-4 py-2 bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
+                                <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Line-by-Line Comparison</span>
                             </div>
                             <table className="w-full text-[12px]">
                                 <thead>
-                                    <tr className="border-b border-zinc-800">
-                                        <th className="text-left px-4 py-1.5 text-zinc-500 font-medium">Line</th>
-                                        <th className="text-left px-4 py-1.5 text-zinc-500 font-medium">Item</th>
-                                        <th className="text-left px-4 py-1.5 text-zinc-500 font-medium">PO</th>
-                                        <th className="text-left px-4 py-1.5 text-zinc-500 font-medium">ACK</th>
-                                        <th className="text-left px-4 py-1.5 text-zinc-500 font-medium">Status</th>
+                                    <tr className="border-b border-gray-200 dark:border-zinc-800">
+                                        <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">Line</th>
+                                        <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">Item</th>
+                                        <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">PO</th>
+                                        <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">ACK</th>
+                                        <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-800">
                                     <tr>
-                                        <td className="px-4 py-2 text-zinc-400">1</td>
-                                        <td className="px-4 py-2 text-zinc-300">Task Chair</td>
-                                        <td className="px-4 py-2 font-mono text-zinc-400">ERG-5100</td>
-                                        <td className="px-4 py-2 font-mono text-zinc-400">ERG-5100</td>
+                                        <td className="px-4 py-2 text-zinc-500 dark:text-zinc-400">1</td>
+                                        <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">Task Chair</td>
+                                        <td className="px-4 py-2 font-mono text-zinc-500 dark:text-zinc-400">ERG-5100</td>
+                                        <td className="px-4 py-2 font-mono text-zinc-500 dark:text-zinc-400">ERG-5100</td>
                                         <td className="px-4 py-2"><span className="flex items-center gap-1 text-green-400"><CheckCircle2 size={12} /> Match</span></td>
                                     </tr>
                                     <tr className="bg-amber-500/5">
-                                        <td className="px-4 py-2 text-zinc-400">2</td>
+                                        <td className="px-4 py-2 text-zinc-500 dark:text-zinc-400">2</td>
                                         <td className="px-4 py-2 text-amber-300 font-medium">Desk</td>
-                                        <td className="px-4 py-2 font-mono text-zinc-400">DSK-B</td>
+                                        <td className="px-4 py-2 font-mono text-zinc-500 dark:text-zinc-400">DSK-B</td>
                                         <td className="px-4 py-2 font-mono text-amber-400">DSK-C</td>
                                         <td className="px-4 py-2"><span className="text-amber-400 font-medium">Substitution</span></td>
                                     </tr>
                                     <tr>
-                                        <td className="px-4 py-2 text-zinc-400">3</td>
-                                        <td className="px-4 py-2 text-zinc-300">Armrest</td>
-                                        <td className="px-4 py-2 font-mono text-zinc-400">ARM-4D10</td>
-                                        <td className="px-4 py-2 font-mono text-zinc-400">ARM-4D10</td>
+                                        <td className="px-4 py-2 text-zinc-500 dark:text-zinc-400">3</td>
+                                        <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">Armrest</td>
+                                        <td className="px-4 py-2 font-mono text-zinc-500 dark:text-zinc-400">ARM-4D10</td>
+                                        <td className="px-4 py-2 font-mono text-zinc-500 dark:text-zinc-400">ARM-4D10</td>
                                         <td className="px-4 py-2"><span className="flex items-center gap-1 text-green-400"><CheckCircle2 size={12} /> Match</span></td>
                                     </tr>
                                     <tr className="bg-red-500/5">
-                                        <td className="px-4 py-2 text-zinc-400">4</td>
+                                        <td className="px-4 py-2 text-zinc-500 dark:text-zinc-400">4</td>
                                         <td className="px-4 py-2 text-red-300 font-medium">Freight</td>
-                                        <td className="px-4 py-2 font-mono text-zinc-400">$45</td>
+                                        <td className="px-4 py-2 font-mono text-zinc-500 dark:text-zinc-400">$45</td>
                                         <td className="px-4 py-2 font-mono text-red-400">$150</td>
                                         <td className="px-4 py-2"><span className="text-red-400 font-medium">+233%</span></td>
                                     </tr>
@@ -769,8 +769,8 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         </div>
 
                         {/* Delta Summary */}
-                        <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-zinc-800 border border-zinc-700">
-                            <span className="text-[11px] text-zinc-400">4 lines compared: <span className="text-green-400 font-medium">2 matches</span>, <span className="text-red-400 font-medium">2 exceptions</span></span>
+                        <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
+                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">4 lines compared: <span className="text-green-400 font-medium">2 matches</span>, <span className="text-red-400 font-medium">2 exceptions</span></span>
                             <ConfidenceScoreBadge score={50} label="Match Rate" />
                         </div>
 
@@ -798,14 +798,14 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                     <div className="px-6 pb-5 space-y-4 animate-in fade-in duration-300">
                         {/* Classification Result Badge */}
                         <div className="flex items-center gap-3">
-                            <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 flex items-center gap-2">
-                                <span className="text-[11px] font-medium text-zinc-500 uppercase">Type:</span>
+                            <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 flex items-center gap-2">
+                                <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 uppercase">Type:</span>
                                 <span className="text-[13px] font-bold text-indigo-400">INVOICE</span>
                             </div>
                             <ConfidenceScoreBadge score={97} label="Classification" size="sm" />
                         </div>
 
-                        <p className="text-[12px] text-zinc-400">
+                        <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
                             Routed to 3-Way Match Engine (PO + ACK + Invoice)
                         </p>
 
@@ -824,7 +824,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
 
                 {/* Footer */}
                 <div className="px-6 pb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[11px] text-zinc-500">
+                    <div className="flex items-center gap-2 text-[11px] text-zinc-400 dark:text-zinc-500">
                         <Cpu size={14} />
                         <span>Strata Intelligence Engine v2.0</span>
                     </div>

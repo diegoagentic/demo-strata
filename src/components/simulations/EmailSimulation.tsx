@@ -78,9 +78,9 @@ export default function EmailSimulation() {
     const currentEmail = emails.find(e => e.id === selectedEmail);
 
     return (
-        <div className="flex h-full bg-[#f6f8fc] dark:bg-[#0b0c0e] overflow-hidden text-zinc-900 dark:text-zinc-100">
+        <div className="flex h-full bg-gray-50 dark:bg-zinc-950 overflow-hidden text-zinc-900 dark:text-zinc-100">
             {/* Apps Sidebar (Left-most vertical bar) */}
-            <aside className="w-16 flex flex-col items-center py-2 shrink-0 bg-[#F6F8FC] dark:bg-[#0B0C0E] border-r dark:border-zinc-800/30 gap-1">
+            <aside className="w-16 flex flex-col items-center py-2 shrink-0 bg-gray-50 dark:bg-zinc-950 border-r dark:border-zinc-800/30 gap-1">
                 {[
                     { icon: EnvelopeIcon, label: 'Mail', active: true },
                     { icon: ChatBubbleLeftEllipsisIcon, label: 'Chat' },
@@ -90,12 +90,12 @@ export default function EmailSimulation() {
                     <div key={i} className="flex flex-col items-center gap-1 group cursor-pointer mb-2">
                         <div className={cn(
                             "p-1.5 rounded-full transition-all duration-200 relative",
-                            app.active ? "bg-[#D3E3FD] dark:bg-brand-500/20 text-[#001D35] dark:text-brand-400" : "hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                            app.active ? "bg-blue-100 dark:bg-brand-500/20 text-blue-950 dark:text-brand-400" : "hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                         )}>
                             <app.icon className="w-6 h-6" />
                             {app.active && <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-1 h-4 bg-brand-600 dark:bg-brand-400 rounded-r-full" />}
                         </div>
-                        <span className={cn("text-[10px] font-medium transition-colors", app.active ? "text-[#001D35] dark:text-brand-400 underline underline-offset-4 decoration-2" : "text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-200")}>{app.label}</span>
+                        <span className={cn("text-[10px] font-medium transition-colors", app.active ? "text-blue-950 dark:text-brand-400 underline underline-offset-4 decoration-2" : "text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-200")}>{app.label}</span>
                     </div>
                 ))}
             </aside>
@@ -105,9 +105,9 @@ export default function EmailSimulation() {
                 "flex flex-col px-3 shrink-0 transition-all duration-300",
                 isSidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden"
             )}>
-                <button className="flex items-center gap-4 bg-[#C2E7FF] dark:bg-brand-500 hover:shadow-lg py-4 px-6 rounded-2xl mb-4 transition-all w-fit mt-2 group shadow-sm active:scale-95">
-                    <PencilIcon className="w-6 h-6 text-[#001D35] dark:text-zinc-900 group-hover:scale-110 transition-transform" />
-                    <span className="text-sm font-bold text-[#001D35] dark:text-zinc-900 pr-2">Compose</span>
+                <button className="flex items-center gap-4 bg-blue-200 dark:bg-brand-500 hover:shadow-lg py-4 px-6 rounded-2xl mb-4 transition-all w-fit mt-2 group shadow-sm active:scale-95">
+                    <PencilIcon className="w-6 h-6 text-blue-950 dark:text-zinc-900 group-hover:scale-110 transition-transform" />
+                    <span className="text-sm font-bold text-blue-950 dark:text-zinc-900 pr-2">Compose</span>
                 </button>
 
                 <nav className="space-y-0.5">
@@ -124,11 +124,11 @@ export default function EmailSimulation() {
                             className={cn(
                                 "flex items-center gap-4 py-1 px-5 rounded-full cursor-pointer group transition-all",
                                 item.active
-                                    ? "bg-[#D3E3FD] dark:bg-brand-500/30 text-[#001D35] dark:text-brand-100 font-bold"
-                                    : "hover:bg-[#E1E3E1] dark:hover:bg-zinc-800/80 text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                                    ? "bg-blue-100 dark:bg-brand-500/30 text-blue-950 dark:text-brand-100 font-bold"
+                                    : "hover:bg-gray-200 dark:hover:bg-zinc-800/80 text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
                             )}
                         >
-                            <item.icon className={cn("w-5 h-5", item.active && "text-[#001D35] dark:text-brand-100")} />
+                            <item.icon className={cn("w-5 h-5", item.active && "text-blue-950 dark:text-brand-100")} />
                             <span className="flex-1 text-sm">{item.label}</span>
                             {item.count && <span className={cn("text-xs", item.active ? "text-brand-600 dark:text-brand-300" : "text-zinc-500")}>{item.count}</span>}
                         </div>
@@ -150,7 +150,7 @@ export default function EmailSimulation() {
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 bg-white dark:bg-[#111318] mr-4 mb-4 rounded-3xl overflow-hidden flex flex-col shadow-sm border border-zinc-200 dark:border-zinc-800/50 transition-all">
+            <main className="flex-1 bg-white dark:bg-zinc-900 mr-4 mb-4 rounded-3xl overflow-hidden flex flex-col shadow-sm border border-zinc-200 dark:border-zinc-800/50 transition-all">
                 {selectedEmail === null ? (
                     <>
                         {/* Toolbar */}
@@ -243,7 +243,7 @@ export default function EmailSimulation() {
                     </>
                 ) : (
                     /* Individual Email View */
-                    <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-8 duration-500 bg-white dark:bg-[#111318]">
+                    <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-8 duration-500 bg-white dark:bg-zinc-900">
                         {/* Toolbar */}
                         <div className="h-12 flex items-center px-4 gap-4 border-b border-zinc-100 dark:border-zinc-800/30 shrink-0">
                             <button onClick={() => setSelectedEmail(null)} className="p-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors active:bg-zinc-200">
@@ -458,7 +458,7 @@ export default function EmailSimulation() {
             </main>
 
             {/* Right Apps Sidebar (Static/Hidden) */}
-            <aside className="w-14 flex flex-col items-center py-4 bg-[#F6F8FC] dark:bg-[#0B0C0E] shrink-0 gap-8 border-l border-zinc-200 dark:border-zinc-800/30">
+            <aside className="w-14 flex flex-col items-center py-4 bg-gray-50 dark:bg-zinc-950 shrink-0 gap-8 border-l border-zinc-200 dark:border-zinc-800/30">
                 <img src="https://www.gstatic.com/companion/icon_assets/calendar_2020q4_2x.png" className="w-5 h-5 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" alt="Calendar" />
                 <img src="https://www.gstatic.com/companion/icon_assets/keep_2020q4_v3_2x.png" className="w-5 h-5 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" alt="Keep" />
                 <img src="https://www.gstatic.com/companion/icon_assets/tasks_2021_2x.png" className="w-5 h-5 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" alt="Tasks" />

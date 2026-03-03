@@ -209,7 +209,7 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl mx-4 bg-zinc-900 border border-zinc-700/50 rounded-2xl shadow-2xl shadow-indigo-500/10 animate-in zoom-in-95 fade-in duration-500 overflow-hidden">
+            <div className="relative w-full max-w-2xl mx-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700/50 rounded-2xl shadow-2xl shadow-indigo-500/10 animate-in zoom-in-95 fade-in duration-500 overflow-hidden">
                 {/* Top glow bar */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
 
@@ -228,10 +228,10 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
                             )}
                         </div>
                         <div>
-                            <h3 className="text-sm font-bold text-white">
+                            <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
                                 {phase === 'processing' ? 'AI Agent Pipeline — Processing RFQ' : 'Extraction Complete'}
                             </h3>
-                            <p className="text-[11px] text-zinc-400">
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                                 {phase === 'processing'
                                     ? '5 agents working on Apex Furniture RFQ'
                                     : '5 agents completed — RFQ data extracted and normalized'}
@@ -257,9 +257,9 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
                         <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
                             {phase === 'processing' ? 'Processing...' : 'All agents completed'}
                         </span>
-                        <span className="text-[10px] font-bold text-zinc-400">{progress}%</span>
+                        <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">{progress}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                         <div
                             className={`h-full rounded-full transition-all duration-700 ease-out ${
                                 phase === 'complete'
@@ -274,7 +274,7 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
                 {phase === 'processing' ? (
                     /* Agent Logs */
                     <div className="px-6 pb-5">
-                        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 max-h-[200px] overflow-y-auto scrollbar-micro">
+                        <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 max-h-[200px] overflow-y-auto scrollbar-micro">
                             <div className="space-y-2">
                                 {logs.map((log, i) => (
                                     <div
@@ -291,7 +291,7 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
                                             </span>
                                             <span className={`text-[11px] font-mono ${
                                                 i === logs.length - 1 && phase === 'processing'
-                                                    ? 'text-zinc-200'
+                                                    ? 'text-zinc-800 dark:text-zinc-200'
                                                     : 'text-zinc-500'
                                             }`}>
                                                 {log.message}
@@ -315,21 +315,21 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
                 ) : (
                     /* Extracted Items Summary */
                     <div className="px-6 pb-5">
-                        <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                        <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-3">
                                 <DocumentTextIcon className="w-4 h-4 text-zinc-500" />
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Extracted Data Summary</span>
+                                <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Extracted Data Summary</span>
                             </div>
                             <div className="space-y-2">
                                 {EXTRACTED_ITEMS.slice(0, extractedCount).map((item, i) => (
                                     <div
                                         key={i}
-                                        className="flex items-center gap-3 px-3 py-2 bg-zinc-900 rounded-lg border border-zinc-800 animate-in slide-in-from-bottom-2 fade-in duration-300"
+                                        className="flex items-center gap-3 px-3 py-2 bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-800 animate-in slide-in-from-bottom-2 fade-in duration-300"
                                     >
                                         <span className="text-base shrink-0">{item.icon}</span>
                                         <div className="flex-1 min-w-0">
                                             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{item.label}</span>
-                                            <p className="text-[12px] text-zinc-200 font-medium truncate">{item.value}</p>
+                                            <p className="text-[12px] text-zinc-800 dark:text-zinc-200 font-medium truncate">{item.value}</p>
                                         </div>
                                         <CheckCircleIcon className="w-4 h-4 text-emerald-500 shrink-0" />
                                     </div>

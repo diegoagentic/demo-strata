@@ -2423,9 +2423,9 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                     'w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all duration-500',
                                                     approvalStates25[i] === 'approved' && 'bg-green-500 text-white',
                                                     approvalStates25[i] === 'pending' && i === approvedCount25 && 'bg-amber-500 text-white animate-pulse',
-                                                    approvalStates25[i] === 'pending' && i !== approvedCount25 && 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400',
+                                                    approvalStates25[i] === 'pending' && i !== approvedCount25 && 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400',
                                                 )}>
-                                                    {approvalStates25[i] === 'approved' ? <CheckCircleIcon className="w-5 h-5" /> : i === approvedCount25 ? <ClockIcon className="w-5 h-5" /> : <span className="w-2 h-2 rounded-full bg-zinc-400" />}
+                                                    {approvalStates25[i] === 'approved' ? <CheckCircleIcon className="w-5 h-5" /> : i === approvedCount25 ? <ClockIcon className="w-5 h-5" /> : <span className="w-2 h-2 rounded-full bg-zinc-500 dark:bg-zinc-400" />}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between gap-2">

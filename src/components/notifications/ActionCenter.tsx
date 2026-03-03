@@ -83,11 +83,11 @@ export default function ActionCenter() {
             count: mockNotifications.filter(n => n.unread).length,
             icon: Squares2X2Icon,
             colorTheme: {
-                activeBg: 'bg-zinc-800 dark:bg-white/10',
-                activeText: 'text-white',
-                activeBorder: 'border-white/10',
-                badgeBg: 'bg-white/20',
-                badgeText: 'text-white'
+                activeBg: 'bg-gray-200 dark:bg-white/10',
+                activeText: 'text-zinc-900 dark:text-white',
+                activeBorder: 'border-gray-300 dark:border-white/10',
+                badgeBg: 'bg-zinc-500/20 dark:bg-white/20',
+                badgeText: 'text-zinc-900 dark:text-white'
             },
             filter: () => true
         },
@@ -221,13 +221,13 @@ export default function ActionCenter() {
 
     // Flow 1 tabs for step 1.9 — single tab since only 1 notification
     const flow1Tabs: NotificationTab[] = [
-        { id: 'all', label: 'All', count: FLOW1_NOTIFICATIONS.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-zinc-800 dark:bg-white/10', activeText: 'text-white', activeBorder: 'border-white/10', badgeBg: 'bg-white/20', badgeText: 'text-white' }, filter: () => true },
+        { id: 'all', label: 'All', count: FLOW1_NOTIFICATIONS.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-gray-200 dark:bg-white/10', activeText: 'text-zinc-900 dark:text-white', activeBorder: 'border-gray-300 dark:border-white/10', badgeBg: 'bg-zinc-500/20 dark:bg-white/20', badgeText: 'text-zinc-900 dark:text-white' }, filter: () => true },
         { id: 'quotes', label: 'Quotes & POs', count: FLOW1_NOTIFICATIONS.length, icon: DocumentTextIcon, colorTheme: { activeBg: 'bg-blue-500/15', activeText: 'text-blue-500', activeBorder: 'border-blue-500/20', badgeBg: 'bg-blue-500/20', badgeText: 'text-blue-500' }, filter: (n) => n.type === 'po_created' || n.type === 'quote_update' },
     ];
 
     // Flow 2 tabs for step 2.7
     const flow2Tabs: NotificationTab[] = [
-        { id: 'all', label: 'All', count: FLOW2_NOTIFICATIONS.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-zinc-800 dark:bg-white/10', activeText: 'text-white', activeBorder: 'border-white/10', badgeBg: 'bg-white/20', badgeText: 'text-white' }, filter: () => true },
+        { id: 'all', label: 'All', count: FLOW2_NOTIFICATIONS.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-gray-200 dark:bg-white/10', activeText: 'text-zinc-900 dark:text-white', activeBorder: 'border-gray-300 dark:border-white/10', badgeBg: 'bg-zinc-500/20 dark:bg-white/20', badgeText: 'text-zinc-900 dark:text-white' }, filter: () => true },
         { id: 'acks', label: 'ACKs', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'ack_received').length, icon: DocumentTextIcon, colorTheme: { activeBg: 'bg-blue-500/15', activeText: 'text-blue-500', activeBorder: 'border-blue-500/20', badgeBg: 'bg-blue-500/20', badgeText: 'text-blue-500' }, filter: (n) => n.type === 'ack_received' },
         { id: 'shipping', label: 'Backorders', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'backorder').length, icon: TruckIcon, colorTheme: { activeBg: 'bg-green-500/15', activeText: 'text-green-500', activeBorder: 'border-green-500/20', badgeBg: 'bg-green-500/20', badgeText: 'text-green-500' }, filter: (n) => n.type === 'backorder' },
         { id: 'system', label: 'System', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'system').length, icon: CpuChipIcon, colorTheme: { activeBg: 'bg-indigo-500/15', activeText: 'text-indigo-500', activeBorder: 'border-indigo-500/20', badgeBg: 'bg-indigo-500/20', badgeText: 'text-indigo-500' }, filter: (n) => n.type === 'system' },
