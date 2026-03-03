@@ -1915,6 +1915,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             { id: 'notif', name: 'Notification', status: 'pending' },
                         ]} accentColor="blue" />
 
+                        {/* AI Context */}
+                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                            <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                <span className="font-bold">ERPConnectorAgent:</span> 2 new acknowledgments detected — AIS (EDI/855) and HAT Contract (vendor email). Routing to ACK processing pipeline.
+                            </div>
+                        </div>
+
                         {/* ACK Pipeline Kanban */}
                         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                             <div className="p-4 border-b border-border">
@@ -1998,6 +2006,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             { id: 'approval', name: 'ApprovalOrch', status: 'pending' },
                             { id: 'notif', name: 'Notification', status: 'pending' },
                         ]} accentColor="blue" />
+
+                        {/* AI Context */}
+                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                            <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                <span className="font-bold">DataNormAgent:</span> Normalizing and comparing ACK data field-by-field against PO-1064B. Smart rules applying corrections automatically.
+                            </div>
+                        </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             {/* HAT Comparison Card */}
@@ -2274,6 +2290,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             { id: 'notif', name: 'Notification', status: 'pending' },
                         ]} accentColor="green" />
 
+                        {/* AI Context */}
+                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                            <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                <span className="font-bold">DiscrepResolverAgent:</span> AI reviewed 50 line items — 2 corrections applied automatically, 1 quantity shortfall escalated to expert review.
+                            </div>
+                        </div>
+
                         {/* ACK Summary Header */}
                         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                             <div className="p-4 border-b border-border">
@@ -2366,6 +2390,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             { id: 'approval', name: 'ApprovalOrch', status: boPhase25 === 'complete' ? 'done' : (boPhase25 === 'approval' ? 'running' : 'pending'), detail: boPhase25 === 'approval' ? `${approvedCount25}/3` : undefined },
                             { id: 'notif', name: 'Notification', status: 'pending' },
                         ]} accentColor="green" />
+
+                        {/* AI Context */}
+                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                            <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                <span className="font-bold">BackorderAgent:</span> Creating backorder BO-1064B for 3 shortfall SKUs (6 units), then routing to automated 3-approver chain.
+                            </div>
+                        </div>
 
                         {/* Backorder Card */}
                         <div className={cn('p-4 rounded-2xl border shadow-sm transition-all duration-500', boPhase25 === 'generating' ? 'border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-500/5' : 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-500/5')}>
@@ -2676,6 +2708,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             { id: 'po', name: 'POBuilder', status: poGenPhase18 === 'complete' ? 'done' : ['po-generating', 'po-complete'].includes(phase18) || phase18 === 'po-generating' ? 'running' : 'pending', detail: poGenPhase18 === 'complete' ? 'PO-1029' : phase18 === 'po-generating' ? 'Generating...' : '' },
                             { id: 'notif', name: 'Notification', status: 'pending' },
                         ]} accentColor="green" />
+
+                        {/* AI Context */}
+                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                            <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                <span className="font-bold">POBuilderAgent:</span> Auto-generating purchase order PO-1029 from approved quote QT-1025, then routing to automated order approval chain.
+                            </div>
+                        </div>
 
                         {/* Quote Approval Complete */}
                         <div className="bg-card border border-emerald-200 dark:border-emerald-500/20 rounded-2xl overflow-hidden shadow-sm">
