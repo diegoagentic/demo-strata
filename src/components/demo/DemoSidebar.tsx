@@ -8,7 +8,9 @@ import {
     ChevronLeft,
     Play,
     Pause,
+    Loader2,
 } from 'lucide-react';
+import { STEP_BEHAVIOR } from './DemoStepBanner';
 
 // Apps belonging to Expert Hub — System steps in these show as "Expert"
 const EXPERT_HUB_APPS = ['expert-hub', 'ack-detail', 'transactions', 'mac', 'quote-detail'];
@@ -205,6 +207,12 @@ export default function DemoSidebar() {
                                                 </span>
                                             );
                                         })()}
+                                        {STEP_BEHAVIOR[step.id]?.mode === 'auto' && (
+                                            <span className={`text-[9px] px-1 py-0.5 rounded flex items-center gap-0.5 ${isActive ? `${c.bgBadgeActive} ${c.textBadgeActive}` : `${c.bgBadge} ${c.textBadge}`}`}>
+                                                <Loader2 size={8} className={isActive ? 'animate-spin' : ''} />
+                                                AUTO
+                                            </span>
+                                        )}
                                     </div>
                                     <h3 className={`font-semibold text-sm leading-tight ${isActive ? c.textTitle : c.textBody}`}>
                                         {step.title}

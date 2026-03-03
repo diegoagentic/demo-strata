@@ -21,6 +21,7 @@ import SessionExpiryModal from "./components/SessionExpiryModal"
 import DemoSidebar from "./components/demo/DemoSidebar"
 import DemoSpotlight from "./components/demo/DemoSpotlight"
 import DemoProcessPanel from "./components/demo/DemoProcessPanel"
+import DemoStepBanner from "./components/demo/DemoStepBanner"
 
 // Simulations
 import ExpertHubTransactions from "./components/simulations/ExpertHubTransactions"
@@ -347,6 +348,7 @@ function App() {
       <DemoSidebar />
       <DemoSpotlight />
       <DemoProcessPanel onNavigate={handleNavigate} />
+      <DemoStepBanner />
 
       {/* FIXED NAVBAR (Unified) — hidden for email simulation & workspace/detail */}
       {(isDemoActive
@@ -368,7 +370,7 @@ function App() {
       )}
 
       {/* MAIN CONTENT VIEWPORT */}
-      <main className={`transition-all duration-300 ${(isDemoActive ? currentStep.app !== 'email-marketplace' : currentPage !== 'detail' && currentPage !== 'workspace') ? 'pt-16' : ''} ${isDemoActive ? (isSidebarCollapsed ? 'pl-0' : 'pl-80') + ' animate-in fade-in duration-500' : ''} min-h-screen bg-background`}>
+      <main className={`transition-all duration-300 ${(isDemoActive ? currentStep.app !== 'email-marketplace' : currentPage !== 'detail' && currentPage !== 'workspace') ? (isDemoActive ? 'pt-[108px]' : 'pt-16') : ''} ${isDemoActive ? (isSidebarCollapsed ? 'pl-0' : 'pl-80') + ' animate-in fade-in duration-500' : ''} min-h-screen bg-background`}>
         {isDemoActive ? renderSimulation() : renderCurrentPage()}
       </main>
 
