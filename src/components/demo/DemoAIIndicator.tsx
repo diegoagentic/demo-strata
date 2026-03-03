@@ -13,7 +13,7 @@ const SELF_INDICATED_STEPS = [
     '2.1', '2.2', '2.3', '2.4', '2.5', '2.6',
     // EmailSimulation, Dashboard, Transactions, OrderDetail, MAC — own inline indicators
     '1.1', '1.7', '1.9', '1.10',
-    '3.1', '3.2', '3.3',
+    '3.1', '3.2', '3.3', '3.4',
 ];
 
 // ─── Contextual UX/Marketing Messages ────────────────────────────────────────
@@ -118,6 +118,11 @@ const STEP_MESSAGES: Record<string, string[]> = {
         'Assembling warranty claim package with evidence photos...',
         'Forwarding issue description and ship-to address to manufacturer',
         'Acknowledgement received — tracking shipment on dashboard',
+    ],
+    '3.4': [
+        'Delivering punch list report to end user mobile...',
+        'End user reviewing claim details and evidence summary',
+        'Awaiting end user acknowledgement',
     ],
 };
 

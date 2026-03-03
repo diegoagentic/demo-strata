@@ -12,6 +12,12 @@ import {
     CubeIcon,
     PhotoIcon,
     MapPinIcon,
+    SparklesIcon,
+    EyeIcon,
+    EnvelopeIcon,
+    QrCodeIcon,
+    ArrowUpTrayIcon,
+    PaperClipIcon,
 } from '@heroicons/react/24/outline';
 import { useDemo } from '../context/DemoContext';
 import LiabilityAnalysisPanel from './widgets/LiabilityAnalysisPanel';
@@ -56,6 +62,27 @@ const BUSINESS_RULES: BusinessRule[] = [
     { id: 'duplicate-check', label: 'No duplicate claims', status: 'pass', detail: 'No prior claims for this order line' },
 ];
 
+const AI_RULE_SUGGESTIONS: Record<string, { label: string; value: string }[]> = {
+    'repair-threshold': [
+        { label: 'Adjust to $495', value: '495' },
+        { label: 'Exception for $510', value: '510' },
+        { label: 'Split: 2× $255', value: '255' },
+    ],
+    'labor-hours': [
+        { label: '4 hrs (standard)', value: '4' },
+        { label: '5 hrs (partial)', value: '5' },
+        { label: '6 hrs (justified)', value: '6' },
+    ],
+};
+
+const EXTRACTION_FIELDS: { label: string; value: string; status: 'ok' | 'warning' | 'missing' }[] = [
+    { label: 'Order Number', value: 'ORD-2055', status: 'ok' },
+    { label: 'Product Description', value: '2x Conference Room Chairs (Azure)', status: 'ok' },
+    { label: 'Issue Type', value: 'Freight Damage — Upholstery Tear', status: 'ok' },
+    { label: 'Label / SKU', value: 'CC-AZ-2024 (mismatch with CC-AZ-2025)', status: 'warning' },
+    { label: 'Box / Packaging Photo', value: 'Not provided', status: 'missing' },
+];
+
 const CLAIM_LOG_ENTRIES = [
     'ClaimSubmissionAgent: Initializing claim package CLM-2026-114...',
     'ClaimSubmissionAgent: Forwarding 2 evidence photos to manufacturer portal...',
@@ -73,8 +100,15 @@ export default function MACPunchList() {
     const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
     // Step 3.1 state
+    const [extractionPhase, setExtractionPhase] = useState<'email' | 'extracting' | 'review'>('email');
+    const [extractedCount, setExtractedCount] = useState(0);
     const [expandedValidation, setExpandedValidation] = useState<string | null>(null);
     const [resolvedItems, setResolvedItems] = useState<Set<string>>(new Set());
+    const [qrScanning, setQrScanning] = useState(false);
+    const [qrDone, setQrDone] = useState(false);
+    const [uploadingEvidence, setUploadingEvidence] = useState(false);
+    const [uploadedPhotos, setUploadedPhotos] = useState(0);
+    const [uploadDone, setUploadDone] = useState(false);
 
     // Step 3.2 state
     const [approvedLabor, setApprovedLabor] = useState(false);
@@ -83,12 +117,14 @@ export default function MACPunchList() {
         'repair-threshold': '510',
         'labor-hours': '6',
     });
+    const [validatedRules, setValidatedRules] = useState<Set<string>>(new Set());
 
     // Step 3.3 state
     const [claimLogs, setClaimLogs] = useState<string[]>([]);
     const [claimProgress, setClaimProgress] = useState(0);
     const [claimPhase, setClaimPhase] = useState<'processing' | 'acknowledged' | 'complete'>('processing');
     const [showLiability, setShowLiability] = useState(false);
+    const [showReviewModal, setShowReviewModal] = useState(false);
 
     // Auto-select first item when entering Flow 3
     useEffect(() => {
@@ -97,13 +133,32 @@ export default function MACPunchList() {
         }
     }, [currentStep?.id]);
 
-    // Step 3.1: Auto-expand label-photo after 2s
+    // Step 3.1: Email extraction animation → then validation checklist
     useEffect(() => {
         if (currentStep?.id !== '3.1') return;
+        setExtractionPhase('email');
+        setExtractedCount(0);
         setExpandedValidation(null);
         setResolvedItems(new Set());
-        const t = setTimeout(() => setExpandedValidation('label-photo'), 2000);
-        return () => clearTimeout(t);
+        setQrScanning(false);
+        setQrDone(false);
+        setUploadingEvidence(false);
+        setUploadedPhotos(0);
+        setUploadDone(false);
+
+        const timeouts: ReturnType<typeof setTimeout>[] = [];
+        // 2s: Start extracting
+        timeouts.push(setTimeout(() => setExtractionPhase('extracting'), 2000));
+        // 2.5s–6.5s: Fields appear one-by-one
+        EXTRACTION_FIELDS.forEach((_, i) => {
+            timeouts.push(setTimeout(() => setExtractedCount(i + 1), 2500 + i * 1000));
+        });
+        // 8s: Transition to review (validation checklist)
+        timeouts.push(setTimeout(() => setExtractionPhase('review'), 8000));
+        // 10s: Auto-expand label-photo
+        timeouts.push(setTimeout(() => setExpandedValidation('label-photo'), 10000));
+
+        return () => timeouts.forEach(clearTimeout);
     }, [currentStep?.id]);
 
     // Step 3.2: Reset on enter
@@ -111,6 +166,7 @@ export default function MACPunchList() {
         if (currentStep?.id !== '3.2') return;
         setApprovedLabor(false);
         setEditingRule(null);
+        setValidatedRules(new Set());
     }, [currentStep?.id]);
 
     // Step 3.3: Auto-animated claim submission
@@ -120,12 +176,14 @@ export default function MACPunchList() {
             setClaimProgress(0);
             setClaimPhase('processing');
             setShowLiability(false);
+            setShowReviewModal(false);
             return;
         }
         setClaimLogs([]);
         setClaimProgress(0);
         setClaimPhase('processing');
         setShowLiability(false);
+        setShowReviewModal(false);
 
         const timeouts: ReturnType<typeof setTimeout>[] = [];
         CLAIM_LOG_ENTRIES.forEach((entry, i) => {
@@ -159,6 +217,11 @@ export default function MACPunchList() {
         if (status === 'present') return 'bg-green-50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20';
         if (status === 'needs_clarification') return 'bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20';
         return 'bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20';
+    };
+
+    const effectiveRuleStatus = (rule: BusinessRule): 'pass' | 'warning' | 'fail' => {
+        if (validatedRules.has(rule.id)) return 'pass';
+        return rule.status;
     };
 
     const ruleStatusIcon = (status: 'pass' | 'warning' | 'fail') => {
@@ -219,115 +282,322 @@ export default function MACPunchList() {
                             <AIAgentAvatar />
                             <div>
                                 <span className="font-bold text-sm text-indigo-900 dark:text-indigo-300">IntakeValidationAgent</span>
-                                <span className="text-xs text-indigo-600 dark:text-indigo-400 ml-2">Reviewing request REQ-PL-2026-047</span>
+                                <span className="text-xs text-indigo-600 dark:text-indigo-400 ml-2">
+                                    {extractionPhase === 'email' ? 'Incoming service request detected' : extractionPhase === 'extracting' ? 'Extracting and evaluating fields...' : 'Reviewing request REQ-PL-2026-047'}
+                                </span>
                             </div>
                         </div>
 
                         <div className="p-4 space-y-4 overflow-y-auto max-h-[700px]">
-                            {/* Request Context Card */}
-                            <div className="p-4 bg-card border border-border rounded-xl">
-                                <div className="flex items-center justify-between mb-3">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Request Context</p>
-                                    <ConfidenceScoreBadge score={72} label="Completeness" size="sm" />
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    {[
-                                        { label: 'Request ID', value: 'REQ-PL-2026-047' },
-                                        { label: 'Product', value: '2x Conf. Room Chairs Azure' },
-                                        { label: 'Requester', value: 'Site Supervisor — Floor 2' },
-                                        { label: 'Order Ref', value: 'ORD-2055, Line 3' },
-                                    ].map((item, i) => (
-                                        <div key={i} className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-2.5">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">{item.label}</p>
-                                            <p className="text-xs font-bold text-foreground">{item.value}</p>
+
+                            {/* ── Email Extraction Phase ── */}
+                            {extractionPhase !== 'review' && (
+                                <div className="animate-in fade-in duration-500">
+                                    {/* Email Card */}
+                                    <div className="p-4 bg-card border border-border rounded-xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <EnvelopeIcon className="w-5 h-5 text-blue-500" />
+                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Incoming Email</span>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* AI Validation Checklist */}
-                            <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">AI Validation Checklist — Required Documentation</p>
-                                <div className="space-y-2">
-                                    {VALIDATION_ITEMS.map((item) => {
-                                        const resolved = resolvedItems.has(item.id);
-                                        const isExpanded = expandedValidation === item.id;
-                                        return (
-                                            <div key={item.id}>
-                                                <button
-                                                    onClick={() => setExpandedValidation(isExpanded ? null : item.id)}
-                                                    className={`w-full p-3 rounded-lg border transition-all text-left flex items-center gap-3 ${statusBg(item.status, resolved)} ${isExpanded ? 'ring-2 ring-brand-500/30' : ''}`}
-                                                >
-                                                    {statusIcon(item.status, resolved)}
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-sm font-semibold text-foreground">{item.label}</span>
-                                                            {resolved && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold">Resolved</span>}
-                                                        </div>
-                                                        <p className="text-xs text-muted-foreground mt-0.5">{item.detail}</p>
-                                                    </div>
-                                                    <ConfidenceScoreBadge score={item.confidence} size="sm" />
-                                                </button>
-
-                                                {/* Expandable AI Suggestion Panel */}
-                                                {isExpanded && item.aiSuggestion && !resolved && (
-                                                    <div className="ml-8 mt-2 p-3 bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 rounded-lg animate-in slide-in-from-top-2 fade-in duration-300">
-                                                        <div className="flex items-start gap-2 mb-3">
-                                                            <AIAgentAvatar />
-                                                            <p className="text-xs text-indigo-900 dark:text-indigo-300">{item.aiSuggestion}</p>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <button
-                                                                onClick={() => handleResolveItem(item.id)}
-                                                                className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-md transition-colors"
-                                                            >
-                                                                Accept
-                                                            </button>
-                                                            <button className="px-3 py-1.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-foreground text-xs font-bold rounded-md transition-colors">
-                                                                Edit
-                                                            </button>
-                                                            <button className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/20 hover:bg-amber-200 dark:hover:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-md transition-colors flex items-center gap-1">
-                                                                <ChatBubbleLeftRightIcon className="w-3.5 h-3.5" />
-                                                                Contact Requester
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                        <div className="space-y-2 text-xs">
+                                            <div className="flex gap-2"><span className="font-bold text-muted-foreground w-14 shrink-0">From:</span><span className="text-foreground">carlos.rivera@acmecorp.com</span></div>
+                                            <div className="flex gap-2"><span className="font-bold text-muted-foreground w-14 shrink-0">Subject:</span><span className="font-bold text-foreground">Service Request — Damaged Conference Chairs (ORD-2055)</span></div>
+                                            <div className="flex gap-2 mt-2"><span className="font-bold text-muted-foreground w-14 shrink-0">Body:</span><span className="text-muted-foreground leading-relaxed">We received 2 Azure conference chairs from order ORD-2055 with visible upholstery damage on both units. The damage appears to have occurred during shipping — the packaging was partially crushed. Attached are photos of the damage, the product label, and relevant documentation. Please process a warranty claim.</span></div>
+                                            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
+                                                <PaperClipIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                                                <span className="text-muted-foreground font-medium">3 attachments:</span>
+                                                {['damage-photo-1.jpg', 'damage-photo-2.jpg', 'product-label.jpg'].map((f, i) => (
+                                                    <span key={i} className="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 rounded text-[10px] font-medium text-foreground">{f}</span>
+                                                ))}
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                                        </div>
+                                    </div>
 
-                            {/* Contact Requester Card */}
-                            <div className="p-4 bg-card border border-border rounded-xl flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <DemoAvatar name="Carlos Rivera" size="md" />
-                                    <div>
-                                        <p className="text-sm font-bold text-foreground">Carlos Rivera</p>
-                                        <p className="text-xs text-muted-foreground">Site Supervisor — Facilities</p>
+                                    {/* Extraction Progress */}
+                                    {extractionPhase === 'extracting' && (
+                                        <div className="mt-4 space-y-2 animate-in fade-in duration-300">
+                                            <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                                                <SparklesIcon className="w-3.5 h-3.5" />
+                                                AI Extraction in Progress
+                                            </p>
+                                            {EXTRACTION_FIELDS.map((field, i) => (
+                                                i < extractedCount && (
+                                                    <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-border animate-in fade-in slide-in-from-left-4 duration-300">
+                                                        {field.status === 'ok' ? <CheckCircleIcon className="w-4 h-4 text-green-500 shrink-0" /> : field.status === 'warning' ? <ExclamationTriangleIcon className="w-4 h-4 text-amber-500 shrink-0" /> : <XMarkIcon className="w-4 h-4 text-red-500 shrink-0" />}
+                                                        <span className="text-xs font-medium text-muted-foreground w-36 shrink-0">{field.label}</span>
+                                                        <span className={`text-xs font-semibold ${field.status === 'ok' ? 'text-foreground' : field.status === 'warning' ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>{field.value}</span>
+                                                    </div>
+                                                )
+                                            ))}
+                                            {extractedCount < EXTRACTION_FIELDS.length && (
+                                                <div className="flex items-center gap-2 px-3 py-2">
+                                                    <div className="flex gap-1">
+                                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                                    </div>
+                                                    <span className="text-[11px] text-muted-foreground">Scanning...</span>
+                                                </div>
+                                            )}
+                                            {extractedCount >= EXTRACTION_FIELDS.length && (
+                                                <div className="mt-2 p-3 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-lg animate-in fade-in duration-300">
+                                                    <div className="flex items-start gap-2">
+                                                        <AIAgentAvatar />
+                                                        <p className="text-xs text-indigo-900 dark:text-indigo-300">
+                                                            Extraction complete — <span className="font-bold">2 items need expert attention</span>. Label shows potential SKU mismatch and no box photo was provided. Transitioning to validation checklist...
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ── Validation Checklist Phase ── */}
+                            {extractionPhase === 'review' && (
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    {/* Request Context Card */}
+                                    <div className="p-4 bg-card border border-border rounded-xl">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Request Context</p>
+                                            <ConfidenceScoreBadge score={72} label="Completeness" size="sm" />
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            {[
+                                                { label: 'Request ID', value: 'REQ-PL-2026-047' },
+                                                { label: 'Product', value: '2x Conf. Room Chairs Azure' },
+                                                { label: 'Requester', value: 'Site Supervisor — Floor 2' },
+                                                { label: 'Order Ref', value: 'ORD-2055, Line 3' },
+                                            ].map((item, i) => (
+                                                <div key={i} className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-2.5">
+                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">{item.label}</p>
+                                                    <p className="text-xs font-bold text-foreground">{item.value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* AI Validation Checklist */}
+                                    <div className="mt-4">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">AI Validation Checklist — Required Documentation</p>
+                                        <div className="space-y-2">
+                                            {VALIDATION_ITEMS.map((item) => {
+                                                const resolved = resolvedItems.has(item.id);
+                                                const isExpanded = expandedValidation === item.id;
+                                                return (
+                                                    <div key={item.id}>
+                                                        <button
+                                                            onClick={() => setExpandedValidation(isExpanded ? null : item.id)}
+                                                            className={`w-full p-3 rounded-lg border transition-all text-left flex items-center gap-3 ${statusBg(item.status, resolved)} ${isExpanded ? 'ring-2 ring-brand-500/30' : ''}`}
+                                                        >
+                                                            {statusIcon(item.status, resolved)}
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-sm font-semibold text-foreground">{item.label}</span>
+                                                                    {resolved && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold">Resolved</span>}
+                                                                </div>
+                                                                <p className="text-xs text-muted-foreground mt-0.5">{item.detail}</p>
+                                                            </div>
+                                                            <ConfidenceScoreBadge score={item.confidence} size="sm" />
+                                                        </button>
+
+                                                        {/* ── Label Photo: QR Scan ── */}
+                                                        {isExpanded && item.id === 'label-photo' && !resolved && (
+                                                            <div className="ml-8 mt-2 p-3 bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 rounded-lg animate-in slide-in-from-top-2 fade-in duration-300">
+                                                                <div className="flex items-start gap-2 mb-3">
+                                                                    <AIAgentAvatar />
+                                                                    <p className="text-xs text-indigo-900 dark:text-indigo-300">{item.aiSuggestion}</p>
+                                                                </div>
+
+                                                                {!qrScanning && !qrDone && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setQrScanning(true);
+                                                                                setTimeout(() => { setQrScanning(false); setQrDone(true); }, 2500);
+                                                                            }}
+                                                                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-md transition-colors flex items-center gap-1.5"
+                                                                        >
+                                                                            <QrCodeIcon className="w-3.5 h-3.5" />
+                                                                            Scan QR Code
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleResolveItem(item.id)}
+                                                                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-md transition-colors"
+                                                                        >
+                                                                            Accept As-Is
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* QR Scanning Animation */}
+                                                                {qrScanning && (
+                                                                    <div className="mt-3 animate-in fade-in duration-300">
+                                                                        <div className="relative w-full max-w-[280px] aspect-square rounded-lg overflow-hidden border-2 border-indigo-300 dark:border-indigo-500/40 bg-zinc-100 dark:bg-zinc-800">
+                                                                            <img src="https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=300&h=300&fit=crop" alt="Furniture label with QR code" className="w-full h-full object-cover" />
+                                                                            {/* Scanning overlay */}
+                                                                            <div className="absolute inset-0 bg-indigo-500/10">
+                                                                                <div className="absolute left-0 right-0 h-0.5 bg-indigo-500 animate-[scan_2s_ease-in-out_infinite]" style={{ animation: 'scan 2s ease-in-out infinite' }} />
+                                                                            </div>
+                                                                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm px-3 py-2">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="flex gap-1">
+                                                                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                                                                    </div>
+                                                                                    <span className="text-[11px] text-white font-medium">Scanning QR code...</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* QR Done */}
+                                                                {qrDone && (
+                                                                    <div className="mt-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                                        <div className="p-3 bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 rounded-lg">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                                                                                <span className="text-xs font-bold text-green-700 dark:text-green-400">QR Decoded: CC-AZ-2025 — SKU verified</span>
+                                                                            </div>
+                                                                            <p className="text-[11px] text-green-600 dark:text-green-400/80 ml-6">Product label matches order reference. Model year variant confirmed.</p>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => handleResolveItem(item.id)}
+                                                                            className="mt-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-md transition-colors"
+                                                                        >
+                                                                            Accept
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* ── Box Photo: Multi-File Upload ── */}
+                                                        {isExpanded && item.id === 'box-photo' && !resolved && (
+                                                            <div className="ml-8 mt-2 p-3 bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 rounded-lg animate-in slide-in-from-top-2 fade-in duration-300">
+                                                                <div className="flex items-start gap-2 mb-3">
+                                                                    <AIAgentAvatar />
+                                                                    <p className="text-xs text-indigo-900 dark:text-indigo-300">{item.aiSuggestion}</p>
+                                                                </div>
+
+                                                                {!uploadingEvidence && !uploadDone && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setUploadingEvidence(true);
+                                                                            setUploadedPhotos(0);
+                                                                            setTimeout(() => setUploadedPhotos(1), 800);
+                                                                            setTimeout(() => setUploadedPhotos(2), 1600);
+                                                                            setTimeout(() => setUploadedPhotos(3), 2400);
+                                                                            setTimeout(() => { setUploadingEvidence(false); setUploadDone(true); }, 3000);
+                                                                        }}
+                                                                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-md transition-colors flex items-center gap-1.5"
+                                                                    >
+                                                                        <ArrowUpTrayIcon className="w-3.5 h-3.5" />
+                                                                        Upload Evidence
+                                                                    </button>
+                                                                )}
+
+                                                                {/* Upload Progress */}
+                                                                {(uploadingEvidence || uploadDone) && (
+                                                                    <div className="mt-3 space-y-2">
+                                                                        <div className="flex items-center gap-3">
+                                                                            {[
+                                                                                { src: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=100&h=100&fit=crop', alt: 'Box damage 1' },
+                                                                                { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=100&h=100&fit=crop', alt: 'Box damage 2' },
+                                                                                { src: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=100&h=100&fit=crop', alt: 'Box damage 3' },
+                                                                            ].map((img, i) => (
+                                                                                i < uploadedPhotos && (
+                                                                                    <div key={i} className="relative w-[80px] h-[80px] rounded-lg overflow-hidden border border-border animate-in fade-in zoom-in-95 duration-300">
+                                                                                        <img src={img.src} alt={img.alt} className="w-full h-full object-cover" />
+                                                                                        <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                                                                            <CheckCircleIcon className="w-3.5 h-3.5 text-white" />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )
+                                                                            ))}
+                                                                            {uploadingEvidence && uploadedPhotos < 3 && (
+                                                                                <div className="w-[80px] h-[80px] rounded-lg border-2 border-dashed border-indigo-300 dark:border-indigo-500/40 flex items-center justify-center">
+                                                                                    <div className="flex gap-1">
+                                                                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        {uploadDone && (
+                                                                            <div className="animate-in fade-in duration-300">
+                                                                                <div className="p-2.5 bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 rounded-lg flex items-center gap-2">
+                                                                                    <CheckCircleIcon className="w-4 h-4 text-green-500 shrink-0" />
+                                                                                    <span className="text-xs font-bold text-green-700 dark:text-green-400">3 evidence photos uploaded</span>
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={() => handleResolveItem(item.id)}
+                                                                                    className="mt-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-md transition-colors"
+                                                                                >
+                                                                                    Accept
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* ── Generic Items (order-number, line-number, issue-photo) ── */}
+                                                        {isExpanded && item.aiSuggestion && !resolved && item.id !== 'label-photo' && item.id !== 'box-photo' && (
+                                                            <div className="ml-8 mt-2 p-3 bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 rounded-lg animate-in slide-in-from-top-2 fade-in duration-300">
+                                                                <div className="flex items-start gap-2 mb-3">
+                                                                    <AIAgentAvatar />
+                                                                    <p className="text-xs text-indigo-900 dark:text-indigo-300">{item.aiSuggestion}</p>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleResolveItem(item.id)}
+                                                                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-md transition-colors"
+                                                                >
+                                                                    Accept
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Contact Requester Card */}
+                                    <div className="mt-4 p-4 bg-card border border-border rounded-xl flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <DemoAvatar name="Carlos Rivera" size="md" />
+                                            <div>
+                                                <p className="text-sm font-bold text-foreground">Carlos Rivera</p>
+                                                <p className="text-xs text-muted-foreground">Site Supervisor — Facilities</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button className="p-2 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-muted-foreground">
+                                                <PhoneIcon className="w-4 h-4" />
+                                            </button>
+                                            <button className="p-2 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-muted-foreground">
+                                                <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* CTA */}
+                                    <div className="flex justify-end pt-4">
+                                        <button
+                                            onClick={() => nextStep()}
+                                            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
+                                        >
+                                            <CheckCircleIcon className="w-4 h-4" />
+                                            Validate & Continue
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button className="p-2 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-muted-foreground">
-                                        <PhoneIcon className="w-4 h-4" />
-                                    </button>
-                                    <button className="p-2 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-muted-foreground">
-                                        <ChatBubbleLeftRightIcon className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* CTA */}
-                            <div className="flex justify-end pt-2">
-                                <button
-                                    onClick={() => nextStep()}
-                                    className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
-                                >
-                                    <CheckCircleIcon className="w-4 h-4" />
-                                    Validate & Continue
-                                </button>
-                            </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -396,20 +666,28 @@ export default function MACPunchList() {
                             <div>
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">AI Business Rules Validation</p>
                                 <div className="space-y-2">
-                                    {BUSINESS_RULES.map((rule) => (
-                                        <div key={rule.id} className={`p-3 rounded-lg border transition-all ${ruleStatusBg(rule.status)}`}>
+                                    {BUSINESS_RULES.map((rule) => {
+                                        const eff = effectiveRuleStatus(rule);
+                                        const isValidated = validatedRules.has(rule.id);
+                                        const suggestions = AI_RULE_SUGGESTIONS[rule.id] || [];
+                                        return (
+                                        <div key={rule.id} className={`p-3 rounded-lg border transition-all duration-500 ${ruleStatusBg(eff)}`}>
                                             <div className="flex items-center gap-3">
-                                                {ruleStatusIcon(rule.status)}
+                                                {ruleStatusIcon(eff)}
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-sm font-semibold text-foreground">{rule.label}</span>
-                                                        {rule.status === 'warning' && (
+                                                        {isValidated ? (
+                                                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold">Validated</span>
+                                                        ) : rule.status === 'warning' && (
                                                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-bold">Warning</span>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-muted-foreground mt-0.5">{rule.detail}</p>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                                        {isValidated ? `Adjusted to ${editValues[rule.id]} — expert validated` : rule.detail}
+                                                    </p>
                                                 </div>
-                                                {rule.editable && editingRule !== rule.id && (
+                                                {rule.editable && !isValidated && editingRule !== rule.id && (
                                                     <button
                                                         onClick={() => setEditingRule(rule.id)}
                                                         className="p-1.5 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-muted-foreground"
@@ -418,7 +696,7 @@ export default function MACPunchList() {
                                                     </button>
                                                 )}
                                             </div>
-                                            {/* Inline Edit Form */}
+                                            {/* Inline Edit Form + AI Suggestions */}
                                             {editingRule === rule.id && (
                                                 <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-500/20 animate-in slide-in-from-top-2 fade-in duration-200">
                                                     <div className="flex items-center gap-2">
@@ -432,7 +710,7 @@ export default function MACPunchList() {
                                                             className="w-24 px-2 py-1 text-sm border border-border rounded-md bg-white dark:bg-zinc-800 text-foreground focus:ring-1 focus:ring-brand-500 focus:outline-none"
                                                         />
                                                         <button
-                                                            onClick={() => setEditingRule(null)}
+                                                            onClick={() => { setValidatedRules(prev => new Set(prev).add(rule.id)); setEditingRule(null); }}
                                                             className="px-3 py-1 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-md transition-colors"
                                                         >
                                                             Save
@@ -444,10 +722,29 @@ export default function MACPunchList() {
                                                             Cancel
                                                         </button>
                                                     </div>
+                                                    {/* AI Suggestion Chips */}
+                                                    {suggestions.length > 0 && (
+                                                        <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                                                            <span className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                                                                <SparklesIcon className="w-3.5 h-3.5" />
+                                                                AI Suggestions
+                                                            </span>
+                                                            {suggestions.map((s) => (
+                                                                <button
+                                                                    key={s.value}
+                                                                    onClick={() => setEditValues(prev => ({ ...prev, [rule.id]: s.value }))}
+                                                                    className="px-2.5 py-1 text-[11px] font-semibold rounded-full border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors cursor-pointer"
+                                                                >
+                                                                    {s.label}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -635,7 +932,14 @@ export default function MACPunchList() {
 
                             {/* CTA */}
                             {showLiability && (
-                                <div className="flex justify-end pt-2 animate-in fade-in duration-300">
+                                <div className="flex justify-end gap-3 pt-2 animate-in fade-in duration-300">
+                                    <button
+                                        onClick={() => setShowReviewModal(true)}
+                                        className="px-5 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-foreground text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2 border border-border"
+                                    >
+                                        <EyeIcon className="w-4 h-4" />
+                                        Review Changes
+                                    </button>
                                     <button
                                         onClick={() => nextStep()}
                                         className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
@@ -643,6 +947,118 @@ export default function MACPunchList() {
                                         <CheckCircleIcon className="w-4 h-4" />
                                         Complete Flow 3
                                     </button>
+                                </div>
+                            )}
+
+                            {/* Review Changes Modal */}
+                            {showReviewModal && (
+                                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowReviewModal(false)}>
+                                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto mx-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300" onClick={(e) => e.stopPropagation()}>
+                                        {/* Modal Header */}
+                                        <div className="px-5 py-4 border-b border-border flex items-center justify-between sticky top-0 bg-white dark:bg-zinc-900 rounded-t-2xl z-10">
+                                            <div>
+                                                <h3 className="text-sm font-bold text-foreground">Expert Submission Review</h3>
+                                                <p className="text-[11px] text-muted-foreground mt-0.5">REQ-PL-2026-047 — CLM-2026-114</p>
+                                            </div>
+                                            <button onClick={() => setShowReviewModal(false)} className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                                                <XMarkIcon className="w-5 h-5 text-muted-foreground" />
+                                            </button>
+                                        </div>
+
+                                        <div className="p-5 space-y-5">
+                                            {/* Section 1: Validation Results */}
+                                            <div>
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Validation Results</p>
+                                                <div className="space-y-1.5">
+                                                    {VALIDATION_ITEMS.map((item) => {
+                                                        const resolved = resolvedItems.has(item.id);
+                                                        return (
+                                                            <div key={item.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
+                                                                {resolved || item.status === 'present'
+                                                                    ? <CheckCircleIcon className="w-4 h-4 text-green-500 shrink-0" />
+                                                                    : item.status === 'needs_clarification'
+                                                                        ? <ExclamationTriangleIcon className="w-4 h-4 text-amber-500 shrink-0" />
+                                                                        : <XMarkIcon className="w-4 h-4 text-red-500 shrink-0" />
+                                                                }
+                                                                <span className="text-xs font-medium text-foreground flex-1">{item.label}</span>
+                                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${resolved || item.status === 'present' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : item.status === 'needs_clarification' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                                    {resolved ? 'Resolved' : item.status === 'present' ? 'Present' : item.status === 'needs_clarification' ? 'Clarified' : 'Missing'}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            {/* Section 2: Labor Decision */}
+                                            <div>
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Labor Decision</p>
+                                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Installer</span>
+                                                        <span className="text-xs font-bold text-foreground">ProInstall LLC (Certified)</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Repair Amount</span>
+                                                        <span className="text-xs font-bold text-foreground">${editValues['repair-threshold'] || '510'}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Labor Hours</span>
+                                                        <span className="text-xs font-bold text-foreground">{editValues['labor-hours'] || '6'} hrs</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Trip Charge</span>
+                                                        <span className="text-xs font-bold text-foreground">$175.00 (Zone 3)</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                                                        <span className="text-xs font-bold text-foreground">Status</span>
+                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Approved</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Section 3: Claim Package */}
+                                            <div>
+                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Claim Package</p>
+                                                <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Claim ID</span>
+                                                        <span className="text-xs font-bold text-foreground">CLM-2026-114</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Evidence</span>
+                                                        <span className="text-xs font-bold text-foreground">2 photos + 1 label + SHA256</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Ship-To</span>
+                                                        <span className="text-xs font-bold text-foreground">742 Evergreen Terrace, Springfield</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Liability Split</span>
+                                                        <span className="text-xs font-bold text-foreground">Carrier 65% / Manufacturer 35%</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs text-muted-foreground">Manufacturer</span>
+                                                        <span className="text-xs font-bold text-foreground">AIS Furniture Corp</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                                                        <span className="text-xs font-bold text-foreground">Status</span>
+                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Acknowledged — 8 days ETA</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Modal Footer */}
+                                        <div className="px-5 py-3 border-t border-border flex justify-end sticky bottom-0 bg-white dark:bg-zinc-900 rounded-b-2xl">
+                                            <button
+                                                onClick={() => setShowReviewModal(false)}
+                                                className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg transition-colors"
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </div>

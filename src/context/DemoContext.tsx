@@ -229,6 +229,16 @@ const DEMO_STEPS: DemoStep[] = [
         role: 'Dealer',
         highlightId: 'punch-claim-submission'
     },
+    {
+        id: '3.4',
+        groupId: 3,
+        groupTitle: 'Flow 3: Punch List / Warranty Claims',
+        title: 'End User Process Report',
+        description: 'End user receives the completed punch list report on mobile. Reviews details and can leave comments before final acknowledgement.',
+        app: 'dashboard',
+        role: 'End User',
+        highlightId: 'mobile-enduser-report'
+    },
 ];
 
 interface DemoContextType {
