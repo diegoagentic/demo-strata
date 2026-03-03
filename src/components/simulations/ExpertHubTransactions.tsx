@@ -2949,7 +2949,9 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
             <CreateOrderModal isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
             <AcknowledgementUploadModal isOpen={isAckModalOpen} onClose={() => setIsAckModalOpen(false)} />
             <BatchAckModal isOpen={isBatchAckOpen} onClose={() => setIsBatchAckOpen(false)} />
-            <SmartQuoteHub isOpen={isQuoteWidgetOpen} onClose={() => setIsQuoteWidgetOpen(false)} />
+            {!['2.3', '2.4', '2.5', '2.6'].includes(currentStep.id) && (
+                <SmartQuoteHub isOpen={isQuoteWidgetOpen} onClose={() => setIsQuoteWidgetOpen(false)} />
+            )}
 
             <Transition show={showToast} as={Fragment}>
                 <div className="fixed bottom-10 right-10 z-[100] w-96 pointer-events-none">
