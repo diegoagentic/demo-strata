@@ -64,7 +64,7 @@ const DiscrepancyResolutionFlow = () => {
         setStatus('sending')
         setTimeout(() => {
             setStatus('sent')
-            if (currentStep.id === '2.3' || currentStep.id === '2.5') {
+            if (currentStep.id === '2.3') {
                 setTimeout(nextStep, 2000)
             }
         }, 1500)
@@ -110,7 +110,7 @@ const DiscrepancyResolutionFlow = () => {
                             </div>
                         </div>
                         <div>
-                            <span className="block text-[10px] uppercase text-muted-foreground font-semibold mb-1">Manufacturer ACK</span>
+                            <span className="block text-[10px] uppercase text-muted-foreground font-semibold mb-1">Manufacturer Acknowledgement</span>
                             <div className="bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 p-2 rounded border border-green-100 dark:border-green-900/30 flex items-center justify-between">
                                 <span>Finish: Fabric / Azure</span>
                                 <span className="bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200 px-1.5 py-0.5 rounded text-[9px] font-bold">IN STOCK</span>
@@ -139,7 +139,7 @@ const DiscrepancyResolutionFlow = () => {
                             </div>
                         </div>
                         <div>
-                            <span className="block text-[10px] uppercase text-muted-foreground font-semibold mb-1">Manufacturer ACK</span>
+                            <span className="block text-[10px] uppercase text-muted-foreground font-semibold mb-1">Manufacturer Acknowledgement</span>
                             <div className="bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 p-2 rounded border border-amber-100 dark:border-amber-900/30 flex items-center justify-between">
                                 <span>Ship Date: Nov 27, 2025</span>
                                 <span className="text-amber-600 dark:text-amber-400 font-bold text-[10px]">+12 Days</span>
@@ -504,9 +504,9 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
     const { currentStep, isDemoActive } = useDemo()
     const [activeTabIndex, setActiveTabIndex] = useState(initialTab || 0)
 
-    // Auto-switch to AI Assistant tab when entering step 2.5
+    // Auto-switch to AI Assistant tab when entering step 2.4
     useEffect(() => {
-        if (currentStep.id === '2.5') {
+        if (currentStep.id === '2.4') {
             setActiveTabIndex(1);
         }
     }, [currentStep.id]);
@@ -516,7 +516,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
             id: 1,
             sender: "System",
             avatar: "",
-            content: "Acknowledgment #ACK-3099 received from Manufacturer via EDI.",
+            content: "Acknowledgement #ACK-3099 received from Manufacturer via EDI.",
             time: "10 mins ago",
             type: "system",
         },
@@ -524,7 +524,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
             id: 2,
             sender: "AI Assistant",
             avatar: "AI",
-            content: "Smart ACK Engine intercepted the acknowledgment and compared it against PO #ORD-2055. Found 2 discrepancies requiring your review.",
+            content: "Smart Acknowledgement Engine intercepted the acknowledgement and compared it against PO #ORD-2055. Found 2 discrepancies requiring your review.",
             time: "10 mins ago",
             type: "action_processing",
         },
@@ -574,7 +574,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                         items={[
                             { label: 'Dashboard', onClick: onBack },
                             { label: 'Transactions', onClick: onBack },
-                            { label: 'Acknowledgment #ACK-3099', active: true }
+                            { label: 'Acknowledgement #ACK-3099', active: true }
                         ]}
                     />
                 </div>
@@ -745,7 +745,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                         )
                                     }
                                 >
-                                    Ack Items
+                                    Acknowledgement Items
                                 </Tab>
                                 <Tab
                                     className={({ selected }) =>
@@ -1144,7 +1144,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                         Create Purchase Order
                                                     </button>
                                                     <button className="w-full py-1.5 bg-background hover:bg-muted text-muted-foreground text-xs font-semibold rounded-lg border border-border transition-colors">
-                                                        Send Acknowledgment
+                                                        Send Acknowledgement
                                                     </button>
                                                 </div>
                                             </div>

@@ -41,7 +41,7 @@ interface BusinessRule {
 // ─── Constants ────────────────────────────────────────────────────────────────
 const VALIDATION_ITEMS: ValidationItem[] = [
     { id: 'order-number', label: 'Original Order Number', status: 'present', confidence: 98, detail: 'ORD-2055 — verified against order database' },
-    { id: 'line-number', label: 'Line Number from ACK', status: 'present', confidence: 96, detail: 'Line 3 — matched to ACK-7842' },
+    { id: 'line-number', label: 'Line Number from Acknowledgement', status: 'present', confidence: 96, detail: 'Line 3 — matched to ACK-7842' },
     { id: 'issue-photo', label: 'Picture of Issue', status: 'present', confidence: 94, detail: '2 photos attached — upholstery damage clearly visible' },
     { id: 'label-photo', label: 'Picture of Label', status: 'needs_clarification', confidence: 62, detail: 'Label partially obscured — AI detects potential SKU mismatch', aiSuggestion: 'Label shows CC-AZ-2024 but order references CC-AZ-2025. This may be a model year variant. Recommend confirming with requester or checking product catalog for cross-reference.' },
     { id: 'box-photo', label: 'Picture of Box', status: 'missing', confidence: 0, detail: 'No box photo provided — required for freight damage claims', aiSuggestion: 'Box condition is critical for carrier liability assessment. Contact requester to provide a photo of the original shipping box and packaging materials.' },

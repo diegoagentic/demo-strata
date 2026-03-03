@@ -56,7 +56,7 @@ const STEP_CARD_PREVIEW: Record<string, {
     '2.3': {
         icon: <Cpu size={12} className="text-red-400" />,
         title: 'Delta Engine',
-        subtitle: '8 agents — PO vs ACK comparison',
+        subtitle: '8 agents — PO vs Acknowledgement comparison',
         detail: 'Line-by-line comparison in progress. Checking for substitutions and price deltas.',
         accentClass: 'border-red-500/20 bg-red-500/5',
     },
@@ -73,8 +73,8 @@ const CARDS = [
     { id: 2, title: 'Herman Miller Q1 Proj', dealer: 'HM Partners', status: 'Paused', column: 'active', priority: 'medium', aiInsight: 'Inventory check suggests substitution for SKU-X99 to avoid 2-week delay' },
     { id: 3, title: 'Retailer Group Sync', dealer: 'Multiple', status: 'Normal', column: 'awaiting', priority: 'low' },
     { id: 4, title: 'Office Depot Reconcile', dealer: 'OD Solutions', status: 'Auto-Processing', column: 'active', priority: 'high', aiInsight: 'Agent #29 is resolving 14 duplicate line items' },
-    { id: 5, title: 'PO #ORD-2055 vs ACK', dealer: 'Global Workspace', status: 'Delta Match Exception', column: 'awaiting', priority: 'critical', aiInsight: 'Delta Engine flagged 2 exceptions: Freight cost mismatch and Line 2 item substitution.' },
-    { id: 6, title: 'Invoice #INV-9001', dealer: 'AutoManufacture Co.', status: 'Document Processing', column: 'active', priority: 'high', aiInsight: 'AI classified as INVOICE. Routed to 3-Way Match Engine for PO/ACK/Invoice reconciliation.' }
+    { id: 5, title: 'PO #ORD-2055 vs Acknowledgement', dealer: 'Global Workspace', status: 'Delta Match Exception', column: 'awaiting', priority: 'critical', aiInsight: 'Delta Engine flagged 2 exceptions: Freight cost mismatch and Line 2 item substitution.' },
+    { id: 6, title: 'Invoice #INV-9001', dealer: 'AutoManufacture Co.', status: 'Document Processing', column: 'active', priority: 'high', aiInsight: 'AI classified as INVOICE. Routed to 3-Way Match Engine for PO/Acknowledgement/Invoice reconciliation.' }
 ];
 
 // Steps where each card gets a minimal "processing" indicator (detail is in DemoProcessPanel)

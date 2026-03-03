@@ -65,8 +65,8 @@ import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
 const urgentActions = [
     {
         id: 4,
-        title: 'ACK Received - 2 Exceptions Require Review',
-        description: 'Smart ACK Engine detected anomalies vs PO #ORD-2055',
+        title: 'Acknowledgement Received - 2 Exceptions Require Review',
+        description: 'Smart Acknowledgement Engine detected anomalies vs PO #ORD-2055',
         time: 'Under 10 mins',
         type: 'critical',
         action: 'Review Exceptions',
@@ -1161,14 +1161,14 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                     </div>
                 )}
 
-                {/* ===== Step 2.7: Smart Notifications (Action Center opens in Navbar) ===== */}
-                {currentStep.id === '2.7' && (
+                {/* ===== Step 2.6: Smart Notifications (Action Center opens in Navbar) ===== */}
+                {currentStep.id === '2.6' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* AI Attribution */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
                             <AIAgentAvatar className="mt-0.5" />
                             <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
-                                <span className="font-bold">NotificationAgent:</span> Generated 4 persona-specific notifications from 8-agent ACK pipeline. Dealer receives full lifecycle summary. Expert receives only actionable items — reducing noise by 60%.
+                                <span className="font-bold">NotificationAgent:</span> Generated 4 persona-specific notifications from 8-agent Acknowledgement pipeline. Dealer receives full lifecycle summary. Expert receives only actionable items — reducing noise by 60%.
                             </div>
                         </div>
 
@@ -1176,9 +1176,9 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                         <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 space-y-2">
                             <div className="flex items-center gap-2">
                                 <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
-                                <h3 className="text-sm font-bold text-green-700 dark:text-green-400">Flow 2 Complete — ACK Processing</h3>
+                                <h3 className="text-sm font-bold text-green-700 dark:text-green-400">Flow 2 Complete — Acknowledgement Processing</h3>
                             </div>
-                            <p className="text-xs text-green-600 dark:text-green-500 ml-7">2 ACKs processed for Premier Underground Design. HAT: 5 lines confirmed (AI vendor rule). AIS: 50 lines, 3 exceptions resolved, backorder BO-1064B approved.</p>
+                            <p className="text-xs text-green-600 dark:text-green-500 ml-7">2 Acknowledgements processed for Premier Underground Design. HAT: 5 lines confirmed (AI vendor rule). AIS: 50 lines, 3 exceptions resolved, sent to client.</p>
                         </div>
                     </div>
                 )}

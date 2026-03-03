@@ -88,7 +88,7 @@ const recentAcknowledgments = [
 ]
 
 // ═══════════════════════════════════════════
-// FLOW 2 DATA: Real ACK data from AIS PDF + HAT vendor email
+// FLOW 2 DATA: Real Acknowledgement data from AIS PDF + HAT vendor email
 // ═══════════════════════════════════════════
 const ACK_AIS = {
     id: 'ACK-7842', relatedPo: 'PO-1064B', vendor: 'AIS', vendorFull: 'AIS (Adaptive Interior Solutions)',
@@ -119,12 +119,6 @@ const ACK_LINE_ITEMS_50 = [
     { line: 41, sku: 'X-DS6030', desc: 'CB Desk Shell 60x30', qty: 2, qtyAck: 2, price: '$2,568.00', grommetPO: 'No Grommet', grommetACK: 'Grommet Option C - Left Rear Corner #2', status: 'grommet-error' as const },
     { line: 47, sku: 'X-QUADALDR', desc: 'CB Quad Alder Table', qty: 4, qtyAck: 2, price: '$3,440.00', shortfall: 2, status: 'qty-short' as const },
     { line: 68, sku: 'X-DSFM9624', desc: 'CB Desk Shell FM 96x24', qty: 1, qtyAck: 1, price: '$1,812.00', grommetACK: 'No Grommet', status: 'match' as const },
-];
-
-const FLOW2_BACKORDER_LINES = [
-    { sku: 'X-W3060', desc: 'CB Wardrobe 30x60', qtyShort: 0, qtyBackorder: 3, reason: 'Full line backorder — vendor capacity' },
-    { sku: 'X-P2460', desc: 'CB Pedestal 24x60', qtyShort: 2, qtyBackorder: 2, reason: 'Partial — 6 of 8 acknowledged' },
-    { sku: 'X-QUADALDR', desc: 'CB Quad Alder Table', qtyShort: 2, qtyBackorder: 2, reason: 'Partial — 2 of 4 acknowledged' },
 ];
 
 // Pipeline stages
@@ -170,7 +164,7 @@ const quotesSummary = {
 }
 
 const acksSummary = {
-    pending_acks: { label: 'Pending Acks', value: '8', sub: 'Awaiting vendor', icon: <ClockIcon className="w-5 h-5" />, color: 'orange' },
+    pending_acks: { label: 'Pending Acknowledgements', value: '8', sub: 'Awaiting vendor', icon: <ClockIcon className="w-5 h-5" />, color: 'orange' },
     discrepancies: { label: 'Discrepancies', value: '3', sub: 'Action required', icon: <ExclamationTriangleIcon className="w-5 h-5" />, color: 'red' },
     confirmed: { label: 'Confirmed', value: '156', sub: 'On track', icon: <ClipboardDocumentCheckIcon className="w-5 h-5" />, color: 'green' },
     avg_lead: { label: 'Avg Lead Time', value: '4.2w', sub: 'Weeks to ship', icon: <CalendarIcon className="w-5 h-5" />, color: 'blue' },
@@ -277,7 +271,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     // FLOW 2 STATE + EFFECTS
     // ═══════════════════════════════════════════
 
-    // Step 2.1 — Pipeline arrival (both ACK cards appear)
+    // Step 2.1 — Pipeline arrival (both Acknowledgement cards appear)
     const [ackArrival21, setAckArrival21] = useState<Record<string, 'hidden' | 'appearing' | 'placed'>>({ AIS: 'hidden', HAT: 'hidden' });
     useEffect(() => {
         if (currentStep.id !== '2.1') { setAckArrival21({ AIS: 'hidden', HAT: 'hidden' }); return; }
@@ -335,35 +329,15 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
         }
     }, [currentStep.id]);
 
-    // Step 2.5 — Backorder & approval chain
-    const [boPhase25, setBoPhase25] = useState<'generating' | 'generated' | 'approval' | 'complete'>('generating');
-    const [approvalStates25, setApprovalStates25] = useState<('pending' | 'approved')[]>(['pending', 'pending', 'pending']);
+    // Step 2.5 — Pipeline resolution
+    const [resolvedCards25, setResolvedCards25] = useState<Record<string, 'hidden' | 'appearing' | 'placed'>>({ AIS: 'hidden', HAT: 'hidden' });
     useEffect(() => {
-        if (currentStep.id !== '2.5') { setBoPhase25('generating'); setApprovalStates25(['pending', 'pending', 'pending']); return; }
+        if (currentStep.id !== '2.5') { setResolvedCards25({ AIS: 'hidden', HAT: 'hidden' }); return; }
         const t: ReturnType<typeof setTimeout>[] = [];
-        // Backorder generation (0-3s)
-        t.push(setTimeout(() => setBoPhase25('generated'), 3000));
-        // Approval chain begins (6s) — 5s per approver for readability
-        t.push(setTimeout(() => setBoPhase25('approval'), 6000));
-        t.push(setTimeout(() => setApprovalStates25(['approved', 'pending', 'pending']), 11000));
-        t.push(setTimeout(() => setApprovalStates25(['approved', 'approved', 'pending']), 16000));
-        t.push(setTimeout(() => setApprovalStates25(['approved', 'approved', 'approved']), 21000));
-        // Completion (24s) + advance (28s)
-        t.push(setTimeout(() => setBoPhase25('complete'), 24000));
-        t.push(setTimeout(() => nextStep(), 28000));
-        return () => t.forEach(clearTimeout);
-    }, [currentStep.id]);
-    const approvedCount25 = approvalStates25.filter(s => s === 'approved').length;
-
-    // Step 2.6 — Pipeline resolution
-    const [resolvedCards26, setResolvedCards26] = useState<Record<string, 'hidden' | 'appearing' | 'placed'>>({ AIS: 'hidden', HAT: 'hidden' });
-    useEffect(() => {
-        if (currentStep.id !== '2.6') { setResolvedCards26({ AIS: 'hidden', HAT: 'hidden' }); return; }
-        const t: ReturnType<typeof setTimeout>[] = [];
-        t.push(setTimeout(() => setResolvedCards26(p => ({ ...p, HAT: 'appearing' })), 500));
-        t.push(setTimeout(() => setResolvedCards26(p => ({ ...p, HAT: 'placed' })), 2000));
-        t.push(setTimeout(() => setResolvedCards26(p => ({ ...p, AIS: 'appearing' })), 3500));
-        t.push(setTimeout(() => setResolvedCards26(p => ({ ...p, AIS: 'placed' })), 6000));
+        t.push(setTimeout(() => setResolvedCards25(p => ({ ...p, HAT: 'appearing' })), 500));
+        t.push(setTimeout(() => setResolvedCards25(p => ({ ...p, HAT: 'placed' })), 2000));
+        t.push(setTimeout(() => setResolvedCards25(p => ({ ...p, AIS: 'appearing' })), 3500));
+        t.push(setTimeout(() => setResolvedCards25(p => ({ ...p, AIS: 'placed' })), 6000));
         return () => t.forEach(clearTimeout);
     }, [currentStep.id]);
 
@@ -505,10 +479,10 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
             setLifecycleTab('orders');
             setViewMode('pipeline');
             setSearchQuery('');
-        } else if (['2.1', '2.2', '2.3', '2.4', '2.5', '2.6'].includes(currentStep.id)) {
+        } else if (['2.1', '2.2', '2.3', '2.4', '2.5'].includes(currentStep.id)) {
             setLifecycleTab('acknowledgments');
             setSearchQuery('');
-            if (currentStep.id === '2.1' || currentStep.id === '2.6') {
+            if (currentStep.id === '2.1' || currentStep.id === '2.5') {
                 setViewMode('pipeline');
             }
         }
@@ -658,7 +632,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             )}
                         >
                             <ClipboardDocumentCheckIcon className="w-4 h-4" />
-                            Acknowledgments
+                            Acknowledgements
                         </button>
                     </div>
                 </div>
@@ -796,7 +770,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                 <div className="flex items-center gap-4 mt-6 animate-in fade-in slide-in-from-top-2 duration-500">
                                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Quick Actions:</span>
                                     {[
-                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack", action: () => setIsAckModalOpen(true) },
+                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Acknowledgement", action: () => setIsAckModalOpen(true) },
                                         { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export Acknowledgement", action: () => handleExportSIF('Acknowledgement') },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Email Vendor" },
                                         { icon: <CheckBadgeIcon className="w-5 h-5" />, label: "Approve Orders", action: () => setIsBatchAckOpen(true) },
@@ -831,13 +805,13 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                 <div className="w-px h-12 bg-zinc-200 dark:bg-zinc-700 hidden xl:block mx-2"></div>
                                 <div className="flex items-center gap-1 overflow-x-auto min-w-max pl-4 border-l border-zinc-200 dark:border-zinc-700 xl:border-none xl:pl-0">
                                     {[
-                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack" },
+                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Acknowledgement" },
                                         { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export Acknowledgement" },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Email Vendor" },
                                         { icon: <CheckBadgeIcon className="w-5 h-5" />, label: "Approve Orders" },
                                     ].map((action, i) => (
                                         <button key={i} onClick={() => {
-                                            if (action.label === 'Upload Ack') setIsAckModalOpen(true);
+                                            if (action.label === 'Upload Acknowledgement') setIsAckModalOpen(true);
                                             if (action.label === 'Approve Orders') setIsBatchAckOpen(true);
                                             if (action.label === 'Export Acknowledgement') handleExportSIF('Acknowledgement');
                                         }} className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors relative group" title={action.label}>
@@ -1867,21 +1841,21 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                 {/* FLOW 2: Steps 2.1 through 2.6 */}
                 {/* ═══════════════════════════════════════════ */}
 
-                {/* Step 2.1 — ACK Intake Pipeline */}
+                {/* Step 2.1 — Acknowledgement Intake Pipeline */}
                 {currentStep.id === '2.1' && (
                     <div data-demo-target="ack-pipeline-intake" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
                             <AIAgentAvatar className="mt-0.5" />
                             <div className="text-xs text-indigo-700 dark:text-indigo-300">
-                                <span className="font-bold">ERPConnectorAgent:</span> 2 new acknowledgments detected — AIS (EDI/855) and HAT Contract (vendor email). Routing to ACK processing pipeline.
+                                <span className="font-bold">ERPConnectorAgent:</span> 2 new acknowledgements detected — AIS (EDI/855) and HAT Contract (vendor email). Routing to Acknowledgement processing pipeline.
                             </div>
                         </div>
 
                         {/* ACK Pipeline Kanban */}
                         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                             <div className="p-4 border-b border-border">
-                                <h3 className="text-sm font-bold text-foreground">ACK Pipeline — Incoming</h3>
+                                <h3 className="text-sm font-bold text-foreground">Acknowledgement Pipeline — Incoming</h3>
                                 <p className="text-xs text-muted-foreground mt-0.5">2 new acknowledgments received from ERPConnector</p>
                             </div>
                             <div className="p-4 grid grid-cols-4 gap-3">
@@ -1899,7 +1873,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                             </span>
                                         </div>
                                         <div className="min-h-[120px] space-y-2">
-                                            {/* New ACK cards in Pending column */}
+                                            {/* New Acknowledgement cards in Pending column */}
                                             {si === 0 && ackArrival21.HAT !== 'hidden' && (
                                                 <div className={cn(
                                                     'p-3 rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-500/5 transition-all duration-500',
@@ -1930,7 +1904,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                     <p className="text-[10px] text-muted-foreground truncate">{ACK_AIS.project}</p>
                                                 </div>
                                             )}
-                                            {/* Existing ACK cards in their columns */}
+                                            {/* Existing Acknowledgement cards in their columns */}
                                             {recentAcknowledgments.filter(a => a.status === stage).map(ack => (
                                                 <div key={ack.id} className="p-2.5 rounded-lg border border-border bg-card">
                                                     <div className="flex items-center gap-2 mb-1">
@@ -1955,7 +1929,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
                             <AIAgentAvatar className="mt-0.5" />
                             <div className="text-xs text-indigo-700 dark:text-indigo-300">
-                                <span className="font-bold">DataNormAgent:</span> Normalizing and comparing ACK data field-by-field against PO-1064B. Smart rules applying corrections automatically.
+                                <span className="font-bold">DataNormAgent:</span> Normalizing and comparing Acknowledgement data field-by-field against PO-1064B. Smart rules applying corrections automatically.
                             </div>
                         </div>
 
@@ -1982,7 +1956,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                                 {normPhase22 !== 'idle' && (
                                     <>
-                                        {/* PO vs ACK comparison table */}
+                                        {/* PO vs Acknowledgement comparison table */}
                                         <div className="rounded-lg border border-border overflow-hidden mb-3">
                                             <table className="w-full text-[10px]">
                                                 <thead>
@@ -1990,7 +1964,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                         <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">Line</th>
                                                         <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">Part#</th>
                                                         <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">PO</th>
-                                                        <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">ACK</th>
+                                                        <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">Acknowledgement</th>
                                                         <th className="text-left px-2 py-1.5 font-bold text-muted-foreground">Status</th>
                                                     </tr>
                                                 </thead>
@@ -2057,7 +2031,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                     <>
                                         <div className="space-y-2">
                                             <div className="px-3 py-2 rounded-lg bg-muted/50 flex items-center justify-between">
-                                                <span className="text-[10px] text-foreground">Scanning {ACK_AIS.lineItems} line items...</span>
+                                                <span className="text-[10px] text-foreground">Scanning {ACK_AIS.lineItems} Acknowledgement line items...</span>
                                                 {normPhase22 === 'comparing-ais' && <span className="text-[10px] text-blue-600 dark:text-blue-400 animate-pulse">Comparing...</span>}
                                                 {normPhase22 === 'ais-flagged' && <span className="text-[10px] text-red-600 dark:text-red-400 font-bold">3 discrepancies found</span>}
                                             </div>
@@ -2066,7 +2040,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                     <p className="text-[10px] font-bold text-red-700 dark:text-red-400 mb-1">Line 41: Grommet Configuration Error</p>
                                                     <div className="grid grid-cols-2 gap-2 text-[10px]">
                                                         <div><span className="text-muted-foreground">PO spec:</span> <span className="font-medium text-foreground">No Grommet</span></div>
-                                                        <div><span className="text-muted-foreground">ACK:</span> <span className="font-medium text-red-600 dark:text-red-400">Grommet Option C - Left Rear Corner #2</span></div>
+                                                        <div><span className="text-muted-foreground">Acknowledgement:</span> <span className="font-medium text-red-600 dark:text-red-400">Grommet Option C - Left Rear Corner #2</span></div>
                                                     </div>
                                                 </div>
                                             )}
@@ -2078,14 +2052,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                     </div>
                 )}
 
-                {/* Step 2.3 — AIS ACK Delta Engine */}
+                {/* Step 2.3 — AIS Acknowledgement Delta Engine */}
                 {currentStep.id === '2.3' && (
                     <div data-demo-target="ack-delta-results" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
                             <AIAgentAvatar className="mt-0.5" />
                             <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
-                                <span className="font-bold">DiscrepResolverAgent:</span> Analyzing 3 exceptions from PO vs ACK comparison — resolving grommet config error, date shifts, and quantity shortfalls against auto-fix thresholds.
+                                <span className="font-bold">DiscrepResolverAgent:</span> Analyzing 3 exceptions from PO vs Acknowledgement comparison — resolving grommet config error, date shifts, and quantity shortfalls against auto-fix thresholds.
                             </div>
                         </div>
 
@@ -2112,14 +2086,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                             <span className="font-bold text-foreground">Calibrate Grommet Choice: No Grommet</span>
                                         </div>
                                         <div className="p-2 rounded-lg bg-card border border-red-200 dark:border-red-800">
-                                            <span className="text-muted-foreground block">ACK Value:</span>
+                                            <span className="text-muted-foreground block">Acknowledgement Value:</span>
                                             <span className="font-bold text-red-600 dark:text-red-400 line-through">Grommet Option C - Left Rear Corner #2</span>
                                         </div>
                                     </div>
                                     {['grommet-fixed', 'dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) && (
                                         <div className="mt-2 ml-11 flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
                                             <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
-                                            <span className="text-[10px] text-indigo-700 dark:text-indigo-400">Cross-referenced Line 68 (X-DSFM9624) — correct spec is "No Grommet". Auto-corrected ACK line 41.</span>
+                                            <span className="text-[10px] text-indigo-700 dark:text-indigo-400">Cross-referenced Line 68 (X-DSFM9624) — correct spec is "No Grommet". Auto-corrected Acknowledgement line 41.</span>
                                         </div>
                                     )}
                                 </div>
@@ -2177,11 +2151,11 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                         ].filter(l => l.ordered !== l.acked).map(l => (
                                             <div key={l.line} className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/50">
                                                 <span>Line {l.line}: {l.sku}</span>
-                                                <span><span className="text-muted-foreground">Ordered: {l.ordered}</span> → <span className="font-bold text-amber-600 dark:text-amber-400">ACK: {l.acked}</span></span>
+                                                <span><span className="text-muted-foreground">Ordered: {l.ordered}</span> → <span className="font-bold text-amber-600 dark:text-amber-400">Acknowledged: {l.acked}</span></span>
                                             </div>
                                         ))}
                                     </div>
-                                    {/* Generate Backorder button — inside qty shortfall card */}
+                                    {/* Accept and Send to Client button — inside qty shortfall card */}
                                     {deltaPhase23 === 'complete' && (
                                         <div className="mt-3 ml-11 flex items-center gap-3 animate-in fade-in duration-300">
                                             <button
@@ -2193,13 +2167,13 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                 )}
                                             >
                                                 {backorderTriggered23 ? (
-                                                    <><CheckCircleIcon className="w-4 h-4" /> Backorder Initiated</>
+                                                    <><CheckCircleIcon className="w-4 h-4" /> Accepted & Sent</>
                                                 ) : (
-                                                    <><PlusIcon className="w-4 h-4" /> Generate Backorder</>
+                                                    <><CheckCircleIcon className="w-4 h-4" /> Accept and Send to Client</>
                                                 )}
                                             </button>
                                             {backorderTriggered23 && (
-                                                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium animate-pulse">Creating BO-1064B...</span>
+                                                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium animate-pulse">Sending to client...</span>
                                             )}
                                         </div>
                                     )}
@@ -2228,7 +2202,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             </div>
                         </div>
 
-                        {/* ACK Summary Header */}
+                        {/* Acknowledgement Summary Header */}
                         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                             <div className="p-4 border-b border-border">
                                 <div className="flex items-center justify-between mb-3">
@@ -2264,7 +2238,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                             <th className="text-left px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">SKU</th>
                                             <th className="text-left px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Description</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Qty</th>
-                                            <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">ACK Qty</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Ack Qty</th>
                                             <th className="text-right px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Price</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Status</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase w-16">Action</th>
@@ -2318,7 +2292,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                                 <div className="flex items-end gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
                                                                     {item.status === 'qty-short' && (
                                                                         <div className="flex-shrink-0">
-                                                                            <label className="block text-[10px] font-bold text-muted-foreground uppercase mb-1">Corrected ACK Qty</label>
+                                                                            <label className="block text-[10px] font-bold text-muted-foreground uppercase mb-1">Corrected Acknowledgement Qty</label>
                                                                             <input
                                                                                 type="number"
                                                                                 defaultValue={editedItems24[item.line]?.qtyAck ?? item.qtyAck}
@@ -2393,134 +2367,29 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-colors shadow-sm"
                                 >
                                     <CheckCircleIcon className="w-4 h-4" />
-                                    Approve & Generate Backorder
+                                    Accept and Send to Client
                                 </button>
                             </div>
                         ) : (
                             <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-800 animate-in fade-in zoom-in duration-300">
                                 <CheckCircleIcon className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
                                 <div>
-                                    <p className="text-xs font-bold text-green-700 dark:text-green-400">Expert Review Approved — Generating Backorder</p>
-                                    <p className="text-[10px] text-green-600 dark:text-green-500">3 SKUs, 6 units — routing to approval chain{Object.keys(editedItems24).length > 0 ? ` · ${Object.keys(editedItems24).length} expert correction(s) applied` : ''}</p>
+                                    <p className="text-xs font-bold text-green-700 dark:text-green-400">Expert Review Approved — Sending to Client</p>
+                                    <p className="text-[10px] text-green-600 dark:text-green-500">50 line items reviewed, exceptions resolved{Object.keys(editedItems24).length > 0 ? ` · ${Object.keys(editedItems24).length} expert correction(s) applied` : ''}</p>
                                 </div>
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* Step 2.5 — Backorder & Approval Chain */}
+                {/* Step 2.5 — Pipeline Resolution */}
                 {currentStep.id === '2.5' && (
-                    <div data-demo-target="backorder-approval-chain" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                        {/* AI Context */}
-                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <AIAgentAvatar className="mt-0.5" />
-                            <div className="text-xs text-indigo-700 dark:text-indigo-300">
-                                <span className="font-bold">BackorderAgent:</span> Creating backorder BO-1064B for 3 shortfall SKUs (6 units), then routing to automated 3-approver chain.
-                            </div>
-                        </div>
-
-                        {/* Backorder Card */}
-                        <div className={cn('p-4 rounded-2xl border shadow-sm transition-all duration-500', boPhase25 === 'generating' ? 'border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-500/5' : 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-500/5')}>
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className={cn('p-2 rounded-xl', boPhase25 === 'generating' ? 'bg-blue-100 dark:bg-blue-500/15' : 'bg-green-100 dark:bg-green-500/15')}>
-                                    {boPhase25 === 'generating' ? <ClockIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" /> : <CheckCircleIcon className="w-4 h-4 text-green-600 dark:text-green-400" />}
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-bold text-foreground">Backorder BO-1064B</h4>
-                                    <p className="text-[10px] text-muted-foreground">3 SKUs · 6 units · From ACK-7842</p>
-                                </div>
-                            </div>
-                            <div className="rounded-lg border border-border overflow-hidden">
-                                <table className="w-full text-[10px]">
-                                    <thead>
-                                        <tr className="bg-muted/50">
-                                            <th className="text-left px-3 py-1.5 font-bold text-muted-foreground">SKU</th>
-                                            <th className="text-left px-3 py-1.5 font-bold text-muted-foreground">Description</th>
-                                            <th className="text-center px-3 py-1.5 font-bold text-muted-foreground">Qty</th>
-                                            <th className="text-left px-3 py-1.5 font-bold text-muted-foreground">Reason</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border">
-                                        {FLOW2_BACKORDER_LINES.map(ln => (
-                                            <tr key={ln.sku}>
-                                                <td className="px-3 py-1.5 font-bold text-foreground">{ln.sku}</td>
-                                                <td className="px-3 py-1.5 text-foreground">{ln.desc}</td>
-                                                <td className="px-3 py-1.5 text-center font-bold text-amber-600 dark:text-amber-400">{ln.qtyBackorder}</td>
-                                                <td className="px-3 py-1.5 text-muted-foreground">{ln.reason}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        {/* Approval Chain */}
-                        {['approval', 'complete'].includes(boPhase25) && (
-                            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-                                <div className="p-4 border-b border-border">
-                                    <h3 className="text-sm font-bold text-foreground">Approval Chain — Backorder BO-1064B</h3>
-                                </div>
-                                <div className="p-4 space-y-4">
-                                    <div className="space-y-0 relative">
-                                        {[
-                                            { name: 'System Policy Engine', role: 'Auto-approval' },
-                                            { name: 'David Park', role: 'Regional Sales Manager' },
-                                            { name: 'James Liu', role: 'Finance Director' },
-                                        ].map((approver, i) => (
-                                            <div key={i} className="flex items-start gap-4 relative pb-5 last:pb-0">
-                                                {i < 2 && (
-                                                    <div className={cn('absolute left-[15px] top-8 w-0.5 h-[calc(100%-16px)]', approvalStates25[i] === 'approved' ? 'bg-green-500' : 'bg-border')} />
-                                                )}
-                                                <div className="relative shrink-0 z-10">
-                                                    <DemoAvatar name={approver.name} size="md" />
-                                                    {approvalStates25[i] === 'approved' && (
-                                                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-zinc-900"><CheckIcon className="w-2.5 h-2.5" /></div>
-                                                    )}
-                                                    {approvalStates25[i] === 'pending' && i === approvedCount25 && (
-                                                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-zinc-900 animate-pulse"><ClockIcon className="w-2.5 h-2.5" /></div>
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <span className={cn('text-sm font-bold', approvalStates25[i] === 'approved' && 'text-green-700 dark:text-green-400', approvalStates25[i] === 'pending' && i === approvedCount25 && 'text-amber-700 dark:text-amber-400', approvalStates25[i] === 'pending' && i !== approvedCount25 && 'text-muted-foreground')}>{approver.name}</span>
-                                                        {approvalStates25[i] === 'approved' && <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">Approved</span>}
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground">{approver.role}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {/* Progress bar */}
-                                    <div>
-                                        <div className="flex items-center justify-between mb-1.5">
-                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
-                                            <span className="text-[10px] font-bold text-foreground">{approvedCount25}/3</span>
-                                        </div>
-                                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                            <div className={cn('h-full rounded-full transition-all duration-500', approvedCount25 === 3 ? 'bg-green-500' : 'bg-primary')} style={{ width: `${(approvedCount25 / 3) * 100}%` }} />
-                                        </div>
-                                    </div>
-                                    {approvedCount25 === 3 && (
-                                        <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-800 text-center animate-in fade-in zoom-in duration-300">
-                                            <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400 mx-auto mb-1" />
-                                            <p className="text-xs font-bold text-green-700 dark:text-green-400">All Approvals Complete</p>
-                                            <p className="text-[10px] text-green-600 dark:text-green-500">Backorder BO-1064B approved for processing</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Step 2.6 — Pipeline Resolution */}
-                {currentStep.id === '2.6' && (
                     <div data-demo-target="ack-pipeline-resolved" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
                             <AIAgentAvatar className="mt-0.5" />
                             <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
-                                <span className="font-bold">NotificationAgent:</span> Both ACKs resolved — HAT confirmed via AI vendor rule, AIS processed with backorder BO-1064B approved. Preparing stakeholder notification digests.
+                                <span className="font-bold">NotificationAgent:</span> Both Acknowledgements resolved — HAT confirmed via AI vendor rule, AIS processed with expert corrections accepted. Preparing stakeholder notification digests.
                             </div>
                         </div>
 
@@ -2529,8 +2398,8 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             <div className="flex items-center gap-3">
                                 <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400 shrink-0" />
                                 <div>
-                                    <p className="text-sm font-bold text-green-700 dark:text-green-400">Both ACKs Resolved</p>
-                                    <p className="text-xs text-green-600 dark:text-green-500">HAT: 5 lines confirmed (AI vendor rule) · AIS: 50 lines, 3 exceptions resolved, backorder BO-1064B approved</p>
+                                    <p className="text-sm font-bold text-green-700 dark:text-green-400">Both Acknowledgements Resolved</p>
+                                    <p className="text-xs text-green-600 dark:text-green-500">HAT: 5 lines confirmed (AI vendor rule) · AIS: 50 lines, 3 exceptions resolved, sent to client</p>
                                 </div>
                             </div>
                         </div>
@@ -2538,7 +2407,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                         {/* Pipeline Kanban */}
                         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
                             <div className="p-4 border-b border-border">
-                                <h3 className="text-sm font-bold text-foreground">ACK Pipeline — Resolved</h3>
+                                <h3 className="text-sm font-bold text-foreground">Acknowledgement Pipeline — Resolved</h3>
                             </div>
                             <div className="p-4 grid grid-cols-4 gap-3">
                                 {ackStages.map((stage) => (
@@ -2546,11 +2415,11 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stage}</span>
                                         <div className="min-h-[100px] space-y-2">
                                             {/* HAT in Confirmed */}
-                                            {stage === 'Confirmed' && resolvedCards26.HAT !== 'hidden' && (
+                                            {stage === 'Confirmed' && resolvedCards25.HAT !== 'hidden' && (
                                                 <div className={cn(
                                                     'p-3 rounded-xl border-2 border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-500/5 transition-all duration-500',
-                                                    resolvedCards26.HAT === 'appearing' && 'opacity-70 scale-95',
-                                                    resolvedCards26.HAT === 'placed' && 'opacity-100 scale-100',
+                                                    resolvedCards25.HAT === 'appearing' && 'opacity-70 scale-95',
+                                                    resolvedCards25.HAT === 'placed' && 'opacity-100 scale-100',
                                                 )}>
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">HC</span>
@@ -2561,21 +2430,21 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                 </div>
                                             )}
                                             {/* AIS in Partial */}
-                                            {stage === 'Partial' && resolvedCards26.AIS !== 'hidden' && (
+                                            {stage === 'Partial' && resolvedCards25.AIS !== 'hidden' && (
                                                 <div className={cn(
                                                     'p-3 rounded-xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-500/5 transition-all duration-500',
-                                                    resolvedCards26.AIS === 'appearing' && 'opacity-70 scale-95',
-                                                    resolvedCards26.AIS === 'placed' && 'opacity-100 scale-100',
+                                                    resolvedCards25.AIS === 'appearing' && 'opacity-70 scale-95',
+                                                    resolvedCards25.AIS === 'placed' && 'opacity-100 scale-100',
                                                 )}>
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-[9px] font-bold flex items-center justify-center">AI</span>
                                                         <span className="text-xs font-bold text-foreground">{ACK_AIS.id}</span>
                                                     </div>
                                                     <p className="text-[10px] text-muted-foreground">AIS · {ACK_AIS.lineItems} lines</p>
-                                                    <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-[8px] font-bold text-amber-700 dark:text-amber-400">Backorder BO-1064B</span>
+                                                    <span className="px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/20 text-[8px] font-bold text-green-700 dark:text-green-400">Sent to Client</span>
                                                 </div>
                                             )}
-                                            {/* Existing ACK cards */}
+                                            {/* Existing Acknowledgement cards */}
                                             {recentAcknowledgments.filter(a => a.status === stage).map(ack => (
                                                 <div key={ack.id} className="p-2.5 rounded-lg border border-border bg-card">
                                                     <div className="flex items-center gap-2 mb-1">
@@ -2595,7 +2464,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                         <div className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border shadow-sm">
                             <div className="flex items-center gap-2">
                                 <AIAgentAvatar />
-                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">NotificationAgent ready — persona-aware digests for both ACKs</span>
+                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">NotificationAgent ready — persona-aware digests for both Acknowledgements</span>
                             </div>
                             <button
                                 onClick={() => nextStep()}
@@ -2715,7 +2584,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                 )}
 
                 {/* Hide table/pipeline when expert review panel or demo steps are active */}
-                {!(currentStep.id === '1.5' && showExpertReview) && !['1.11', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6'].includes(currentStep.id) && (viewMode === 'list' ? (
+                {!(currentStep.id === '1.5' && showExpertReview) && !['1.11', '2.1', '2.2', '2.3', '2.4', '2.5'].includes(currentStep.id) && (viewMode === 'list' ? (
                     <div className="bg-card glass border border-border rounded-2xl overflow-hidden shadow-xl shadow-black/5">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse min-w-[1000px]">
@@ -2949,7 +2818,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
             <CreateOrderModal isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
             <AcknowledgementUploadModal isOpen={isAckModalOpen} onClose={() => setIsAckModalOpen(false)} />
             <BatchAckModal isOpen={isBatchAckOpen} onClose={() => setIsBatchAckOpen(false)} />
-            {!['2.3', '2.4', '2.5', '2.6'].includes(currentStep.id) && (
+            {!['2.3', '2.4', '2.5'].includes(currentStep.id) && (
                 <SmartQuoteHub isOpen={isQuoteWidgetOpen} onClose={() => setIsQuoteWidgetOpen(false)} />
             )}
 

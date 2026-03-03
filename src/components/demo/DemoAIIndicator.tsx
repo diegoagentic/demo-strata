@@ -10,7 +10,7 @@ const SELF_INDICATED_STEPS = [
     '1.2', '1.3', '1.4',
     // ExpertHubTransactions — AgentPipelineStrip + AI Context boxes
     '1.5', '1.6', '1.8', '1.11',
-    '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7',
+    '2.1', '2.2', '2.3', '2.4', '2.5', '2.6',
     // EmailSimulation, Dashboard, Transactions, OrderDetail, MAC — own inline indicators
     '1.1', '1.7', '1.9', '1.10',
     '3.1', '3.2', '3.3',
@@ -75,15 +75,15 @@ const STEP_MESSAGES: Record<string, string[]> = {
         'Review summary and dispatch notifications',
     ],
 
-    // ═══ Flow 2: PO & ACK Comparison ═══
+    // ═══ Flow 2: PO & Acknowledgement Comparison ═══
     '2.1': [
-        'ACKs arriving from supplier ERPs...',
+        'Acknowledgements arriving from supplier ERPs...',
         'EDI/855 translation processing',
         'Two suppliers acknowledged: AIS + HAT',
     ],
     '2.2': [
-        'Normalizing ACK data to standard model...',
-        'Linking acknowledgment to original PO-1029',
+        'Normalizing Acknowledgement data to standard model...',
+        'Linking acknowledgement to original PO-1029',
         'Running intelligent line-by-line comparison',
     ],
     '2.3': [
@@ -92,18 +92,13 @@ const STEP_MESSAGES: Record<string, string[]> = {
     ],
     '2.4': [
         'Expert review queue loaded — 50 line items',
-        'Edit flagged items, then approve to generate backorder',
+        'Edit flagged items, then accept and send to client',
     ],
     '2.5': [
-        'Creating backorder for partial shipment items...',
-        'Running 3-approver authorization chain',
-        'Backorder BO-2031 confirmed and logged',
-    ],
-    '2.6': [
         'Pipeline resolved — review final summary',
         'Dispatch notifications to all stakeholders',
     ],
-    '2.7': [
+    '2.6': [
         'Notification digests ready by persona',
         'Dealer: lifecycle updates — Expert: exceptions only',
     ],

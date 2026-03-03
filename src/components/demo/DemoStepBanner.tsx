@@ -22,14 +22,13 @@ export const STEP_BEHAVIOR: Record<string, StepBehavior> = {
     '1.9':  { mode: 'interactive', userAction: 'Review PO notification on mobile, tap "Acknowledge"' },
     '1.10': { mode: 'interactive', userAction: 'Review smart notifications' },
     '1.11': { mode: 'interactive', userAction: 'Review pipeline resolution, click "Send Notifications"' },
-    // Flow 2: PO & ACK Comparison
-    '2.1':  { mode: 'auto', duration: 10, aiSummary: 'Two ACKs arriving in pipeline — AIS and HAT' },
-    '2.2':  { mode: 'auto', duration: 20, aiSummary: 'Normalizing ACK data and running smart comparison' },
-    '2.3':  { mode: 'interactive', userAction: 'Review delta results, click "Generate Backorder"' },
-    '2.4':  { mode: 'interactive', userAction: 'Review AI corrections and edit flagged line items, then click "Approve & Generate Backorder"' },
-    '2.5':  { mode: 'auto', duration: 28, aiSummary: 'Creating backorder and running 3-approver chain' },
-    '2.6':  { mode: 'interactive', userAction: 'Review pipeline resolution, click "Send Notifications"' },
-    '2.7':  { mode: 'interactive', userAction: 'Review notification digests' },
+    // Flow 2: PO & Acknowledgement Comparison
+    '2.1':  { mode: 'auto', duration: 10, aiSummary: 'Two Acknowledgements arriving in pipeline — AIS and HAT' },
+    '2.2':  { mode: 'auto', duration: 20, aiSummary: 'Normalizing Acknowledgement data and running smart comparison' },
+    '2.3':  { mode: 'interactive', userAction: 'Review delta results, click "Accept and Send to Client"' },
+    '2.4':  { mode: 'interactive', userAction: 'Review AI corrections and edit flagged line items, then click "Accept and Send to Client"' },
+    '2.5':  { mode: 'interactive', userAction: 'Review pipeline resolution, click "Send Notifications"' },
+    '2.6':  { mode: 'interactive', userAction: 'Review notification digests' },
     // Flow 3: Punch List / Warranty Claims
     '3.1':  { mode: 'interactive', userAction: 'Review AI validation checklist, resolve flagged items, click "Validate & Continue"' },
     '3.2':  { mode: 'interactive', userAction: 'Review labor quote and business rules, approve or edit, click "Approve & Submit"' },

@@ -106,7 +106,7 @@ export default function BatchAckModal({ isOpen, onClose }: BatchAckModalProps) {
                                         <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-muted/50">
                                             <div>
                                                 <Dialog.Title as="h3" className="text-lg font-bold text-foreground">
-                                                    Bulk Acknowledge Processing
+                                                    Bulk Acknowledgement Processing
                                                 </Dialog.Title>
                                                 <p className="text-sm text-muted-foreground">Review and approve pending vendor acknowledgements</p>
                                             </div>

@@ -138,9 +138,9 @@ const DEMO_STEPS: DemoStep[] = [
     {
         id: '2.1',
         groupId: 2,
-        groupTitle: 'Flow 2: PO & ACK Comparison',
-        title: 'ACK Intake — Pipeline',
-        description: 'Two ACKs arrive: AIS (50 lines, $65K) and HAT (5 lines, $8K). Both appear in Pending column.',
+        groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
+        title: 'Acknowledgement Intake — Pipeline',
+        description: 'Two Acknowledgements arrive: AIS (50 lines, $65K) and HAT (5 lines, $8K). Both appear in Pending column.',
         app: 'expert-hub',
         role: 'System',
         highlightId: 'ack-pipeline-intake'
@@ -148,7 +148,7 @@ const DEMO_STEPS: DemoStep[] = [
     {
         id: '2.2',
         groupId: 2,
-        groupTitle: 'Flow 2: PO & ACK Comparison',
+        groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
         title: 'Normalization & Smart Comparison',
         description: 'HAT: AI trained — color/desc mismatch OK (part# match). HAT → Confirmed. AIS: grommet error flagged → Discrepancy.',
         app: 'expert-hub',
@@ -158,8 +158,8 @@ const DEMO_STEPS: DemoStep[] = [
     {
         id: '2.3',
         groupId: 2,
-        groupTitle: 'Flow 2: PO & ACK Comparison',
-        title: 'AIS ACK — Delta Engine',
+        groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
+        title: 'AIS Acknowledgement — Delta Engine',
         description: 'Grommet config error (AI auto-corrects), date shifts (auto-accepted), quantity shortfall (escalated to expert).',
         app: 'expert-hub',
         role: 'System',
@@ -168,9 +168,9 @@ const DEMO_STEPS: DemoStep[] = [
     {
         id: '2.4',
         groupId: 2,
-        groupTitle: 'Flow 2: PO & ACK Comparison',
+        groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
         title: 'Expert Review — 50 Line Items',
-        description: 'Expert reviews ACK-7842. AI corrections shown. Quantity shortfall → "Generate Backorder" button.',
+        description: 'Expert reviews ACK-7842. AI corrections shown. Quantity shortfall reviewed and accepted.',
         app: 'expert-hub',
         role: 'Expert',
         highlightId: 'expert-ack-review'
@@ -178,29 +178,19 @@ const DEMO_STEPS: DemoStep[] = [
     {
         id: '2.5',
         groupId: 2,
-        groupTitle: 'Flow 2: PO & ACK Comparison',
-        title: 'Backorder & Approval Chain',
-        description: 'Backorder created for 6 units (3 SKUs). Automated 3-approver approval chain.',
-        app: 'expert-hub',
-        role: 'System',
-        highlightId: 'backorder-approval-chain'
-    },
-    {
-        id: '2.6',
-        groupId: 2,
-        groupTitle: 'Flow 2: PO & ACK Comparison',
+        groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
         title: 'Pipeline Resolution',
-        description: 'Pipeline shows: HAT in Confirmed, AIS in Partial (backorder). Both ACKs resolved.',
+        description: 'Pipeline shows: HAT in Confirmed, AIS in Partial. Both Acknowledgements resolved.',
         app: 'expert-hub',
         role: 'Dealer',
         highlightId: 'ack-pipeline-resolved'
     },
     {
-        id: '2.7',
+        id: '2.6',
         groupId: 2,
-        groupTitle: 'Flow 2: PO & ACK Comparison',
+        groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
         title: 'Smart Notifications',
-        description: 'Dealer: "2 ACKs processed, 1 clean, 1 with 3 exceptions resolved, backorder created." Expert: only exceptions.',
+        description: 'Dealer: "2 Acknowledgements processed, 1 clean, 1 with 3 exceptions resolved." Expert: only exceptions.',
         app: 'dashboard',
         role: 'Dealer',
         highlightId: 'action-center-ack-notify'

@@ -118,7 +118,7 @@ const quotesSummary = {
 }
 
 const acksSummary = {
-    pending_acks: { label: 'Pending Acks', value: '8', sub: 'Awaiting vendor', icon: <ClockIcon className="w-5 h-5" />, color: 'orange' },
+    pending_acks: { label: 'Pending Acknowledgements', value: '8', sub: 'Awaiting vendor', icon: <ClockIcon className="w-5 h-5" />, color: 'orange' },
     discrepancies: { label: 'Discrepancies', value: '3', sub: 'Action required', icon: <ExclamationTriangleIcon className="w-5 h-5" />, color: 'red' },
     confirmed: { label: 'Confirmed', value: '156', sub: 'On track', icon: <ClipboardDocumentCheckIcon className="w-5 h-5" />, color: 'green' },
     avg_lead: { label: 'Avg Lead Time', value: '4.2w', sub: 'Weeks to ship', icon: <CalendarIcon className="w-5 h-5" />, color: 'blue' },
@@ -404,7 +404,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                             )}
                         >
                             <ClipboardDocumentCheckIcon className="w-4 h-4" />
-                            Acknowledgments
+                            Acknowledgements
                         </button>
                     </div>
                 </div>
@@ -512,7 +512,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                     </>
                 )}
 
-                {/* Acknowledgments Tab Content */}
+                {/* Acknowledgements Tab Content */}
                 {lifecycleTab === 'acknowledgments' && (
                     <>
                         {/* KPI Cards for Acks — hidden during demo */}
@@ -552,7 +552,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                 <div className="flex items-center gap-4 mt-6 animate-in fade-in slide-in-from-top-2 duration-500">
                                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Quick Actions:</span>
                                     {[
-                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack", action: () => setIsAckModalOpen(true) },
+                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Acknowledgement", action: () => setIsAckModalOpen(true) },
                                         { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export Acknowledgement", action: () => handleExportSIF('Acknowledgement') },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Email Vendor" },
                                         { icon: <CheckBadgeIcon className="w-5 h-5" />, label: "Approve Orders", action: () => setIsBatchAckOpen(true) },
@@ -590,13 +590,13 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {/* Quick Actions Integrated - Compact */}
                                     <div className="flex items-center gap-1 overflow-x-auto min-w-max pl-4 border-l border-zinc-200 dark:border-zinc-700 xl:border-none xl:pl-0">
                                         {[
-                                            { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack" },
+                                            { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Acknowledgement" },
                                             { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export Acknowledgement" },
                                             { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Email Vendor" },
                                             { icon: <CheckBadgeIcon className="w-5 h-5" />, label: "Approve Orders" },
                                         ].map((action, i) => (
                                             <button key={i} onClick={() => {
-                                                if (action.label === 'Upload Ack') setIsAckModalOpen(true);
+                                                if (action.label === 'Upload Acknowledgement') setIsAckModalOpen(true);
                                                 if (action.label === 'Approve Orders') setIsBatchAckOpen(true);
                                                 if (action.label === 'Export Acknowledgement') handleExportSIF('Acknowledgement');
                                             }} className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors relative group" title={action.label}>
@@ -783,7 +783,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {/* Top Row: Title + Tabs */}
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                         <h3 className="text-lg font-brand font-semibold text-foreground flex items-center gap-2 whitespace-nowrap">
-                                            {lifecycleTab === 'quotes' ? 'Recent Quotes' : lifecycleTab === 'acknowledgments' ? 'Recent Acknowledgments' : 'Recent Orders'}
+                                            {lifecycleTab === 'quotes' ? 'Recent Quotes' : lifecycleTab === 'acknowledgments' ? 'Recent Acknowledgements' : 'Recent Orders'}
                                         </h3>
                                         <div className="hidden sm:block w-px h-6 bg-border mx-2"></div>
                                         {/* Tabs */}
@@ -829,7 +829,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                                 <input
                                                     type="text"
-                                                    placeholder={lifecycleTab === 'quotes' ? "Search quotes..." : lifecycleTab === 'acknowledgments' ? "Search acknowledgments..." : "Search orders..."}
+                                                    placeholder={lifecycleTab === 'quotes' ? "Search quotes..." : lifecycleTab === 'acknowledgments' ? "Search acknowledgements..." : "Search orders..."}
                                                     className="pl-9 pr-4 py-2 bg-background border border-input rounded-lg text-sm text-foreground w-full sm:w-48 lg:w-64 focus:ring-2 focus:ring-primary outline-none placeholder:text-muted-foreground transition-all"
                                                     value={searchQuery}
                                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -900,7 +900,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             >
                                                 <PlusIcon className="w-4 h-4" />
                                                 <span>
-                                                    {lifecycleTab === 'quotes' ? 'Create Quote' : lifecycleTab === 'acknowledgments' ? 'Upload Ack' : 'Create Order'}
+                                                    {lifecycleTab === 'quotes' ? 'Create Quote' : lifecycleTab === 'acknowledgments' ? 'Upload Acknowledgement' : 'Create Order'}
                                                 </span>
                                             </button>
                                         </div>
@@ -979,7 +979,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-6 border border-blue-200 dark:border-blue-800/20 shadow-sm">
                                                 <div className="flex items-center justify-between mb-4">
                                                     <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                                                        {lifecycleTab === 'quotes' ? 'Active Quotes' : lifecycleTab === 'acknowledgments' ? 'Pending Acks' : 'Active Orders'}
+                                                        {lifecycleTab === 'quotes' ? 'Active Quotes' : lifecycleTab === 'acknowledgments' ? 'Pending Acknowledgements' : 'Active Orders'}
                                                     </p>
                                                     <ShoppingBagIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                                 </div>
@@ -1002,7 +1002,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                 <div>
                                                     <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{metricsData.efficiency}%</p>
                                                     <p className="text-xs text-indigo-600/80 dark:text-indigo-400/80 mt-1">
-                                                        {lifecycleTab === 'quotes' ? 'Quotes approved' : lifecycleTab === 'acknowledgments' ? 'Acks confirmed' : 'Orders delivered successfully'}
+                                                        {lifecycleTab === 'quotes' ? 'Quotes approved' : lifecycleTab === 'acknowledgments' ? 'Acknowledgements confirmed' : 'Orders delivered successfully'}
                                                     </p>
                                                 </div>
                                             </div>
