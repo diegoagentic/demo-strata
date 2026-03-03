@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     ExclamationTriangleIcon,
     CheckCircleIcon,
@@ -96,8 +96,20 @@ const CLAIM_LOG_ENTRIES = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function MACPunchList() {
-    const { currentStep, nextStep } = useDemo();
+    const { currentStep, nextStep, isPaused } = useDemo();
     const [selectedItem, setSelectedItem] = useState<string | null>(null);
+
+    // ── Pause-aware timer support ──
+    const isPausedRef = useRef(isPaused);
+    useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+    const pauseAware = useCallback((fn: () => void) => {
+        return () => {
+            if (!isPausedRef.current) { fn(); return; }
+            const poll = setInterval(() => {
+                if (!isPausedRef.current) { clearInterval(poll); fn(); }
+            }, 200);
+        };
+    }, []);
 
     // Step 3.1 state
     const [extractionPhase, setExtractionPhase] = useState<'email' | 'extracting' | 'review'>('email');
@@ -156,15 +168,15 @@ export default function MACPunchList() {
 
         const timeouts: ReturnType<typeof setTimeout>[] = [];
         // 2s: Start extracting
-        timeouts.push(setTimeout(() => setExtractionPhase('extracting'), 2000));
+        timeouts.push(setTimeout(pauseAware(() => setExtractionPhase('extracting')), 2000));
         // 2.5s–6.5s: Fields appear one-by-one
         EXTRACTION_FIELDS.forEach((_, i) => {
-            timeouts.push(setTimeout(() => setExtractedCount(i + 1), 2500 + i * 1000));
+            timeouts.push(setTimeout(pauseAware(() => setExtractedCount(i + 1)), 2500 + i * 1000));
         });
         // 8s: Transition to review (validation checklist)
-        timeouts.push(setTimeout(() => setExtractionPhase('review'), 8000));
+        timeouts.push(setTimeout(pauseAware(() => setExtractionPhase('review')), 8000));
         // 10s: Auto-expand label-photo
-        timeouts.push(setTimeout(() => setExpandedValidation('label-photo'), 10000));
+        timeouts.push(setTimeout(pauseAware(() => setExpandedValidation('label-photo')), 10000));
 
         return () => timeouts.forEach(clearTimeout);
     }, [currentStep?.id]);
@@ -203,15 +215,15 @@ export default function MACPunchList() {
 
         const timeouts: ReturnType<typeof setTimeout>[] = [];
         CLAIM_LOG_ENTRIES.forEach((entry, i) => {
-            timeouts.push(setTimeout(() => {
+            timeouts.push(setTimeout(pauseAware(() => {
                 setClaimLogs(prev => [...prev, entry]);
                 setClaimProgress(Math.round(((i + 1) / CLAIM_LOG_ENTRIES.length) * 100));
-            }, (i + 1) * 2000));
+            }), (i + 1) * 2000));
         });
         // Acknowledged
-        timeouts.push(setTimeout(() => setClaimPhase('acknowledged'), CLAIM_LOG_ENTRIES.length * 2000 + 1000));
+        timeouts.push(setTimeout(pauseAware(() => setClaimPhase('acknowledged')), CLAIM_LOG_ENTRIES.length * 2000 + 1000));
         // Show liability
-        timeouts.push(setTimeout(() => setShowLiability(true), CLAIM_LOG_ENTRIES.length * 2000 + 2500));
+        timeouts.push(setTimeout(pauseAware(() => setShowLiability(true)), CLAIM_LOG_ENTRIES.length * 2000 + 2500));
 
         return () => timeouts.forEach(clearTimeout);
     }, [currentStep?.id]);
@@ -431,7 +443,7 @@ export default function MACPunchList() {
                                                                         <button
                                                                             onClick={() => {
                                                                                 setQrScanning(true);
-                                                                                setTimeout(() => { setQrScanning(false); setQrDone(true); }, 2500);
+                                                                                setTimeout(pauseAware(() => { setQrScanning(false); setQrDone(true); }), 2500);
                                                                             }}
                                                                             className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-md transition-colors flex items-center gap-1.5"
                                                                         >
@@ -441,7 +453,7 @@ export default function MACPunchList() {
                                                                         <button
                                                                             onClick={() => {
                                                                                 setUploadingLabel(true);
-                                                                                setTimeout(() => { setUploadingLabel(false); setLabelUploaded(true); }, 2000);
+                                                                                setTimeout(pauseAware(() => { setUploadingLabel(false); setLabelUploaded(true); }), 2000);
                                                                             }}
                                                                             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-colors flex items-center gap-1.5"
                                                                         >
@@ -559,10 +571,10 @@ export default function MACPunchList() {
                                                                         onClick={() => {
                                                                             setUploadingEvidence(true);
                                                                             setUploadedPhotos(0);
-                                                                            setTimeout(() => setUploadedPhotos(1), 800);
-                                                                            setTimeout(() => setUploadedPhotos(2), 1600);
-                                                                            setTimeout(() => setUploadedPhotos(3), 2400);
-                                                                            setTimeout(() => { setUploadingEvidence(false); setUploadDone(true); }, 3000);
+                                                                            setTimeout(pauseAware(() => setUploadedPhotos(1)), 800);
+                                                                            setTimeout(pauseAware(() => setUploadedPhotos(2)), 1600);
+                                                                            setTimeout(pauseAware(() => setUploadedPhotos(3)), 2400);
+                                                                            setTimeout(pauseAware(() => { setUploadingEvidence(false); setUploadDone(true); }), 3000);
                                                                         }}
                                                                         className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-md transition-colors flex items-center gap-1.5"
                                                                     >
