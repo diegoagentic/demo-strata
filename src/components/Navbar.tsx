@@ -110,8 +110,6 @@ export default function Navbar({
 
     const allNavigation = customNavigation || [
         { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-        { name: 'Catalogs', page: 'catalogs', icon: BookOpenIcon },
-        { name: 'Inventory', page: 'inventory', icon: CubeTransparentIcon },
         { name: 'Service Center', page: 'mac', icon: ArrowPathRoundedSquareIcon },
         { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
     ];
