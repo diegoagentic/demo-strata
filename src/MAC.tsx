@@ -13,7 +13,8 @@ import {
     WrenchScrewdriverIcon,
     ArrowPathRoundedSquareIcon,
     ClipboardDocumentCheckIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
+    SparklesIcon
 } from '@heroicons/react/24/outline';
 
 // Mock Utils if cn is not available globally
@@ -71,7 +72,21 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                     </div>
                 </div>
 
-                {/* Step 3.5: Warranty Claims Pipeline */}
+                {/* Step 3.4: Service Center Pipeline */}
+                {currentStep?.id === '3.4' && (
+                    <AgentPipelineStrip agents={[
+                        { id: 'doc-class', name: 'DocClassifier', status: 'done' },
+                        { id: 'ocr', name: 'OCR/Extract', status: 'done' },
+                        { id: 'data-norm', name: 'DataNorm', status: 'done' },
+                        { id: 'match', name: '3-WayMatch', status: 'done' },
+                        { id: 'logistics', name: 'LogisticsAI', status: 'done' },
+                        { id: 'mac', name: 'MACOrch', status: 'running', detail: 'Validating 3 requests' },
+                        { id: 'warranty', name: 'WarrantyAgent', status: 'pending' },
+                        { id: 'notif', name: 'Notification', status: 'pending' },
+                    ]} accentColor="green" />
+                )}
+
+                {/* Step 3.5: Warranty Claims Pipeline (unified) */}
                 {currentStep?.id === '3.5' && (
                     <div data-demo-target="warranty-claim-package">
                         <AgentPipelineStrip agents={[
@@ -79,9 +94,9 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                             { id: 'ocr', name: 'OCR/Extract', status: 'done' },
                             { id: 'data-norm', name: 'DataNorm', status: 'done' },
                             { id: 'match', name: '3-WayMatch', status: 'done' },
+                            { id: 'logistics', name: 'LogisticsAI', status: 'done' },
                             { id: 'mac', name: 'MACOrch', status: 'done' },
                             { id: 'warranty', name: 'WarrantyAgent', status: 'running', detail: 'Claim assembly' },
-                            { id: 'liability', name: 'LiabilityAI', status: 'pending' },
                             { id: 'notif', name: 'Notification', status: 'pending' },
                         ]} accentColor="amber" />
                     </div>
@@ -122,33 +137,57 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                     ))}
                 </div>
 
-                {/* Step 3.4: AI Validation Banner */}
+                {/* Step 3.4: AI Validation Banner (enhanced) */}
                 {currentStep?.id === '3.4' && activeTab === 'requests' && (
-                    <div data-demo-target="mac-orchestrator" className="p-4 rounded-2xl bg-green-500/10 border border-green-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-green-500/20 rounded-xl">
-                                    <ClipboardDocumentCheckIcon className="w-5 h-5 text-green-500" />
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-sm font-bold text-green-700 dark:text-green-400">AI Validated Service Requests</h3>
-                                        <span className="px-2 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 text-[10px] font-bold rounded-full uppercase tracking-wider">AI Validated</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 mt-1">
-                                        <p className="text-xs text-green-600/80 dark:text-green-500/80">
-                                            3 requests validated against inventory and compliance rules
-                                        </p>
-                                        <ConfidenceScoreBadge score={94} label="Validation" size="sm" />
-                                    </div>
-                                </div>
+                    <div data-demo-target="mac-orchestrator" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* AI Context */}
+                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
+                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                            <div className="text-xs text-indigo-700 dark:text-indigo-300">
+                                <span className="font-bold">MACOrchestrator:</span> Validated 3 service requests against live inventory, active order commitments, and compliance rules. Scope and cost impact assessed.
                             </div>
-                            <button
-                                onClick={() => nextStep()}
-                                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
-                            >
-                                Continue to Warranty
-                            </button>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/30">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-green-500/20 rounded-xl">
+                                        <ClipboardDocumentCheckIcon className="w-5 h-5 text-green-500" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-sm font-bold text-green-700 dark:text-green-400">AI Validated Service Requests</h3>
+                                            <span className="px-2 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 text-[10px] font-bold rounded-full uppercase tracking-wider">AI Validated</span>
+                                        </div>
+                                        <div className="flex items-center gap-3 mt-1">
+                                            <p className="text-xs text-green-600/80 dark:text-green-500/80">
+                                                3 requests validated against inventory and compliance rules
+                                            </p>
+                                            <ConfidenceScoreBadge score={94} label="Validation" size="sm" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => nextStep()}
+                                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
+                                >
+                                    Continue to Warranty
+                                </button>
+                            </div>
+
+                            {/* Validation breakdown */}
+                            <div className="grid grid-cols-3 gap-3 mt-4">
+                                {[
+                                    { check: 'Inventory Available', result: '6 units in stock' },
+                                    { check: 'Compliance Rules', result: 'No restrictions' },
+                                    { check: 'Cost Impact', result: '$2,400 estimated' },
+                                ].map((v, i) => (
+                                    <div key={i} className="p-2.5 rounded-lg bg-card border border-border text-center">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{v.check}</p>
+                                        <p className="text-[11px] font-bold text-foreground mt-1">{v.result}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}

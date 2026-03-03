@@ -33,12 +33,15 @@ export const STEP_BEHAVIOR: Record<string, StepBehavior> = {
     '2.6':  { mode: 'interactive', userAction: 'Review pipeline resolution, click "Send Notifications"' },
     '2.7':  { mode: 'interactive', userAction: 'Review notification digests' },
     // Flow 3: Punch List
-    '3.1':  { mode: 'interactive', userAction: 'Watch AI classify document, then click "Route to 3-Way Match"' },
-    '3.2':  { mode: 'interactive', userAction: 'Review 3-way match results' },
-    '3.3':  { mode: 'interactive', userAction: 'Review shipment timeline' },
-    '3.4':  { mode: 'interactive', userAction: 'Review service center plan' },
-    '3.5':  { mode: 'interactive', userAction: 'Review warranty claim package' },
+    '3.1':  { mode: 'auto', duration: 20, aiSummary: 'DocClassifier identifying document type and routing to pipeline' },
+    '3.2':  { mode: 'interactive', userAction: 'Review 3-way match results, then click "Resolve & Approve"' },
+    '3.3':  { mode: 'auto', duration: 14, aiSummary: 'LogisticsAI analyzing shipment — predicting delays and detecting fulfillment gaps' },
+    '3.4':  { mode: 'interactive', userAction: 'Review MAC validation results, then click "Continue to Warranty"' },
+    '3.5':  { mode: 'interactive', userAction: 'Watch AI process warranty claim and liability analysis' },
 };
+
+// Steps where the floating lupa panel (DemoProcessPanel) is shown — banner hidden to avoid overlap
+const LUPA_STEPS = ['1.2', '1.3', '1.4', '3.1'];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -76,7 +79,7 @@ export default function DemoStepBanner() {
         return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
     }, [isDemoActive, currentStep.id, behavior]);
 
-    if (!isDemoActive || !behavior || !visible) return null;
+    if (!isDemoActive || !behavior || !visible || LUPA_STEPS.includes(currentStep.id)) return null;
 
     const isAuto = behavior.mode === 'auto';
     const progress = isAuto && behavior.duration ? (elapsed / behavior.duration) * 100 : 0;
@@ -94,34 +97,37 @@ export default function DemoStepBanner() {
                     : 'bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 dark:from-amber-500/15 dark:via-orange-500/8 dark:to-amber-500/15 border-l-4 border-l-amber-500'
             }`}
         >
-            <div className="flex items-center justify-between px-5 py-2.5">
+            <div className="flex items-center justify-between px-5 py-1.5">
                 {/* Left: Icon + message */}
                 <div className="flex items-center gap-3 min-w-0">
                     {isAuto ? (
                         <div className="flex items-center gap-2 shrink-0">
                             <div className="relative">
-                                <Sparkles size={16} className="text-indigo-500 dark:text-indigo-400" />
-                                <Loader2 size={10} className="absolute -bottom-0.5 -right-0.5 animate-spin text-indigo-500 dark:text-indigo-400" />
+                                <Sparkles size={14} className="text-indigo-500 dark:text-indigo-400" />
+                                <Loader2 size={8} className="absolute -bottom-0.5 -right-0.5 animate-spin text-indigo-500 dark:text-indigo-400" />
                             </div>
-                            <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider whitespace-nowrap">
+                            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider whitespace-nowrap">
                                 AI Processing
                             </span>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2 shrink-0">
-                            <MousePointerClick size={16} className="text-amber-500 dark:text-amber-400" />
-                            <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider whitespace-nowrap">
+                            <MousePointerClick size={14} className="text-amber-500 dark:text-amber-400" />
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider whitespace-nowrap">
                                 Action Required
                             </span>
                         </div>
                     )}
-                    <span className="text-[11px] text-zinc-600 dark:text-zinc-300 truncate">
-                        {isAuto ? behavior.aiSummary : behavior.userAction}
-                    </span>
+                    {/* Interactive steps show the user action instruction; auto steps show context in-component */}
+                    {!isAuto && (
+                        <span className="text-[10px] text-zinc-600 dark:text-zinc-300 truncate">
+                            {behavior.userAction}
+                        </span>
+                    )}
                 </div>
 
                 {/* Right: Mode badge */}
-                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ml-3 ${
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shrink-0 ml-3 ${
                     isAuto
                         ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25'
                         : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 animate-pulse'

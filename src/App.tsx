@@ -370,7 +370,7 @@ function App() {
       )}
 
       {/* MAIN CONTENT VIEWPORT */}
-      <main className={`transition-all duration-300 ${(isDemoActive ? currentStep.app !== 'email-marketplace' : currentPage !== 'detail' && currentPage !== 'workspace') ? (isDemoActive ? 'pt-[108px]' : 'pt-16') : ''} ${isDemoActive ? (isSidebarCollapsed ? 'pl-0' : 'pl-80') + ' animate-in fade-in duration-500' : ''} min-h-screen bg-background`}>
+      <main className={`transition-all duration-300 ${(isDemoActive ? currentStep.app !== 'email-marketplace' : currentPage !== 'detail' && currentPage !== 'workspace') ? (isDemoActive ? 'pt-[96px]' : 'pt-16') : ''} ${isDemoActive ? (isSidebarCollapsed ? 'pl-0' : 'pl-80') + ' animate-in fade-in duration-500' : ''} min-h-screen bg-background`}>
         {isDemoActive ? renderSimulation() : renderCurrentPage()}
       </main>
 

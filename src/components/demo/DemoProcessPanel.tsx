@@ -340,6 +340,12 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                     if (statusMap[index]) setPipelineAgents(statusMap[index]);
                 }), delay));
             });
+
+            // Auto-advance after pipeline completes
+            timers.push(setTimeout(pauseAware(() => {
+                nextStep();
+                onNavigate?.('transactions');
+            }), D + 20000));
         }
 
         return () => timers.forEach(clearTimeout);
@@ -808,6 +814,12 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
                             Routed to 3-Way Match Engine (PO + ACK + Invoice)
                         </p>
+
+                        {/* Auto-advance indicator */}
+                        <div className="flex items-center justify-center gap-2 text-[11px] text-indigo-600 dark:text-indigo-400 animate-pulse">
+                            <Loader2 size={12} className="animate-spin" />
+                            <span>Auto-routing to 3-Way Match...</span>
+                        </div>
 
                         <button
                             onClick={() => {

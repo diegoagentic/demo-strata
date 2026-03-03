@@ -223,8 +223,8 @@ const DEMO_STEPS: DemoStep[] = [
         id: '3.3',
         groupId: 3,
         groupTitle: 'Flow 3: Punch List',
-        title: 'Shipment Management',
-        description: 'ASN/BOL parsed. Timeline updated with tracking, delays, partial shipments. Backorders generated if needed.',
+        title: 'Shipment Intelligence',
+        description: 'LogisticsAI analyzes shipment data, predicts delays, detects partial fulfillment, and generates backorder recommendations.',
         app: 'order-detail',
         role: 'Dealer',
         highlightId: 'shipment-timeline'
