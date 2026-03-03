@@ -56,6 +56,7 @@ import DashboardMetricsGrid from './components/DashboardMetricsGrid';
 import { Card } from 'strata-design-system';
 import { useDemo } from './context/DemoContext'
 import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
+import { AIAgentAvatar } from './components/simulations/DemoAvatars'
 import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
 
 // Urgent Actions Data (Dealer Persona)
@@ -680,7 +681,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
                                     {/* AI Summary for dealer */}
                                     <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                                        <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                                        <AIAgentAvatar className="mt-0.5" />
                                         <div className="text-xs text-indigo-700 dark:text-indigo-300 space-y-1">
                                             <p><span className="font-bold">AI Summary:</span> Quote generated from your RFQ email + attachments. All 50 SKUs matched to catalog across 8 product categories. Pricing verified. Early payment discount (2%) + volume discount (2%) applied automatically.</p>
                                             <p>Estimated savings vs. list price: <span className="font-bold text-green-600 dark:text-green-400">$27,497 (4%)</span></p>
@@ -785,7 +786,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
                         {/* AI Attribution */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                            <AIAgentAvatar className="mt-0.5" />
                             <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
                                 <span className="font-bold">NotificationAgent:</span> Generated 4 persona-specific notifications from 8-agent ACK pipeline. Dealer receives full lifecycle summary. Expert receives only actionable items — reducing noise by 60%.
                             </div>
@@ -819,7 +820,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
                         {/* AI Attribution */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                            <AIAgentAvatar className="mt-0.5" />
                             <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
                                 <span className="font-bold">NotificationAgent:</span> PO-1029 notification delivered to Dealer portal. Click "View PO" in Action Center to continue to pipeline.
                             </div>
@@ -1284,7 +1285,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                         {item.aiSuggestion && (
                                                             <div className="rounded-lg bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-500/10 p-3">
                                                                 <div className="flex items-start gap-3">
-                                                                    <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                                                                    <AIAgentAvatar className="mt-0.5" />
                                                                     <div className="flex-1">
                                                                         <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 mb-1">
                                                                             AI Insight

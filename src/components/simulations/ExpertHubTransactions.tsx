@@ -26,6 +26,7 @@ import AcknowledgementUploadModal from '../AcknowledgementUploadModal'
 import { useDemo } from '../../context/DemoContext'
 import ConfidenceScoreBadge from '../widgets/ConfidenceScoreBadge'
 import AgentPipelineStrip from './AgentPipelineStrip'
+import DemoAvatar, { AIAgentAvatar } from './DemoAvatars'
 import Select from '../Select'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -256,7 +257,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     ]);
     const [discountPage, setDiscountPage] = useState(0);
 
-    // Step 1.6 — Quote Approval Chain (2 approvers: System Policy auto → Sarah Chen → auto-advance)
+    // Step 1.6 — Quote Approval Chain (2 approvers: System Policy auto → David Park → auto-advance)
     const [approvalStates16, setApprovalStates16] = useState<('pending' | 'approved')[]>(['pending', 'pending'])
     useEffect(() => {
         if (currentStep.id !== '1.6') {
@@ -266,7 +267,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
         const timeouts: ReturnType<typeof setTimeout>[] = [];
         // T+5s: System Policy Engine finishes compliance review
         timeouts.push(setTimeout(() => setApprovalStates16(['approved', 'pending']), 5000));
-        // T+10s: Sarah Chen approves after reviewing
+        // T+10s: David Park approves after reviewing
         timeouts.push(setTimeout(() => setApprovalStates16(['approved', 'approved']), 10000));
         // T+14s: advance to next step (4s to see both approved)
         timeouts.push(setTimeout(() => nextStep(), 14000));
@@ -1922,7 +1923,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                            <AIAgentAvatar className="mt-0.5" />
                             <div className="text-xs text-indigo-700 dark:text-indigo-300">
                                 <span className="font-bold">ERPConnectorAgent:</span> 2 new acknowledgments detected — AIS (EDI/855) and HAT Contract (vendor email). Routing to ACK processing pipeline.
                             </div>
@@ -2014,7 +2015,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                            <AIAgentAvatar className="mt-0.5" />
                             <div className="text-xs text-indigo-700 dark:text-indigo-300">
                                 <span className="font-bold">DataNormAgent:</span> Normalizing and comparing ACK data field-by-field against PO-1064B. Smart rules applying corrections automatically.
                             </div>
@@ -2081,7 +2082,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                         {['hat-ai-rule', 'hat-confirmed', 'norm-ais', 'comparing-ais', 'ais-flagged'].includes(normPhase22) && (
                                             <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 animate-in fade-in duration-300">
                                                 <div className="flex items-start gap-2">
-                                                    <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                                                    <AIAgentAvatar className="mt-0.5" />
                                                     <div>
                                                         <p className="text-[10px] font-bold text-indigo-700 dark:text-indigo-400">AI Vendor Rule: HAT Contract</p>
                                                         <p className="text-[10px] text-indigo-600 dark:text-indigo-300 mt-0.5">Part number match is sufficient per client directive. Color and description variations accepted.</p>
@@ -2273,7 +2274,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             {/* Summary Banner */}
                             {deltaPhase23 === 'complete' && (
                                 <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center gap-3 animate-in fade-in duration-300">
-                                    <SparklesIcon className="w-4 h-4 text-indigo-500 shrink-0 animate-pulse" />
+                                    <AIAgentAvatar />
                                     <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">3 discrepancies analyzed: 2 auto-resolved (grommet corrected, dates accepted), 1 requires expert action (quantity shortfall).</span>
                                 </div>
                             )}
@@ -2297,7 +2298,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                            <AIAgentAvatar className="mt-0.5" />
                             <div className="text-xs text-indigo-700 dark:text-indigo-300">
                                 <span className="font-bold">DiscrepResolverAgent:</span> AI reviewed 50 line items — 2 corrections applied automatically, 1 quantity shortfall escalated to expert review. <span className="font-medium">Click the edit icon on flagged rows to modify.</span>
                             </div>
@@ -2499,7 +2500,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                            <AIAgentAvatar className="mt-0.5" />
                             <div className="text-xs text-indigo-700 dark:text-indigo-300">
                                 <span className="font-bold">BackorderAgent:</span> Creating backorder BO-1064B for 3 shortfall SKUs (6 units), then routing to automated 3-approver chain.
                             </div>
@@ -2550,20 +2551,21 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                     <div className="space-y-0 relative">
                                         {[
                                             { name: 'System Policy Engine', role: 'Auto-approval' },
-                                            { name: 'Sarah Chen', role: 'Regional Sales Manager' },
-                                            { name: 'David Park', role: 'Finance Director' },
+                                            { name: 'David Park', role: 'Regional Sales Manager' },
+                                            { name: 'James Liu', role: 'Finance Director' },
                                         ].map((approver, i) => (
                                             <div key={i} className="flex items-start gap-4 relative pb-5 last:pb-0">
                                                 {i < 2 && (
                                                     <div className={cn('absolute left-[15px] top-8 w-0.5 h-[calc(100%-16px)]', approvalStates25[i] === 'approved' ? 'bg-green-500' : 'bg-border')} />
                                                 )}
-                                                <div className={cn(
-                                                    'w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all duration-500',
-                                                    approvalStates25[i] === 'approved' && 'bg-green-500 text-white',
-                                                    approvalStates25[i] === 'pending' && i === approvedCount25 && 'bg-amber-500 text-white animate-pulse',
-                                                    approvalStates25[i] === 'pending' && i !== approvedCount25 && 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400',
-                                                )}>
-                                                    {approvalStates25[i] === 'approved' ? <CheckCircleIcon className="w-5 h-5" /> : i === approvedCount25 ? <ClockIcon className="w-5 h-5" /> : <span className="w-2 h-2 rounded-full bg-zinc-500 dark:bg-zinc-400" />}
+                                                <div className="relative shrink-0 z-10">
+                                                    <DemoAvatar name={approver.name} size="md" />
+                                                    {approvalStates25[i] === 'approved' && (
+                                                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-zinc-900"><CheckIcon className="w-2.5 h-2.5" /></div>
+                                                    )}
+                                                    {approvalStates25[i] === 'pending' && i === approvedCount25 && (
+                                                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-zinc-900 animate-pulse"><ClockIcon className="w-2.5 h-2.5" /></div>
+                                                    )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between gap-2">
@@ -2682,7 +2684,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                         {/* Send Notifications Button */}
                         <div className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border shadow-sm">
                             <div className="flex items-center gap-2">
-                                <SparklesIcon className="w-4 h-4 text-indigo-500 animate-pulse" />
+                                <AIAgentAvatar />
                                 <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">NotificationAgent ready — persona-aware digests for both ACKs</span>
                             </div>
                             <button
@@ -2726,7 +2728,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                             <div className="p-6 space-y-5">
                                 <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                                    <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                                    <AIAgentAvatar className="mt-0.5" />
                                     <div className="text-xs text-indigo-700 dark:text-indigo-300">
                                         <span className="font-bold">ApprovalOrchestratorAgent:</span> Routing to 2-level approval chain — automated compliance check first, then manager sign-off for quote value bracket ($100k-$250k).
                                     </div>
@@ -2735,7 +2737,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                 <div className="space-y-0">
                                     {[
                                         { name: 'System Policy Engine', role: 'Automated Compliance Check', reason: 'Pricing + discount + policy validation', level: 'Level 1' },
-                                        { name: 'Sarah Chen', role: 'Regional Sales Manager', reason: 'Quote value > $100k', level: 'Level 2' },
+                                        { name: 'David Park', role: 'Regional Sales Manager', reason: 'Quote value > $100k', level: 'Level 2' },
                                     ].map((approver, i) => (
                                         <div key={i}>
                                             {i > 0 && <div className="ml-5 h-6 border-l-2 border-dashed border-border" />}
@@ -2746,10 +2748,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                         ? 'bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 animate-pulse'
                                                         : 'bg-muted/30 border border-border/50'
                                             }`}>
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${
-                                                    approvalStates16[i] === 'approved' ? 'bg-emerald-500 text-white' : i === approvedCount16 ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'
-                                                }`}>
-                                                    {approvalStates16[i] === 'approved' ? <CheckIcon className="w-5 h-5" /> : i === approvedCount16 ? <ArrowPathIcon className="w-5 h-5 animate-spin" /> : <ClockIcon className="w-4 h-4" />}
+                                                <div className="relative shrink-0">
+                                                    <DemoAvatar name={approver.name} size="lg" />
+                                                    {approvalStates16[i] === 'approved' && (
+                                                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-zinc-900"><CheckIcon className="w-2.5 h-2.5" /></div>
+                                                    )}
+                                                    {approvalStates16[i] !== 'approved' && i === approvedCount16 && (
+                                                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center ring-2 ring-white dark:ring-zinc-900"><ArrowPathIcon className="w-2.5 h-2.5 animate-spin" /></div>
+                                                    )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2">
@@ -2792,7 +2798,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                     <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center gap-2">
                                         <ClockIcon className="w-4 h-4 text-amber-500 shrink-0" />
                                         <span className="text-[10px] text-amber-700 dark:text-amber-300">
-                                            {approvedCount16 === 0 ? 'System Policy Engine running compliance check...' : 'Awaiting manager approval — notification sent to Sarah Chen'}
+                                            {approvedCount16 === 0 ? 'System Policy Engine running compliance check...' : 'Awaiting manager approval — notification sent to David Park'}
                                         </span>
                                     </div>
                                 )}
@@ -2817,7 +2823,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
 
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                            <AIAgentAvatar className="mt-0.5" />
                             <div className="text-xs text-indigo-700 dark:text-indigo-300">
                                 <span className="font-bold">POBuilderAgent:</span> Auto-generating purchase order PO-1029 from approved quote QT-1025, then routing to automated order approval chain.
                             </div>
@@ -2829,16 +2835,19 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                 <CheckCircleIcon className="w-5 h-5 text-emerald-500 shrink-0" />
                                 <div className="flex-1">
                                     <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Quote Approval Chain — Complete</p>
-                                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">QT-1025 approved by System Policy Engine + Sarah Chen</p>
+                                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">QT-1025 approved by System Policy Engine + David Park</p>
                                 </div>
                             </div>
                             <div className="p-4 flex items-center gap-6">
                                 {[
                                     { name: 'System Policy Engine', status: 'Auto-Approved' },
-                                    { name: 'Sarah Chen', status: 'Approved' },
+                                    { name: 'David Park', status: 'Approved' },
                                 ].map((a, i) => (
                                     <div key={i} className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center"><CheckIcon className="w-3.5 h-3.5" /></div>
+                                        <div className="relative">
+                                            <DemoAvatar name={a.name} size="sm" />
+                                            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-1 ring-white dark:ring-zinc-900"><CheckIcon className="w-2 h-2" /></div>
+                                        </div>
                                         <div>
                                             <span className="text-[11px] font-medium text-foreground">{a.name}</span>
                                             <span className="text-[10px] text-emerald-600 dark:text-emerald-400 ml-1.5">· {a.status}</span>
@@ -2916,10 +2925,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                         ? 'bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 animate-pulse'
                                                         : 'bg-muted/30 border border-border/50'
                                             }`}>
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-500 ${
-                                                    orderApprovalStates18[i] === 'approved' ? 'bg-emerald-500 text-white' : i === orderApprovedCount18 ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'
-                                                }`}>
-                                                    {orderApprovalStates18[i] === 'approved' ? <CheckIcon className="w-4 h-4" /> : i === orderApprovedCount18 ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <ClockIcon className="w-3.5 h-3.5" />}
+                                                <div className="relative shrink-0">
+                                                    <DemoAvatar name={approver.name} size="md" />
+                                                    {orderApprovalStates18[i] === 'approved' && (
+                                                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center ring-1 ring-white dark:ring-zinc-900"><CheckIcon className="w-2 h-2" /></div>
+                                                    )}
+                                                    {orderApprovalStates18[i] !== 'approved' && i === orderApprovedCount18 && (
+                                                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-blue-500 text-white flex items-center justify-center ring-1 ring-white dark:ring-zinc-900"><ArrowPathIcon className="w-2 h-2 animate-spin" /></div>
+                                                    )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <span className="text-[11px] font-bold text-foreground">{approver.name}</span>

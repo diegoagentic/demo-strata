@@ -27,6 +27,7 @@ import { useDemo } from './context/DemoContext'
 import ThreeWayMatchView from './components/widgets/ThreeWayMatchView'
 import type { MatchLine } from './components/widgets/ThreeWayMatchView'
 import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
+import { AIAgentAvatar } from './components/simulations/DemoAvatars'
 
 const THREE_WAY_MATCH_LINES: MatchLine[] = [
     { lineItem: 'Ergonomic Task Chair x125', sku: 'SKU-OFF-2025-002', poValue: '$34,375.00', ackValue: '$34,375.00', invoiceValue: '$34,375.00', status: 'match' },
@@ -390,7 +391,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
 
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <SparklesIcon className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0 animate-pulse" />
+                            <AIAgentAvatar className="mt-0.5" />
                             <div className="text-xs text-indigo-700 dark:text-indigo-300">
                                 <span className="font-bold">3-WayMatchAgent:</span> Compared PO #ORD-2055 against ACK and Invoice line-by-line. 1 of 2 lines matched perfectly. $0.03 tax rounding discrepancy auto-identified on freight line.
                             </div>

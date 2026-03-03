@@ -324,7 +324,7 @@ const DiscrepancyActionCard = ({ msg }: { msg: Message }) => {
 }
 
 const collaborators = [
-    { name: "Sarah Chen", role: "Logistics Mgr", status: "online", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" },
+    { name: "David Park", role: "Regional Sales Mgr", status: "online", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" },
     { name: "Mike Ross", role: "Warehouse Lead", status: "offline", avatar: "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" },
     { name: "AI Agent", role: "System Bot", status: "online", avatar: "AI" },
 ]
@@ -361,16 +361,16 @@ export default function Detail({ onBack, onLogout, onNavigateToWorkspace, onNavi
         },
         {
             id: 3,
-            sender: "Sarah Chen",
-            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+            sender: "David Park",
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
             content: "@InventoryManager I'm verifying the physical stock in Zone B. Will update shortly.",
             time: "1 hour ago",
             type: "user",
         },
         {
             id: 4,
-            sender: "Sarah Chen",
-            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+            sender: "David Park",
+            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
             content: "I've contacted the client. They want to proceed with the available items. I've updated the order line items accordingly.",
             time: "15 mins ago",
             type: "user",
@@ -379,7 +379,7 @@ export default function Detail({ onBack, onLogout, onNavigateToWorkspace, onNavi
             id: 5,
             sender: "System",
             avatar: "",
-            content: "Sarah Chen triggered context action: Process Quote",
+            content: "David Park triggered context action: Process Quote",
             time: "Just now",
             type: "system",
         },
