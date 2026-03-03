@@ -106,6 +106,8 @@ export default function MACPunchList() {
     const [resolvedItems, setResolvedItems] = useState<Set<string>>(new Set());
     const [qrScanning, setQrScanning] = useState(false);
     const [qrDone, setQrDone] = useState(false);
+    const [uploadingLabel, setUploadingLabel] = useState(false);
+    const [labelUploaded, setLabelUploaded] = useState(false);
     const [uploadingEvidence, setUploadingEvidence] = useState(false);
     const [uploadedPhotos, setUploadedPhotos] = useState(0);
     const [uploadDone, setUploadDone] = useState(false);
@@ -142,6 +144,8 @@ export default function MACPunchList() {
         setResolvedItems(new Set());
         setQrScanning(false);
         setQrDone(false);
+        setUploadingLabel(false);
+        setLabelUploaded(false);
         setUploadingEvidence(false);
         setUploadedPhotos(0);
         setUploadDone(false);
@@ -410,8 +414,8 @@ export default function MACPunchList() {
                                                                     <p className="text-xs text-indigo-900 dark:text-indigo-300">{item.aiSuggestion}</p>
                                                                 </div>
 
-                                                                {!qrScanning && !qrDone && (
-                                                                    <div className="flex items-center gap-2">
+                                                                {!qrScanning && !qrDone && !uploadingLabel && !labelUploaded && (
+                                                                    <div className="flex items-center gap-2 flex-wrap">
                                                                         <button
                                                                             onClick={() => {
                                                                                 setQrScanning(true);
@@ -421,6 +425,16 @@ export default function MACPunchList() {
                                                                         >
                                                                             <QrCodeIcon className="w-3.5 h-3.5" />
                                                                             Scan QR Code
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setUploadingLabel(true);
+                                                                                setTimeout(() => { setUploadingLabel(false); setLabelUploaded(true); }, 2000);
+                                                                            }}
+                                                                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-colors flex items-center gap-1.5"
+                                                                        >
+                                                                            <ArrowUpTrayIcon className="w-3.5 h-3.5" />
+                                                                            Upload Label
                                                                         </button>
                                                                         <button
                                                                             onClick={() => handleResolveItem(item.id)}
@@ -472,6 +486,51 @@ export default function MACPunchList() {
                                                                         </button>
                                                                     </div>
                                                                 )}
+
+                                                                {/* Upload Label Animation */}
+                                                                {uploadingLabel && (
+                                                                    <div className="mt-3 animate-in fade-in duration-300">
+                                                                        <div className="relative w-full max-w-[280px] h-[180px] rounded-lg overflow-hidden border-2 border-blue-300 dark:border-blue-500/40 bg-zinc-100 dark:bg-zinc-800">
+                                                                            <img src="https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=300&h=200&fit=crop" alt="Furniture product label" className="w-full h-full object-cover opacity-60" />
+                                                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[1px]">
+                                                                                <ArrowUpTrayIcon className="w-8 h-8 text-white mb-2 animate-bounce" />
+                                                                                <span className="text-[11px] text-white font-medium">Uploading label image...</span>
+                                                                                <div className="mt-2 w-32 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                                                                                    <div className="h-full bg-blue-400 rounded-full animate-[upload_2s_ease-in-out_forwards]" style={{ animation: 'upload 2s ease-in-out forwards' }} />
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Upload Label Done */}
+                                                                {labelUploaded && (
+                                                                    <div className="mt-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                                        <div className="flex items-start gap-3">
+                                                                            <div className="relative w-[100px] h-[100px] rounded-lg overflow-hidden border border-green-300 dark:border-green-500/30 shrink-0">
+                                                                                <img src="https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=100&h=100&fit=crop" alt="Uploaded label" className="w-full h-full object-cover" />
+                                                                                <div className="absolute top-1 right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                                                                    <CheckCircleIcon className="w-3.5 h-3.5 text-white" />
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="flex-1">
+                                                                                <div className="p-2.5 bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 rounded-lg">
+                                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                                                                                        <span className="text-xs font-bold text-green-700 dark:text-green-400">Label uploaded — CC-AZ-2025 identified</span>
+                                                                                    </div>
+                                                                                    <p className="text-[11px] text-green-600 dark:text-green-400/80 ml-6">Product label image attached to request. SKU cross-referenced with order.</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => handleResolveItem(item.id)}
+                                                                            className="mt-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-md transition-colors"
+                                                                        >
+                                                                            Accept
+                                                                        </button>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
 
@@ -505,9 +564,9 @@ export default function MACPunchList() {
                                                                     <div className="mt-3 space-y-2">
                                                                         <div className="flex items-center gap-3">
                                                                             {[
-                                                                                { src: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=100&h=100&fit=crop', alt: 'Box damage 1' },
-                                                                                { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=100&h=100&fit=crop', alt: 'Box damage 2' },
-                                                                                { src: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=100&h=100&fit=crop', alt: 'Box damage 3' },
+                                                                                { src: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=100&h=100&fit=crop', alt: 'Office chair packaging 1' },
+                                                                                { src: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=100&h=100&fit=crop', alt: 'Office chair packaging 2' },
+                                                                                { src: 'https://images.unsplash.com/photo-1541558869434-2840d308329a?w=100&h=100&fit=crop', alt: 'Office chair packaging 3' },
                                                                             ].map((img, i) => (
                                                                                 i < uploadedPhotos && (
                                                                                     <div key={i} className="relative w-[80px] h-[80px] rounded-lg overflow-hidden border border-border animate-in fade-in zoom-in-95 duration-300">
