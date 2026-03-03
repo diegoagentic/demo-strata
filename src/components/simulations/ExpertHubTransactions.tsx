@@ -2658,7 +2658,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                     </div>
                 )}
 
-                {/* Step 1.6 — Quote Approval Chain (System auto → Sarah pending → auto-advance) */}
+                {/* Step 1.6 — Quote Approval Chain (System auto → Sara pending → auto-advance) */}
                 {currentStep.id === '1.6' && (
                     <div data-demo-target="approval-chain-progress" className="space-y-4">
                         <div className="bg-card glass border border-border rounded-2xl overflow-hidden shadow-lg">

@@ -13,7 +13,7 @@ interface DemoStep {
     title: string;
     description: string;
     app: SimulationApp;
-    role: 'Expert' | 'System' | 'Dealer';
+    role: 'Expert' | 'System' | 'Dealer' | 'End User';
     highlightId?: string;
 }
 
@@ -105,10 +105,10 @@ const DEMO_STEPS: DemoStep[] = [
         id: '1.9',
         groupId: 1,
         groupTitle: 'Flow 1: RFQ to PO Processing',
-        title: 'Dealer Mobile Approval',
-        description: 'Dealer receives PO approval notification on mobile. Reviews and acknowledges from their phone.',
+        title: 'End User Mobile Approval',
+        description: 'End user receives PO approval notification on mobile. Reviews and acknowledges from their phone.',
         app: 'dashboard',
-        role: 'Dealer',
+        role: 'End User',
         highlightId: 'mobile-dealer-approval'
     },
     {
@@ -207,27 +207,37 @@ const DEMO_STEPS: DemoStep[] = [
     },
 
     // ═══════════════════════════════════════════
-    // FLOW 3: Punch List
+    // FLOW 3: Punch List / Warranty Claims
     // ═══════════════════════════════════════════
     {
-        id: '3.4',
+        id: '3.1',
         groupId: 3,
-        groupTitle: 'Flow 3: Punch List',
-        title: 'Service Center (Move/Add/Change)',
-        description: 'Service request validated against inventory and active orders. Plan created with approval for scope/cost impact.',
+        groupTitle: 'Flow 3: Punch List / Warranty Claims',
+        title: 'Request Intake & AI Validation',
+        description: 'Expert + AI review incoming service request. AI checks for required documentation: order number, line number, photos of issue, label, and box. Missing items flagged for expert clarification.',
         app: 'mac',
         role: 'Expert',
-        highlightId: 'mac-orchestrator'
+        highlightId: 'punch-request-intake'
     },
     {
-        id: '3.5',
+        id: '3.2',
         groupId: 3,
-        groupTitle: 'Flow 3: Punch List',
-        title: 'Warranty Claims',
-        description: 'Evidence photos + text. OCR extracts serials. Claim assembled with carrier vs mfg liability recommendation.',
+        groupTitle: 'Flow 3: Punch List / Warranty Claims',
+        title: 'Labor Reimbursement Review',
+        description: 'AI validates labor quote against business rules: repair total, trip charge, certified installer, warranty coverage. Expert approves, edits, or rejects.',
+        app: 'mac',
+        role: 'Expert',
+        highlightId: 'punch-labor-review'
+    },
+    {
+        id: '3.3',
+        groupId: 3,
+        groupTitle: 'Flow 3: Punch List / Warranty Claims',
+        title: 'Claim Submission & Tracking',
+        description: 'Claim package assembled with photos, issue description, and ship-to address. Acknowledgement received from manufacturer. Shipment tracked on dashboard.',
         app: 'mac',
         role: 'Dealer',
-        highlightId: 'warranty-claim-package'
+        highlightId: 'punch-claim-submission'
     },
 ];
 

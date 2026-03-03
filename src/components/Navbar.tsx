@@ -30,7 +30,7 @@ import logoDarkBrand from '../assets/logo-dark-brand.png';
 // --- Demo Role Profiles ---
 const DEMO_PROFILES: Record<string, { name: string; role: string; photo: string }> = {
     Dealer: {
-        name: 'Sarah Mitchell',
+        name: 'Sara Chen',
         role: 'Account Manager',
         photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
     },
@@ -39,6 +39,11 @@ const DEMO_PROFILES: Record<string, { name: string; role: string; photo: string 
         role: 'Regional Sales Manager',
         photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
     },
+    'End User': {
+        name: 'Carlos Rivera',
+        role: 'Facilities Coordinator',
+        photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face',
+    },
 };
 
 // Apps that belong to Expert Hub — everything else is Dealer Experience
@@ -46,6 +51,7 @@ const EXPERT_HUB_APPS = ['expert-hub', 'ack-detail', 'transactions', 'mac', 'quo
 
 function resolveProfileKey(role: string | undefined, app: string | undefined): string {
     if (role === 'Expert') return 'Expert';
+    if (role === 'End User') return 'End User';
     if (role === 'System') {
         // System steps inherit the human profile of their parent app
         return EXPERT_HUB_APPS.includes(app || '') ? 'Expert' : 'Dealer';

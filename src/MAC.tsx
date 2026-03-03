@@ -2,20 +2,16 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import { useTenant } from './TenantContext';
 import { useDemo } from './context/DemoContext';
-import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge';
 import InventoryMovements from './components/InventoryMovements';
 import InventoryMaintenance from './components/InventoryMaintenance';
 import MACRequests from './components/MACRequests';
 import MACPunchList from './components/MACPunchList';
-import AgentPipelineStrip from './components/simulations/AgentPipelineStrip';
-import { AIAgentAvatar } from './components/simulations/DemoAvatars';
 import {
     Squares2X2Icon,
     WrenchScrewdriverIcon,
     ArrowPathRoundedSquareIcon,
     ClipboardDocumentCheckIcon,
     ExclamationTriangleIcon,
-    SparklesIcon
 } from '@heroicons/react/24/outline';
 
 // Mock Utils if cn is not available globally
@@ -41,9 +37,7 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
 
     // Auto-select tab based on step
     useEffect(() => {
-        if (currentStep?.id === '3.4') {
-            setActiveTab('requests');
-        } else if (currentStep?.id === '3.5') {
+        if (['3.1', '3.2', '3.3'].includes(currentStep?.id)) {
             setActiveTab('punchlist');
         }
     }, [currentStep?.id]);
@@ -72,19 +66,6 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                         <p className="text-muted-foreground mt-1">Moves, Adds, Changes, and service request management.</p>
                     </div>
                 </div>
-
-                {/* Step 3.5: Warranty Claims Pipeline (unified) */}
-                {currentStep?.id === '3.5' && (
-                    <div data-demo-target="warranty-claim-package" className="space-y-3">
-                        {/* AI Context */}
-                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <AIAgentAvatar className="mt-0.5" />
-                            <div className="flex-1 text-xs text-indigo-700 dark:text-indigo-300">
-                                <span className="font-bold">WarrantyAgent:</span> Analyzing punch list item — cross-referencing serial number, warranty database, and damage evidence to determine claim eligibility and carrier vs manufacturer liability.
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Tabs */}
                 <div className="flex gap-1 bg-card/50 p-1 rounded-lg w-fit overflow-x-auto max-w-full border border-zinc-200 dark:border-zinc-800">
@@ -120,61 +101,6 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
                         </button>
                     ))}
                 </div>
-
-                {/* Step 3.4: AI Validation Banner (enhanced) */}
-                {currentStep?.id === '3.4' && activeTab === 'requests' && (
-                    <div data-demo-target="mac-orchestrator" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                        {/* AI Context */}
-                        <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
-                            <AIAgentAvatar className="mt-0.5" />
-                            <div className="text-xs text-indigo-700 dark:text-indigo-300">
-                                <span className="font-bold">MACOrchestrator:</span> Validated 3 service requests against live inventory, active order commitments, and compliance rules. Scope and cost impact assessed.
-                            </div>
-                        </div>
-
-                        <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/30">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-green-500/20 rounded-xl">
-                                        <ClipboardDocumentCheckIcon className="w-5 h-5 text-green-500" />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="text-sm font-bold text-green-700 dark:text-green-400">AI Validated Service Requests</h3>
-                                            <span className="px-2 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 text-[10px] font-bold rounded-full uppercase tracking-wider">AI Validated</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <p className="text-xs text-green-600/80 dark:text-green-500/80">
-                                                3 requests validated against inventory and compliance rules
-                                            </p>
-                                            <ConfidenceScoreBadge score={94} label="Validation" size="sm" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => nextStep()}
-                                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap"
-                                >
-                                    Continue to Warranty
-                                </button>
-                            </div>
-
-                            {/* Validation breakdown */}
-                            <div className="grid grid-cols-3 gap-3 mt-4">
-                                {[
-                                    { check: 'Inventory Available', result: '6 units in stock' },
-                                    { check: 'Compliance Rules', result: 'No restrictions' },
-                                    { check: 'Cost Impact', result: '$2,400 estimated' },
-                                ].map((v, i) => (
-                                    <div key={i} className="p-2.5 rounded-lg bg-card border border-border text-center">
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{v.check}</p>
-                                        <p className="text-[11px] font-bold text-foreground mt-1">{v.result}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Content */}
                 <div className="min-h-[400px]">

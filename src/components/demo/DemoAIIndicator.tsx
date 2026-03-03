@@ -13,7 +13,7 @@ const SELF_INDICATED_STEPS = [
     '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7',
     // EmailSimulation, Dashboard, Transactions, OrderDetail, MAC — own inline indicators
     '1.1', '1.7', '1.9', '1.10',
-    '3.4', '3.5',
+    '3.1', '3.2', '3.3',
 ];
 
 // ─── Contextual UX/Marketing Messages ────────────────────────────────────────
@@ -108,15 +108,21 @@ const STEP_MESSAGES: Record<string, string[]> = {
         'Dealer: lifecycle updates — Expert: exceptions only',
     ],
 
-    // ═══ Flow 3: Punch List ═══
-    '3.4': [
-        'MAC validated against active inventory',
-        'Review validation results and proceed',
+    // ═══ Flow 3: Punch List / Warranty Claims ═══
+    '3.1': [
+        'Scanning incoming service request for required documentation...',
+        'Checking: order number, line number, issue photo, label photo, box photo',
+        'AI flagged 2 items needing attention — expert review required',
     ],
-    '3.5': [
-        'Processing warranty claim evidence with AI...',
-        'OCR extracting serial numbers from photos',
-        'Liability analysis: Carrier 78% · Manufacturer 22%',
+    '3.2': [
+        'Labor reimbursement requested — validating installer quote...',
+        'Checking repair total against threshold, trip charge vs zone rate',
+        'Business rules checklist: 4/6 passed, 2 flagged for expert review',
+    ],
+    '3.3': [
+        'Assembling warranty claim package with evidence photos...',
+        'Forwarding issue description and ship-to address to manufacturer',
+        'Acknowledgement received — tracking shipment on dashboard',
     ],
 };
 

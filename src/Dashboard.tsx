@@ -466,7 +466,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                     <span className="text-[10px] font-black text-primary-foreground">S</span>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-muted-foreground font-medium leading-none">Dealer Experience</p>
+                                    <p className="text-[10px] text-muted-foreground font-medium leading-none">End User</p>
                                     <p className="text-xs font-bold text-foreground leading-tight">Acme Corp</p>
                                 </div>
                             </div>
@@ -476,8 +476,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                     <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">1</div>
                                 </div>
                                 <img
-                                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face"
-                                    alt="Sarah Mitchell"
+                                    src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face"
+                                    alt="Carlos Rivera"
                                     className="w-7 h-7 rounded-full object-cover ring-1 ring-border"
                                 />
                             </div>
@@ -563,7 +563,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                 onClick={() => nextStep()}
                                 className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl transition-colors shadow-sm active:scale-[0.98]"
                             >
-                                Acknowledge & View Order
+                                Approve
                             </button>
                         </div>
                     </MobileDeviceFrame>
