@@ -95,21 +95,21 @@ const DEMO_STEPS: DemoStep[] = [
         id: '1.8',
         groupId: 1,
         groupTitle: 'Flow 1: RFQ to PO Processing',
-        title: 'PO Generation & Order Approval',
-        description: 'Both approvers shown approved. PO auto-generated. Followed by automated order approval chain.',
+        title: 'Sales Approval',
+        description: 'End user receives PO approval notification on mobile. Reviews and acknowledges from their phone.',
         app: 'dashboard',
-        role: 'Dealer',
-        highlightId: 'po-order-approval'
+        role: 'End User',
+        highlightId: 'mobile-dealer-approval'
     },
     {
         id: '1.9',
         groupId: 1,
         groupTitle: 'Flow 1: RFQ to PO Processing',
-        title: 'End User Mobile Approval',
-        description: 'End user receives PO approval notification on mobile. Reviews and acknowledges from their phone.',
+        title: 'PO Generation & Order Approval',
+        description: 'Both approvers shown approved. PO auto-generated. Followed by automated order approval chain.',
         app: 'dashboard',
-        role: 'End User',
-        highlightId: 'mobile-dealer-approval'
+        role: 'Dealer',
+        highlightId: 'po-order-approval'
     },
     {
         id: '1.10',

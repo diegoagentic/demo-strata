@@ -375,12 +375,12 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     }, [currentStep.id, pauseAware]);
     const approvedCount16 = approvalStates16.filter(s => s === 'approved').length;
 
-    // Step 1.8 — PO Generation + Order Approval Chain (fully automated)
+    // Step 1.9 — PO Generation + Order Approval Chain (fully automated)
     const [phase18, setPhase18] = useState<'showing-approvals' | 'po-generating' | 'po-complete' | 'order-chain' | 'order-complete' | 'done'>('showing-approvals')
     const [poGenPhase18, setPoGenPhase18] = useState<'building' | 'mapping' | 'validating' | 'complete'>('building')
     const [orderApprovalStates18, setOrderApprovalStates18] = useState<('pending' | 'approved')[]>(['pending', 'pending', 'pending'])
     useEffect(() => {
-        if (currentStep.id !== '1.8') {
+        if (currentStep.id !== '1.9') {
             setPhase18('showing-approvals');
             setPoGenPhase18('building');
             setOrderApprovalStates18(['pending', 'pending', 'pending']);
@@ -513,10 +513,10 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
 
     return (
         <div className="min-h-screen bg-background font-sans text-foreground pb-10">
-            {!['1.9', '3.4'].includes(currentStep.id) && <GenUIContainer />}
+            {!['1.8', '3.4'].includes(currentStep.id) && <GenUIContainer />}
 
-            {/* ===== Step 1.9: Dealer Mobile Approval — Fullscreen overlay ===== */}
-            {currentStep.id === '1.9' && (
+            {/* ===== Step 1.8: Sales Approval — Fullscreen mobile overlay ===== */}
+            {currentStep.id === '1.8' && (
                 <div data-demo-target="mobile-dealer-approval" className="fixed inset-0 z-[200] flex items-center justify-center bg-zinc-950 animate-in fade-in duration-500">
                     {/* Mobile Device Frame — centered, nothing else */}
                     <MobileDeviceFrame>
@@ -527,7 +527,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                     <span className="text-[10px] font-black text-primary-foreground">S</span>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-muted-foreground font-medium leading-none">End User</p>
+                                    <p className="text-[10px] text-muted-foreground font-medium leading-none">Sales Analyst</p>
                                     <p className="text-xs font-bold text-foreground leading-tight">Diego Sabatini</p>
                                 </div>
                             </div>
@@ -897,8 +897,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                 </div>
             )}
 
-            {/* Main Content — hidden during step 1.9 / 3.4 (fullscreen mobile overlay) */}
-            <div className={`pt-24 px-4 max-w-7xl mx-auto space-y-6 ${['1.9', '3.4'].includes(currentStep.id) ? 'hidden' : ''}`}>
+            {/* Main Content — hidden during step 1.8 / 3.4 (fullscreen mobile overlay) */}
+            <div className={`pt-24 px-4 max-w-7xl mx-auto space-y-6 ${['1.8', '3.4'].includes(currentStep.id) ? 'hidden' : ''}`}>
                 {/* Page Title & Search */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div>
@@ -1019,8 +1019,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                     </div>
                 )}
 
-                {/* ===== Step 1.8: PO Generation & Order Approval ===== */}
-                {currentStep.id === '1.8' && (
+                {/* ===== Step 1.9: PO Generation & Order Approval ===== */}
+                {currentStep.id === '1.9' && (
                     <div data-demo-target="po-order-approval" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* AI Context */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">
@@ -1468,7 +1468,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                     </div>
                 )}
 
-                {/* Step 1.9 renders as fullscreen overlay — see portal below GenUIContainer */}
+                {/* Step 1.8 renders as fullscreen mobile overlay — see portal above */}
 
                 {/* ===== Step 1.10: Smart Notifications (Action Center opens in Navbar) ===== */}
                 {currentStep.id === '1.10' && (

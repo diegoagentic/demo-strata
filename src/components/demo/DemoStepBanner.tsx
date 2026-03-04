@@ -18,8 +18,8 @@ export const STEP_BEHAVIOR: Record<string, StepBehavior> = {
     '1.5':  { mode: 'interactive', userAction: 'Review AI corrections, then click "Approve & Create Quote"' },
     '1.6':  { mode: 'auto', duration: 19, aiSummary: 'Policy engine and approval chain running automatically' },
     '1.7':  { mode: 'interactive', userAction: 'Review quote details, then click "Approve Quote"' },
-    '1.8':  { mode: 'auto', duration: 50, aiSummary: 'Generating PO and running automated order approval chain' },
-    '1.9':  { mode: 'interactive', userAction: 'Review PO notification on mobile, tap "Acknowledge"' },
+    '1.8':  { mode: 'interactive', userAction: 'Review PO notification on mobile, tap "Acknowledge"' },
+    '1.9':  { mode: 'auto', duration: 50, aiSummary: 'Generating PO and running automated order approval chain' },
     '1.10': { mode: 'interactive', userAction: 'Review smart notifications' },
     '1.11': { mode: 'interactive', userAction: 'Review pipeline resolution, click "Send Notifications"' },
     // Flow 2: PO & Acknowledgement Comparison
