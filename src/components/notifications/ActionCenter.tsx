@@ -26,13 +26,6 @@ const FLOW2_NOTIFICATIONS: Notification[] = [
         actions: [{ label: 'View Details', primary: true }], persona: 'dealer',
     },
     {
-        id: 'f2-backorder', type: 'backorder', priority: 'high',
-        title: 'Backorder BO-1064B Approved',
-        message: '3 SKUs, 6 units. All 3 approvers confirmed. Processing initiated.',
-        meta: 'BackorderAgent', timestamp: '1 min ago', unread: true,
-        actions: [{ label: 'Track', primary: true }], persona: 'dealer',
-    },
-    {
         id: 'f2-expert-queue', type: 'system', priority: 'medium',
         title: 'Expert Queue Update',
         message: 'ACK-7842 grommet auto-corrected (Line 41, X-DS6030 CB). Next queue: 2 pending Acknowledgements.',
@@ -229,7 +222,6 @@ export default function ActionCenter() {
     const flow2Tabs: NotificationTab[] = [
         { id: 'all', label: 'All', count: FLOW2_NOTIFICATIONS.length, icon: Squares2X2Icon, colorTheme: { activeBg: 'bg-gray-200 dark:bg-white/10', activeText: 'text-zinc-900 dark:text-white', activeBorder: 'border-gray-300 dark:border-white/10', badgeBg: 'bg-zinc-500/20 dark:bg-white/20', badgeText: 'text-zinc-900 dark:text-white' }, filter: () => true },
         { id: 'acks', label: 'Acknowledgements', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'ack_received').length, icon: DocumentTextIcon, colorTheme: { activeBg: 'bg-blue-500/15', activeText: 'text-blue-500', activeBorder: 'border-blue-500/20', badgeBg: 'bg-blue-500/20', badgeText: 'text-blue-500' }, filter: (n) => n.type === 'ack_received' },
-        { id: 'shipping', label: 'Backorders', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'backorder').length, icon: TruckIcon, colorTheme: { activeBg: 'bg-green-500/15', activeText: 'text-green-500', activeBorder: 'border-green-500/20', badgeBg: 'bg-green-500/20', badgeText: 'text-green-500' }, filter: (n) => n.type === 'backorder' },
         { id: 'system', label: 'System', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'system').length, icon: SparklesIcon, colorTheme: { activeBg: 'bg-emerald-500/15', activeText: 'text-emerald-500', activeBorder: 'border-emerald-500/20', badgeBg: 'bg-emerald-500/20', badgeText: 'text-emerald-500' }, filter: (n) => n.type === 'system' },
     ];
 
