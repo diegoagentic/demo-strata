@@ -2543,7 +2543,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                         <span className="text-xs font-bold text-foreground">{ACK_AIS.id}</span>
                                                     </div>
                                                     <p className="text-[10px] text-muted-foreground">AIS · {ACK_AIS.lineItems} lines</p>
-                                                    <span className="px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/20 text-[8px] font-bold text-green-700 dark:text-green-400">Sent to Client</span>
+                                                    <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-[8px] font-bold text-amber-700 dark:text-amber-400">Manufacturer Approval</span>
                                                 </div>
                                             )}
                                             {/* Existing Acknowledgement cards */}
