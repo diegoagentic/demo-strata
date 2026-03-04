@@ -10,7 +10,7 @@ const SELF_INDICATED_STEPS = [
     '1.2', '1.3', '1.4',
     // ExpertHubTransactions — AgentPipelineStrip + AI Context boxes
     '1.5', '1.6', '1.8', '1.11',
-    '2.1', '2.2', '2.3', '2.4', '2.5', '2.6',
+    '2.1', '2.2', '2.3', '2.4', '2.5', '2.6', '2.7',
     // EmailSimulation, Dashboard, Transactions, OrderDetail, MAC — own inline indicators
     '1.1', '1.7', '1.9', '1.10',
     '3.1', '3.2', '3.3', '3.4',
@@ -95,10 +95,15 @@ const STEP_MESSAGES: Record<string, string[]> = {
         'Edit flagged items, then accept and send to client',
     ],
     '2.5': [
+        'Creating backorder for partial shipment items...',
+        'Running 3-approver authorization chain',
+        'Backorder BO-2031 confirmed and logged',
+    ],
+    '2.6': [
         'Pipeline resolved — review final summary',
         'Dispatch notifications to all stakeholders',
     ],
-    '2.6': [
+    '2.7': [
         'Notification digests ready by persona',
         'Dealer: lifecycle updates — Expert: exceptions only',
     ],

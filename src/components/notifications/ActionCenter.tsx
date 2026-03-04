@@ -13,14 +13,14 @@ import { useDemo } from '../../context/DemoContext';
 const FLOW2_NOTIFICATIONS: Notification[] = [
     {
         id: 'f2-hat-confirmed', type: 'ack_received', priority: 'low',
-        title: 'ACK-7841 (HAT) — Confirmed',
+        title: 'Acknowledgement-7841 (HAT) — Confirmed',
         message: '5 lines confirmed. AI vendor rule applied: part number match is sufficient per client directive.',
         meta: 'ACKIngestionAgent', timestamp: 'Just now', unread: true,
         actions: [{ label: 'View Acknowledgement', primary: true }], persona: 'dealer',
     },
     {
         id: 'f2-ais-resolved', type: 'ack_received', priority: 'high',
-        title: 'ACK-7842 (AIS) — 3 Exceptions Resolved',
+        title: 'Acknowledgement-7842 (AIS) — 3 Exceptions Resolved',
         message: '50 lines processed. Grommet corrected (Line 41), dates accepted (+14/+11 days), backorder BO-1064B created for 6 units.',
         meta: 'DiscrepResolverAgent', timestamp: 'Just now', unread: true,
         actions: [{ label: 'View Details', primary: true }], persona: 'dealer',
@@ -28,7 +28,7 @@ const FLOW2_NOTIFICATIONS: Notification[] = [
     {
         id: 'f2-expert-queue', type: 'system', priority: 'medium',
         title: 'Expert Queue Update',
-        message: 'ACK-7842 grommet auto-corrected (Line 41, X-DS6030 CB). Next queue: 2 pending Acknowledgements.',
+        message: 'Acknowledgement-7842 grommet auto-corrected (Line 41, X-DS6030 CB). Next queue: 2 pending Acknowledgements.',
         meta: 'NotificationAgent', timestamp: '2 min ago', unread: true,
         actions: [{ label: 'View Queue', primary: true }], persona: 'expert',
     },
@@ -55,19 +55,19 @@ export default function ActionCenter() {
     // Step 1.10: Auto-open with single notification
     const isStep19 = isDemoActive && currentStep?.id === '1.10';
 
-    // Step 2.6: Auto-open with animated delivery for Flow 2 Acknowledgement notifications
-    const isStep26 = isDemoActive && currentStep?.id === '2.6';
-    const [notifDelivered26, setNotifDelivered27] = useState<number[]>([]);
+    // Step 2.7: Auto-open with animated delivery for Flow 2 Acknowledgement notifications
+    const isStep27 = isDemoActive && currentStep?.id === '2.7';
+    const [notifDelivered27, setNotifDelivered27] = useState<number[]>([]);
 
     useEffect(() => {
-        if (!isStep26) { setNotifDelivered27([]); return; }
+        if (!isStep27) { setNotifDelivered27([]); return; }
         const timeouts: ReturnType<typeof setTimeout>[] = [];
         timeouts.push(setTimeout(() => setNotifDelivered27([0]), 1500));
         timeouts.push(setTimeout(() => setNotifDelivered27([0, 1]), 3000));
         timeouts.push(setTimeout(() => setNotifDelivered27([0, 1, 2]), 4500));
         timeouts.push(setTimeout(() => setNotifDelivered27([0, 1, 2, 3]), 6000));
         return () => timeouts.forEach(clearTimeout);
-    }, [isStep26]);
+    }, [isStep27]);
 
     const tabs: NotificationTab[] = [
         {
@@ -225,7 +225,7 @@ export default function ActionCenter() {
         { id: 'system', label: 'System', count: FLOW2_NOTIFICATIONS.filter(n => n.type === 'system').length, icon: SparklesIcon, colorTheme: { activeBg: 'bg-emerald-500/15', activeText: 'text-emerald-500', activeBorder: 'border-emerald-500/20', badgeBg: 'bg-emerald-500/20', badgeText: 'text-emerald-500' }, filter: (n) => n.type === 'system' },
     ];
 
-    const isStepAutoOpen = isStep19 || isStep26;
+    const isStepAutoOpen = isStep19 || isStep27;
 
     return (
         <>
@@ -380,7 +380,7 @@ export default function ActionCenter() {
         )}
 
         {/* Step 2.6: Always-visible Action Center with Flow 2 Acknowledgement notifications */}
-        {isStep26 && (
+        {isStep27 && (
             <div className={clsx("fixed top-[90px] -translate-x-1/2 w-[95vw] max-h-[85vh] lg:w-[600px] p-0 z-50 animate-in fade-in slide-in-from-top-2 duration-300", sidebarExpanded ? 'left-[calc(50%+10rem)]' : 'left-1/2')}>
                 <div className="bg-zinc-100 dark:bg-zinc-900/85 backdrop-blur-xl border border-border shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[80vh]">
                     {/* Header */}
@@ -409,14 +409,14 @@ export default function ActionCenter() {
                                 key={notification.id}
                                 className={clsx(
                                     "transition-all duration-700",
-                                    notifDelivered26.includes(i)
+                                    notifDelivered27.includes(i)
                                         ? 'opacity-100 translate-y-0'
                                         : 'opacity-0 translate-y-4 h-0 overflow-hidden'
                                 )}
                             >
                                 <div className="relative">
                                     <NotificationItem notification={notification} />
-                                    {notifDelivered26.includes(i) && (
+                                    {notifDelivered27.includes(i) && (
                                         <span className="absolute top-3 right-3 text-[9px] font-bold text-green-600 dark:text-green-400 flex items-center gap-1 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full">
                                             <CheckCircleIcon className="w-3 h-3" /> Delivered
                                         </span>
@@ -429,7 +429,7 @@ export default function ActionCenter() {
                     {/* Footer */}
                     <div className="px-5 py-3 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 backdrop-blur-md flex items-center justify-between shrink-0">
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                            {notifDelivered26.length} actions
+                            {notifDelivered27.length} actions
                         </p>
                         <p className="text-xs font-bold text-red-500 flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />

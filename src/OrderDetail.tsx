@@ -501,8 +501,8 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
             </div>
 
             <div className="flex flex-col p-6 gap-6">
-                {/* Step 2.5: Backorder Trace Panel + Agent Attribution */}
-                {currentStep?.id === '2.5' && (
+                {/* Step 2.6: Backorder Trace Panel + Agent Attribution */}
+                {currentStep?.id === '2.6' && (
                     <div data-demo-target="backorder-split" className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* AI Attribution Header */}
                         <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20">

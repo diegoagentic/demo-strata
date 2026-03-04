@@ -27,11 +27,12 @@ export const STEP_BEHAVIOR: Record<string, StepBehavior> = {
     '2.2':  { mode: 'interactive', userAction: 'Review comparison results, click "Review Discrepancies" on AIS card' },
     '2.3':  { mode: 'interactive', userAction: 'Review delta results, click "Accept and Send to Client"' },
     '2.4':  { mode: 'interactive', userAction: 'Review AI corrections and edit flagged line items, then click "Approved & Send to System of Records"' },
-    '2.5':  { mode: 'interactive', userAction: 'Review pipeline resolution, click "Send Notifications"' },
-    '2.6':  { mode: 'interactive', userAction: 'Review notification digests' },
+    '2.5':  { mode: 'auto', duration: 28, aiSummary: 'Creating backorder and running 3-approver chain' },
+    '2.6':  { mode: 'interactive', userAction: 'Review pipeline resolution, click "Send Notifications"' },
+    '2.7':  { mode: 'interactive', userAction: 'Review notification digests' },
     // Flow 3: Punch List / Warranty Claims
     '3.1':  { mode: 'interactive', userAction: 'Review AI validation checklist, resolve flagged items, click "Validate & Continue"' },
-    '3.2':  { mode: 'interactive', userAction: 'Review labor quote and business rules, approve or edit, click "Approve & Submit"' },
+    '3.2':  { mode: 'interactive', userAction: 'Review labor quote and business rules, click "Reviewed and Continue"' },
     '3.3':  { mode: 'auto', duration: 24, aiSummary: 'Assembling claim, forwarding evidence, tracking shipment' },
     '3.4':  { mode: 'interactive', userAction: 'Review punch list report on mobile, leave comments, then acknowledge' },
 };

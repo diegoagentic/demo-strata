@@ -55,7 +55,7 @@ const VALIDATION_ITEMS: ValidationItem[] = [
 
 const BUSINESS_RULES: BusinessRule[] = [
     { id: 'repair-threshold', label: 'Repair quote within $500 threshold', status: 'warning', detail: '$510 exceeds threshold by $10 (2% over)', editable: true },
-    { id: 'trip-zone', label: 'Trip charge matches zone rate', status: 'pass', detail: '$175 matches Zone 3 standard rate' },
+    { id: 'trip-zone', label: 'Trip charge matches standard rate', status: 'pass', detail: '$175 matches standard rate' },
     { id: 'certified-vendor', label: 'Installer is certified vendor', status: 'pass', detail: 'ProInstall LLC — Certified since 2019' },
     { id: 'labor-hours', label: 'Labor hours within standard range', status: 'warning', detail: '6 hrs quoted vs. 4 hrs typical for this repair type', editable: true },
     { id: 'warranty-coverage', label: 'Warranty coverage confirmed', status: 'pass', detail: 'Active warranty until 2027-03 (SN-2025-88712)' },
@@ -734,7 +734,7 @@ export default function MACPunchList() {
                                     <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
                                         <div>
                                             <p className="text-sm font-semibold text-foreground">Trip Charge</p>
-                                            <p className="text-xs text-muted-foreground">Zone 3 — Standard rate</p>
+                                            <p className="text-xs text-muted-foreground">Standard rate</p>
                                         </div>
                                         <p className="text-sm font-bold text-foreground">$175.00</p>
                                     </div>
@@ -831,40 +831,15 @@ export default function MACPunchList() {
                                 </div>
                             </div>
 
-                            {/* Approve / Reject / Edit Quote */}
+                            {/* Reviewed and Continue */}
                             <div className="flex items-center gap-3 pt-2">
-                                {!approvedLabor ? (
-                                    <>
-                                        <button
-                                            onClick={() => setApprovedLabor(true)}
-                                            className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
-                                        >
-                                            <CheckCircleIcon className="w-4 h-4" />
-                                            Approve
-                                        </button>
-                                        <button className="px-4 py-2.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold rounded-lg transition-colors">
-                                            Reject
-                                        </button>
-                                        <button className="px-4 py-2.5 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-foreground text-xs font-bold rounded-lg transition-colors">
-                                            Edit Quote
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="flex items-center gap-3 w-full">
-                                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-bold">
-                                            <CheckCircleIcon className="w-5 h-5" />
-                                            Labor quote approved
-                                        </div>
-                                        <div className="flex-1" />
-                                        <button
-                                            onClick={() => nextStep()}
-                                            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
-                                        >
-                                            <CheckCircleIcon className="w-4 h-4" />
-                                            Approve & Submit Claim
-                                        </button>
-                                    </div>
-                                )}
+                                <button
+                                    onClick={() => nextStep()}
+                                    className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
+                                >
+                                    <CheckCircleIcon className="w-4 h-4" />
+                                    Reviewed and Continue
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1028,7 +1003,7 @@ export default function MACPunchList() {
                                         className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
                                     >
                                         <CheckCircleIcon className="w-4 h-4" />
-                                        Approve and Send to Client
+                                        Finish
                                     </button>
                                 </div>
                             )}
@@ -1091,7 +1066,7 @@ export default function MACPunchList() {
                                                     </div>
                                                     <div className="flex items-center justify-between">
                                                         <span className="text-xs text-muted-foreground">Trip Charge</span>
-                                                        <span className="text-xs font-bold text-foreground">$175.00 (Zone 3)</span>
+                                                        <span className="text-xs font-bold text-foreground">$175.00</span>
                                                     </div>
                                                     <div className="flex items-center justify-between pt-2 border-t border-border">
                                                         <span className="text-xs font-bold text-foreground">Status</span>

@@ -1446,8 +1446,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                     </div>
                 )}
 
-                {/* ===== Step 2.6: Smart Notifications (Action Center opens in Navbar) ===== */}
-                {currentStep.id === '2.6' && (
+                {/* ===== Step 2.7: Smart Notifications (Action Center opens in Navbar) ===== */}
+                {currentStep.id === '2.7' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* AI Attribution */}
                         <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-start gap-3">

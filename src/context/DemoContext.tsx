@@ -179,6 +179,16 @@ const DEMO_STEPS: DemoStep[] = [
         id: '2.5',
         groupId: 2,
         groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
+        title: 'Approval Chain',
+        description: 'Backorder created for 6 units (3 SKUs). Automated 3-approver approval chain.',
+        app: 'expert-hub',
+        role: 'System',
+        highlightId: 'backorder-approval-chain'
+    },
+    {
+        id: '2.6',
+        groupId: 2,
+        groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
         title: 'Pipeline Resolution',
         description: 'Pipeline shows: HAT in Confirmed, AIS in Partial. Both Acknowledgements resolved.',
         app: 'expert-hub',
@@ -186,7 +196,7 @@ const DEMO_STEPS: DemoStep[] = [
         highlightId: 'ack-pipeline-resolved'
     },
     {
-        id: '2.6',
+        id: '2.7',
         groupId: 2,
         groupTitle: 'Flow 2: PO & Acknowledgement Comparison',
         title: 'Smart Notifications',
