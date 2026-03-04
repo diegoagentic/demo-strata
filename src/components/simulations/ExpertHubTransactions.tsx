@@ -82,16 +82,16 @@ const recentQuotes = [
 ]
 
 const recentAcknowledgments = [
-    { id: "ACK-8839", relatedPo: "PO-2026-001", vendor: "Herman Miller", status: "Confirmed", date: "Jan 14, 2026", expShipDate: "Feb 20, 2026", discrepancy: "None", initials: "HM", statusColor: "bg-green-50 text-green-700", location: "Zeeland" },
-    { id: "ACK-8840", relatedPo: "PO-2026-002", vendor: "Steelcase", status: "Discrepancy", date: "Jan 13, 2026", expShipDate: "Pending", discrepancy: "Price Mismatch ($500)", initials: "SC", statusColor: "bg-red-50 text-red-700", location: "Grand Rapids" },
-    { id: "ACK-8841", relatedPo: "PO-2026-003", vendor: "Knoll", status: "Partial", date: "Jan 12, 2026", expShipDate: "Mar 01, 2026", discrepancy: "Backordered Items", initials: "KN", statusColor: "bg-amber-50 text-amber-700", location: "East Greenville" },
+    { id: "Acknowledgement-8839", relatedPo: "PO-2026-001", vendor: "Herman Miller", status: "Confirmed", date: "Jan 14, 2026", expShipDate: "Feb 20, 2026", discrepancy: "None", initials: "HM", statusColor: "bg-green-50 text-green-700", location: "Zeeland" },
+    { id: "Acknowledgement-8840", relatedPo: "PO-2026-002", vendor: "Steelcase", status: "Discrepancy", date: "Jan 13, 2026", expShipDate: "Pending", discrepancy: "Price Mismatch ($500)", initials: "SC", statusColor: "bg-red-50 text-red-700", location: "Grand Rapids" },
+    { id: "Acknowledgement-8841", relatedPo: "PO-2026-003", vendor: "Knoll", status: "Partial", date: "Jan 12, 2026", expShipDate: "Mar 01, 2026", discrepancy: "Backordered Items", initials: "KN", statusColor: "bg-amber-50 text-amber-700", location: "East Greenville" },
 ]
 
 // ═══════════════════════════════════════════
 // FLOW 2 DATA: Real Acknowledgement data from AIS PDF + HAT vendor email
 // ═══════════════════════════════════════════
 const ACK_AIS = {
-    id: 'ACK-7842', relatedPo: 'PO-1064B', vendor: 'AIS', vendorFull: 'AIS (Adaptive Interior Solutions)',
+    id: 'Acknowledgement-7842', relatedPo: 'PO-1064B', vendor: 'AIS', vendorFull: 'AIS (Adaptive Interior Solutions)',
     status: 'Discrepancy', date: 'Feb 18, 2026', lineItems: 50, total: '$65,439.09', discrepancies: 3,
     project: 'Premier Underground Design', customer: 'Corporate Interior Systems',
     shipTo: '135 E Watkins St, Phoenix, AZ 85004', initials: 'AI', statusColor: 'bg-red-50 text-red-700',
@@ -99,7 +99,7 @@ const ACK_AIS = {
 };
 
 const ACK_HAT = {
-    id: 'ACK-7841', relatedPo: 'PO-1064', vendor: 'HAT', vendorFull: 'HAT Contract',
+    id: 'Acknowledgement-7841', relatedPo: 'PO-1064', vendor: 'HAT', vendorFull: 'HAT Contract',
     status: 'Confirmed', date: 'Feb 18, 2026', lineItems: 5, total: '$8,220.00', discrepancies: 0,
     project: 'Premier Underground Design', customer: 'Corporate Interior Systems',
     initials: 'HC', statusColor: 'bg-green-50 text-green-700', location: 'Holland, MI',
@@ -2230,7 +2230,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                     <div className="flex items-center gap-3">
                                         <span className="w-8 h-8 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">AI</span>
                                         <div>
-                                            <h3 className="text-sm font-bold text-foreground">ACK-7842 — Expert Review</h3>
+                                            <h3 className="text-sm font-bold text-foreground">{ACK_AIS.id} — Expert Review</h3>
                                             <p className="text-[10px] text-muted-foreground">{ACK_AIS.vendorFull} · {ACK_AIS.project}</p>
                                         </div>
                                     </div>
