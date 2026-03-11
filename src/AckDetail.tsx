@@ -24,14 +24,14 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 const items = [
-    { id: "SKU-OFF-2025-001", name: "Executive Chair Pro", category: "Premium Series", properties: "Leather / Black", stock: 285, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700", aiStatus: "info" },
-    { id: "SKU-OFF-2025-002", name: "Ergonomic Task Chair", category: "Standard Series", properties: "Mesh / Gray", stock: 520, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-003", name: "Conference Room Chair", category: "Meeting Series", properties: "Fabric / Navy", stock: 42, status: "Exception: Finish", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
-    { id: "SKU-OFF-2025-004", name: "Visitor Stacking Chair", category: "Guest Series", properties: "Plastic / White", stock: 180, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-005", name: "Gaming Office Chair", category: "Sport Series", properties: "Leather / Red", stock: 0, status: "Out of Stock", statusColor: "bg-red-50 text-red-700 ring-red-600/20" },
-    { id: "SKU-OFF-2025-006", name: "Reception Lounge Chair", category: "Lobby Series", properties: "Velvet / Teal", stock: 95, status: "Exception: Date", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
-    { id: "SKU-OFF-2025-007", name: "Drafting Stool High", category: "Studio Series", properties: "Mesh / Black", stock: 340, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-008", name: "Bench Seating 3-Seat", category: "Waiting Series", properties: "Metal / Chrome", stock: 28, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20" },
+    { id: "T-RCR306029HLG2", name: "TBL, REC, 30Dx60Wx29H", category: "Tables", tag: "A", qtyOrd: 4, qtyShip: 4, qtyBO: 0, listPrice: 1261.00, discPct: 62.0, netPrice: 479.18, amount: 1916.72, configs: ["Finish: LG2-Loft Gray", "Edge: SE-Straight Edge"], status: "Confirmed", statusColor: "bg-zinc-100 text-zinc-700" },
+    { id: "X-BBFPFS182812", name: "CBX Full Depth BBF Ped", category: "Storage", tag: "A", qtyOrd: 4, qtyShip: 4, qtyBO: 0, listPrice: 1048.00, discPct: 62.0, netPrice: 398.24, amount: 1592.96, configs: ["Finish: LG2-Loft Gray", "Lock: KA-Keyed Alike"], status: "Confirmed", statusColor: "bg-zinc-100 text-zinc-700" },
+    { id: "W-WS3072", name: "WORKSURFACE RECT 30Dx72W", category: "Worksurfaces", tag: "B", qtyOrd: 6, qtyShip: 6, qtyBO: 0, listPrice: 656.00, discPct: 62.0, netPrice: 249.28, amount: 1495.68, configs: ["Finish: LG2-Loft Gray", "Edge: SE-Straight Edge"], status: "Confirmed", statusColor: "bg-zinc-100 text-zinc-700" },
+    { id: "S-LATJJ2D36", name: 'LATERAL FILE 2 DRAWER 36"', category: "Storage", tag: "C", qtyOrd: 3, qtyShip: 3, qtyBO: 0, listPrice: 1492.00, discPct: 62.0, netPrice: 566.96, amount: 1700.88, configs: ["Finish: LG2-Loft Gray", "Lock: KA-Keyed Alike"], status: "Confirmed", statusColor: "bg-zinc-100 text-zinc-700" },
+    { id: "F-SSC346030C", name: 'LB LOUNGE 2 SEAT 34"H', category: "Seating", tag: "D", qtyOrd: 2, qtyShip: 0, qtyBO: 2, listPrice: 4836.00, discPct: 58.0, netPrice: 2031.12, amount: 4062.24, configs: ["Fabric: CF-6036 Ocean Blue", "Finish: LG2-Loft Gray"], status: "Exception: Finish", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
+    { id: "7730", name: "AUBURN GRAY CONFERENCE CHAIR", category: "Seating", tag: "D", qtyOrd: 12, qtyShip: 12, qtyBO: 0, listPrice: 1048.00, discPct: 55.0, netPrice: 471.60, amount: 5659.20, configs: ["Fabric: GR-5505 Charcoal", "Arms: ADJ-Adjustable"], status: "Confirmed", statusColor: "bg-zinc-100 text-zinc-700" },
+    { id: "X-LTD661218L", name: "CBX Triple Door Locker", category: "Storage", tag: "E", qtyOrd: 8, qtyShip: 6, qtyBO: 2, listPrice: 1836.00, discPct: 62.0, netPrice: 697.68, amount: 5581.44, configs: ["Finish: LG2-Loft Gray", "Lock: KA-Keyed Alike", "Shelf: 1-One Adjustable"], status: "Exception: Date", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
+    { id: "P-PN60HBF", name: "PANEL 60Hx48W FABRIC BOTH", category: "Panels", tag: "F", qtyOrd: 10, qtyShip: 10, qtyBO: 0, listPrice: 892.00, discPct: 62.0, netPrice: 338.96, amount: 3389.60, configs: ["Fabric: CF-6036 Ocean Blue", "Frame: LG2-Loft Gray"], status: "Confirmed", statusColor: "bg-zinc-100 text-zinc-700" },
 ]
 
 interface Message {
@@ -516,7 +516,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
             id: 1,
             sender: "System",
             avatar: "",
-            content: "Acknowledgement #ACK-3099 received from Manufacturer via EDI.",
+            content: "AIS Sales Order 1151064-B received — Acknowledgement #ACK-3099 via EDI. 40 line items, Total Order: $127,880.17.",
             time: "10 mins ago",
             type: "system",
         },
@@ -524,7 +524,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
             id: 2,
             sender: "AI Assistant",
             avatar: "AI",
-            content: "Smart Acknowledgement Engine intercepted the acknowledgement and compared it against PO #ORD-2055. Found 2 discrepancies requiring your review.",
+            content: "DiscrepancyResolverAgent compared ACK against PO #ORD-2055. Match rate: 95%. Found 2 exceptions — Item F-SSC346030C (finish backordered, substitution proposed) and X-LTD661218L (2 units backordered, ETA Nov 27).",
             time: "10 mins ago",
             type: "action_processing",
         },
@@ -604,11 +604,11 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 animate-in fade-in zoom-in duration-300">
                                 {[
                                     { label: 'MATCH RATE', value: '95%' },
-                                    { label: 'ITEMS', value: '40' },
-                                    { label: 'EST. DELIVERY', value: 'Nov 27, 2025' },
+                                    { label: 'LINE ITEMS', value: '40' },
+                                    { label: 'TOTAL ORDER', value: '$127,880.17' },
+                                    { label: 'P.O. REF', value: '#ORD-2055' },
+                                    { label: 'SHIP VIA', value: 'Best Way' },
                                     { label: 'EXCEPTIONS', value: '2', color: 'text-amber-600 dark:text-amber-400' },
-                                    { label: 'ORIGINAL ORDER', value: '#ORD-2055' },
-                                    { label: 'STATUS', value: 'Review Needed', color: 'text-amber-600 dark:text-amber-400' },
                                 ].map((stat, i) => (
                                     <div key={i} className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-100 dark:border-white/5">
                                         <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-1">{stat.label}</p>
@@ -784,7 +784,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                     <ChevronDownIcon className="ml-2 h-4 w-4" />
                                                 </button>
                                                 <button className="inline-flex items-center px-3 py-2 border border-input shadow-sm text-sm leading-4 font-medium rounded-md text-foreground bg-background hover:bg-muted focus:outline-none">
-                                                    Stock Status
+                                                    Line Status
                                                     <ChevronDownIcon className="ml-2 h-4 w-4" />
                                                 </button>
                                             </div>
@@ -795,15 +795,15 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                             <table className="min-w-full divide-y divide-border">
                                                 <thead className="bg-muted/50">
                                                     <tr>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-10">
+                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-10">
                                                             <input type="checkbox" className="h-4 w-4 rounded border-input text-zinc-900 dark:text-primary focus:ring-primary bg-background" />
                                                         </th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">SKU ID</th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Image</th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Product Name</th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Properties</th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock Level</th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Item #</th>
+                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</th>
+                                                        <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Qty</th>
+                                                        <th scope="col" className="px-3 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Net Price</th>
+                                                        <th scope="col" className="px-3 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
+                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-white dark:bg-zinc-800 divide-y divide-border">
@@ -816,49 +816,45 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                                 selectedItem.id === item.id ? "bg-muted/80" : ""
                                                             )}
                                                         >
-                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                            <td className="px-4 py-3 whitespace-nowrap">
                                                                 <input type="checkbox" className="h-4 w-4 rounded border-input text-zinc-900 dark:text-primary focus:ring-primary bg-background" />
                                                             </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{item.id}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                                <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-                                                                    <CubeIcon className="h-5 w-5 text-muted-foreground" />
-                                                                </div>
+                                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                                <span className="text-sm font-mono font-medium text-foreground">{item.id}</span>
                                                             </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                                <div className="flex items-center">
-                                                                    <div>
-                                                                        <div className="text-sm font-medium text-foreground flex items-center gap-2">
-                                                                            {item.name}
-                                                                            {item.aiStatus && (
-                                                                                <div className={cn(
-                                                                                    "h-2 w-2 rounded-full",
-                                                                                    item.aiStatus === 'warning' ? "bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)]" : "bg-primary shadow-[0_0_0_2px_rgba(var(--primary),0.2)]"
-                                                                                )} />
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="text-sm text-muted-foreground">{item.category}</div>
+                                                            <td className="px-4 py-3">
+                                                                <div>
+                                                                    <div className="text-sm font-medium text-foreground flex items-center gap-2">
+                                                                        {item.name}
+                                                                        {item.aiStatus && (
+                                                                            <div className={cn(
+                                                                                "h-2 w-2 rounded-full",
+                                                                                item.aiStatus === 'warning' ? "bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)]" : "bg-primary shadow-[0_0_0_2px_rgba(var(--primary),0.2)]"
+                                                                            )} />
+                                                                        )}
+                                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-600">Tag {item.tag}</span>
                                                                     </div>
+                                                                    <div className="text-xs text-muted-foreground mt-0.5">{item.configs.join(' · ')}</div>
                                                                 </div>
                                                             </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{item.properties}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-1.5 bg-muted rounded-full relative overflow-hidden">
-                                                                        <div
-                                                                            className="absolute bottom-0 left-0 w-full bg-foreground rounded-full"
-                                                                            style={{ height: `${(item.stock / 600) * 100}%` }}
-                                                                        />
-                                                                    </div>
-                                                                    <span className="text-xs text-muted-foreground">{Math.floor((item.stock / 600) * 100)}%</span>
-                                                                </div>
+                                                            <td className="px-3 py-3 whitespace-nowrap text-center">
+                                                                <div className="text-sm font-medium text-foreground">{item.qtyOrd}</div>
+                                                                {item.qtyBO > 0 && (
+                                                                    <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">BO: {item.qtyBO}</div>
+                                                                )}
                                                             </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                            <td className="px-3 py-3 whitespace-nowrap text-right">
+                                                                <div className="text-sm text-foreground">${item.netPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                                                                <div className="text-[10px] text-muted-foreground">-{item.discPct}%</div>
+                                                            </td>
+                                                            <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium text-foreground">
+                                                                ${item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap">
                                                                 <span className={cn(
                                                                     "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
-                                                                    item.status === 'In Stock' ? "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700" :
-                                                                        item.status === 'Low Stock' ? "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800" :
-                                                                            "bg-red-50 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-200 dark:border-red-800"
+                                                                    item.status === 'Confirmed' ? "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700" :
+                                                                        "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800"
                                                                 )}>
                                                                     {item.status}
                                                                 </span>
@@ -1080,8 +1076,8 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                         </div>
                                                         <div>
                                                             <h4 className="text-base font-semibold text-foreground">{selectedItem.name}</h4>
-                                                            <p className="text-sm text-muted-foreground">{selectedItem.id}</p>
-                                                            <div className="flex gap-2 mt-2">
+                                                            <p className="text-xs font-mono text-muted-foreground">{selectedItem.id}</p>
+                                                            <div className="flex flex-wrap gap-2 mt-2">
                                                                 <span className={cn(
                                                                     "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
                                                                     selectedItem.statusColor
@@ -1089,8 +1085,43 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                                     {selectedItem.status}
                                                                 </span>
                                                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground border border-border">
-                                                                    Premium
+                                                                    Tag {selectedItem.tag}
                                                                 </span>
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground border border-border">
+                                                                    {selectedItem.category}
+                                                                </span>
+                                                            </div>
+                                                            <div className="mt-3 space-y-1.5">
+                                                                <div className="flex justify-between text-xs">
+                                                                    <span className="text-muted-foreground">Qty Ordered</span>
+                                                                    <span className="font-medium text-foreground">{selectedItem.qtyOrd}</span>
+                                                                </div>
+                                                                {selectedItem.qtyBO > 0 && (
+                                                                    <div className="flex justify-between text-xs">
+                                                                        <span className="text-amber-600 dark:text-amber-400">Backordered</span>
+                                                                        <span className="font-medium text-amber-600 dark:text-amber-400">{selectedItem.qtyBO}</span>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex justify-between text-xs">
+                                                                    <span className="text-muted-foreground">Net Price</span>
+                                                                    <span className="font-medium text-foreground">${selectedItem.netPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                                                </div>
+                                                                <div className="flex justify-between text-xs">
+                                                                    <span className="text-muted-foreground">Amount</span>
+                                                                    <span className="font-bold text-foreground">${selectedItem.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                                                </div>
+                                                                <div className="flex justify-between text-xs">
+                                                                    <span className="text-muted-foreground">Discount</span>
+                                                                    <span className="font-medium text-foreground">{selectedItem.discPct}%</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-3 pt-3 border-t border-border">
+                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Configurations</p>
+                                                                <div className="space-y-1">
+                                                                    {selectedItem.configs.map((cfg, i) => (
+                                                                        <p key={i} className="text-xs text-muted-foreground">{cfg}</p>
+                                                                    ))}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1159,7 +1190,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <h3 className="text-lg font-semibold text-foreground">Activity Stream</h3>
-                                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">#ORD-2055</span>
+                                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">AIS SO 1151064-B</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground">Real-time updates and collaboration</p>
                                         </div>
@@ -1271,11 +1302,11 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center border border-amber-200 dark:border-amber-500/30">
-                                                <ClockIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                                                <DocumentChartBarIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-foreground">Pending Review</p>
-                                                <p className="text-xs text-muted-foreground">Waiting for Final Approval (2/3)</p>
+                                                <p className="text-sm font-bold text-foreground">ACK Review</p>
+                                                <p className="text-xs text-muted-foreground">2 Exceptions Found · $127,880.17</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1286,11 +1317,21 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                             <div className="space-y-3">
                                                 <button onClick={() => setIsDocumentModalOpen(true)} className="w-full group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all text-left">
                                                     <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors text-zinc-900 dark:text-primary">
-                                                        <DocumentTextIcon className="h-5 w-5" />
+                                                        <ClipboardDocumentListIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-zinc-900 dark:group-hover:text-primary transition-colors">Process Quote</p>
-                                                        <p className="text-[10px] text-muted-foreground">Analyze PDF & Extract Data</p>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-zinc-900 dark:group-hover:text-primary transition-colors">Compare vs PO</p>
+                                                        <p className="text-[10px] text-muted-foreground">Side-by-side ACK vs original PO</p>
+                                                    </div>
+                                                </button>
+
+                                                <button className="w-full group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-amber-500/50 hover:shadow-md transition-all text-left">
+                                                    <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors text-amber-600 dark:text-amber-400">
+                                                        <ExclamationTriangleIcon className="h-5 w-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Resolve Exceptions</p>
+                                                        <p className="text-[10px] text-muted-foreground">2 items need attention</p>
                                                     </div>
                                                 </button>
 
@@ -1299,18 +1340,18 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                         <CheckIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Approve Order</p>
-                                                        <p className="text-[10px] text-muted-foreground">Move to Production</p>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Approve ACK</p>
+                                                        <p className="text-[10px] text-muted-foreground">Confirm & move to fulfillment</p>
                                                     </div>
                                                 </button>
 
-                                                <button className="w-full group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-amber-500/50 hover:shadow-md transition-all text-left">
-                                                    <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors text-amber-600 dark:text-amber-400">
-                                                        <PencilIcon className="h-5 w-5" />
+                                                <button className="w-full group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-indigo-500/50 hover:shadow-md transition-all text-left">
+                                                    <div className="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors text-indigo-600 dark:text-indigo-400">
+                                                        <ArrowDownTrayIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Request Changes</p>
-                                                        <p className="text-[10px] text-muted-foreground">Send feedback to vendor</p>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Export PED</p>
+                                                        <p className="text-[10px] text-muted-foreground">Download industry-format PDF</p>
                                                     </div>
                                                 </button>
                                             </div>
@@ -1325,8 +1366,8 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                         <div className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></div>
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-medium text-zinc-900 dark:text-primary">AI Assistant is processing the new quote...</p>
-                                                        <p className="text-[10px] text-zinc-700 dark:text-primary/80 mt-1">Estimated completion: 30s</p>
+                                                        <p className="text-xs font-medium text-zinc-900 dark:text-primary">DiscrepancyResolverAgent analyzing exceptions...</p>
+                                                        <p className="text-[10px] text-zinc-700 dark:text-primary/80 mt-1">Comparing 40 line items against PO #ORD-2055</p>
                                                     </div>
                                                 </div>
                                             </div>

@@ -27,24 +27,24 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 const items = [
-    { id: "SKU-OFF-2025-001", name: "Executive Chair Pro", category: "Premium Series", properties: "Leather / Black", stock: 285, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700", aiStatus: "info" },
-    { id: "SKU-OFF-2025-002", name: "Ergonomic Task Chair", category: "Standard Series", properties: "Mesh / Gray", stock: 520, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-003", name: "Conference Room Chair", category: "Meeting Series", properties: "Fabric / Navy", stock: 42, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning" },
-    { id: "SKU-OFF-2025-004", name: "Visitor Stacking Chair", category: "Guest Series", properties: "Plastic / White", stock: 180, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-005", name: "Gaming Office Chair", category: "Sport Series", properties: "Leather / Red", stock: 0, status: "Out of Stock", statusColor: "bg-red-50 text-red-700 ring-red-600/20" },
-    { id: "SKU-OFF-2025-006", name: "Reception Lounge Chair", category: "Lobby Series", properties: "Velvet / Teal", stock: 95, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-007", name: "Drafting Stool High", category: "Studio Series", properties: "Mesh / Black", stock: 340, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" },
-    { id: "SKU-OFF-2025-008", name: "Bench Seating 3-Seat", category: "Waiting Series", properties: "Metal / Chrome", stock: 28, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20" },
+    { id: "T-RCR306029HLG2", name: "TBL, REC, 30Dx60Wx29H", category: "Tables", tag: "A", qtyOrd: 4, qtyShip: 4, qtyBO: 0, listPrice: 1261.00, discPct: 62.0, netPrice: 479.18, amount: 1916.72, configs: ["Finish: LG2-Loft Gray", "Edge: SE-Straight Edge"], status: "Shipped", statusColor: "bg-zinc-100 text-zinc-700", stock: 285 },
+    { id: "X-BBFPFS182812", name: "CBX Full Depth BBF Ped", category: "Storage", tag: "A", qtyOrd: 4, qtyShip: 4, qtyBO: 0, listPrice: 1048.00, discPct: 62.0, netPrice: 398.24, amount: 1592.96, configs: ["Finish: LG2-Loft Gray", "Lock: KA-Keyed Alike"], status: "Shipped", statusColor: "bg-zinc-100 text-zinc-700", stock: 520 },
+    { id: "W-WS3072", name: "WORKSURFACE RECT 30Dx72W", category: "Worksurfaces", tag: "B", qtyOrd: 6, qtyShip: 6, qtyBO: 0, listPrice: 656.00, discPct: 62.0, netPrice: 249.28, amount: 1495.68, configs: ["Finish: LG2-Loft Gray", "Edge: SE-Straight Edge"], status: "Shipped", statusColor: "bg-zinc-100 text-zinc-700", stock: 340 },
+    { id: "S-LATJJ2D36", name: 'LATERAL FILE 2 DRAWER 36"', category: "Storage", tag: "C", qtyOrd: 3, qtyShip: 3, qtyBO: 0, listPrice: 1492.00, discPct: 62.0, netPrice: 566.96, amount: 1700.88, configs: ["Finish: LG2-Loft Gray", "Lock: KA-Keyed Alike"], status: "Shipped", statusColor: "bg-zinc-100 text-zinc-700", stock: 180 },
+    { id: "F-SSC346030C", name: 'LB LOUNGE 2 SEAT 34"H', category: "Seating", tag: "D", qtyOrd: 2, qtyShip: 0, qtyBO: 2, listPrice: 4836.00, discPct: 58.0, netPrice: 2031.12, amount: 4062.24, configs: ["Fabric: CF-6036 Ocean Blue", "Finish: LG2-Loft Gray"], status: "Backordered", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning", stock: 0 },
+    { id: "7730", name: "AUBURN GRAY CONFERENCE CHAIR", category: "Seating", tag: "D", qtyOrd: 12, qtyShip: 12, qtyBO: 0, listPrice: 1048.00, discPct: 55.0, netPrice: 471.60, amount: 5659.20, configs: ["Fabric: GR-5505 Charcoal", "Arms: ADJ-Adjustable"], status: "Shipped", statusColor: "bg-zinc-100 text-zinc-700", stock: 95 },
+    { id: "X-LTD661218L", name: "CBX Triple Door Locker", category: "Storage", tag: "E", qtyOrd: 8, qtyShip: 6, qtyBO: 2, listPrice: 1836.00, discPct: 62.0, netPrice: 697.68, amount: 5581.44, configs: ["Finish: LG2-Loft Gray", "Lock: KA-Keyed Alike", "Shelf: 1-One Adjustable"], status: "Partial Ship", statusColor: "bg-amber-50 text-amber-700 ring-amber-600/20", aiStatus: "warning", stock: 42 },
+    { id: "P-PN60HBF", name: "PANEL 60Hx48W FABRIC BOTH", category: "Panels", tag: "F", qtyOrd: 10, qtyShip: 10, qtyBO: 0, listPrice: 892.00, discPct: 62.0, netPrice: 338.96, amount: 3389.60, configs: ["Fabric: CF-6036 Ocean Blue", "Frame: LG2-Loft Gray"], status: "Shipped", statusColor: "bg-zinc-100 text-zinc-700", stock: 28 },
 ]
 
 const demoItems = [
-    { id: "AER-REM-2025-BLK", name: "Aeron Remastered", category: "Task Seating", properties: "Graphite / Size B", stock: 120, status: "In Stock", statusColor: "bg-green-50 text-green-700", aiStatus: "check" },
-    { id: "EMB-CHR-2025-GRY", name: "Embody Chair", category: "Performance", properties: "Sync / Gray", stock: 45, status: "Low Stock", statusColor: "bg-amber-50 text-amber-700" },
-    { id: "NVI-DSK-2025-WAL", name: "Nevi Sit-Stand Desk", category: "Desking", properties: "Walnut / White", stock: 200, status: "In Stock", statusColor: "bg-zinc-100 text-zinc-700" }
+    { id: "AER-REM-2025-BLK", name: "Aeron Remastered", category: "Task Seating", tag: "A", qtyOrd: 3, qtyShip: 3, qtyBO: 0, listPrice: 1895.00, discPct: 40.0, netPrice: 1137.00, amount: 3411.00, configs: ["Finish: Graphite", "Size: B-Medium"], status: "Allocated", statusColor: "bg-green-50 text-green-700", aiStatus: "check", stock: 120 },
+    { id: "EMB-CHR-2025-GRY", name: "Embody Chair", category: "Performance", tag: "A", qtyOrd: 2, qtyShip: 1, qtyBO: 1, listPrice: 1895.00, discPct: 35.0, netPrice: 1231.75, amount: 2463.50, configs: ["Sync: Gray", "Arms: Fully Adjustable"], status: "Partial Ship", statusColor: "bg-amber-50 text-amber-700", stock: 45 },
+    { id: "NVI-DSK-2025-WAL", name: "Nevi Sit-Stand Desk", category: "Desking", tag: "B", qtyOrd: 4, qtyShip: 4, qtyBO: 0, listPrice: 1295.00, discPct: 30.0, netPrice: 906.50, amount: 3626.00, configs: ["Top: Walnut", "Base: White"], status: "Shipped", statusColor: "bg-zinc-100 text-zinc-700", stock: 200 },
 ];
 
 const flow1Items = [
-    { id: "SKU-OFF-2025-002", name: "Ergonomic Task Chair", category: "Standard Series", properties: "Mesh / Gray", stock: 125, status: "Allocated", statusColor: "bg-brand/10 text-brand ring-brand/20", aiStatus: "check" }
+    { id: "SKU-OFF-2025-002", name: "Ergonomic Task Chair", category: "Standard Series", tag: "A", qtyOrd: 125, qtyShip: 125, qtyBO: 0, listPrice: 685.00, discPct: 45.0, netPrice: 376.75, amount: 47093.75, configs: ["Mesh: Gray", "Arms: Adjustable"], status: "Allocated", statusColor: "bg-brand/10 text-brand ring-brand/20", aiStatus: "check", stock: 125 }
 ];
 
 interface Message {
@@ -388,11 +388,10 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
             id: 1,
             sender: "System",
             avatar: "",
-            content: `Order ${orderId} has been successfully placed via Smart Quote Hub.`,
+            content: `Order ${orderId} placed — 8 line items, $25,398.72 total. Ship Via: Best Way.`,
             time: "Just now",
             type: "system",
         },
-        // ... (We can keep or clear other messages, for demo cleaner is better)
     ]);
 
     // If it's the demo order, we might want cleaner messages
@@ -774,11 +773,11 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 animate-in fade-in zoom-in duration-300">
                                 {[
-                                    { label: 'ORDER VALUE', value: isFlow1Order ? '$43,750.00' : '$45,200.00' },
-                                    { label: 'ITEMS', value: isFlow1Order ? '125' : '12' },
-                                    { label: 'FULFILLMENT', value: isFlow1Order ? 'Allocated' : 'Partial', color: isFlow1Order ? 'text-brand' : 'text-amber-600 dark:text-amber-400' },
-                                    { label: 'CARRIER', value: 'FedEx' },
-                                    { label: 'STATUS', value: 'Processing', color: 'text-blue-600 dark:text-blue-400' },
+                                    { label: 'ORDER VALUE', value: isFlow1Order ? '$47,093.75' : '$25,398.72' },
+                                    { label: 'LINE ITEMS', value: isFlow1Order ? '1' : '8' },
+                                    { label: 'SHIPPED', value: isFlow1Order ? '125' : '45 of 49', color: isFlow1Order ? 'text-brand' : 'text-amber-600 dark:text-amber-400' },
+                                    { label: 'SHIP VIA', value: 'Best Way' },
+                                    { label: 'STATUS', value: isFlow1Order ? 'Allocated' : 'Partial Fulfillment', color: 'text-blue-600 dark:text-blue-400' },
                                 ].map((stat, i) => (
                                     <div key={i} className="bg-zinc-50 dark:bg-card/50 p-4 rounded-xl border border-zinc-100 dark:border-white/5">
                                         <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider mb-1">{stat.label}</p>
@@ -943,7 +942,7 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                     <ChevronDownIcon className="ml-2 h-4 w-4" />
                                                 </Button>
                                                 <Button variant="outline" className="gap-2 px-3 py-2 border-input text-sm leading-4 font-medium text-foreground bg-background hover:bg-muted">
-                                                    Stock Status
+                                                    Ship Status
                                                     <ChevronDownIcon className="ml-2 h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -957,16 +956,16 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                         <TableHead className="w-10">
                                                             <Checkbox className="border-input text-zinc-900 dark:text-primary focus:ring-primary bg-background" />
                                                         </TableHead>
-                                                        <TableHead>SKU ID</TableHead>
-                                                        <TableHead>Image</TableHead>
-                                                        <TableHead>Product Name</TableHead>
-                                                        <TableHead>Properties</TableHead>
-                                                        <TableHead>Stock Level</TableHead>
+                                                        <TableHead>Item #</TableHead>
+                                                        <TableHead>Description</TableHead>
+                                                        <TableHead className="text-center">Qty</TableHead>
+                                                        <TableHead className="text-right">Net Price</TableHead>
+                                                        <TableHead className="text-right">Amount</TableHead>
                                                         <TableHead>Status</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {items.map((item) => (
+                                                    {currentItems.map((item) => (
                                                         <TableRow
                                                             key={item.id}
                                                             onClick={() => setSelectedItem(item)}
@@ -975,48 +974,43 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                                 selectedItem.id === item.id ? "bg-muted/80" : ""
                                                             )}
                                                         >
-                                                            <TableCell className="px-6 py-4 whitespace-nowrap">
+                                                            <TableCell className="px-4 py-3 whitespace-nowrap">
                                                                 <Checkbox
                                                                     checked={selectedItem.id === item.id}
                                                                     onChange={() => setSelectedItem(item)}
                                                                     className="border-input text-zinc-900 dark:text-primary focus:ring-primary bg-background"
                                                                 />
                                                             </TableCell>
-                                                            <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
+                                                            <TableCell className="px-4 py-3 whitespace-nowrap text-sm font-mono font-medium text-foreground">
                                                                 {item.id}
                                                             </TableCell>
-                                                            <TableCell className="px-6 py-4 whitespace-nowrap">
-                                                                <div className="h-10 w-10 flex-shrink-0">
-                                                                    {item.image ? (
-                                                                        <img className="h-10 w-10 rounded-full object-cover" src={item.image} alt="" />
-                                                                    ) : (
-                                                                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                                                                            <CubeIcon className="h-6 w-6 text-muted-foreground" />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                                                            <TableCell className="px-4 py-3">
                                                                 <div className="flex flex-col">
-                                                                    <span className="text-foreground font-medium">{item.name}</span>
-                                                                    <span className="text-xs text-muted-foreground/70 mt-0.5">{item.category}</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-sm text-foreground font-medium">{item.name}</span>
+                                                                        {item.aiStatus && (
+                                                                            <div className={cn(
+                                                                                "h-2 w-2 rounded-full",
+                                                                                item.aiStatus === 'warning' ? "bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.2)]" : "bg-primary shadow-[0_0_0_2px_rgba(var(--primary),0.2)]"
+                                                                            )} />
+                                                                        )}
+                                                                        {item.tag && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-600">Tag {item.tag}</span>}
+                                                                    </div>
+                                                                    {item.configs && <span className="text-xs text-muted-foreground mt-0.5">{item.configs.join(' · ')}</span>}
                                                                 </div>
                                                             </TableCell>
-                                                            <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                                                                {item.properties}
+                                                            <TableCell className="px-3 py-3 whitespace-nowrap text-center">
+                                                                <div className="text-sm font-medium text-foreground">{item.qtyOrd ?? item.stock}</div>
+                                                                {(item.qtyBO ?? 0) > 0 && (
+                                                                    <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">BO: {item.qtyBO}</div>
+                                                                )}
                                                             </TableCell>
-                                                            <TableCell className="px-6 py-4 whitespace-nowrap">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden flex items-end">
-                                                                        <div
-                                                                            className={cn(
-                                                                                "w-full rounded-full transition-all",
-                                                                                item.stock > 100 ? "bg-green-500" : item.stock > 20 ? "bg-amber-500" : "bg-red-500"
-                                                                            )}
-                                                                            style={{ height: `${Math.min((item.stock / 600) * 100, 100)}%` }}
-                                                                        />
-                                                                    </div>
-                                                                    <span className="text-xs text-muted-foreground font-medium min-w-[3ch]">{Math.round((item.stock / 600) * 100)}%</span>
+                                                            <TableCell className="px-3 py-3 whitespace-nowrap text-right">
+                                                                <div className="text-sm text-foreground">${(item.netPrice ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                                                                {item.discPct && <div className="text-[10px] text-muted-foreground">-{item.discPct}%</div>}
+                                                            </TableCell>
+                                                            <TableCell className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium text-foreground">
+                                                                ${(item.amount ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                                 </div>
                                                             </TableCell>
                                                             <TableCell className="px-6 py-4 whitespace-nowrap">
@@ -1251,21 +1245,48 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                         </div>
                                                         <div>
                                                             <h4 className="text-base font-semibold text-foreground">{selectedItem.name}</h4>
-                                                            <p className="text-sm text-muted-foreground">{selectedItem.id}</p>
-                                                            <div className="flex gap-2 mt-2">
-                                                                <Badge
-                                                                    variant={
-                                                                        selectedItem.status === 'In Stock' ? 'success' :
-                                                                            selectedItem.status === 'Low Stock' ? 'warning' :
-                                                                                'error'
-                                                                    }
-                                                                >
+                                                            <p className="text-xs font-mono text-muted-foreground">{selectedItem.id}</p>
+                                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                                <Badge variant={selectedItem.status === 'Shipped' || selectedItem.status === 'Allocated' ? 'success' : selectedItem.status === 'Backordered' || selectedItem.status === 'Partial Ship' ? 'warning' : 'error'}>
                                                                     {selectedItem.status}
                                                                 </Badge>
-                                                                <Badge variant="outline">
-                                                                    Premium
-                                                                </Badge>
+                                                                {selectedItem.tag && <Badge variant="outline">Tag {selectedItem.tag}</Badge>}
+                                                                <Badge variant="outline">{selectedItem.category}</Badge>
                                                             </div>
+                                                            <div className="mt-3 space-y-1.5">
+                                                                <div className="flex justify-between text-xs">
+                                                                    <span className="text-muted-foreground">Qty Ordered</span>
+                                                                    <span className="font-medium text-foreground">{selectedItem.qtyOrd ?? selectedItem.stock}</span>
+                                                                </div>
+                                                                {(selectedItem.qtyBO ?? 0) > 0 && (
+                                                                    <div className="flex justify-between text-xs">
+                                                                        <span className="text-amber-600 dark:text-amber-400">Backordered</span>
+                                                                        <span className="font-medium text-amber-600 dark:text-amber-400">{selectedItem.qtyBO}</span>
+                                                                    </div>
+                                                                )}
+                                                                {selectedItem.netPrice != null && (
+                                                                    <div className="flex justify-between text-xs">
+                                                                        <span className="text-muted-foreground">Net Price</span>
+                                                                        <span className="font-medium text-foreground">${selectedItem.netPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                                                    </div>
+                                                                )}
+                                                                {selectedItem.amount != null && (
+                                                                    <div className="flex justify-between text-xs">
+                                                                        <span className="text-muted-foreground">Amount</span>
+                                                                        <span className="font-bold text-foreground">${selectedItem.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {selectedItem.configs && (
+                                                                <div className="mt-3 pt-3 border-t border-border">
+                                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Configurations</p>
+                                                                    <div className="space-y-1">
+                                                                        {selectedItem.configs.map((cfg: string, i: number) => (
+                                                                            <p key={i} className="text-xs text-muted-foreground">{cfg}</p>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )}
@@ -1338,7 +1359,7 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <h3 className="text-lg font-semibold text-foreground">Activity Stream</h3>
-                                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">#ORD-2055</span>
+                                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">{orderId}</span>
                                             </div>
                                             <p className="text-sm text-muted-foreground">Real-time updates and collaboration</p>
                                         </div>
@@ -1444,15 +1465,15 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                     <div className="p-5 border-b border-border bg-background/50">
                                         <div className="flex items-center justify-between mb-2">
                                             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Context</h3>
-                                            <span className="flex h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                            <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center border border-amber-200 dark:border-amber-500/30">
-                                                <ClockIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                                            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center border border-blue-200 dark:border-blue-500/30">
+                                                <CubeIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-foreground">Pending Review</p>
-                                                <p className="text-xs text-muted-foreground">Waiting for Final Approval (2/3)</p>
+                                                <p className="text-sm font-bold text-foreground">Order Tracking</p>
+                                                <p className="text-xs text-muted-foreground">4 items backordered · $25,398.72</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1462,29 +1483,15 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                             <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Suggested Actions</h4>
                                             <div className="space-y-3">
                                                 <Button
-                                                    onClick={() => setIsDocumentModalOpen(true)}
                                                     variant="ghost"
                                                     className="w-full h-auto justify-start group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all text-left"
                                                 >
                                                     <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors text-zinc-900 dark:text-primary">
-                                                        <DocumentTextIcon className="h-5 w-5" />
+                                                        <ClipboardDocumentListIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-zinc-900 dark:group-hover:text-primary transition-colors">Process Quote</p>
-                                                        <p className="text-[10px] text-muted-foreground font-normal normal-case">Analyze PDF & Extract Data</p>
-                                                    </div>
-                                                </Button>
-
-                                                <Button
-                                                    variant="ghost"
-                                                    className="w-full h-auto justify-start group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-green-500/50 hover:shadow-md transition-all text-left"
-                                                >
-                                                    <div className="h-8 w-8 rounded-lg bg-green-50 dark:bg-green-500/10 flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors text-green-600 dark:text-green-400">
-                                                        <CheckIcon className="h-5 w-5" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Approve Order</p>
-                                                        <p className="text-[10px] text-muted-foreground font-normal normal-case">Move to Production</p>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-zinc-900 dark:group-hover:text-primary transition-colors">Track Shipment</p>
+                                                        <p className="text-[10px] text-muted-foreground font-normal normal-case">View carrier tracking & ETA</p>
                                                     </div>
                                                 </Button>
 
@@ -1493,11 +1500,38 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                     className="w-full h-auto justify-start group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-amber-500/50 hover:shadow-md transition-all text-left"
                                                 >
                                                     <div className="h-8 w-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors text-amber-600 dark:text-amber-400">
-                                                        <PencilIcon className="h-5 w-5" />
+                                                        <ExclamationTriangleIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Request Changes</p>
-                                                        <p className="text-[10px] text-muted-foreground font-normal normal-case">Send feedback to vendor</p>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Check Backorders</p>
+                                                        <p className="text-[10px] text-muted-foreground font-normal normal-case">4 items pending fulfillment</p>
+                                                    </div>
+                                                </Button>
+
+                                                <Button
+                                                    onClick={() => setIsDocumentModalOpen(true)}
+                                                    variant="ghost"
+                                                    className="w-full h-auto justify-start group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-indigo-500/50 hover:shadow-md transition-all text-left"
+                                                >
+                                                    <div className="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-colors text-indigo-600 dark:text-indigo-400">
+                                                        <ArrowDownTrayIcon className="h-5 w-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Export PED</p>
+                                                        <p className="text-[10px] text-muted-foreground font-normal normal-case">Download industry-format PDF</p>
+                                                    </div>
+                                                </Button>
+
+                                                <Button
+                                                    variant="ghost"
+                                                    className="w-full h-auto justify-start group relative flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-green-500/50 hover:shadow-md transition-all text-left"
+                                                >
+                                                    <div className="h-8 w-8 rounded-lg bg-green-50 dark:bg-green-500/10 flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-colors text-green-600 dark:text-green-400">
+                                                        <EnvelopeIcon className="h-5 w-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Contact Vendor</p>
+                                                        <p className="text-[10px] text-muted-foreground font-normal normal-case">Email AIS about backorders</p>
                                                     </div>
                                                 </Button>
                                             </div>
@@ -1512,8 +1546,8 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                         <div className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary"></div>
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-medium text-zinc-900 dark:text-primary">AI Assistant is processing the new quote...</p>
-                                                        <p className="text-[10px] text-zinc-700 dark:text-primary/80 mt-1">Estimated completion: 30s</p>
+                                                        <p className="text-xs font-medium text-zinc-900 dark:text-primary">BackorderAgent monitoring fulfillment...</p>
+                                                        <p className="text-[10px] text-zinc-700 dark:text-primary/80 mt-1">Tracking 4 backordered items across 2 lines</p>
                                                     </div>
                                                 </div>
                                             </div>
