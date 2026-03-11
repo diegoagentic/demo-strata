@@ -69,7 +69,20 @@ const urgentActions = [
         time: 'Under 10 mins',
         type: 'critical',
         action: 'Review Exceptions',
-        icon: SparklesIcon
+        icon: SparklesIcon,
+        details: {
+            fields: [
+                { label: 'Vendor', value: 'AIS (American Industrial Systems)' },
+                { label: 'Sales Order', value: '1151064-B' },
+                { label: 'PO Reference', value: '#ORD-2055' },
+                { label: 'Line Items', value: '40 items · $127,880.17' },
+                { label: 'Match Rate', value: '95%' },
+            ],
+            exceptions: [
+                { item: 'F-SSC346030C', issue: 'Finish backordered — substitution proposed', confidence: 91 },
+                { item: 'X-LTD661218L', issue: '2 units backordered — ETA Nov 27', confidence: 76 },
+            ],
+        }
     },
     {
         id: 1,
@@ -78,7 +91,17 @@ const urgentActions = [
         time: '2h remaining',
         type: 'critical',
         action: 'Renew Quote',
-        icon: ClockIcon
+        icon: ClockIcon,
+        details: {
+            fields: [
+                { label: 'Client', value: 'Office Images Inc.' },
+                { label: 'Quote Value', value: '$18,450.00 (Net after 55% disc.)' },
+                { label: 'Items', value: '12 line items · 3 categories' },
+                { label: 'Created', value: 'Mar 8, 2026 by David Park' },
+                { label: 'Valid Until', value: 'Mar 10, 2026 at 4:00 PM' },
+            ],
+            topItems: ['6× Ergonomic Task Chair ($471.60 ea)', '4× WORKSURFACE 30Dx72W ($249.28 ea)', '2× LATERAL FILE 36" ($566.96 ea)'],
+        }
     },
     {
         id: 2,
@@ -87,7 +110,18 @@ const urgentActions = [
         time: 'Urgent',
         type: 'warning',
         action: 'Restock',
-        icon: ExclamationTriangleIcon
+        icon: ExclamationTriangleIcon,
+        details: {
+            fields: [
+                { label: 'Product', value: 'Ergonomic Task Chair — Mesh / Black' },
+                { label: 'SKU', value: 'SKU-OFF-2025-002' },
+                { label: 'Current Stock', value: '5 units', highlight: true },
+                { label: 'Reorder Point', value: '20 units' },
+                { label: 'Avg. Monthly Usage', value: '38 units (last 90 days)' },
+                { label: 'Preferred Vendor', value: 'AIS · Lead time: 12 business days' },
+            ],
+            stockHistory: [42, 38, 30, 22, 15, 5],
+        }
     },
     {
         id: 3,
@@ -96,7 +130,22 @@ const urgentActions = [
         time: '14m ago',
         type: 'info',
         action: 'Approve',
-        icon: CheckCircleIcon
+        icon: CheckCircleIcon,
+        details: {
+            fields: [
+                { label: 'Order', value: '#OR-999 · Apex Furniture' },
+                { label: 'Total Value', value: '$43,750.00' },
+                { label: 'Items', value: '125 × Ergonomic Task Chair' },
+                { label: 'Requested By', value: 'David Park · Regional Sales Mgr' },
+                { label: 'Cost Center', value: 'Marketing-101' },
+                { label: 'Ship To', value: 'Austin, TX Distribution Center' },
+            ],
+            approvalChain: [
+                { name: 'David Park', role: 'Requester', status: 'done' },
+                { name: 'Sara Chen', role: 'Account Mgr', status: 'current' },
+                { name: 'Finance', role: 'Final Approval', status: 'pending' },
+            ],
+        }
     }
 ]
 
@@ -1852,25 +1901,111 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                                         </div>
                                                     </div>
                                                 </div>
-                                                {/* Expandable Quick Action */}
-                                                <div className={`overflow-hidden transition-all duration-300 ${expandedActionId === action.id ? 'max-h-20 opacity-100 border-t border-border' : 'max-h-0 opacity-0'}`}>
-                                                    <div className="p-3 bg-secondary flex justify-end gap-2">
-                                                        <button className="text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 transition-colors">
-                                                            Dismiss
-                                                        </button>
-                                                        <button
-                                                            onClick={() => {
-                                                                if (action.id === 4) {
-                                                                    nextStep()
-                                                                } else {
-                                                                    handleGenUIAction(`${action.action} ${action.title}`)
-                                                                }
-                                                            }}
-                                                            className="text-xs font-bold bg-primary text-zinc-900 px-4 py-1.5 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center gap-1.5"
-                                                        >
-                                                            {action.action}
-                                                            <ArrowRightIcon className="w-3 h-3" />
-                                                        </button>
+                                                {/* Expandable Details + Quick Action */}
+                                                <div className={`overflow-hidden transition-all duration-300 ${expandedActionId === action.id ? 'max-h-[500px] opacity-100 border-t border-border' : 'max-h-0 opacity-0'}`}>
+                                                    <div className="p-4 bg-muted/20 space-y-3">
+                                                        {/* Detail Fields */}
+                                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                                                            {action.details.fields.map((f, i) => (
+                                                                <div key={i} className="flex flex-col">
+                                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{f.label}</span>
+                                                                    <span className={`text-xs font-medium mt-0.5 ${(f as any).highlight ? 'text-amber-600 dark:text-amber-400 font-bold' : 'text-foreground'}`}>{f.value}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        {/* Exceptions list (ACK item) */}
+                                                        {(action.details as any).exceptions && (
+                                                            <div className="space-y-1.5">
+                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Exceptions</p>
+                                                                {(action.details as any).exceptions.map((exc: any, i: number) => (
+                                                                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/50 dark:border-amber-800/30">
+                                                                        <div>
+                                                                            <span className="text-xs font-mono font-medium text-foreground">{exc.item}</span>
+                                                                            <span className="text-xs text-muted-foreground ml-2">{exc.issue}</span>
+                                                                        </div>
+                                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${exc.confidence >= 90 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}`}>{exc.confidence}%</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Top Items (Quote item) */}
+                                                        {(action.details as any).topItems && (
+                                                            <div>
+                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Top Items</p>
+                                                                <div className="space-y-1">
+                                                                    {(action.details as any).topItems.map((item: string, i: number) => (
+                                                                        <p key={i} className="text-xs text-muted-foreground pl-2 border-l-2 border-border">{item}</p>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Stock History (Low Stock item) */}
+                                                        {(action.details as any).stockHistory && (
+                                                            <div>
+                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Stock Trend (6 weeks)</p>
+                                                                <div className="flex items-end gap-1 h-8">
+                                                                    {(action.details as any).stockHistory.map((v: number, i: number) => (
+                                                                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                                                                            <div
+                                                                                className={`w-full rounded-sm transition-all ${i === 5 ? 'bg-red-500' : i >= 4 ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+                                                                                style={{ height: `${(v / 42) * 100}%`, minHeight: '2px' }}
+                                                                            />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                <div className="flex justify-between mt-1">
+                                                                    <span className="text-[9px] text-muted-foreground">6w ago</span>
+                                                                    <span className="text-[9px] text-red-500 font-bold">Now: 5</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Approval Chain (Pending Approval item) */}
+                                                        {(action.details as any).approvalChain && (
+                                                            <div>
+                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Approval Chain</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    {(action.details as any).approvalChain.map((step: any, i: number) => (
+                                                                        <div key={i} className="flex items-center gap-2">
+                                                                            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium border ${step.status === 'done' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' :
+                                                                                step.status === 'current' ? 'bg-primary/10 text-zinc-900 dark:text-primary border-primary/30 ring-1 ring-primary/20' :
+                                                                                    'bg-zinc-50 text-zinc-500 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+                                                                                }`}>
+                                                                                {step.status === 'done' && <CheckCircleIcon className="w-3 h-3" />}
+                                                                                {step.status === 'current' && <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
+                                                                                {step.name}
+                                                                            </div>
+                                                                            {i < (action.details as any).approvalChain.length - 1 && (
+                                                                                <ArrowRightIcon className="w-3 h-3 text-muted-foreground" />
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Action Buttons */}
+                                                        <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+                                                            <button className="text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 transition-colors">
+                                                                Dismiss
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (action.id === 4) {
+                                                                        nextStep()
+                                                                    } else {
+                                                                        handleGenUIAction(`${action.action} ${action.title}`)
+                                                                    }
+                                                                }}
+                                                                className="text-xs font-bold bg-primary text-zinc-900 px-4 py-1.5 rounded-lg shadow-sm hover:shadow-md transition-all flex items-center gap-1.5"
+                                                            >
+                                                                {action.action}
+                                                                <ArrowRightIcon className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
