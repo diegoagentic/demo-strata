@@ -1004,7 +1004,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
 
                                 {/* Quick Actions — always visible except in Metrics tab */}
                                 {activeTab !== 'metrics' && (
-                                    <div className="flex items-center gap-2 flex-wrap">
+                                    <div className="flex items-center gap-2 flex-wrap mt-3">
                                         {lifecycleTab === 'quotes' && (<>
                                             <button onClick={() => setIsQuoteWidgetOpen(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-white dark:bg-zinc-800 text-foreground hover:border-primary/30 hover:shadow-sm transition-all">
                                                 <PlusIcon className="w-3.5 h-3.5 text-green-500" />
