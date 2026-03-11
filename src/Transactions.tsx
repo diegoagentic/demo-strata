@@ -1001,6 +1001,33 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Quick Actions — always visible except in Metrics tab */}
+                                {activeTab !== 'metrics' && (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {(lifecycleTab === 'quotes' ? [
+                                            { icon: <PlusIcon className="w-4 h-4" />, label: "New Quote", action: () => setIsQuoteWidgetOpen(true) },
+                                            { icon: <DocumentDuplicateIcon className="w-4 h-4" />, label: "Duplicate", action: () => triggerToast('Duplicate Quote', 'Select a quote to duplicate from the list.', 'info') },
+                                            { icon: <DocumentTextIcon className="w-4 h-4" />, label: "Export PED", action: () => openPEDPreview('quote') },
+                                            { icon: <EnvelopeIcon className="w-4 h-4" />, label: "Send to Client", action: () => triggerToast('Send to Client', 'Email prepared with quote summary. Ready to review and send.', 'info') },
+                                        ] : lifecycleTab === 'acknowledgments' ? [
+                                            { icon: <CloudArrowUpIcon className="w-4 h-4" />, label: "Upload Ack", action: () => setIsAckModalOpen(true) },
+                                            { icon: <DocumentTextIcon className="w-4 h-4" />, label: "Export PED", action: () => openPEDPreview('acknowledgment') },
+                                            { icon: <EnvelopeIcon className="w-4 h-4" />, label: "Email Vendor", action: () => triggerToast('Email Vendor', 'Drafting vendor communication with acknowledgement details.', 'info') },
+                                            { icon: <CheckBadgeIcon className="w-4 h-4" />, label: "Batch Approve", action: () => setIsBatchAckOpen(true) },
+                                        ] : [
+                                            { icon: <PlusIcon className="w-4 h-4" />, label: "New Order", action: () => setIsCreateOrderOpen(true) },
+                                            { icon: <DocumentDuplicateIcon className="w-4 h-4" />, label: "Duplicate", action: () => triggerToast('Duplicate Order', 'Select an order to duplicate from the list.', 'info') },
+                                            { icon: <DocumentTextIcon className="w-4 h-4" />, label: "Export PED", action: () => openPEDPreview('order') },
+                                            { icon: <EnvelopeIcon className="w-4 h-4" />, label: "Send Email", action: () => triggerToast('Send Email', 'Email drafted with order confirmation details.', 'info') },
+                                        ]).map((action, i) => (
+                                            <button key={i} onClick={action.action} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 border border-border hover:border-primary hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-all text-xs font-medium">
+                                                {action.icon}
+                                                <span>{action.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <CreateOrderModal isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
 
