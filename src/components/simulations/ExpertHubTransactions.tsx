@@ -2639,13 +2639,14 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                                     </div>
                                                     {/* Send Notifications CTA inside the card */}
                                                     {cardAnimationStage19 === 'arrived' && (
-                                                        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-700 space-y-2">
-                                                            <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium flex items-center gap-1">
-                                                                <SparklesIcon className="w-3 h-3" />
-                                                                NotificationAgent will deliver persona-aware digests
-                                                            </span>
-                                                            <button onClick={nextStep} className="w-full px-4 py-2 text-xs font-bold rounded-lg bg-primary text-primary-foreground hover:opacity-90 shadow-sm flex items-center justify-center gap-2">
-                                                                Send Notifications <ArrowRightIcon className="w-3.5 h-3.5" />
+                                                        <div className="mt-3 pt-3 border-t border-brand-500/30 space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                                            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200/50 dark:border-indigo-500/20">
+                                                                <SparklesIcon className="w-3 h-3 text-indigo-500 shrink-0" />
+                                                                <span className="text-[9px] text-indigo-600 dark:text-indigo-400 font-medium leading-tight">Notify all stakeholders</span>
+                                                            </div>
+                                                            <button onClick={nextStep} className="w-full px-3 py-2.5 text-[11px] font-black rounded-lg bg-brand-500 text-zinc-900 hover:bg-brand-400 shadow-lg shadow-brand-500/25 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]">
+                                                                Send Notifications
+                                                                <ArrowRightIcon className="w-3 h-3" />
                                                             </button>
                                                         </div>
                                                     )}
