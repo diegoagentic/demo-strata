@@ -213,12 +213,12 @@ export const mockNotifications: Notification[] = [
         id: '16',
         type: 'ack_received',
         priority: 'medium',
-        title: 'ACK Received',
-        message: 'ACK for PO #ORD-2055 received from eManage ONE.',
+        title: 'Acknowledgement Received',
+        message: 'Acknowledgement for PO #ORD-2055 received from eManage ONE.',
         meta: 'ERP Connector',
         timestamp: '1 min ago',
         unread: true,
-        actions: [{ label: 'View ACK', primary: true }],
+        actions: [{ label: 'View Acknowledgement', primary: true }],
         persona: 'dealer'
     },
     {

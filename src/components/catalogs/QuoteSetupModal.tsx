@@ -13,6 +13,7 @@ import {
     ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
+import { useTenant } from '../../TenantContext';
 
 interface QuoteSetupModalProps {
     isOpen: boolean;
@@ -28,6 +29,7 @@ const AVAILABLE_RULES = [
 ];
 
 export default function QuoteSetupModal({ isOpen, onClose, catalogName }: QuoteSetupModalProps) {
+    const { currentTenant } = useTenant();
     const [copilotEnabled, setCopilotEnabled] = useState(true);
     const [volumeDiscount, setVolumeDiscount] = useState(true);
 
@@ -92,11 +94,11 @@ export default function QuoteSetupModal({ isOpen, onClose, catalogName }: QuoteS
                             {/* Context Badge */}
                             <div className="mb-6 flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
                                 <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                                    <span className="text-indigo-400 font-bold text-lg">A</span>
+                                    <span className="text-indigo-400 font-bold text-lg">{currentTenant.charAt(0)}</span>
                                 </div>
                                 <div>
                                     <div className="text-xs text-zinc-400 font-medium uppercase tracking-wider">Quoting For</div>
-                                    <div className="text-white font-medium">Acme Corp <span className="text-zinc-500 font-normal ml-2">Global Master Agreement</span></div>
+                                    <div className="text-white font-medium">{currentTenant} <span className="text-zinc-500 font-normal ml-2">Global Master Agreement</span></div>
                                 </div>
                             </div>
 
@@ -233,7 +235,7 @@ export default function QuoteSetupModal({ isOpen, onClose, catalogName }: QuoteS
 
                                         {copilotEnabled && (
                                             <div className="mt-2 text-xs text-indigo-200 bg-indigo-500/10 p-2 rounded border border-indigo-500/20">
-                                                AI Insight: Acme prefers "Task Seating" and "Herman Miller". We've highlighted these categories.
+                                                AI Insight: {currentTenant} prefers "Task Seating" and "Herman Miller". We've highlighted these categories.
                                             </div>
                                         )}
                                     </div>

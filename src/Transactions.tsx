@@ -321,13 +321,13 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
         if (isDemoComplete) {
             orders.unshift({
                 id: "#ORD-7829",
-                customer: "Acme Corp",
-                client: "Acme Corp",
+                customer: currentTenant,
+                client: currentTenant,
                 project: "HQ Refresh",
                 amount: "$124,500",
                 status: "Order Placed",
                 date: "Just Now",
-                initials: "AC",
+                initials: currentTenant.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
                 statusColor: "bg-green-50 text-green-700 ring-green-600/20",
                 location: "New York"
             });
@@ -554,7 +554,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {[
                                         { icon: <PlusIcon className="w-5 h-5" />, label: "New Quote", action: () => setIsQuoteWidgetOpen(true) },
                                         { icon: <DocumentDuplicateIcon className="w-5 h-5" />, label: "Duplicate", action: () => triggerToast('Duplicate Quote', 'Select a quote to duplicate from the list.', 'info') },
-                                        { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PED", action: () => openPEDPreview('quote') },
+                                        { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PDF", action: () => openPEDPreview('quote') },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Send to Client", action: () => triggerToast('Send to Client', 'Email prepared with quote summary. Ready to review and send.', 'info') },
                                     ].map((action, i) => (
                                         <button key={i} onClick={() => action.action && action.action()} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-all text-xs font-medium">
@@ -597,7 +597,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                         {[
                                             { icon: <PlusIcon className="w-5 h-5" />, label: "New Quote", action: () => setIsQuoteWidgetOpen(true) },
                                             { icon: <DocumentDuplicateIcon className="w-5 h-5" />, label: "Duplicate", action: () => triggerToast('Duplicate Quote', 'Select a quote to duplicate from the list.', 'info') },
-                                            { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PED", action: () => openPEDPreview('quote') },
+                                            { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PDF", action: () => openPEDPreview('quote') },
                                             { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Send to Client", action: () => triggerToast('Send to Client', 'Email prepared with quote summary.', 'info') },
                                         ].map((action, i) => (
                                             <button key={i} onClick={() => action.action && action.action()} className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors relative group" title={action.label}>
@@ -660,8 +660,8 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                 <div className="flex items-center gap-4 mt-6 animate-in fade-in slide-in-from-top-2 duration-500">
                                     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Quick Actions:</span>
                                     {[
-                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack", action: () => setIsAckModalOpen(true) },
-                                        { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PED", action: () => openPEDPreview('acknowledgment') },
+                                        { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Acknowledgement", action: () => setIsAckModalOpen(true) },
+                                        { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PDF", action: () => openPEDPreview('acknowledgment') },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Email Vendor", action: () => triggerToast('Email Vendor', 'Drafting vendor communication with acknowledgement details.', 'info') },
                                         { icon: <CheckBadgeIcon className="w-5 h-5" />, label: "Batch Approve", action: () => setIsBatchAckOpen(true) },
                                     ].map((action, i) => (
@@ -703,8 +703,8 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {/* Quick Actions Integrated - Compact */}
                                     <div className="flex items-center gap-1 overflow-x-auto min-w-max pl-4 border-l border-zinc-200 dark:border-zinc-700 xl:border-none xl:pl-0">
                                         {[
-                                            { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Ack", action: () => setIsAckModalOpen(true) },
-                                            { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PED", action: () => openPEDPreview('acknowledgment') },
+                                            { icon: <CloudArrowUpIcon className="w-5 h-5" />, label: "Upload Acknowledgement", action: () => setIsAckModalOpen(true) },
+                                            { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PDF", action: () => openPEDPreview('acknowledgment') },
                                             { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Email Vendor", action: () => triggerToast('Email Vendor', 'Drafting vendor communication.', 'info') },
                                             { icon: <CheckBadgeIcon className="w-5 h-5" />, label: "Batch Approve", action: () => setIsBatchAckOpen(true) },
                                         ].map((action, i) => (
@@ -773,7 +773,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {[
                                         { icon: <PlusIcon className="w-5 h-5" />, label: "New Order", action: () => setIsCreateOrderOpen(true) },
                                         { icon: <DocumentDuplicateIcon className="w-5 h-5" />, label: "Duplicate", action: () => triggerToast('Duplicate Order', 'Select an order to duplicate from the list.', 'info') },
-                                        { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PED", action: () => openPEDPreview('order') },
+                                        { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PDF", action: () => openPEDPreview('order') },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Send Email", action: () => triggerToast('Send Email', 'Email drafted with order confirmation details.', 'info') },
                                     ].map((action, i) => (
                                         <button key={i} onClick={() => action.action && action.action()} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary hover:bg-primary hover:text-primary-foreground text-muted-foreground transition-all text-xs font-medium">
@@ -838,7 +838,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     {[
                                         { icon: <PlusIcon className="w-5 h-5" />, label: "New Order", action: () => setIsCreateOrderOpen(true) },
                                         { icon: <DocumentPlusIcon className="w-5 h-5" />, label: "New Quote", action: () => setIsQuoteWidgetOpen(true) },
-                                        { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PED", action: () => openPEDPreview('order') },
+                                        { icon: <DocumentTextIcon className="w-5 h-5" />, label: "Export PDF", action: () => openPEDPreview('order') },
                                         { icon: <EnvelopeIcon className="w-5 h-5" />, label: "Send Email", action: () => triggerToast('Send Email', 'Email drafted with order details.', 'info') },
                                     ].map((action, i) => (
                                         <button key={i} onClick={() => action.action()} className="p-2 rounded-lg hover:bg-brand-300 dark:hover:bg-brand-600/50 text-muted-foreground hover:text-zinc-900 dark:hover:text-white transition-colors relative group" title={action.label}>
@@ -1016,7 +1016,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             </button>
                                             <button onClick={() => openPEDPreview('quote')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-white dark:bg-zinc-800 text-foreground hover:border-primary/30 hover:shadow-sm transition-all">
                                                 <DocumentTextIcon className="w-3.5 h-3.5 text-zinc-500" />
-                                                Export PED
+                                                Export PDF
                                             </button>
                                             <button onClick={() => triggerToast('Send to Client', 'Email prepared with quote summary. Ready to review and send.', 'info')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-white dark:bg-zinc-800 text-foreground hover:border-primary/30 hover:shadow-sm transition-all">
                                                 <EnvelopeIcon className="w-3.5 h-3.5 text-indigo-500" />
@@ -1026,11 +1026,11 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                         {lifecycleTab === 'acknowledgments' && (<>
                                             <button onClick={() => setIsAckModalOpen(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-white dark:bg-zinc-800 text-foreground hover:border-primary/30 hover:shadow-sm transition-all">
                                                 <CloudArrowUpIcon className="w-3.5 h-3.5 text-green-500" />
-                                                Upload Ack
+                                                Upload Acknowledgement
                                             </button>
                                             <button onClick={() => openPEDPreview('acknowledgment')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-white dark:bg-zinc-800 text-foreground hover:border-primary/30 hover:shadow-sm transition-all">
                                                 <DocumentTextIcon className="w-3.5 h-3.5 text-zinc-500" />
-                                                Export PED
+                                                Export PDF
                                             </button>
                                             <button onClick={() => triggerToast('Email Vendor', 'Drafting vendor communication with acknowledgement details.', 'info')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-white dark:bg-zinc-800 text-foreground hover:border-primary/30 hover:shadow-sm transition-all">
                                                 <EnvelopeIcon className="w-3.5 h-3.5 text-blue-500" />
@@ -1052,7 +1052,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                             </button>
                                             <button onClick={() => openPEDPreview('order')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-white dark:bg-zinc-800 text-foreground hover:border-primary/30 hover:shadow-sm transition-all">
                                                 <DocumentTextIcon className="w-3.5 h-3.5 text-zinc-500" />
-                                                Export PED
+                                                Export PDF
                                             </button>
                                             <button onClick={() => triggerToast('Send Email', 'Email drafted with order confirmation details.', 'info')} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-white dark:bg-zinc-800 text-foreground hover:border-primary/30 hover:shadow-sm transition-all">
                                                 <EnvelopeIcon className="w-3.5 h-3.5 text-indigo-500" />
@@ -1643,7 +1643,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                     <div className="text-xs text-muted-foreground mt-2">Unit Price: $250.00</div>
                                                 </div>
                                                 <div className="p-4 border border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/5 rounded-lg">
-                                                    <span className="block text-xs uppercase text-red-600 dark:text-red-400 mb-1">Vendor Ack</span>
+                                                    <span className="block text-xs uppercase text-red-600 dark:text-red-400 mb-1">Vendor Acknowledgement</span>
                                                     <div className="font-semibold text-lg text-red-700 dark:text-red-400">$13,000.00</div>
                                                     <div className="text-xs text-red-600/80 mt-2">Unit Price: $260.00</div>
                                                 </div>

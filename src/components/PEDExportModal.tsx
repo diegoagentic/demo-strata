@@ -176,7 +176,7 @@ const MOCK_LINE_ITEMS: LineItem[] = [
 
 export function getMockPEDData(type: PEDDocumentType, id?: string): PEDData {
     const base: Omit<PEDData, 'type' | 'id' | 'salesOrderNumber' | 'status' | 'orderDate'> = {
-        vendorName: 'AIS — American Industrial Systems',
+        vendorName: 'Strata — Strata Experience Platform',
         vendorAddress: '25 Tucker Drive\nLeominster, MA 01453 USA',
         vendorPhone: '978/562-7500',
         billToName: 'Corporate Interior Systems',
@@ -375,7 +375,7 @@ export default function PEDExportModal({ isOpen, onClose, data }: PEDExportModal
                                             <DocumentTextIcon className="w-5 h-5 text-primary" />
                                         </div>
                                         <div>
-                                            <h2 className="text-lg font-semibold text-foreground">PED Preview — {label}</h2>
+                                            <h2 className="text-lg font-semibold text-foreground">PDF Preview — {label}</h2>
                                             <p className="text-xs text-muted-foreground">Sales Order {data.salesOrderNumber} • {data.vendorName.split('—')[0].trim()}</p>
                                         </div>
                                     </div>
@@ -401,7 +401,7 @@ export default function PEDExportModal({ isOpen, onClose, data }: PEDExportModal
                                 </div>
 
                                 {/* Document Preview */}
-                                <div className="flex-1 overflow-y-auto p-6 bg-zinc-50 dark:bg-zinc-900/50">
+                                <div className="flex-1 overflow-y-auto scrollbar-micro p-6 bg-zinc-50 dark:bg-zinc-900/50">
                                     <div ref={printRef} className="max-w-4xl mx-auto bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-8 space-y-5">
 
                                         {/* === HEADER === */}

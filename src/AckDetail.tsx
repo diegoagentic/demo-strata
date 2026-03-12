@@ -524,7 +524,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
             id: 2,
             sender: "AI Assistant",
             avatar: "AI",
-            content: "DiscrepancyResolverAgent compared ACK against PO #ORD-2055. Match rate: 95%. Found 2 exceptions — Item F-SSC346030C (finish backordered, substitution proposed) and X-LTD661218L (2 units backordered, ETA Nov 27).",
+            content: "DiscrepancyResolverAgent compared Acknowledgement against PO #ORD-2055. Match rate: 95%. Found 2 exceptions — Item F-SSC346030C (finish backordered, substitution proposed) and X-LTD661218L (2 units backordered, ETA Nov 27).",
             time: "10 mins ago",
             type: "action_processing",
         },
@@ -1305,7 +1305,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                 <DocumentChartBarIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-foreground">ACK Review</p>
+                                                <p className="text-sm font-bold text-foreground">Acknowledgement Review</p>
                                                 <p className="text-xs text-muted-foreground">2 Exceptions Found · $127,880.17</p>
                                             </div>
                                         </div>
@@ -1321,7 +1321,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-medium text-foreground group-hover:text-zinc-900 dark:group-hover:text-primary transition-colors">Compare vs PO</p>
-                                                        <p className="text-[10px] text-muted-foreground">Side-by-side ACK vs original PO</p>
+                                                        <p className="text-[10px] text-muted-foreground">Side-by-side Acknowledgement vs original PO</p>
                                                     </div>
                                                 </button>
 
@@ -1340,7 +1340,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                         <CheckIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Approve ACK</p>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Approve Acknowledgement</p>
                                                         <p className="text-[10px] text-muted-foreground">Confirm & move to fulfillment</p>
                                                     </div>
                                                 </button>
@@ -1350,7 +1350,7 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                                                         <ArrowDownTrayIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Export PED</p>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Export PDF</p>
                                                         <p className="text-[10px] text-muted-foreground">Download industry-format PDF</p>
                                                     </div>
                                                 </button>

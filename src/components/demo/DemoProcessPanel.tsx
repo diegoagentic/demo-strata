@@ -182,11 +182,11 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             }), D));
 
             const timeline = [
-                { delay: D + 3375, log: 'ERPConnectorAgent: ACK data received from eManage ONE (EDI/855).' },
+                { delay: D + 3375, log: 'ERPConnectorAgent: Acknowledgement data received from eManage ONE (EDI/855).' },
                 { delay: D + 8100, log: 'DataNormalizationAgent: Mapping raw EDI fields to standard schema...' },
-                { delay: D + 13500, log: 'ACKIngestAgent: Parsing 4 acknowledgment line items.' },
+                { delay: D + 13500, log: 'AcknowledgementIngestAgent: Parsing 4 acknowledgement line items.' },
                 { delay: D + 18900, log: 'DataNormalizationAgent: Unified 4 raw fields to standard model.' },
-                { delay: D + 24300, log: 'EntityLinker: Linked PO #ORD-2055 ↔ ACK #ACK-2055. Ready for Delta Engine.' },
+                { delay: D + 24300, log: 'EntityLinker: Linked PO #ORD-2055 ↔ Acknowledgement #ACK-2055. Ready for Delta Engine.' },
             ];
 
             timeline.forEach(({ delay, log }, index) => {
@@ -256,7 +256,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
 
             const timeline = [
                 { delay: D + 2700, log: 'POvsACKAgent: Loading PO #ORD-2055 (4 lines).' },
-                { delay: D + 6750, log: 'POvsACKAgent: Loading ACK #ACK-2055 (4 lines).' },
+                { delay: D + 6750, log: 'POvsACKAgent: Loading Acknowledgement #ACK-2055 (4 lines).' },
                 { delay: D + 11475, log: 'POvsACKAgent: Line-by-line comparison in progress...' },
                 { delay: D + 16200, log: 'POvsACKAgent: EXCEPTION — Line 2 substitution SKU-B→SKU-C.' },
                 { delay: D + 20925, log: 'POvsACKAgent: EXCEPTION — Freight $45→$150 (+233%).' },
@@ -608,7 +608,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         {/* Entity Link */}
                         <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
                             <span className="text-zinc-400 dark:text-zinc-500">Entity Link:</span>
-                            <span className="text-blue-400 font-medium">PO #ORD-2055 ↔ ACK #ACK-2055</span>
+                            <span className="text-blue-400 font-medium">PO #ORD-2055 ↔ Acknowledgement #ACK-2055</span>
                         </div>
 
                         {/* Schema Mapping Table */}
@@ -667,7 +667,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                                         <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">Line</th>
                                         <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">Item</th>
                                         <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">PO</th>
-                                        <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">ACK</th>
+                                        <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">Acknowledgement</th>
                                         <th className="text-left px-4 py-1.5 text-zinc-400 dark:text-zinc-500 font-medium">Status</th>
                                     </tr>
                                 </thead>

@@ -2272,7 +2272,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                             <th className="text-left px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">SKU</th>
                                             <th className="text-left px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Description</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Qty</th>
-                                            <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Ack Qty</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Ack'd Qty</th>
                                             <th className="text-right px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Price</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase">Status</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase w-16">Action</th>

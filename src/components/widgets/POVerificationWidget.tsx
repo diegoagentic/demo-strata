@@ -27,7 +27,7 @@ const verificationItems = [
         client: 'Creative Studio',
         status: 'pending',
         mismatches: null,
-        details: 'Waiting for factory ack...',
+        details: 'Waiting for factory acknowledgement...',
         date: 'Today, 09:00 AM'
     }
 ]

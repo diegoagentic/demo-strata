@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useTenant } from '../../TenantContext';
 
 // Helper for classes
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -41,13 +42,14 @@ const MOCK_ERP_CATALOGS = [
 ];
 
 const MOCK_TENANTS = [
-    { id: 't-1', name: 'Acme Corp HQ' },
+    { id: 't-1', name: 'Main HQ' },
     { id: 't-2', name: 'West Coast Branch' },
     { id: 't-3', name: 'Euro Division' },
     { id: 't-4', name: 'Retail Showrooms' },
 ];
 
 export default function CatalogImportModal({ isOpen, onClose, onImportComplete }: CatalogImportModalProps) {
+    const { currentTenant } = useTenant();
     const [step, setStep] = useState<ImportStep>('select');
     const [sourceType, setSourceType] = useState<SourceType>('url');
     const [url, setUrl] = useState('');

@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { useDemoProfile } from './context/DemoProfileContext';
 
-export type Tenant = 'Acme Corp' | 'Globex' | 'Initech';
+export type Tenant = string;
 
 interface TenantContextType {
     currentTenant: Tenant;
@@ -11,8 +12,14 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-    const [currentTenant, setCurrentTenant] = useState<Tenant>('Acme Corp');
+    const { activeProfile } = useDemoProfile();
+    const [currentTenant, setCurrentTenant] = useState<Tenant>(activeProfile.companyName);
     const tenants: Tenant[] = ['Acme Corp', 'Globex', 'Initech'];
+
+    // Sync tenant with active demo profile
+    useEffect(() => {
+        setCurrentTenant(activeProfile.companyName);
+    }, [activeProfile.companyName]);
 
     return (
         <TenantContext.Provider value={{ currentTenant, tenants, setTenant: setCurrentTenant }}>

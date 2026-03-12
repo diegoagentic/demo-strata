@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { GenUIProvider } from './context/GenUIContext'
 import { useAuth } from './context/AuthContext'
 import { useDemo } from './context/DemoContext'
+import { useDemoProfile } from './context/DemoProfileContext'
 import Login from "./Login"
 import Dashboard from "./Dashboard"
 import Detail from "./Detail"
@@ -44,6 +45,7 @@ import logoDarkBrand from './assets/logo-dark-brand.png'
 function App() {
   const { user, initialLoading, signOut, showSessionWarning, refreshSession } = useAuth()
   const { isDemoActive, currentStep, isSidebarCollapsed } = useDemo()
+  const { activeProfile: demoProfile } = useDemoProfile()
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'ack-detail-ai' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('transactions')
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false)
 
@@ -92,7 +94,7 @@ function App() {
       : currentStep.app === 'service-now' ? 'ServiceNow'
       : isExpert ? 'Expert Hub'
       : 'Dealer Experience';
-    const resolvedCompany = isExpert ? 'Strata Services' : 'Acme Corp';
+    const resolvedCompany = isExpert ? 'Strata Services' : demoProfile.companyName;
 
     switch (currentStep.app) {
       case 'expert-hub':

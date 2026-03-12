@@ -50,7 +50,7 @@ const STEP_CARD_PREVIEW: Record<string, {
         icon: <Cpu size={12} className="text-blue-400" />,
         title: 'ERP Normalization',
         subtitle: '8 agents — EDI/855 from eManage ONE',
-        detail: 'Mapping raw EDI fields to standard schema. Linking PO ↔ ACK entities.',
+        detail: 'Mapping raw EDI fields to standard schema. Linking PO ↔ Acknowledgement entities.',
         accentClass: 'border-blue-500/20 bg-blue-500/5',
     },
     '2.3': {

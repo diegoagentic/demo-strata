@@ -36,7 +36,7 @@ export default function ThreeWayMatchView({ orderId, lines, onAutoFix, onResolve
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-sm font-medium text-foreground">3-Way Match — {orderId}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">PO vs ACK vs Invoice reconciliation</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">PO vs Acknowledgement vs Invoice reconciliation</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1.5 text-[10px] font-medium text-green-600 dark:text-green-400">
@@ -63,7 +63,7 @@ export default function ThreeWayMatchView({ orderId, lines, onAutoFix, onResolve
             <div className="grid grid-cols-5 gap-0 border-b border-border">
                 <div className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Line Item</div>
                 <div className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">PO</div>
-                <div className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">ACK</div>
+                <div className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Acknowledgement</div>
                 <div className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Invoice</div>
                 <div className="px-4 py-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-center">Status</div>
             </div>

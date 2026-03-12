@@ -10,7 +10,7 @@ import {
     Pause,
     Loader2,
 } from 'lucide-react';
-import { STEP_BEHAVIOR } from './DemoStepBanner';
+import { useDemoProfile } from '../../context/DemoProfileContext';
 
 // Apps belonging to Expert Hub — System steps in these show as "Expert"
 const EXPERT_HUB_APPS = ['expert-hub', 'ack-detail', 'transactions', 'mac', 'quote-detail'];
@@ -24,7 +24,9 @@ function resolveRoleLabel(role: string, app: string): string {
 
 export default function DemoSidebar() {
     const { currentStepIndex, steps, nextStep, prevStep, goToStep, isDemoActive, setIsDemoActive, isSidebarCollapsed, setIsSidebarCollapsed, isPaused, togglePause } = useDemo();
+    const { activeProfile } = useDemoProfile();
     const { theme } = useTheme();
+    const STEP_BEHAVIOR = activeProfile.stepBehavior;
 
     // Invert: when app is dark → sidebar is light, when app is light → sidebar is dark
     const isDarkSidebar = theme === 'light';

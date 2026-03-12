@@ -1516,7 +1516,7 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                                                         <ArrowDownTrayIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Export PED</p>
+                                                        <p className="text-sm font-medium text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Export PDF</p>
                                                         <p className="text-[10px] text-muted-foreground font-normal normal-case">Download industry-format PDF</p>
                                                     </div>
                                                 </Button>

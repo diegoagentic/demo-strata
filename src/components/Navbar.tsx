@@ -19,6 +19,7 @@ import { useTheme } from 'strata-design-system'
 import { useTenant } from '../TenantContext'
 import { useAuth } from '../context/AuthContext'
 import { useDemo } from '../context/DemoContext'
+import { useDemoProfile } from '../context/DemoProfileContext'
 
 import ActionCenter from './notifications/ActionCenter';
 
@@ -99,6 +100,7 @@ export default function Navbar({
     const { currentTenant, tenants, setTenant } = useTenant()
     const { user } = useAuth()
     const { isDemoActive, currentStep, isSidebarCollapsed } = useDemo()
+    const { activeProfile, profiles, switchProfile } = useDemoProfile()
     const sidebarExpanded = isDemoActive && !isSidebarCollapsed
 
     // Demo profile — always show a profile (default to Dealer for initial screen)
@@ -131,11 +133,47 @@ export default function Navbar({
 
                     <div className="h-6 w-px bg-border mx-1 hidden lg:block"></div>
 
-                    {/* App Name + Company — always static for demo build */}
-                    <div className="hidden lg:flex flex-col items-start text-left px-2 py-1.5">
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">{appName || 'Dealer Experience'}</span>
-                        <span className="text-sm font-bold text-foreground leading-tight">{companyName || 'Acme Corp'}</span>
-                    </div>
+                    {/* App Name + Company — Demo Profile Selector */}
+                    <Popover className="relative hidden lg:block">
+                        <PopoverButton className="flex flex-col items-start text-left px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer outline-none group">
+                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">{appName || 'Dealer Experience'}</span>
+                            <span className="text-sm font-bold text-foreground leading-tight flex items-center gap-1">
+                                {companyName || activeProfile.companyName}
+                            </span>
+                        </PopoverButton>
+                        <Transition
+                            as={Fragment}
+                            enter="transition ease-out duration-200"
+                            enterFrom="opacity-0 translate-y-1"
+                            enterTo="opacity-100 translate-y-0"
+                            leave="transition ease-in duration-150"
+                            leaveFrom="opacity-100 translate-y-0"
+                            leaveTo="opacity-0 translate-y-1"
+                        >
+                            <PopoverPanel className="absolute left-0 top-full mt-2 w-64 py-2 rounded-xl bg-card/95 backdrop-blur-xl border border-border shadow-2xl z-[200]">
+                                <div className="px-3 py-2 border-b border-border mb-1">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Switch Demo</p>
+                                </div>
+                                {profiles.map((profile) => (
+                                    <PopoverButton
+                                        as="button"
+                                        key={profile.id}
+                                        onClick={() => switchProfile(profile.id)}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted transition-colors text-left"
+                                    >
+                                        <span className="text-lg shrink-0">{profile.icon}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-foreground">{profile.name}</p>
+                                            <p className="text-[11px] text-muted-foreground truncate">{profile.description}</p>
+                                        </div>
+                                        {activeProfile.id === profile.id && (
+                                            <CheckIcon className="w-4 h-4 text-primary shrink-0" />
+                                        )}
+                                    </PopoverButton>
+                                ))}
+                            </PopoverPanel>
+                        </Transition>
+                    </Popover>
                 </div>
 
 
