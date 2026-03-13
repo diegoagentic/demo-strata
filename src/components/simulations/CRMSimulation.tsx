@@ -509,126 +509,133 @@ function ProjectsView({ stepId }: { stepId: string }) {
     const projectCount = showApexRow ? MOCK_PROJECTS.length : MOCK_PROJECTS.length - 1
 
     return (
-        <div className="space-y-4">
-            {/* Notification Toast — slides in, clickable */}
-            {isNewProject && (phase === 'notification') && (
-                <button
-                    onClick={handleNotificationClick}
-                    className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500"
-                >
-                    <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
-                        <div className="flex items-start gap-3">
-                            <div className="h-9 w-9 rounded-lg bg-brand-500 flex items-center justify-center shrink-0">
-                                <BellAlertIcon className="h-5 w-5 text-zinc-900" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-foreground">New Project Auto-Created</span>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Just now</span>
+        <div className="flex gap-4">
+            {/* Main content */}
+            <div className="flex-1 min-w-0 space-y-4">
+                {/* Notification Toast — slides in, clickable */}
+                {isNewProject && (phase === 'notification') && (
+                    <button
+                        onClick={handleNotificationClick}
+                        className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500"
+                    >
+                        <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                            <div className="flex items-start gap-3">
+                                <div className="h-9 w-9 rounded-lg bg-brand-500 flex items-center justify-center shrink-0">
+                                    <BellAlertIcon className="h-5 w-5 text-zinc-900" />
                                 </div>
-                                <p className="text-[11px] text-muted-foreground mt-1">
-                                    <strong className="text-foreground">ProjectCreationAgent</strong> created project from Quote #QT-1025 — <strong className="text-foreground">Apex Furniture</strong>, $43,750, 200 line items.
-                                </p>
-                                <div className="flex items-center gap-1 mt-2 text-[10px] text-brand-700 dark:text-brand-400 font-medium">
-                                    <span>Click to view project</span>
-                                    <ArrowRightIcon className="h-3 w-3" />
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-bold text-foreground">New Project Auto-Created</span>
+                                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Just now</span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground mt-1">
+                                        <strong className="text-foreground">ProjectCreationAgent</strong> created project from Quote #QT-1025 — <strong className="text-foreground">Apex Furniture</strong>, $43,750, 200 line items.
+                                    </p>
+                                    <div className="flex items-center gap-1 mt-2 text-[10px] text-brand-700 dark:text-brand-400 font-medium">
+                                        <span>Click to view project</span>
+                                        <ArrowRightIcon className="h-3 w-3" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </button>
-            )}
+                    </button>
+                )}
 
-            {/* AI Agent Confirmation — after reveal */}
-            {isNewProject && (phase === 'revealed' || phase === 'detail') && (
-                <div className="bg-card border border-green-200 dark:border-green-800/30 rounded-xl p-3 flex items-center gap-3 animate-in fade-in duration-300">
-                    <AIAgentAvatar size="sm" />
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 text-xs">
-                            <span className="font-medium text-foreground">ProjectCreationAgent</span>
-                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
-                            <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">Project created successfully</span>
+                {/* AI Agent Confirmation — after reveal */}
+                {isNewProject && (phase === 'revealed' || phase === 'detail') && (
+                    <div className="bg-card border border-green-200 dark:border-green-800/30 rounded-xl p-3 flex items-center gap-3 animate-in fade-in duration-300">
+                        <AIAgentAvatar size="sm" />
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 text-xs">
+                                <span className="font-medium text-foreground">ProjectCreationAgent</span>
+                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
+                                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">Project created successfully</span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                Apex Furniture · Quote #QT-1025 · PO #ORD-2055 · $43,750 — zero manual CRM entry
+                            </p>
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Apex Furniture · Quote #QT-1025 · PO #ORD-2055 · $43,750 — zero manual CRM entry
-                        </p>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Projects Table */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                    <h3 className="text-xs font-medium text-foreground">Active & Recent Projects</h3>
-                    <span className="text-[10px] text-muted-foreground">{projectCount} projects</span>
-                </div>
-                <table className="w-full text-xs">
-                    <thead>
-                        <tr className="border-b border-border bg-muted/30">
-                            <th className="text-left px-4 py-2 text-[10px] font-medium text-muted-foreground">Project</th>
-                            <th className="text-left px-3 py-2 text-[10px] font-medium text-muted-foreground">Customer</th>
-                            <th className="text-left px-3 py-2 text-[10px] font-medium text-muted-foreground">Quote / PO</th>
-                            <th className="text-right px-3 py-2 text-[10px] font-medium text-muted-foreground">Value</th>
-                            <th className="text-center px-3 py-2 text-[10px] font-medium text-muted-foreground">Stage</th>
-                            <th className="text-center px-3 py-2 text-[10px] font-medium text-muted-foreground">Status</th>
-                            <th className="text-right px-4 py-2 text-[10px] font-medium text-muted-foreground">Delivery</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {MOCK_PROJECTS.map(project => {
-                            const isApex = project.id === 'PRJ-001'
-                            // Hide Apex row until revealed in animation
-                            if (isApex && isNewProject && !showApexRow) return null
-                            return (
-                                <tr key={project.id} className={cn(
-                                    'border-b border-border last:border-0 hover:bg-muted/20 transition-all',
-                                    isApex && isNewProject && 'bg-brand-50/50 dark:bg-brand-500/5 ring-2 ring-inset ring-brand-400/30 animate-in fade-in slide-in-from-top-2 duration-500'
-                                )}>
-                                    <td className="px-4 py-2.5">
-                                        <div className="flex items-center gap-2">
-                                            {isApex && isNewProject && (
-                                                <span className="px-1.5 py-0.5 rounded bg-brand-500 text-zinc-900 text-[8px] font-bold uppercase shrink-0">New</span>
-                                            )}
-                                            <div>
-                                                <p className="font-medium text-foreground text-[11px]">{project.name}</p>
-                                                <p className="text-[10px] text-muted-foreground">{project.id} · {project.items} items · {project.zones} zones</p>
+                {/* Projects Table */}
+                <div className="bg-card border border-border rounded-xl overflow-hidden">
+                    <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                        <h3 className="text-xs font-medium text-foreground">Active & Recent Projects</h3>
+                        <span className="text-[10px] text-muted-foreground">{projectCount} projects</span>
+                    </div>
+                    <table className="w-full text-xs">
+                        <thead>
+                            <tr className="border-b border-border bg-muted/30">
+                                <th className="text-left px-4 py-2 text-[10px] font-medium text-muted-foreground">Project</th>
+                                <th className="text-left px-3 py-2 text-[10px] font-medium text-muted-foreground">Customer</th>
+                                <th className="text-left px-3 py-2 text-[10px] font-medium text-muted-foreground">Quote / PO</th>
+                                <th className="text-right px-3 py-2 text-[10px] font-medium text-muted-foreground">Value</th>
+                                <th className="text-center px-3 py-2 text-[10px] font-medium text-muted-foreground">Stage</th>
+                                <th className="text-center px-3 py-2 text-[10px] font-medium text-muted-foreground">Status</th>
+                                <th className="text-right px-4 py-2 text-[10px] font-medium text-muted-foreground">Delivery</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {MOCK_PROJECTS.map(project => {
+                                const isApex = project.id === 'PRJ-001'
+                                if (isApex && isNewProject && !showApexRow) return null
+                                return (
+                                    <tr key={project.id} className={cn(
+                                        'border-b border-border last:border-0 hover:bg-muted/20 transition-all',
+                                        isApex && isNewProject && 'bg-brand-50/50 dark:bg-brand-500/5 ring-2 ring-inset ring-brand-400/30 animate-in fade-in slide-in-from-top-2 duration-500'
+                                    )}>
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex items-center gap-2">
+                                                {isApex && isNewProject && (
+                                                    <span className="px-1.5 py-0.5 rounded bg-brand-500 text-zinc-900 text-[8px] font-bold uppercase shrink-0">New</span>
+                                                )}
+                                                <div>
+                                                    <p className="font-medium text-foreground text-[11px]">{project.name}</p>
+                                                    <p className="text-[10px] text-muted-foreground">{project.id} · {project.items} items · {project.zones} zones</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-[11px] text-foreground">{project.customer}</td>
-                                    <td className="px-3 py-2.5">
-                                        <p className="text-[11px] text-foreground">{project.quote}</p>
-                                        <p className="text-[10px] text-muted-foreground">{project.po}</p>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right">
-                                        <span className="text-[11px] font-medium text-foreground tabular-nums">${project.value.toLocaleString()}</span>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        <StageBadge stage={project.stage} />
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        <ProjectStatusBadge status={project.status} />
-                                    </td>
-                                    <td className="px-4 py-2.5 text-right">
-                                        {project.stage === 'Complete' ? (
-                                            <span className="text-[10px] text-green-600 font-medium">100%</span>
-                                        ) : project.deliveryRate > 0 ? (
-                                            <span className="text-[10px] text-foreground tabular-nums">{project.deliveryRate}%</span>
-                                        ) : (
-                                            <span className="text-[10px] text-muted-foreground">—</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-[11px] text-foreground">{project.customer}</td>
+                                        <td className="px-3 py-2.5">
+                                            <p className="text-[11px] text-foreground">{project.quote}</p>
+                                            <p className="text-[10px] text-muted-foreground">{project.po}</p>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right">
+                                            <span className="text-[11px] font-medium text-foreground tabular-nums">${project.value.toLocaleString()}</span>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <StageBadge stage={project.stage} />
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <ProjectStatusBadge status={project.status} />
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right">
+                                            {project.stage === 'Complete' ? (
+                                                <span className="text-[10px] text-green-600 font-medium">100%</span>
+                                            ) : project.deliveryRate > 0 ? (
+                                                <span className="text-[10px] text-foreground tabular-nums">{project.deliveryRate}%</span>
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground">—</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Apex Project Detail Card — expanded with AI suggestions */}
+                {showDetailCard && (
+                    <ProjectDetailCard isNewProject={isNewProject} />
+                )}
             </div>
 
-            {/* Apex Project Detail Card — expanded with AI suggestions */}
-            {showDetailCard && (
-                <ProjectDetailCard isNewProject={isNewProject} />
-            )}
+            {/* Daily Log — right sidebar within Projects dashboard */}
+            <div className="w-[260px] shrink-0">
+                <DailyLogSidebar stepId={stepId} phase={phase} />
+            </div>
         </div>
     )
 }
@@ -1119,39 +1126,36 @@ const DAILY_LOG_ENTRIES = [
     },
 ]
 
-function DailyLogSidebar({ showNotification, onDismissNotification, stepId }: {
-    showNotification: boolean
-    onDismissNotification: () => void
-    stepId: string
-}) {
+function DailyLogSidebar({ stepId, phase }: { stepId: string; phase: ProjectPhase }) {
     const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
+    const isNewProject = stepId === '1.12'
+    const showNewEntry = isNewProject && phase !== 'idle'
 
-    const typeIcons: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-        change_order: { icon: <ReceiptPercentIcon className="h-3 w-3" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-500/10', label: 'CO' },
-        claim: { icon: <ExclamationTriangleIcon className="h-3 w-3" />, color: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10', label: 'CLM' },
-        delivery: { icon: <Truck className="h-3 w-3" />, color: 'text-blue-500 bg-blue-50 dark:bg-blue-500/10', label: 'DLV' },
-        ack: { icon: <CheckCircleIcon className="h-3 w-3" />, color: 'text-green-500 bg-green-50 dark:bg-green-500/10', label: 'ACK' },
-        po: { icon: <DocumentTextIcon className="h-3 w-3" />, color: 'text-foreground bg-muted/50', label: 'PO' },
-        quote: { icon: <FileText className="h-3 w-3" />, color: 'text-foreground bg-muted/50', label: 'QT' },
-        project_created: { icon: <BuildingOfficeIcon className="h-3 w-3" />, color: 'text-primary bg-primary/10', label: 'NEW' },
+    const typeIcons: Record<string, { icon: React.ReactNode; color: string }> = {
+        change_order: { icon: <ReceiptPercentIcon className="h-3 w-3" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-500/10' },
+        claim: { icon: <ExclamationTriangleIcon className="h-3 w-3" />, color: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10' },
+        delivery: { icon: <Truck className="h-3 w-3" />, color: 'text-blue-500 bg-blue-50 dark:bg-blue-500/10' },
+        ack: { icon: <CheckCircleIcon className="h-3 w-3" />, color: 'text-green-500 bg-green-50 dark:bg-green-500/10' },
+        po: { icon: <DocumentTextIcon className="h-3 w-3" />, color: 'text-foreground bg-muted/50' },
+        quote: { icon: <FileText className="h-3 w-3" />, color: 'text-foreground bg-muted/50' },
+        project_created: { icon: <BuildingOfficeIcon className="h-3 w-3" />, color: 'text-primary bg-primary/10' },
     }
 
-    // For step 1.12, prepend a "Project Created" entry
-    const entries = stepId === '1.12'
-        ? [{
-            id: 'DL-NEW',
-            type: 'project_created' as const,
-            title: 'New Project Created',
-            detail: 'Apex HQ Office Renovation — $43,750 · 200 items · 4 zones',
-            source: 'Auto-created from PO',
-            timestamp: 'Just now',
-            highlight: true,
-        }, ...DAILY_LOG_ENTRIES]
-        : DAILY_LOG_ENTRIES
+    const newEntry = {
+        id: 'DL-NEW',
+        type: 'project_created' as const,
+        title: 'New Project Created',
+        detail: 'Apex HQ Office Renovation — $43,750 · 200 items · 4 zones',
+        source: 'Auto-created from PO',
+        timestamp: 'Just now',
+        highlight: false,
+    }
+
+    const entries = showNewEntry ? [newEntry, ...DAILY_LOG_ENTRIES] : DAILY_LOG_ENTRIES
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Sidebar Header */}
+        <div className="rounded-xl border border-border bg-card flex flex-col h-fit max-h-[calc(100vh-220px)]">
+            {/* Header */}
             <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                     <ClipboardDocumentListIcon className="h-3.5 w-3.5 text-muted-foreground" />
@@ -1161,24 +1165,6 @@ function DailyLogSidebar({ showNotification, onDismissNotification, stepId }: {
                     {entries.length}
                 </span>
             </div>
-
-            {/* Toast notification for step 1.12 */}
-            {showNotification && (
-                <div className="mx-2 mt-2 p-2.5 rounded-lg bg-primary/10 border border-primary/30 animate-in slide-in-from-top-2 fade-in duration-500">
-                    <div className="flex items-start gap-2">
-                        <div className="p-1 rounded-md bg-primary/20 shrink-0">
-                            <BellAlertIcon className="h-3.5 w-3.5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold text-foreground">New Project Auto-Created</p>
-                            <p className="text-[9px] text-muted-foreground mt-0.5">Apex HQ Office Renovation added from PO #ORD-2055. All data synced.</p>
-                        </div>
-                        <button onClick={onDismissNotification} className="text-muted-foreground hover:text-foreground shrink-0">
-                            <span className="text-xs">×</span>
-                        </button>
-                    </div>
-                </div>
-            )}
 
             {/* Log entries */}
             <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
@@ -1191,14 +1177,14 @@ function DailyLogSidebar({ showNotification, onDismissNotification, stepId }: {
                         <div
                             key={entry.id}
                             className={cn(
-                                'rounded-md border p-2 transition-all cursor-pointer hover:shadow-sm',
+                                'rounded-md border p-2 transition-all hover:shadow-sm',
                                 isNew
                                     ? 'border-primary/30 bg-primary/5 animate-in fade-in slide-in-from-top-1 duration-700'
                                     : entry.highlight
-                                        ? 'border-purple-200 dark:border-purple-500/30 bg-purple-50/30 dark:bg-purple-500/5'
+                                        ? 'border-purple-200 dark:border-purple-500/30 bg-purple-50/30 dark:bg-purple-500/5 cursor-pointer'
                                         : 'border-border/50 bg-transparent hover:bg-muted/30'
                             )}
-                            onClick={() => entry.highlight || isNew ? setExpandedEntry(isExpanded ? null : entry.id) : undefined}
+                            onClick={() => (entry.highlight || isNew) ? setExpandedEntry(isExpanded ? null : entry.id) : undefined}
                         >
                             <div className="flex items-start gap-2">
                                 <div className={cn('p-1 rounded shrink-0 mt-0.5', config.color)}>
@@ -1231,7 +1217,7 @@ function DailyLogSidebar({ showNotification, onDismissNotification, stepId }: {
                 })}
             </div>
 
-            {/* Sidebar Footer */}
+            {/* Footer */}
             <div className="px-3 py-2 border-t border-border">
                 <div className="flex items-center gap-1.5">
                     <AIAgentAvatar agentName="LogAgent" size="xs" />
@@ -1448,26 +1434,11 @@ export default function CRMSimulation({ onNavigate }: CRMSimulationProps) {
     // Determine active tab from step
     const defaultTab = STEP_TO_TAB[stepId] || 'projects'
     const [activeTab, setActiveTab] = useState<CRMTab>(defaultTab)
-    const [showDailyLogNotification, setShowDailyLogNotification] = useState(false)
-    const [dailyLogNotificationDismissed, setDailyLogNotificationDismissed] = useState(false)
 
     // Sync tab when step changes
     useMemo(() => {
         const mapped = STEP_TO_TAB[stepId]
         if (mapped) setActiveTab(mapped)
-    }, [stepId])
-
-    // Step 1.12 auto-notification: show new project entry in Daily Log
-    useEffect(() => {
-        if (stepId === '1.12') {
-            setDailyLogNotificationDismissed(false)
-            const timer = setTimeout(() => {
-                setShowDailyLogNotification(true)
-            }, 800)
-            return () => clearTimeout(timer)
-        } else {
-            setShowDailyLogNotification(false)
-        }
     }, [stepId])
 
     // Metrics row
@@ -1525,25 +1496,13 @@ export default function CRMSimulation({ onNavigate }: CRMSimulationProps) {
                 </div>
             </div>
 
-            {/* Content — main area + Daily Log sidebar */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Main tab content */}
-                <div className="flex-1 overflow-y-auto p-6">
-                    {activeTab === 'projects' && <ProjectsView stepId={stepId} />}
-                    {activeTab === 'customer360' && <Customer360View stepId={stepId} />}
-                    {activeTab === 'timeline' && <OrderTimelineView stepId={stepId} />}
-                    {activeTab === 'invoicing' && <InvoicingView />}
-                    {activeTab === 'reports' && <ReportsView stepId={stepId} />}
-                </div>
-
-                {/* Daily Log Sidebar */}
-                <div className="w-[280px] shrink-0 border-l border-border bg-card overflow-y-auto">
-                    <DailyLogSidebar
-                        showNotification={showDailyLogNotification && !dailyLogNotificationDismissed}
-                        onDismissNotification={() => setDailyLogNotificationDismissed(true)}
-                        stepId={stepId}
-                    />
-                </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+                {activeTab === 'projects' && <ProjectsView stepId={stepId} />}
+                {activeTab === 'customer360' && <Customer360View stepId={stepId} />}
+                {activeTab === 'timeline' && <OrderTimelineView stepId={stepId} />}
+                {activeTab === 'invoicing' && <InvoicingView />}
+                {activeTab === 'reports' && <ReportsView stepId={stepId} />}
             </div>
         </div>
     )
