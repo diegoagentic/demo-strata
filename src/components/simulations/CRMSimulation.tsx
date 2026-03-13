@@ -1119,154 +1119,126 @@ const DAILY_LOG_ENTRIES = [
     },
 ]
 
-function DailyLogView() {
+function DailyLogSidebar({ showNotification, onDismissNotification, stepId }: {
+    showNotification: boolean
+    onDismissNotification: () => void
+    stepId: string
+}) {
     const [expandedEntry, setExpandedEntry] = useState<string | null>(null)
 
-    const typeConfig: Record<string, { icon: React.ReactNode; color: string; badge: string }> = {
-        change_order: {
-            icon: <ReceiptPercentIcon className="h-4 w-4" />,
-            color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/20',
-            badge: 'Change Order',
-        },
-        claim: {
-            icon: <ExclamationTriangleIcon className="h-4 w-4" />,
-            color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20',
-            badge: 'Claim Filed',
-        },
-        delivery: {
-            icon: <Truck className="h-4 w-4" />,
-            color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20',
-            badge: 'Delivery Update',
-        },
-        ack: {
-            icon: <CheckCircleIcon className="h-4 w-4" />,
-            color: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20',
-            badge: 'Ack Processed',
-        },
-        po: {
-            icon: <DocumentTextIcon className="h-4 w-4" />,
-            color: 'text-foreground bg-muted/50 border-border',
-            badge: 'PO Generated',
-        },
-        quote: {
-            icon: <FileText className="h-4 w-4" />,
-            color: 'text-foreground bg-muted/50 border-border',
-            badge: 'Quote Approved',
-        },
+    const typeIcons: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+        change_order: { icon: <ReceiptPercentIcon className="h-3 w-3" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-500/10', label: 'CO' },
+        claim: { icon: <ExclamationTriangleIcon className="h-3 w-3" />, color: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10', label: 'CLM' },
+        delivery: { icon: <Truck className="h-3 w-3" />, color: 'text-blue-500 bg-blue-50 dark:bg-blue-500/10', label: 'DLV' },
+        ack: { icon: <CheckCircleIcon className="h-3 w-3" />, color: 'text-green-500 bg-green-50 dark:bg-green-500/10', label: 'ACK' },
+        po: { icon: <DocumentTextIcon className="h-3 w-3" />, color: 'text-foreground bg-muted/50', label: 'PO' },
+        quote: { icon: <FileText className="h-3 w-3" />, color: 'text-foreground bg-muted/50', label: 'QT' },
+        project_created: { icon: <BuildingOfficeIcon className="h-3 w-3" />, color: 'text-primary bg-primary/10', label: 'NEW' },
     }
 
+    // For step 1.12, prepend a "Project Created" entry
+    const entries = stepId === '1.12'
+        ? [{
+            id: 'DL-NEW',
+            type: 'project_created' as const,
+            title: 'New Project Created',
+            detail: 'Apex HQ Office Renovation — $43,750 · 200 items · 4 zones',
+            source: 'Auto-created from PO',
+            timestamp: 'Just now',
+            highlight: true,
+        }, ...DAILY_LOG_ENTRIES]
+        : DAILY_LOG_ENTRIES
+
     return (
-        <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-sm font-semibold text-foreground">Project Daily Log — Apex HQ Office Renovation</h3>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Coordinated log of all project activities — change orders, deliveries, claims & milestones</p>
-                </div>
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/30 border border-border">
+        <div className="flex flex-col h-full">
+            {/* Sidebar Header */}
+            <div className="px-3 py-2.5 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
                     <ClipboardDocumentListIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[10px] text-muted-foreground">{DAILY_LOG_ENTRIES.length} entries</span>
+                    <span className="text-[11px] font-semibold text-foreground">Daily Log</span>
                 </div>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                    {entries.length}
+                </span>
             </div>
 
-            {/* Timeline */}
-            <div className="relative">
-                {/* Vertical line */}
-                <div className="absolute left-[17px] top-2 bottom-2 w-px bg-border" />
+            {/* Toast notification for step 1.12 */}
+            {showNotification && (
+                <div className="mx-2 mt-2 p-2.5 rounded-lg bg-primary/10 border border-primary/30 animate-in slide-in-from-top-2 fade-in duration-500">
+                    <div className="flex items-start gap-2">
+                        <div className="p-1 rounded-md bg-primary/20 shrink-0">
+                            <BellAlertIcon className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold text-foreground">New Project Auto-Created</p>
+                            <p className="text-[9px] text-muted-foreground mt-0.5">Apex HQ Office Renovation added from PO #ORD-2055. All data synced.</p>
+                        </div>
+                        <button onClick={onDismissNotification} className="text-muted-foreground hover:text-foreground shrink-0">
+                            <span className="text-xs">×</span>
+                        </button>
+                    </div>
+                </div>
+            )}
 
-                <div className="space-y-3">
-                    {DAILY_LOG_ENTRIES.map((entry) => {
-                        const config = typeConfig[entry.type]
-                        const isExpanded = expandedEntry === entry.id
+            {/* Log entries */}
+            <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
+                {entries.map((entry) => {
+                    const config = typeIcons[entry.type]
+                    const isExpanded = expandedEntry === entry.id
+                    const isNew = entry.id === 'DL-NEW'
 
-                        return (
-                            <div
-                                key={entry.id}
-                                className={cn(
-                                    'relative pl-10 group',
-                                    entry.highlight && 'ml-0'
-                                )}
-                            >
-                                {/* Timeline dot */}
-                                <div className={cn(
-                                    'absolute left-2 top-3 h-[14px] w-[14px] rounded-full border-2 flex items-center justify-center',
-                                    entry.highlight
-                                        ? 'bg-purple-500 border-purple-300 dark:border-purple-600'
-                                        : 'bg-card border-border'
-                                )}>
-                                    {entry.highlight && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                    return (
+                        <div
+                            key={entry.id}
+                            className={cn(
+                                'rounded-md border p-2 transition-all cursor-pointer hover:shadow-sm',
+                                isNew
+                                    ? 'border-primary/30 bg-primary/5 animate-in fade-in slide-in-from-top-1 duration-700'
+                                    : entry.highlight
+                                        ? 'border-purple-200 dark:border-purple-500/30 bg-purple-50/30 dark:bg-purple-500/5'
+                                        : 'border-border/50 bg-transparent hover:bg-muted/30'
+                            )}
+                            onClick={() => entry.highlight || isNew ? setExpandedEntry(isExpanded ? null : entry.id) : undefined}
+                        >
+                            <div className="flex items-start gap-2">
+                                <div className={cn('p-1 rounded shrink-0 mt-0.5', config.color)}>
+                                    {config.icon}
                                 </div>
-
-                                <div
-                                    className={cn(
-                                        'rounded-lg border p-3 transition-all cursor-pointer hover:shadow-sm',
-                                        entry.highlight
-                                            ? 'border-purple-200 dark:border-purple-500/30 bg-purple-50/50 dark:bg-purple-500/5'
-                                            : 'border-border bg-card'
-                                    )}
-                                    onClick={() => entry.highlight && setExpandedEntry(isExpanded ? null : entry.id)}
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border', config.color)}>
-                                                    {config.icon}
-                                                    {config.badge}
-                                                </span>
-                                                {entry.highlight && (
-                                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 font-medium">
-                                                        Feeds into Invoice
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-xs font-medium text-foreground">{entry.title}</p>
-                                            <p className="text-[10px] text-muted-foreground mt-0.5">{entry.detail}</p>
-                                        </div>
-                                        <div className="text-right shrink-0">
-                                            <p className="text-[10px] text-muted-foreground">{entry.timestamp}</p>
-                                            <p className="text-[9px] text-muted-foreground/70 mt-0.5">{entry.source}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Expanded change order detail */}
-                                    {entry.highlight && isExpanded && entry.expandedDetail && (
-                                        <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-500/20">
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div className="rounded-md bg-white dark:bg-zinc-900 border border-border p-2">
-                                                    <p className="text-[9px] text-muted-foreground font-medium mb-1">ORIGINAL</p>
-                                                    <p className="text-[10px] text-foreground">{entry.expandedDetail.original.rate} × {entry.expandedDetail.original.hours}hrs</p>
-                                                    <p className="text-xs font-semibold text-foreground">{entry.expandedDetail.original.total}</p>
-                                                </div>
-                                                <div className="rounded-md bg-white dark:bg-zinc-900 border border-purple-200 dark:border-purple-500/20 p-2">
-                                                    <p className="text-[9px] text-purple-600 dark:text-purple-400 font-medium mb-1">ADJUSTED</p>
-                                                    <p className="text-[10px] text-foreground">{entry.expandedDetail.adjusted.rate} × {entry.expandedDetail.adjusted.hours}hrs</p>
-                                                    <p className="text-xs font-semibold text-purple-600 dark:text-purple-400">{entry.expandedDetail.adjusted.total}</p>
-                                                </div>
-                                            </div>
-                                            <div className="mt-2 flex items-center gap-3 text-[10px] text-muted-foreground">
-                                                <span>Reason: {entry.expandedDetail.reason}</span>
-                                                <span>•</span>
-                                                <span>Approved by: {entry.expandedDetail.approvedBy}</span>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {entry.highlight && !isExpanded && (
-                                        <p className="text-[9px] text-purple-500 dark:text-purple-400 mt-1.5">Click to expand change order details</p>
-                                    )}
+                                <div className="flex-1 min-w-0">
+                                    <p className={cn('text-[10px] font-medium text-foreground leading-snug', isNew && 'font-bold')}>{entry.title}</p>
+                                    <p className="text-[9px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">{entry.detail}</p>
+                                    <p className="text-[8px] text-muted-foreground/60 mt-1">{entry.timestamp}</p>
                                 </div>
                             </div>
-                        )
-                    })}
-                </div>
+
+                            {/* Expanded change order detail */}
+                            {entry.highlight && isExpanded && entry.expandedDetail && (
+                                <div className="mt-2 pt-2 border-t border-purple-200/50 dark:border-purple-500/20">
+                                    <div className="grid grid-cols-2 gap-1.5">
+                                        <div className="rounded bg-white dark:bg-zinc-900 border border-border p-1.5">
+                                            <p className="text-[8px] text-muted-foreground font-medium">ORIGINAL</p>
+                                            <p className="text-[10px] font-semibold text-foreground">{entry.expandedDetail.original.total}</p>
+                                        </div>
+                                        <div className="rounded bg-white dark:bg-zinc-900 border border-purple-200 dark:border-purple-500/20 p-1.5">
+                                            <p className="text-[8px] text-purple-600 dark:text-purple-400 font-medium">ADJUSTED</p>
+                                            <p className="text-[10px] font-semibold text-purple-600 dark:text-purple-400">{entry.expandedDetail.adjusted.total}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )
+                })}
             </div>
 
-            {/* Footer */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border">
-                <AIAgentAvatar agentName="DailyLogAgent" size="xs" />
-                <p className="text-[10px] text-muted-foreground">
-                    All entries auto-recorded from source systems — change orders feed directly into invoicing
-                </p>
+            {/* Sidebar Footer */}
+            <div className="px-3 py-2 border-t border-border">
+                <div className="flex items-center gap-1.5">
+                    <AIAgentAvatar agentName="LogAgent" size="xs" />
+                    <p className="text-[8px] text-muted-foreground leading-snug">
+                        Auto-recorded from all systems — feeds into invoicing
+                    </p>
+                </div>
             </div>
         </div>
     )
@@ -1448,7 +1420,7 @@ function InvoicingView() {
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════
 
-type CRMTab = 'projects' | 'customer360' | 'timeline' | 'dailylog' | 'invoicing' | 'reports'
+type CRMTab = 'projects' | 'customer360' | 'timeline' | 'invoicing' | 'reports'
 
 const STEP_TO_TAB: Record<string, CRMTab> = {
     '1.12': 'projects',
@@ -1461,7 +1433,6 @@ const TAB_LABELS: { id: CRMTab; label: string }[] = [
     { id: 'projects', label: 'Projects' },
     { id: 'customer360', label: 'Customer 360' },
     { id: 'timeline', label: 'Order Timeline' },
-    { id: 'dailylog', label: 'Daily Log' },
     { id: 'invoicing', label: 'Invoicing' },
     { id: 'reports', label: 'Reports' },
 ]
@@ -1477,11 +1448,26 @@ export default function CRMSimulation({ onNavigate }: CRMSimulationProps) {
     // Determine active tab from step
     const defaultTab = STEP_TO_TAB[stepId] || 'projects'
     const [activeTab, setActiveTab] = useState<CRMTab>(defaultTab)
+    const [showDailyLogNotification, setShowDailyLogNotification] = useState(false)
+    const [dailyLogNotificationDismissed, setDailyLogNotificationDismissed] = useState(false)
 
     // Sync tab when step changes
     useMemo(() => {
         const mapped = STEP_TO_TAB[stepId]
         if (mapped) setActiveTab(mapped)
+    }, [stepId])
+
+    // Step 1.12 auto-notification: show new project entry in Daily Log
+    useEffect(() => {
+        if (stepId === '1.12') {
+            setDailyLogNotificationDismissed(false)
+            const timer = setTimeout(() => {
+                setShowDailyLogNotification(true)
+            }, 800)
+            return () => clearTimeout(timer)
+        } else {
+            setShowDailyLogNotification(false)
+        }
     }, [stepId])
 
     // Metrics row
@@ -1539,14 +1525,25 @@ export default function CRMSimulation({ onNavigate }: CRMSimulationProps) {
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-                {activeTab === 'projects' && <ProjectsView stepId={stepId} />}
-                {activeTab === 'customer360' && <Customer360View stepId={stepId} />}
-                {activeTab === 'timeline' && <OrderTimelineView stepId={stepId} />}
-                {activeTab === 'dailylog' && <DailyLogView />}
-                {activeTab === 'invoicing' && <InvoicingView />}
-                {activeTab === 'reports' && <ReportsView stepId={stepId} />}
+            {/* Content — main area + Daily Log sidebar */}
+            <div className="flex-1 flex overflow-hidden">
+                {/* Main tab content */}
+                <div className="flex-1 overflow-y-auto p-6">
+                    {activeTab === 'projects' && <ProjectsView stepId={stepId} />}
+                    {activeTab === 'customer360' && <Customer360View stepId={stepId} />}
+                    {activeTab === 'timeline' && <OrderTimelineView stepId={stepId} />}
+                    {activeTab === 'invoicing' && <InvoicingView />}
+                    {activeTab === 'reports' && <ReportsView stepId={stepId} />}
+                </div>
+
+                {/* Daily Log Sidebar */}
+                <div className="w-[280px] shrink-0 border-l border-border bg-card overflow-y-auto">
+                    <DailyLogSidebar
+                        showNotification={showDailyLogNotification && !dailyLogNotificationDismissed}
+                        onDismissNotification={() => setDailyLogNotificationDismissed(true)}
+                        stepId={stepId}
+                    />
+                </div>
             </div>
         </div>
     )
