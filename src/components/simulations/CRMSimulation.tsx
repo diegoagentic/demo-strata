@@ -1386,15 +1386,14 @@ function CRMDashboardView({ stepId, onGoToCRM }: { stepId: string; onGoToCRM: ()
     const [showNotification, setShowNotification] = useState(false)
     const isNewProject = stepId === '1.12'
 
-    // Step 1.12: auto-show notification, auto-expand new entry, then auto-navigate to CRM
+    // Step 1.12: auto-show notification and auto-expand new entry (user clicks "View Full Project" to navigate)
     useEffect(() => {
         if (!isNewProject) return
         const timers: ReturnType<typeof setTimeout>[] = []
         timers.push(setTimeout(() => setShowNotification(true), 1200))
         timers.push(setTimeout(() => setExpandedEntry('DL-NEW'), 2500))
-        timers.push(setTimeout(() => onGoToCRM(), 7000))
         return () => timers.forEach(clearTimeout)
-    }, [isNewProject, onGoToCRM])
+    }, [isNewProject])
 
     const typeIcons: Record<string, { icon: React.ReactNode; color: string }> = {
         change_order: { icon: <ReceiptPercentIcon className="h-3.5 w-3.5" />, color: 'text-purple-500 bg-purple-50 dark:bg-purple-500/10' },

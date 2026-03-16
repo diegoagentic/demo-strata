@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// COI Interiors — Demo Profile
+// COI — Demo Profile
 // Tailored to COI stakeholder priorities: Acknowledgement processing,
 // quote ingestion, shipment visibility, customer communication, reporting.
 // Reuses existing simulation apps with COI-specific narrative.
@@ -346,7 +346,7 @@ export const COI_DEMO_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     '3.5': { mode: 'interactive', userAction: 'AI-generated punch list report on mobile. Review photos, timeline, status. Leave comments, then acknowledge' },
 
     // CRM steps (integrated at end of each flow)
-    '1.12': { mode: 'auto', duration: 12, aiSummary: 'ProjectCreationAgent: auto-creating CRM project from approved quote — mapping customer, products, delivery zones' },
+    '1.12': { mode: 'interactive', userAction: 'Review CRM Dashboard: notification + daily log entry auto-appear. Click "View Full Project" to see full project record with zero manual entry' },
     '1.13': { mode: 'interactive', userAction: 'Review Customer 360: Apex Furniture profile with $1.2M lifetime value, 5 projects, cross-system data aggregated' },
     '2.8': { mode: 'auto', duration: 10, aiSummary: 'OrderSyncAgent: syncing acknowledgment data to CRM project timeline — delivery dates adjusted, status updated' },
     '3.6': { mode: 'interactive', userAction: 'Review complete project traceability: email → extraction → quote → PO → ack → service claim. Zero data re-entered' },

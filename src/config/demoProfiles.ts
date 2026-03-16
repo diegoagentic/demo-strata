@@ -55,7 +55,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
     {
         id: 'coi',
         name: 'COI',
-        companyName: 'COI Interiors',
+        companyName: 'COI',
         description: 'Contract office interiors',
         icon: '🏗️',
         steps: COI_DEMO_STEPS,
