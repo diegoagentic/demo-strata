@@ -46,7 +46,7 @@ export default function NotificationItem({ notification, onActionClick }: { noti
     const priorityColors = {
         high: 'text-red-500 bg-red-500/10 border-red-500/20',
         medium: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
-        low: 'text-primary bg-primary/10 border-primary/20',
+        low: 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600',
     };
 
     const [actionState, setActionState] = useState<Record<number, string>>({});
@@ -80,7 +80,7 @@ export default function NotificationItem({ notification, onActionClick }: { noti
                             </span>
                         )}
                         {notification.priority === 'low' && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
                                 Low
                             </span>
                         )}
@@ -108,7 +108,7 @@ export default function NotificationItem({ notification, onActionClick }: { noti
                         className={clsx(
                             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm",
                             action.primary
-                                ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                                ? "bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 shadow-sm"
                                 : "bg-muted text-zinc-900 dark:text-gray-200 hover:bg-accent",
                             actionState[i] === 'Sent!' && "!bg-green-500 !text-white"
                         )}
