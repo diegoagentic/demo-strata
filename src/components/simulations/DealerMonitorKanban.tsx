@@ -150,7 +150,7 @@ export default function DealerMonitorKanban(_props: { onNavigate?: (page: string
                                 <MoreHorizontal size={16} className="text-zinc-400 dark:text-zinc-500 cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors" />
                             </div>
 
-                            <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-micro bg-gray-100/50 dark:bg-zinc-900/50 rounded-2xl p-3 border border-gray-200/50 dark:border-zinc-800/50">
+                            <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-micro bg-gray-100/50 dark:bg-zinc-800/50 rounded-2xl p-3 border border-gray-200/50 dark:border-zinc-800/50">
                                 {displayCards.filter(card => card.column === column.id).map(card => {
                                     // Determine data-demo-target for spotlight
                                     const demoTarget =
@@ -288,7 +288,7 @@ export default function DealerMonitorKanban(_props: { onNavigate?: (page: string
                                                             <Sparkles size={12} />
                                                             <span className="text-[10px] font-medium uppercase tracking-wider">AI Insight</span>
                                                         </div>
-                                                        <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400 italic bg-gray-50 dark:bg-zinc-900 p-3 rounded-xl border border-gray-200/50 dark:border-zinc-700/50">
+                                                        <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400 italic bg-gray-50 dark:bg-zinc-800 p-3 rounded-xl border border-gray-200/50 dark:border-zinc-700/50">
                                                             "{card.aiInsight}"
                                                         </p>
                                                         <button className="w-full flex items-center justify-center gap-2 text-xs font-medium text-primary hover:underline group/btn">

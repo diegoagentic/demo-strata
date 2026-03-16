@@ -162,7 +162,7 @@ export default function EmailSimulation() {
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 bg-white dark:bg-zinc-900 mr-4 mb-4 rounded-3xl overflow-hidden flex flex-col shadow-sm border border-zinc-200 dark:border-zinc-800/50 transition-all">
+            <main className="flex-1 bg-white dark:bg-zinc-800 mr-4 mb-4 rounded-3xl overflow-hidden flex flex-col shadow-sm border border-zinc-200 dark:border-zinc-800/50 transition-all">
                 {selectedEmail === null ? (
                     <>
                         {/* Toolbar */}
@@ -217,7 +217,7 @@ export default function EmailSimulation() {
                                     onClick={() => setSelectedEmail(email.id)}
                                     className={cn(
                                         "flex items-center gap-4 px-4 py-2 border-b border-zinc-50 dark:border-zinc-800/30 cursor-pointer group hover:shadow-inner transition-all relative z-10",
-                                        email.unread ? "bg-[#F2F6FC] dark:bg-brand-500/5 font-bold shadow-sm" : "bg-white dark:bg-zinc-900/40"
+                                        email.unread ? "bg-[#F2F6FC] dark:bg-brand-500/5 font-bold shadow-sm" : "bg-white dark:bg-zinc-800/40"
                                     )}
                                 >
                                     <div className="flex items-center gap-3 shrink-0">
@@ -255,7 +255,7 @@ export default function EmailSimulation() {
                     </>
                 ) : (
                     /* Individual Email View */
-                    <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-8 duration-500 bg-white dark:bg-zinc-900">
+                    <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-8 duration-500 bg-white dark:bg-zinc-800">
                         {/* Toolbar */}
                         <div className="h-12 flex items-center px-4 gap-4 border-b border-zinc-100 dark:border-zinc-800/30 shrink-0">
                             <button onClick={() => setSelectedEmail(null)} className="p-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors active:bg-zinc-200">
@@ -359,7 +359,7 @@ export default function EmailSimulation() {
                                                 <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800" />
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-                                                <div className="inline-flex items-center gap-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
+                                                <div className="inline-flex items-center gap-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 p-4 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
                                                     <div className="p-3 bg-red-50 dark:bg-red-500/10 rounded-xl text-red-600 group-hover:scale-105 transition-transform">
                                                         <DocumentIcon className="w-8 h-8" />
                                                     </div>
@@ -369,7 +369,7 @@ export default function EmailSimulation() {
                                                     </div>
                                                     <ArrowDownTrayIcon className="w-5 h-5 text-zinc-400 group-hover:text-brand-600 group-hover:translate-y-0.5 transition-all" />
                                                 </div>
-                                                <div className="inline-flex items-center gap-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
+                                                <div className="inline-flex items-center gap-4 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 p-4 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
                                                     <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl text-green-600 group-hover:scale-105 transition-transform">
                                                         <DocumentIcon className="w-8 h-8" />
                                                     </div>
@@ -386,7 +386,7 @@ export default function EmailSimulation() {
 
                                 {currentEmail?.id === 2 && (
                                     <div className="space-y-6">
-                                        <div className="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
+                                        <div className="p-6 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
                                             <div className="flex items-center justify-between mb-4 border-b border-zinc-100 dark:border-zinc-800 pb-4">
                                                 <h3 className="font-bold text-lg text-zinc-900 dark:text-white">Daily Recap: Expert Hub</h3>
                                                 <span className="bg-brand-100 text-brand-700 text-xs px-2 py-1 rounded font-bold">12 Pending Actions</span>
@@ -409,7 +409,7 @@ export default function EmailSimulation() {
 
                                 {currentEmail?.id === 3 && (
                                     <div className="space-y-6">
-                                        <div className="p-0 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+                                        <div className="p-0 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-800 shadow-sm">
                                             <div className="bg-[#0568AE] text-white p-4">
                                                 <div className="flex justify-between items-center">
                                                     <h3 className="font-bold text-lg">ServiceNow Assignment</h3>
@@ -432,7 +432,7 @@ export default function EmailSimulation() {
 
                                 {currentEmail?.id === 4 && (
                                     <div className="space-y-6">
-                                        <div className="p-6 border-l-4 border-[#FF4D00] bg-white dark:bg-zinc-900 border border-y-zinc-200 border-r-zinc-200 dark:border-y-zinc-800 dark:border-r-zinc-800 rounded-r-xl shadow-sm">
+                                        <div className="p-6 border-l-4 border-[#FF4D00] bg-white dark:bg-zinc-800 border border-y-zinc-200 border-r-zinc-200 dark:border-y-zinc-800 dark:border-r-zinc-800 rounded-r-xl shadow-sm">
                                             <h3 className="font-bold text-xl text-zinc-900 dark:text-white mb-2">Herman Miller: Q2 Catalog Update</h3>
                                             <div className="space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
                                                 <p>Hello Strata Market Partners,</p>

@@ -1530,12 +1530,12 @@ function CRMDashboardView({ stepId, onGoToCRM }: { stepId: string; onGoToCRM: ()
                                 {entry.highlight && isExpanded && entry.expandedDetail && (
                                     <div className="mt-2 pt-2 ml-10 border-t border-purple-200/50 dark:border-purple-500/20">
                                         <div className="grid grid-cols-4 gap-3">
-                                            <div className="rounded-md bg-white dark:bg-zinc-900 border border-border p-2">
+                                            <div className="rounded-md bg-white dark:bg-zinc-800 border border-border p-2">
                                                 <p className="text-[9px] text-muted-foreground font-medium mb-0.5">ORIGINAL</p>
                                                 <p className="text-[10px] text-foreground">{entry.expandedDetail.original.rate} × {entry.expandedDetail.original.hours}hrs</p>
                                                 <p className="text-xs font-semibold text-foreground">{entry.expandedDetail.original.total}</p>
                                             </div>
-                                            <div className="rounded-md bg-white dark:bg-zinc-900 border border-purple-200 dark:border-purple-500/20 p-2">
+                                            <div className="rounded-md bg-white dark:bg-zinc-800 border border-purple-200 dark:border-purple-500/20 p-2">
                                                 <p className="text-[9px] text-purple-600 dark:text-purple-400 font-medium mb-0.5">ADJUSTED</p>
                                                 <p className="text-[10px] text-foreground">{entry.expandedDetail.adjusted.rate} × {entry.expandedDetail.adjusted.hours}hrs</p>
                                                 <p className="text-xs font-semibold text-purple-600 dark:text-purple-400">{entry.expandedDetail.adjusted.total}</p>
@@ -1558,22 +1558,22 @@ function CRMDashboardView({ stepId, onGoToCRM }: { stepId: string; onGoToCRM: ()
                                             <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold">PRJ-001</span>
                                         </div>
                                         <div className="grid grid-cols-4 gap-3">
-                                            <div className="rounded-md bg-white dark:bg-zinc-900 border border-border p-2">
+                                            <div className="rounded-md bg-white dark:bg-zinc-800 border border-border p-2">
                                                 <p className="text-[9px] text-muted-foreground font-medium mb-0.5">CUSTOMER</p>
                                                 <p className="text-[10px] font-semibold text-foreground">Apex Furniture</p>
                                                 <p className="text-[9px] text-muted-foreground">Jennifer Martinez, VP Ops</p>
                                             </div>
-                                            <div className="rounded-md bg-white dark:bg-zinc-900 border border-border p-2">
+                                            <div className="rounded-md bg-white dark:bg-zinc-800 border border-border p-2">
                                                 <p className="text-[9px] text-muted-foreground font-medium mb-0.5">VALUE</p>
                                                 <p className="text-sm font-bold text-foreground">$43,750</p>
                                                 <p className="text-[9px] text-muted-foreground">35.4% margin</p>
                                             </div>
-                                            <div className="rounded-md bg-white dark:bg-zinc-900 border border-border p-2">
+                                            <div className="rounded-md bg-white dark:bg-zinc-800 border border-border p-2">
                                                 <p className="text-[9px] text-muted-foreground font-medium mb-0.5">SCOPE</p>
                                                 <p className="text-[10px] font-semibold text-foreground">200 line items</p>
                                                 <p className="text-[9px] text-muted-foreground">4 delivery zones · 5 suppliers</p>
                                             </div>
-                                            <div className="rounded-md bg-white dark:bg-zinc-900 border border-border p-2">
+                                            <div className="rounded-md bg-white dark:bg-zinc-800 border border-border p-2">
                                                 <p className="text-[9px] text-muted-foreground font-medium mb-0.5">REFERENCES</p>
                                                 <p className="text-[10px] text-foreground">QT-1025 · ORD-2055</p>
                                                 <p className="text-[9px] text-muted-foreground">Stage: Procurement</p>
@@ -1645,7 +1645,7 @@ function CRMDashboardView({ stepId, onGoToCRM }: { stepId: string; onGoToCRM: ()
                         Data Entry: Before vs. After Strata
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-border opacity-60">
+                        <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-border opacity-60">
                             <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Before</p>
                             <p className="text-sm font-bold text-foreground line-through">200 items × 5 systems</p>
                             <p className="text-2xl font-black text-red-500 mt-1 line-through">1,000</p>

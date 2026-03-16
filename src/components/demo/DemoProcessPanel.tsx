@@ -449,7 +449,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         {/* PDF ↔ SIF Side-by-Side */}
                         <div className="grid grid-cols-2 gap-3">
                             {/* Left: PDF Mockup */}
-                            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden">
+                            <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 overflow-hidden">
                                 <div className="px-3 py-1.5 bg-gray-100 dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 flex items-center gap-2">
                                     <FileText size={12} className="text-red-500" />
                                     <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">Apex_RFQ_2025.pdf</span>
@@ -498,7 +498,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         </div>
 
                         {/* Extracted Data Table */}
-                        <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900">
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800">
                             <div className="flex items-center gap-2 mb-3">
                                 <FileText className="text-zinc-500 dark:text-zinc-400" size={14} />
                                 <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Extracted Data</span>
@@ -536,7 +536,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                         </div>
 
                         {/* Automation Flow Diagram */}
-                        <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900">
+                        <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800">
                             <div className="flex items-center gap-2 mb-3">
                                 <Sparkles className="text-indigo-600 dark:text-indigo-400 animate-pulse" size={14} />
                                 <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Automation Flow</span>

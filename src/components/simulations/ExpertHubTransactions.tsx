@@ -2806,7 +2806,7 @@ IEA*1*000002055~`}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="flex-1 bg-zinc-100/50 dark:bg-zinc-900/50 rounded-2xl p-3 border-2 border-dashed border-zinc-200 dark:border-zinc-800 space-y-3">
+                                        <div className="flex-1 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-2xl p-3 border-2 border-dashed border-zinc-200 dark:border-zinc-800 space-y-3">
                                             {/* New animated card */}
                                             {showNewCard && (
                                                 <div className={cn(
@@ -3061,7 +3061,7 @@ IEA*1*000002055~`}
                                         </button>
                                     </div>
 
-                                    <div className="flex-1 bg-zinc-100/50 dark:bg-zinc-900/50 rounded-2xl p-3 border-2 border-dashed border-zinc-200 dark:border-zinc-800 hover:border-brand-500/30 transition-colors space-y-3">
+                                    <div className="flex-1 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-2xl p-3 border-2 border-dashed border-zinc-200 dark:border-zinc-800 hover:border-brand-500/30 transition-colors space-y-3">
                                         {stageData.map((item) => (
                                             <div
                                                 key={item.id}
