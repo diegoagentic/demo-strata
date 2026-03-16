@@ -2056,7 +2056,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                                             )}
                                             {/* Existing Acknowledgement cards in their columns */}
                                             {recentAcknowledgments.filter(a => a.status === stage).map(ack => (
-                                                <div key={ack.id} className="p-2.5 rounded-lg border border-border bg-card">
+                                                <div key={ack.id} className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-sm">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className={cn('w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center', ack.statusColor)}>{ack.initials}</span>
                                                         <span className="text-[10px] font-bold text-foreground">{ack.id}</span>
@@ -2092,9 +2092,9 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             {/* HAT Comparison Card */}
                             <div className={cn(
                                 'p-4 rounded-2xl border shadow-sm transition-all duration-500',
-                                normPhase22 === 'idle' ? 'border-border bg-card opacity-50' :
+                                normPhase22 === 'idle' ? 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 opacity-50' :
                                 ['hat-confirmed', 'norm-ais', 'comparing-ais', 'ais-flagged'].includes(normPhase22) ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-500/5' :
-                                'border-blue-300 dark:border-blue-700 bg-card'
+                                'border-blue-300 dark:border-blue-700 bg-white dark:bg-zinc-800'
                             )}>
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="w-7 h-7 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center">HC</span>
@@ -2165,9 +2165,9 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                             {/* AIS Comparison Card */}
                             <div className={cn(
                                 'p-4 rounded-2xl border shadow-sm transition-all duration-500',
-                                ['idle', 'norm-hat', 'comparing-hat', 'hat-ai-rule', 'hat-confirmed'].includes(normPhase22) ? 'border-border bg-card opacity-50' :
+                                ['idle', 'norm-hat', 'comparing-hat', 'hat-ai-rule', 'hat-confirmed'].includes(normPhase22) ? 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 opacity-50' :
                                 normPhase22 === 'ais-flagged' ? 'border-red-300 dark:border-red-700 bg-red-50/30 dark:bg-red-500/5' :
-                                'border-purple-300 dark:border-purple-700 bg-card'
+                                'border-purple-300 dark:border-purple-700 bg-white dark:bg-zinc-800'
                             )}>
                                 <div className="flex items-center gap-2 mb-3">
                                     <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center">AI</span>
@@ -2224,7 +2224,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
                         {/* EDI Original Document Viewer Modal */}
                         {showEDIViewer && (
                             <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowEDIViewer(false)}>
-                                <div className="bg-card border border-border rounded-2xl shadow-2xl w-[640px] max-h-[80vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
+                                <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl w-[640px] max-h-[80vh] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300" onClick={e => e.stopPropagation()}>
                                     <div className="flex items-center justify-between px-5 py-3 border-b border-border">
                                         <div className="flex items-center gap-2">
                                             <div className="p-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/30">
@@ -2304,11 +2304,11 @@ IEA*1*000002055~`}
                                         {['grommet-fixed', 'dates-found', 'dates-fixed', 'qty-found', 'complete'].includes(deltaPhase23) && <ConfidenceScoreBadge score={97} label="Fix" size="sm" />}
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 text-[10px] ml-11">
-                                        <div className="p-2 rounded-lg bg-card border border-border">
+                                        <div className="p-2 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
                                             <span className="text-muted-foreground block">PO Spec:</span>
                                             <span className="font-bold text-foreground">Calibrate Grommet Choice: No Grommet</span>
                                         </div>
-                                        <div className="p-2 rounded-lg bg-card border border-red-200 dark:border-red-800">
+                                        <div className="p-2 rounded-lg bg-white dark:bg-zinc-800 border border-red-200 dark:border-red-800">
                                             <span className="text-muted-foreground block">Acknowledgement Value:</span>
                                             <span className="font-bold text-red-600 dark:text-red-400 line-through">Grommet Option C - Left Rear Corner #2</span>
                                         </div>
@@ -2341,11 +2341,11 @@ IEA*1*000002055~`}
                                         )}
                                     </div>
                                     <div className="ml-11 space-y-1.5 text-[10px]">
-                                        <div className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/50">
+                                        <div className="flex items-center justify-between px-3 py-1.5 rounded bg-zinc-50 dark:bg-zinc-700/40">
                                             <span>Line 12: X-W3060 CB Wardrobe</span>
                                             <span className="font-bold text-amber-600 dark:text-amber-400">+14 days</span>
                                         </div>
-                                        <div className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/50">
+                                        <div className="flex items-center justify-between px-3 py-1.5 rounded bg-zinc-50 dark:bg-zinc-700/40">
                                             <span>Line 34: X-BK4818 CB Bookcase</span>
                                             <span className="font-bold text-amber-600 dark:text-amber-400">+11 days</span>
                                         </div>
@@ -2372,7 +2372,7 @@ IEA*1*000002055~`}
                                             { line: 34, sku: 'X-BK4818', ordered: 5, acked: 5 },
                                             { line: 47, sku: 'X-QUADALDR', ordered: 4, acked: 2 },
                                         ].filter(l => l.ordered !== l.acked).map(l => (
-                                            <div key={l.line} className="flex items-center justify-between px-3 py-1.5 rounded bg-muted/50">
+                                            <div key={l.line} className="flex items-center justify-between px-3 py-1.5 rounded bg-zinc-50 dark:bg-zinc-700/40">
                                                 <span>Line {l.line}: {l.sku}</span>
                                                 <span><span className="text-muted-foreground">Ordered: {l.ordered}</span> → <span className="font-bold text-amber-600 dark:text-amber-400">Acknowledged: {l.acked}</span></span>
                                             </div>
@@ -2738,7 +2738,7 @@ IEA*1*000002055~`}
                                             )}
                                             {/* Existing Acknowledgement cards */}
                                             {recentAcknowledgments.filter(a => a.status === stage).map(ack => (
-                                                <div key={ack.id} className="p-2.5 rounded-lg border border-border bg-card">
+                                                <div key={ack.id} className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-sm">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className={cn('w-5 h-5 rounded-full text-[8px] font-bold flex items-center justify-center', ack.statusColor)}>{ack.initials}</span>
                                                         <span className="text-[10px] font-bold text-foreground">{ack.id}</span>
@@ -2753,7 +2753,7 @@ IEA*1*000002055~`}
                         </div>
 
                         {/* Send Notifications Button */}
-                        <div className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border shadow-sm">
+                        <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm">
                             <div className="flex items-center gap-2">
                                 <AIAgentAvatar />
                                 <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">NotificationAgent ready — persona-aware digests for both Acknowledgements</span>
