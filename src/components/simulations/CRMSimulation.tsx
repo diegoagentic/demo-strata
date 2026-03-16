@@ -264,7 +264,7 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                             {tab.icon}
                             {tab.label}
                             {tab.key === 'insights' && (
-                                <span className="px-1 py-0.5 rounded-full bg-brand-500 text-zinc-900 text-[8px] font-bold leading-none">{PROJECT_DETAIL_SECTIONS.aiSuggestions.length}</span>
+                                <span className="px-1 py-0.5 rounded-full bg-brand-300 dark:bg-brand-400 text-zinc-900 text-[8px] font-bold leading-none">{PROJECT_DETAIL_SECTIONS.aiSuggestions.length}</span>
                             )}
                         </button>
                     ))}
@@ -341,7 +341,7 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                             {isNewProject && (
                                 <button
                                     onClick={nextStep}
-                                    className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-500 text-zinc-900 text-[11px] font-bold hover:bg-brand-400 shadow-lg shadow-brand-500/25 transition-all hover:scale-[1.02]"
+                                    className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]"
                                 >
                                     <UserGroupIcon className="h-3.5 w-3.5" />
                                     Review Customer Profile
@@ -356,7 +356,7 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                     <div className="space-y-3 animate-in fade-in duration-200">
                         <div className="flex items-center justify-between">
                             <p className="text-[10px] text-muted-foreground">4 delivery zones · 200 total items · Estimated completion: Apr 25</p>
-                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-primary-foreground bg-primary hover:bg-brand-400 transition-colors">
+                            <button className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium text-zinc-900 bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 transition-colors">
                                 <CalendarDaysIcon className="h-3 w-3" />
                                 Schedule All
                             </button>
@@ -365,7 +365,7 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                             {PROJECT_DETAIL_SECTIONS.deliveryZones.map((z, i) => (
                                 <div key={i} className="px-3 py-2.5 rounded-lg border border-border bg-muted/20 hover:bg-muted/40 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-[10px] font-bold text-foreground shrink-0">{String.fromCharCode(65 + i)}</div>
+                                        <div className="h-7 w-7 rounded-lg bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-700 dark:text-zinc-300 shrink-0">{String.fromCharCode(65 + i)}</div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[11px] font-medium text-foreground">{z.zone}</p>
                                             <p className="text-[9px] text-muted-foreground">{z.items} items · {z.value}</p>
@@ -390,7 +390,7 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                                         <span>Top items: {['Workstations', 'Exec Chairs', 'Lounge Sofas', 'Conf. Tables'][i]}</span>
                                         <span>·</span>
                                         <span>Supplier: {['Herman Miller', 'Steelcase', 'Haworth', 'Knoll'][i]}</span>
-                                        <span className="ml-auto text-[9px] text-primary font-medium cursor-pointer hover:underline">View items →</span>
+                                        <span className="ml-auto text-[9px] text-indigo-600 dark:text-indigo-400 font-medium cursor-pointer hover:underline">View items →</span>
                                     </div>
                                 </div>
                             ))}
@@ -688,7 +688,7 @@ function Customer360View({ stepId }: { stepId: string }) {
                         </div>
                         <div className="ml-auto flex items-center gap-1.5">
                             {c.tags.map(tag => (
-                                <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-foreground font-medium">{tag}</span>
+                                <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium">{tag}</span>
                             ))}
                         </div>
                     </div>
