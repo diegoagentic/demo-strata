@@ -789,8 +789,10 @@ function Customer360View({ stepId }: { stepId: string }) {
 // ═══════════════════════════════════════════════════
 
 function OrderTimelineView({ stepId }: { stepId: string }) {
+    type SyncPhase = 'hidden' | 'syncing' | 'synced';
     const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
-    const [visibleItems, setVisibleItems] = useState<number[]>([]);
+    const [syncPhases, setSyncPhases] = useState<[SyncPhase, SyncPhase]>(['hidden', 'hidden']);
+    const [visibleOthers, setVisibleOthers] = useState<boolean[]>([]);
     const isStep28 = stepId === '2.8';
 
     // Build display order: newly synced items first when step 2.8
@@ -798,19 +800,45 @@ function OrderTimelineView({ stepId }: { stepId: string }) {
         ? [...PROJECT_TIMELINE.filter(e => e.newlySynced), ...PROJECT_TIMELINE.filter(e => !e.newlySynced)]
         : PROJECT_TIMELINE;
 
-    // Staggered entrance animation on step 2.8 load
+    // 3-phase sync animation: hidden → syncing (amber/spinner) → synced (sky-blue)
     useEffect(() => {
-        if (!isStep28) { setVisibleItems([]); return; }
-        setVisibleItems([]);
-        const timeouts: ReturnType<typeof setTimeout>[] = [];
-        // Synced items: dramatic entrance first (300ms, 700ms)
-        // Rest: cascade in from 1200ms with 100ms gap each
-        displayTimeline.forEach((_, i) => {
-            const delay = i < 2 ? i * 400 + 300 : (i - 2) * 100 + 1100;
-            timeouts.push(setTimeout(() => setVisibleItems(prev => [...prev, i]), delay));
-        });
-        return () => timeouts.forEach(clearTimeout);
+        if (!isStep28) {
+            setSyncPhases(['hidden', 'hidden']);
+            setVisibleOthers([]);
+            return;
+        }
+        const otherCount = displayTimeline.filter(e => !e.newlySynced).length;
+        setSyncPhases(['hidden', 'hidden']);
+        setVisibleOthers(new Array(otherCount).fill(false));
+        const t: ReturnType<typeof setTimeout>[] = [];
+        // AIS: syncing at 300ms, synced at 1800ms
+        t.push(setTimeout(() => setSyncPhases(p => ['syncing', p[1]]), 300));
+        t.push(setTimeout(() => setSyncPhases(p => ['synced', p[1]]), 1800));
+        // HAT: syncing at 800ms, synced at 2300ms
+        t.push(setTimeout(() => setSyncPhases(p => [p[0], 'syncing']), 800));
+        t.push(setTimeout(() => setSyncPhases(p => [p[0], 'synced']), 2300));
+        // Other items cascade from 2600ms
+        for (let i = 0; i < otherCount; i++) {
+            const idx = i;
+            t.push(setTimeout(() => setVisibleOthers(prev => prev.map((v, j) => j === idx ? true : v)), 2600 + idx * 100));
+        }
+        return () => t.forEach(clearTimeout);
     }, [isStep28]);
+
+    // Pre-compute per-item animation state
+    let nsCount = 0;
+    let otCount = 0;
+    const itemStates = displayTimeline.map((event) => {
+        if (event.newlySynced && isStep28) {
+            const phase = syncPhases[nsCount < 2 ? nsCount : 1];
+            nsCount++;
+            return { isNew: true as const, phase };
+        } else {
+            const visible = !isStep28 || (visibleOthers[otCount] ?? false);
+            otCount++;
+            return { isNew: false as const, visible };
+        }
+    });
 
     const timelineIcons: Record<string, React.ReactNode> = {
         email: <Mail size={14} className="text-blue-500" />,
@@ -825,7 +853,7 @@ function OrderTimelineView({ stepId }: { stepId: string }) {
         <div className="space-y-4">
             {/* AI Agent Banner */}
             {stepId === '2.8' && (
-                <div className="bg-card border border-primary/20 rounded-xl p-4 flex items-center gap-4">
+                <div className="bg-white dark:bg-zinc-800 border border-primary/20 rounded-xl p-4 flex items-center gap-4">
                     <AIAgentAvatar size="sm" />
                     <div className="flex-1">
                         <div className="flex items-center gap-2 text-xs">
@@ -840,7 +868,7 @@ function OrderTimelineView({ stepId }: { stepId: string }) {
             )}
 
             {/* Project Header */}
-            <div className="bg-card border border-border rounded-xl p-4">
+            <div className="bg-white dark:bg-zinc-800 border border-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
@@ -887,79 +915,92 @@ function OrderTimelineView({ stepId }: { stepId: string }) {
             </div>
 
             {/* Full Timeline */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="bg-white dark:bg-zinc-800 border border-border rounded-xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-border">
                     <h3 className="text-xs font-medium text-foreground">Complete Order Lifecycle</h3>
                     <p className="text-[10px] text-muted-foreground">Every event auto-recorded from source system — zero manual entry</p>
                 </div>
                 <div className="divide-y divide-border">
                     {displayTimeline.map((event, idx) => {
-                        const isNewlySynced = isStep28 && event.newlySynced;
+                        const meta = itemStates[idx];
+                        const isNS = meta.isNew;
+                        const phase: SyncPhase = isNS ? meta.phase : 'synced';
+                        const isVisible = isNS ? meta.phase !== 'hidden' : meta.visible;
                         const isExpanded = expandedIdx === idx;
-                        const isVisible = !isStep28 || visibleItems.includes(idx);
                         return (
                         <div
                             key={event.step + event.event}
-                            className={cn(
-                                'transition-all duration-500',
-                                isNewlySynced
-                                    ? isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-6'
-                                    : isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-                            )}
+                            className={cn('transition-opacity duration-500', isVisible ? 'opacity-100' : 'opacity-0')}
                         >
                             <div
-                                onClick={() => event.expandedDetail && setExpandedIdx(isExpanded ? null : idx)}
+                                onClick={() => isNS && phase === 'synced' && event.expandedDetail ? setExpandedIdx(isExpanded ? null : idx) : undefined}
                                 className={cn(
-                                    'flex items-start gap-3 px-4 py-3 transition-colors',
-                                    event.expandedDetail && 'cursor-pointer',
-                                    isNewlySynced && isExpanded && 'bg-sky-50/60 dark:bg-sky-500/10',
-                                    isNewlySynced && !isExpanded && 'bg-sky-50/40 dark:bg-sky-500/5 hover:bg-sky-50/70 dark:hover:bg-sky-500/10',
-                                    !isNewlySynced && event.status === 'active' && 'bg-amber-50/30 dark:bg-amber-900/10',
-                                    !isNewlySynced && event.status !== 'active' && 'bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/60',
+                                    'flex items-start gap-3 px-4 py-3 transition-colors duration-700',
+                                    isNS && phase === 'synced' && event.expandedDetail && 'cursor-pointer',
+                                    isNS && phase === 'syncing' && 'bg-amber-50/60 dark:bg-amber-500/10',
+                                    isNS && phase === 'synced' && isExpanded && 'bg-sky-50/60 dark:bg-sky-500/10',
+                                    isNS && phase === 'synced' && !isExpanded && 'bg-sky-50/40 dark:bg-sky-500/5 hover:bg-sky-50/70 dark:hover:bg-sky-500/10',
+                                    !isNS && event.status === 'active' && 'bg-amber-50/30 dark:bg-amber-900/10',
+                                    !isNS && event.status !== 'active' && 'bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/60',
                                 )}
                             >
                                 <div className="relative">
                                     <div className={cn(
-                                        'h-7 w-7 rounded-full flex items-center justify-center shrink-0 transition-all',
-                                        isNewlySynced && 'ring-2 ring-sky-400 dark:ring-sky-500 ring-offset-1 dark:ring-offset-zinc-800',
-                                        event.status === 'complete' && 'bg-green-100 dark:bg-green-900/30',
-                                        event.status === 'active' && 'bg-amber-100 dark:bg-amber-900/30',
-                                        event.status === 'pending' && 'bg-muted',
+                                        'h-7 w-7 rounded-full flex items-center justify-center shrink-0 transition-all duration-700',
+                                        isNS && phase === 'syncing' && 'ring-2 ring-amber-400 ring-offset-1 dark:ring-offset-zinc-800 bg-amber-100 dark:bg-amber-900/30',
+                                        isNS && phase === 'synced' && 'ring-2 ring-sky-400 dark:ring-sky-500 ring-offset-1 dark:ring-offset-zinc-800 bg-green-100 dark:bg-green-900/30',
+                                        !isNS && event.status === 'complete' && 'bg-green-100 dark:bg-green-900/30',
+                                        !isNS && event.status === 'active' && 'bg-amber-100 dark:bg-amber-900/30',
+                                        !isNS && event.status === 'pending' && 'bg-muted',
                                     )}>
-                                        {timelineIcons[event.icon]}
+                                        {isNS && phase === 'syncing'
+                                            ? <ArrowPathIcon className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                                            : timelineIcons[event.icon]
+                                        }
                                     </div>
-                                    {idx < PROJECT_TIMELINE.length - 1 && (
+                                    {idx < displayTimeline.length - 1 && (
                                         <div className="absolute top-7 left-1/2 -translate-x-1/2 w-px h-[calc(100%+4px)] bg-border" />
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0 pb-1">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className={cn('text-[11px] font-medium', isNewlySynced ? 'text-sky-700 dark:text-sky-300' : 'text-foreground')}>{event.event}</span>
-                                        {isNewlySynced && (
+                                        <span className={cn('text-[11px] font-medium transition-colors duration-700',
+                                            isNS && phase === 'syncing' ? 'text-amber-700 dark:text-amber-300' :
+                                            isNS && phase === 'synced' ? 'text-sky-700 dark:text-sky-300' :
+                                            'text-foreground'
+                                        )}>{event.event}</span>
+                                        {isNS && phase === 'syncing' && (
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold flex items-center gap-1">
+                                                <ArrowPathIcon className="w-2.5 h-2.5 animate-spin" /> Syncing...
+                                            </span>
+                                        )}
+                                        {isNS && phase === 'synced' && (
                                             <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-bold flex items-center gap-1 animate-in fade-in duration-500">
                                                 <SparklesIcon className="w-2.5 h-2.5" /> Just synced
                                             </span>
                                         )}
-                                        {event.status === 'active' && !isNewlySynced && (
+                                        {!isNS && event.status === 'active' && (
                                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 font-medium">Active</span>
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground mt-0.5">{event.detail}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        {isNS && phase === 'syncing' ? 'OrderSyncAgent processing...' : event.detail}
+                                    </p>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                     <div className="text-right">
                                         <span className="text-[10px] text-muted-foreground">Step {event.step}</span>
                                         <p className="text-[10px] text-muted-foreground">{event.system}</p>
                                     </div>
-                                    {event.expandedDetail && (
+                                    {isNS && phase === 'synced' && event.expandedDetail && (
                                         <span className={cn('text-muted-foreground transition-transform duration-200', isExpanded && 'rotate-180')}>
                                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                         </span>
                                     )}
                                 </div>
                             </div>
-                            {/* Expanded detail panel */}
-                            {isExpanded && event.expandedDetail && (
+                            {/* Expanded detail panel — only in synced phase */}
+                            {isExpanded && isNS && phase === 'synced' && event.expandedDetail && (
                                 <div className="px-4 pb-3 bg-sky-50/60 dark:bg-sky-500/10 border-t border-sky-100 dark:border-sky-500/20 animate-in fade-in slide-in-from-top-1 duration-200">
                                     <div className="ml-10 grid grid-cols-2 gap-x-6 gap-y-1.5 pt-2">
                                         {event.expandedDetail.map((d, di) => (
