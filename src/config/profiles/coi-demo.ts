@@ -265,7 +265,7 @@ export const COI_DEMO_STEPS: DemoStep[] = [
         groupId: 3,
         groupTitle: 'Flow 3: Service, Warranty & Reporting',
         title: 'Labor Quote Requested',
-        description: 'Labor quote requested from certified installer. Strata tracks the request and triggers AI validation when quote arrives. Presenter narration — no automated actions at this step.',
+        description: 'Labor quote requested from certified installer. Strata tracks the request and triggers AI validation when quote arrives.',
         app: 'mac',
         role: 'Expert',
         highlightId: 'punch-labor-requested'
