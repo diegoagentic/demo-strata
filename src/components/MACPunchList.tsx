@@ -673,7 +673,7 @@ export default function MACPunchList() {
                                     <div className="flex justify-end pt-4">
                                         <button
                                             onClick={() => nextStep()}
-                                            className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
+                                            className="px-5 py-2.5 bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-xs font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
                                         >
                                             <CheckCircleIcon className="w-4 h-4" />
                                             Validate & Continue
