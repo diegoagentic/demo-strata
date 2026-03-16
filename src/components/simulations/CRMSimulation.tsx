@@ -1536,7 +1536,7 @@ function CRMDashboardView({ stepId, onGoToCRM }: { stepId: string; onGoToCRM: ()
         ack: { icon: <CheckCircleIcon className="h-3.5 w-3.5" />, color: 'text-green-500 bg-green-50 dark:bg-green-500/10' },
         po: { icon: <DocumentTextIcon className="h-3.5 w-3.5" />, color: 'text-foreground bg-muted/50' },
         quote: { icon: <FileText className="h-3.5 w-3.5" />, color: 'text-foreground bg-muted/50' },
-        project_created: { icon: <BuildingOfficeIcon className="h-3.5 w-3.5" />, color: 'text-primary bg-primary/10' },
+        project_created: { icon: <BuildingOfficeIcon className="h-3.5 w-3.5" />, color: 'text-zinc-900 bg-brand-400 dark:text-zinc-900 dark:bg-brand-400' },
     }
 
     const newEntry = {
@@ -1644,7 +1644,7 @@ function CRMDashboardView({ stepId, onGoToCRM }: { stepId: string; onGoToCRM: ()
                                                 </span>
                                             )}
                                             {isNew && (
-                                                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-bold">
+                                                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-brand-300 dark:bg-brand-400 text-zinc-900 font-bold">
                                                     New
                                                 </span>
                                             )}
@@ -1688,9 +1688,9 @@ function CRMDashboardView({ stepId, onGoToCRM }: { stepId: string; onGoToCRM: ()
                                 {isNew && isExpanded && (
                                     <div className="mt-3 pt-3 ml-10 border-t border-primary/20 animate-in fade-in slide-in-from-top-2 duration-500">
                                         <div className="flex items-center gap-2 mb-2.5">
-                                            <BuildingOfficeIcon className="h-4 w-4 text-primary" />
+                                            <BuildingOfficeIcon className="h-4 w-4 text-zinc-600 dark:text-zinc-300" />
                                             <p className="text-xs font-bold text-foreground">Apex HQ Office Renovation</p>
-                                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold">PRJ-001</span>
+                                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-brand-300 dark:bg-brand-400 text-zinc-900 font-bold">PRJ-001</span>
                                         </div>
                                         <div className="grid grid-cols-4 gap-3">
                                             <div className="rounded-md bg-white dark:bg-zinc-800 border border-border p-2">
@@ -1717,7 +1717,7 @@ function CRMDashboardView({ stepId, onGoToCRM }: { stepId: string; onGoToCRM: ()
                                         <div className="mt-2.5 flex items-center gap-3">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); onGoToCRM() }}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-[10px] font-bold hover:bg-primary/90 transition-colors"
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[10px] font-bold transition-colors"
                                             >
                                                 View Full Project <ArrowRightIcon className="h-3 w-3" />
                                             </button>
