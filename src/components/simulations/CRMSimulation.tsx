@@ -102,6 +102,8 @@ interface TimelineEvent {
     status: 'complete' | 'active' | 'pending';
     detail?: string;
     icon: 'email' | 'ai' | 'quote' | 'po' | 'ack' | 'service';
+    newlySynced?: boolean;
+    expandedDetail?: { label: string; value: string }[];
 }
 
 const PROJECT_TIMELINE: TimelineEvent[] = [
@@ -112,8 +114,22 @@ const PROJECT_TIMELINE: TimelineEvent[] = [
     { event: 'Expert Review — 8 items validated', step: '1.5', system: 'Expert Hub', status: 'complete', detail: 'Freight $2,450 Austin TX corrected', icon: 'ai' },
     { event: 'Quote Approved — $43,750', step: '1.7', system: 'Dealer Exp.', status: 'complete', detail: '35.4% margin, 3-level chain', icon: 'quote' },
     { event: 'PO #ORD-2055 Generated', step: '1.9', system: 'Dealer Exp.', status: 'complete', detail: '5 SKUs mapped, transmitted to supplier', icon: 'po' },
-    { event: 'AIS Ack — 3 exceptions resolved', step: '2.4', system: 'Expert Hub', status: 'complete', detail: '50 lines, $65K, +14d delivery adj.', icon: 'ack' },
-    { event: 'HAT Ack — Confirmed', step: '2.6', system: 'Expert Hub', status: 'complete', detail: '5 lines, $8K, on schedule', icon: 'ack' },
+    { event: 'AIS Ack — 3 exceptions resolved', step: '2.4', system: 'Expert Hub', status: 'complete', detail: '50 lines, $65K, +14d delivery adj.', icon: 'ack', newlySynced: true, expandedDetail: [
+        { label: 'Vendor', value: 'AIS (Adaptive Interior Solutions)' },
+        { label: 'Lines processed', value: '50 lines · $65,000' },
+        { label: 'Grommet fix', value: 'Line 41 auto-corrected — No Grommet spec' },
+        { label: 'Date shifts', value: 'Lines 12 & 34 accepted (+14d / +11d)' },
+        { label: 'Qty shortfall', value: 'Backorder BO-1064B created for 6 units' },
+        { label: 'Synced by', value: 'OrderSyncAgent · Just now' },
+    ]},
+    { event: 'HAT Ack — Confirmed', step: '2.6', system: 'Expert Hub', status: 'complete', detail: '5 lines, $8K, on schedule', icon: 'ack', newlySynced: true, expandedDetail: [
+        { label: 'Vendor', value: 'HAT (Haworth)' },
+        { label: 'Lines processed', value: '5 lines · $8,000' },
+        { label: 'AI Vendor Rule', value: 'Part number match sufficient per client directive' },
+        { label: 'Color/desc variations', value: 'Accepted — no discrepancies' },
+        { label: 'Delivery schedule', value: 'On schedule, no date shifts' },
+        { label: 'Synced by', value: 'OrderSyncAgent · Just now' },
+    ]},
     { event: 'Warranty Claim — SKU mismatch', step: '3.4', system: 'Service Ctr.', status: 'active', detail: 'CC-AZ-2024 vs 2025, carrier review', icon: 'service' },
 ]
 
@@ -773,6 +789,9 @@ function Customer360View({ stepId }: { stepId: string }) {
 // ═══════════════════════════════════════════════════
 
 function OrderTimelineView({ stepId }: { stepId: string }) {
+    const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+    const isStep28 = stepId === '2.8';
+
     const timelineIcons: Record<string, React.ReactNode> = {
         email: <Mail size={14} className="text-blue-500" />,
         ai: <Bot size={14} className="text-purple-500" />,
@@ -854,39 +873,78 @@ function OrderTimelineView({ stepId }: { stepId: string }) {
                     <p className="text-[10px] text-muted-foreground">Every event auto-recorded from source system — zero manual entry</p>
                 </div>
                 <div className="divide-y divide-border">
-                    {PROJECT_TIMELINE.map((event, idx) => (
-                        <div key={idx} className={cn(
-                            'flex items-start gap-3 px-4 py-3 transition-colors',
-                            event.status === 'active' ? 'bg-amber-50/30 dark:bg-amber-900/10' : 'bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/60'
-                        )}>
-                            <div className="relative">
-                                <div className={cn(
-                                    'h-7 w-7 rounded-full flex items-center justify-center shrink-0',
-                                    event.status === 'complete' && 'bg-green-100 dark:bg-green-900/30',
-                                    event.status === 'active' && 'bg-amber-100 dark:bg-amber-900/30',
-                                    event.status === 'pending' && 'bg-muted',
-                                )}>
-                                    {timelineIcons[event.icon]}
-                                </div>
-                                {idx < PROJECT_TIMELINE.length - 1 && (
-                                    <div className="absolute top-7 left-1/2 -translate-x-1/2 w-px h-[calc(100%+4px)] bg-border" />
+                    {PROJECT_TIMELINE.map((event, idx) => {
+                        const isNewlySynced = isStep28 && event.newlySynced;
+                        const isExpanded = expandedIdx === idx;
+                        return (
+                        <div key={idx}>
+                            <div
+                                onClick={() => event.expandedDetail && setExpandedIdx(isExpanded ? null : idx)}
+                                className={cn(
+                                    'flex items-start gap-3 px-4 py-3 transition-colors',
+                                    event.expandedDetail && 'cursor-pointer',
+                                    isNewlySynced && isExpanded && 'bg-sky-50/60 dark:bg-sky-500/10',
+                                    isNewlySynced && !isExpanded && 'bg-sky-50/40 dark:bg-sky-500/5 hover:bg-sky-50/70 dark:hover:bg-sky-500/10',
+                                    !isNewlySynced && event.status === 'active' && 'bg-amber-50/30 dark:bg-amber-900/10',
+                                    !isNewlySynced && event.status !== 'active' && 'bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/60',
                                 )}
-                            </div>
-                            <div className="flex-1 min-w-0 pb-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[11px] font-medium text-foreground">{event.event}</span>
-                                    {event.status === 'active' && (
-                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 font-medium">Active</span>
+                            >
+                                <div className="relative">
+                                    <div className={cn(
+                                        'h-7 w-7 rounded-full flex items-center justify-center shrink-0 transition-all',
+                                        isNewlySynced && 'ring-2 ring-sky-400 dark:ring-sky-500 ring-offset-1 dark:ring-offset-zinc-800',
+                                        event.status === 'complete' && 'bg-green-100 dark:bg-green-900/30',
+                                        event.status === 'active' && 'bg-amber-100 dark:bg-amber-900/30',
+                                        event.status === 'pending' && 'bg-muted',
+                                    )}>
+                                        {timelineIcons[event.icon]}
+                                    </div>
+                                    {idx < PROJECT_TIMELINE.length - 1 && (
+                                        <div className="absolute top-7 left-1/2 -translate-x-1/2 w-px h-[calc(100%+4px)] bg-border" />
                                     )}
                                 </div>
-                                {event.detail && <p className="text-[10px] text-muted-foreground mt-0.5">{event.detail}</p>}
+                                <div className="flex-1 min-w-0 pb-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className={cn('text-[11px] font-medium', isNewlySynced ? 'text-sky-700 dark:text-sky-300' : 'text-foreground')}>{event.event}</span>
+                                        {isNewlySynced && (
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 font-bold flex items-center gap-1 animate-in fade-in duration-500">
+                                                <SparklesIcon className="w-2.5 h-2.5" /> Just synced
+                                            </span>
+                                        )}
+                                        {event.status === 'active' && !isNewlySynced && (
+                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 font-medium">Active</span>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">{event.detail}</p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <div className="text-right">
+                                        <span className="text-[10px] text-muted-foreground">Step {event.step}</span>
+                                        <p className="text-[10px] text-muted-foreground">{event.system}</p>
+                                    </div>
+                                    {event.expandedDetail && (
+                                        <span className={cn('text-muted-foreground transition-transform duration-200', isExpanded && 'rotate-180')}>
+                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <div className="text-right shrink-0">
-                                <span className="text-[10px] text-muted-foreground">Step {event.step}</span>
-                                <p className="text-[10px] text-muted-foreground">{event.system}</p>
-                            </div>
+                            {/* Expanded detail panel */}
+                            {isExpanded && event.expandedDetail && (
+                                <div className="px-4 pb-3 bg-sky-50/60 dark:bg-sky-500/10 border-t border-sky-100 dark:border-sky-500/20 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="ml-10 grid grid-cols-2 gap-x-6 gap-y-1.5 pt-2">
+                                        {event.expandedDetail.map((d, di) => (
+                                            <div key={di} className="flex flex-col">
+                                                <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{d.label}</span>
+                                                <span className="text-[11px] text-foreground font-medium">{d.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>
