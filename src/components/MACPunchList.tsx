@@ -472,8 +472,15 @@ export default function MACPunchList() {
                                                                 {/* QR Scanning Animation */}
                                                                 {qrScanning && (
                                                                     <div className="mt-3 animate-in fade-in duration-300">
-                                                                        <div className="relative w-full max-w-[280px] aspect-square rounded-lg overflow-hidden border-2 border-indigo-300 dark:border-indigo-500/40 bg-zinc-100 dark:bg-zinc-800">
-                                                                            <img src="https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=300&h=300&fit=crop" alt="Furniture label with QR code" className="w-full h-full object-cover" />
+                                                                        <div className="relative w-full max-w-[280px] aspect-square rounded-lg overflow-hidden border-2 border-indigo-300 dark:border-indigo-500/40 bg-white dark:bg-zinc-800 flex items-center justify-center">
+                                                                            <div className="flex flex-col items-center gap-2 p-4 w-full h-full">
+                                                                                <p className="text-[9px] font-bold text-zinc-500 tracking-widest uppercase">STRATA · ORDER VERIFICATION</p>
+                                                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=STRATA-ORD-2055-ACK7841-CC-AZ-2024&margin=8&color=1a1a2e&bgcolor=FFFFFF" alt="QR code for order verification" className="w-[180px] h-[180px]" />
+                                                                                <div className="text-center">
+                                                                                    <p className="text-[9px] font-mono text-zinc-600 dark:text-zinc-400">ORD-2055 · Line 3</p>
+                                                                                    <p className="text-[8px] text-zinc-400">2x Conf. Room Chairs — Azure</p>
+                                                                                </div>
+                                                                            </div>
                                                                             {/* Scanning overlay */}
                                                                             <div className="absolute inset-0 bg-indigo-500/10">
                                                                                 <div className="absolute left-0 right-0 h-0.5 bg-indigo-500 animate-[scan_2s_ease-in-out_infinite]" style={{ animation: 'scan 2s ease-in-out infinite' }} />
