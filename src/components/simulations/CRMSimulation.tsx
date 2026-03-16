@@ -829,7 +829,7 @@ function OrderTimelineView({ stepId }: { stepId: string }) {
                             'p-3 rounded-lg border',
                             s.color === 'green' && 'border-green-200 bg-green-50/30 dark:border-green-800/30 dark:bg-green-900/10',
                             s.color === 'amber' && 'border-amber-200 bg-amber-50/30 dark:border-amber-800/30 dark:bg-amber-900/10',
-                            s.color === 'zinc' && 'border-border bg-muted/20',
+                            s.color === 'zinc' && 'border-border bg-white dark:bg-zinc-800',
                         )}>
                             <div className="flex items-center justify-between mb-1">
                                 <span className="text-[10px] font-medium text-foreground">{s.supplier}</span>
@@ -856,8 +856,8 @@ function OrderTimelineView({ stepId }: { stepId: string }) {
                 <div className="divide-y divide-border">
                     {PROJECT_TIMELINE.map((event, idx) => (
                         <div key={idx} className={cn(
-                            'flex items-start gap-3 px-4 py-3 hover:bg-muted/20 transition-colors',
-                            event.status === 'active' && 'bg-amber-50/30 dark:bg-amber-900/5'
+                            'flex items-start gap-3 px-4 py-3 transition-colors',
+                            event.status === 'active' ? 'bg-amber-50/30 dark:bg-amber-900/10' : 'bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/60'
                         )}>
                             <div className="relative">
                                 <div className={cn(
