@@ -1031,7 +1031,7 @@ function ReportsView({ stepId }: { stepId: string }) {
         <div className="space-y-4">
             {/* AI Agent Banner */}
             {stepId === '3.6' && (
-                <div className="bg-card border border-primary/20 rounded-xl p-4 flex items-center gap-4">
+                <div className="bg-white dark:bg-zinc-800 border border-primary/20 rounded-xl p-4 flex items-center gap-4">
                     <AIAgentAvatar size="sm" />
                     <div className="flex-1">
                         <div className="flex items-center gap-2 text-xs">
@@ -1058,7 +1058,7 @@ function ReportsView({ stepId }: { stepId: string }) {
                         className={cn(
                             'px-3 py-1.5 text-[11px] font-medium rounded-md transition-all',
                             reportTab === tab.id
-                                ? 'bg-card text-foreground shadow-sm border border-border'
+                                ? 'bg-white dark:bg-zinc-800 text-foreground shadow-sm border border-border'
                                 : 'text-muted-foreground hover:text-foreground'
                         )}
                     >
@@ -1070,7 +1070,7 @@ function ReportsView({ stepId }: { stepId: string }) {
             {/* === Backlog Tab === */}
             {reportTab === 'backlog' && (
                 <div className="space-y-4 animate-in fade-in duration-300">
-                    <div className="bg-card border border-border rounded-xl p-4">
+                    <div className="bg-white dark:bg-zinc-800 border border-border rounded-xl p-4">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xs font-medium text-foreground">Pending Orders by Supplier</h3>
@@ -1128,7 +1128,7 @@ function ReportsView({ stepId }: { stepId: string }) {
             {/* === Bookings Tab === */}
             {reportTab === 'bookings' && (
                 <div className="space-y-4 animate-in fade-in duration-300">
-                    <div className="bg-card border border-border rounded-xl p-4">
+                    <div className="bg-white dark:bg-zinc-800 border border-border rounded-xl p-4">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <h3 className="text-xs font-medium text-foreground">Weekly Bookings vs. Target</h3>
@@ -1188,7 +1188,7 @@ function ReportsView({ stepId }: { stepId: string }) {
             {/* === Project Health Tab (default) === */}
             {reportTab === 'health' && <>
             {/* Project Health Card */}
-            <div className="bg-card border border-border rounded-xl p-4">
+            <div className="bg-white dark:bg-zinc-800 border border-border rounded-xl p-4">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
@@ -1253,7 +1253,7 @@ function ReportsView({ stepId }: { stepId: string }) {
                             <div key={item.step} className="flex items-center gap-1">
                                 <div className={cn(
                                     'px-2 py-1 rounded text-[10px] border',
-                                    item.step === '3.6' ? 'border-primary/30 bg-primary/10 font-medium text-foreground' : 'border-border bg-card text-muted-foreground'
+                                    item.step === '3.6' ? 'border-primary/30 bg-primary/10 font-medium text-foreground' : 'border-border bg-white dark:bg-zinc-800 text-muted-foreground'
                                 )}>
                                     <span className="mr-1">{item.icon}</span>{item.label}
                                     <span className="ml-1 text-[9px] opacity-60">{item.step}</span>
@@ -1268,7 +1268,7 @@ function ReportsView({ stepId }: { stepId: string }) {
 
             {/* AI Impact KPIs — Spec Errors + Manual Entries */}
             <div className="grid grid-cols-2 gap-4">
-                <div className="bg-card border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                <div className="bg-white dark:bg-zinc-800 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
                         <div className="h-7 w-7 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                             <svg className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
@@ -1292,7 +1292,7 @@ function ReportsView({ stepId }: { stepId: string }) {
                     </div>
                 </div>
 
-                <div className="bg-card border border-green-200 dark:border-green-800 rounded-xl p-4">
+                <div className="bg-white dark:bg-zinc-800 border border-green-200 dark:border-green-800 rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-2">
                         <div className="h-7 w-7 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                             <svg className="h-3.5 w-3.5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -1319,7 +1319,7 @@ function ReportsView({ stepId }: { stepId: string }) {
             {/* Charts */}
             <div className="grid grid-cols-2 gap-4">
                 {/* Portfolio by Stage */}
-                <div className="bg-card border border-border rounded-xl p-4">
+                <div className="bg-white dark:bg-zinc-800 border border-border rounded-xl p-4">
                     <h3 className="text-xs font-medium text-foreground mb-3">Portfolio Value by Stage</h3>
                     <div className="h-[180px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -1334,7 +1334,7 @@ function ReportsView({ stepId }: { stepId: string }) {
                 </div>
 
                 {/* Cross-Platform Sync Status */}
-                <div className="bg-card border border-border rounded-xl p-4">
+                <div className="bg-white dark:bg-zinc-800 border border-border rounded-xl p-4">
                     <h3 className="text-xs font-medium text-foreground mb-3">Cross-Platform Sync Status</h3>
                     <div className="space-y-2.5">
                         {[
@@ -1366,7 +1366,7 @@ function ReportsView({ stepId }: { stepId: string }) {
             </div>
 
             {/* Report Consistency Guarantee */}
-            <details className="bg-card border border-border rounded-xl overflow-hidden group">
+            <details className="bg-white dark:bg-zinc-800 border border-border rounded-xl overflow-hidden group">
                 <summary className="px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-muted/30 transition-colors list-none">
                     <div className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
