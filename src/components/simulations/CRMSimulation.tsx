@@ -790,7 +790,27 @@ function Customer360View({ stepId }: { stepId: string }) {
 
 function OrderTimelineView({ stepId }: { stepId: string }) {
     const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+    const [visibleItems, setVisibleItems] = useState<number[]>([]);
     const isStep28 = stepId === '2.8';
+
+    // Build display order: newly synced items first when step 2.8
+    const displayTimeline = isStep28
+        ? [...PROJECT_TIMELINE.filter(e => e.newlySynced), ...PROJECT_TIMELINE.filter(e => !e.newlySynced)]
+        : PROJECT_TIMELINE;
+
+    // Staggered entrance animation on step 2.8 load
+    useEffect(() => {
+        if (!isStep28) { setVisibleItems([]); return; }
+        setVisibleItems([]);
+        const timeouts: ReturnType<typeof setTimeout>[] = [];
+        // Synced items: dramatic entrance first (300ms, 700ms)
+        // Rest: cascade in from 1200ms with 100ms gap each
+        displayTimeline.forEach((_, i) => {
+            const delay = i < 2 ? i * 400 + 300 : (i - 2) * 100 + 1100;
+            timeouts.push(setTimeout(() => setVisibleItems(prev => [...prev, i]), delay));
+        });
+        return () => timeouts.forEach(clearTimeout);
+    }, [isStep28]);
 
     const timelineIcons: Record<string, React.ReactNode> = {
         email: <Mail size={14} className="text-blue-500" />,
@@ -873,11 +893,20 @@ function OrderTimelineView({ stepId }: { stepId: string }) {
                     <p className="text-[10px] text-muted-foreground">Every event auto-recorded from source system — zero manual entry</p>
                 </div>
                 <div className="divide-y divide-border">
-                    {PROJECT_TIMELINE.map((event, idx) => {
+                    {displayTimeline.map((event, idx) => {
                         const isNewlySynced = isStep28 && event.newlySynced;
                         const isExpanded = expandedIdx === idx;
+                        const isVisible = !isStep28 || visibleItems.includes(idx);
                         return (
-                        <div key={idx}>
+                        <div
+                            key={event.step + event.event}
+                            className={cn(
+                                'transition-all duration-500',
+                                isNewlySynced
+                                    ? isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-6'
+                                    : isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                            )}
+                        >
                             <div
                                 onClick={() => event.expandedDetail && setExpandedIdx(isExpanded ? null : idx)}
                                 className={cn(
