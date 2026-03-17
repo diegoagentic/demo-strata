@@ -676,7 +676,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     }, [])
 
     return (
-        <div className={`min-h-screen font-sans text-foreground ${['1.8', '3.5'].includes(currentStep.id) ? 'bg-zinc-950' : 'bg-background pb-10'}`}>
+        <div className={`font-sans text-foreground ${['1.8', '3.5'].includes(currentStep.id) ? 'min-h-[200vh] bg-zinc-950 -mt-16 pt-16' : 'min-h-screen bg-background pb-10'}`}>
             {!['1.8', '3.5'].includes(currentStep.id) && <GenUIContainer />}
 
             {/* ===== Step 1.8: Sales Approval — Mobile device inline ===== */}
