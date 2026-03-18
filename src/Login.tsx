@@ -415,22 +415,22 @@ export default function Login() {
             {/* MFA Modal */}
             {showMfa && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-md mx-4 rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="w-full max-w-md mx-4 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="px-8 pt-8 pb-4 text-center">
                             {mfaPhase !== 'welcome' && (
                                 <div className="mx-auto w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-4">
                                     {mfaPhase === 'success' ? (
-                                        <ShieldCheckIcon className="w-7 h-7 text-green-400" />
+                                        <ShieldCheckIcon className="w-7 h-7 text-green-500 dark:text-green-400" />
                                     ) : (
                                         <DevicePhoneMobileIcon className="w-7 h-7 text-primary" />
                                     )}
                                 </div>
                             )}
-                            <h3 className="text-xl font-bold text-white">
+                            <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
                                 {mfaPhase === 'welcome' ? 'Welcome!' : mfaPhase === 'success' ? 'Verification Complete' : 'Multi-Factor Authentication'}
                             </h3>
-                            <p className="text-sm text-zinc-400 mt-1">
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                                 {mfaPhase === 'welcome' && ''}
                                 {mfaPhase === 'phone' && 'Verify your identity with a one-time code sent to your phone.'}
                                 {mfaPhase === 'sending' && 'Sending verification code...'}
@@ -445,8 +445,8 @@ export default function Login() {
                             {/* Welcome phase */}
                             {mfaPhase === 'welcome' && (
                                 <div className="space-y-6 mt-2">
-                                    <p className="text-sm text-zinc-300 leading-relaxed">
-                                        To enhance the security of your account, we require an extra layer of protection. This additional step ensures that only you can access your account. Thank you for helping us keep your information safe and secure! Let us help you setting up your <span className="font-semibold text-white">Multi-Factor Authentication (MFA)</span>.
+                                    <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                                        To enhance the security of your account, we require an extra layer of protection. This additional step ensures that only you can access your account. Thank you for helping us keep your information safe and secure! Let us help you setting up your <span className="font-semibold text-zinc-900 dark:text-white">Multi-Factor Authentication (MFA)</span>.
                                     </p>
                                     <button
                                         onClick={() => setMfaPhase('phone')}
@@ -456,7 +456,7 @@ export default function Login() {
                                     </button>
                                     <button
                                         onClick={handleMfaSkip}
-                                        className="w-full text-sm text-zinc-400 hover:text-white underline underline-offset-2 transition-colors"
+                                        className="w-full text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white underline underline-offset-2 transition-colors"
                                     >
                                         Skip MFA for now
                                     </button>
@@ -467,12 +467,12 @@ export default function Login() {
                             {mfaPhase === 'phone' && (
                                 <div className="space-y-5 mt-2">
                                     <div>
-                                        <label className="text-zinc-300 text-sm font-medium mb-1.5 block">Mobile Phone Number</label>
+                                        <label className="text-zinc-700 dark:text-zinc-300 text-sm font-medium mb-1.5 block">Mobile Phone Number</label>
                                         <input
                                             type="text"
                                             value={MFA_PHONE}
                                             readOnly
-                                            className="w-full bg-white/10 border border-white/20 text-white rounded-lg h-12 px-4 outline-none cursor-default"
+                                            className="w-full bg-zinc-50 dark:bg-white/10 border border-zinc-200 dark:border-white/20 text-zinc-900 dark:text-white rounded-lg h-12 px-4 outline-none cursor-default"
                                         />
                                         <p className="text-xs text-zinc-500 mt-1.5">A verification code will be sent via SMS to this number.</p>
                                     </div>
@@ -492,19 +492,19 @@ export default function Login() {
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
-                                    <p className="text-zinc-300 text-sm">Sending SMS to {MFA_PHONE}...</p>
+                                    <p className="text-zinc-600 dark:text-zinc-300 text-sm">Sending SMS to {MFA_PHONE}...</p>
                                 </div>
                             )}
 
                             {/* Code phase */}
                             {mfaPhase === 'code' && (
                                 <div className="space-y-5 mt-2">
-                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                                        <CheckCircleIcon className="w-5 h-5 text-green-400 shrink-0" />
-                                        <p className="text-sm text-green-300">Code sent to {MFA_PHONE}</p>
+                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
+                                        <CheckCircleIcon className="w-5 h-5 text-green-500 dark:text-green-400 shrink-0" />
+                                        <p className="text-sm text-green-700 dark:text-green-300">Code sent to {MFA_PHONE}</p>
                                     </div>
                                     <div>
-                                        <label className="text-zinc-300 text-sm font-medium mb-2 block">Verification Code</label>
+                                        <label className="text-zinc-700 dark:text-zinc-300 text-sm font-medium mb-2 block">Verification Code</label>
                                         <div className="flex gap-2 justify-center">
                                             {MFA_CODE.map((digit, i) => (
                                                 <input
@@ -512,7 +512,7 @@ export default function Login() {
                                                     type="text"
                                                     value={digit}
                                                     readOnly
-                                                    className="w-12 h-14 text-center text-xl font-bold bg-white/10 border border-white/20 text-white rounded-lg outline-none cursor-default"
+                                                    className="w-12 h-14 text-center text-xl font-bold bg-zinc-50 dark:bg-white/10 border border-zinc-200 dark:border-white/20 text-zinc-900 dark:text-white rounded-lg outline-none cursor-default"
                                                 />
                                             ))}
                                         </div>
@@ -533,17 +533,17 @@ export default function Login() {
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
-                                    <p className="text-zinc-300 text-sm">Verifying code...</p>
+                                    <p className="text-zinc-600 dark:text-zinc-300 text-sm">Verifying code...</p>
                                 </div>
                             )}
 
                             {/* Success phase */}
                             {mfaPhase === 'success' && (
                                 <div className="flex flex-col items-center py-4 gap-3">
-                                    <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-                                        <CheckCircleIcon className="w-8 h-8 text-green-400" />
+                                    <div className="w-16 h-16 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center">
+                                        <CheckCircleIcon className="w-8 h-8 text-green-500 dark:text-green-400" />
                                     </div>
-                                    <p className="text-green-300 text-sm font-medium">Authentication successful. Redirecting...</p>
+                                    <p className="text-green-700 dark:text-green-300 text-sm font-medium">Authentication successful. Redirecting...</p>
                                 </div>
                             )}
                         </div>
