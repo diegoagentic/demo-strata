@@ -150,7 +150,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             timers.push(setTimeout(pauseAware(() => nextStep()), D + 27000));
 
         } else if (currentStep.id === '1.3' && isContinua) {
-            // Continua 1.3: Price Verification Engine — UAL HQ Floor 7 context (10s auto)
+            // Continua 1.3: Price Verification Engine — UAL HQ Floor 7 context (interactive, waits for button)
             timers.push(setTimeout(pauseAware(() => {
                 setAgentLogs(['PriceVerificationEngine: UAL HQ — Scanning 200+ manufacturer price lists...']);
                 setPipelineAgents([
@@ -162,11 +162,11 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             }), D));
 
             const continuaPriceTimeline = [
-                { delay: D + 2500, log: 'PriceScanner: UAL HQ project — scanning Q1 updates across Herman Miller, Steelcase, DIRTT...' },
-                { delay: D + 5000, log: 'PriceScanner: 14 items with outdated cost basis detected (avg +3.2% increase).' },
-                { delay: D + 7000, log: 'MarginAnalyzer: UAL Floor 7 spec — recalculating margins. Average 34% → 6 items below 25% threshold.' },
-                { delay: D + 9000, log: 'ExceptionFlagger: 3 consignment items from Herman Miller — 90-day review pending.' },
-                { delay: D + 10500, log: 'PriceUpdater: Suggested price updates generated — $110K savings identified. Report sent to expert.' },
+                { delay: D + 3500, log: 'PriceScanner: UAL HQ project — scanning Q1 updates across Herman Miller, Steelcase, DIRTT...' },
+                { delay: D + 7000, log: 'PriceScanner: 14 items with outdated cost basis detected (avg +3.2% increase).' },
+                { delay: D + 10000, log: 'MarginAnalyzer: UAL Floor 7 spec — recalculating margins. Average 34% → 6 items below 25% threshold.' },
+                { delay: D + 13000, log: 'ExceptionFlagger: 3 consignment items from Herman Miller — 90-day review pending.' },
+                { delay: D + 15500, log: 'PriceUpdater: Suggested price updates generated — $110K savings identified. Report sent to expert.' },
             ];
 
             continuaPriceTimeline.forEach(({ delay, log }, index) => {
@@ -206,7 +206,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                 }), delay));
             });
 
-            timers.push(setTimeout(pauseAware(() => nextStep()), D + 12000));
+            // No auto-advance — waits for "Continue to Quote Draft" button click
 
         } else if (currentStep.id === '1.3' && !isOps) {
             timers.push(setTimeout(pauseAware(() => {
