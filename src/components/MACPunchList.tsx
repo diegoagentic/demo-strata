@@ -449,11 +449,7 @@ export default function MACPunchList() {
         return () => clearTimeout(t);
     }, [fmTriagePhase]);
 
-    useEffect(() => {
-        if (fmTriagePhase !== 'results') return;
-        const t = setTimeout(pauseAware(() => nextStep()), tpF2.resultsDur);
-        return () => clearTimeout(t);
-    }, [fmTriagePhase]);
+    // 2.2: results — wait for manual "Approve Plan" click (no auto-advance)
 
     // ─── FM Step F.5: Resolution & Installer Report state ────────────────────
     const [fmResPhase, setFmResPhase] = useState<FMResolutionPhase>('idle')
@@ -2126,17 +2122,24 @@ export default function MACPunchList() {
                                                 <p className="text-[10px] text-muted-foreground">{r.detail}</p>
                                                 <div className="flex items-center justify-between mt-2 text-[10px]">
                                                     <span className="font-semibold text-green-600 dark:text-green-400">Cost: {r.cost}</span>
+                                                    <button className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-border bg-card hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors text-[10px] font-medium">
+                                                        <ChatBubbleLeftRightIcon className="h-3 w-3" />
+                                                        Comment
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* Auto-advance footer */}
-                                <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground py-2">
-                                    <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                    <span>Routing to Expert for review...</span>
-                                </div>
+                                {/* Approve Plan button */}
+                                <button
+                                    onClick={() => nextStep()}
+                                    className="w-full py-2.5 bg-brand-300 hover:bg-brand-400 text-zinc-900 text-xs font-bold rounded-xl transition-colors shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircleIcon className="h-4 w-4" />
+                                    Approve Plan
+                                </button>
                             </div>
                         )}
                     </div>
