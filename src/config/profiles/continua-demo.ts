@@ -145,9 +145,9 @@ export const CONTINUA_DEMO_STEPS: DemoStep[] = [
     },
 
     // ═══════════════════════════════════════════
-    // FLOW 3: Project Lifecycle & Procurement (5 steps)
+    // FLOW 3: Project Lifecycle & Procurement (6 steps)
     // From RFP to installation — how Strata orchestrates a multi-manufacturer project
-    // 2 auto (System) + 2 interactive (Expert) + 1 interactive (Sales Rep)
+    // 1 auto (System) + 4 interactive (Expert/Dealer) + 1 interactive (End User)
     // ═══════════════════════════════════════════
     {
         id: '3.1',
@@ -163,8 +163,8 @@ export const CONTINUA_DEMO_STEPS: DemoStep[] = [
         id: '3.2',
         groupId: 3,
         groupTitle: 'Flow 3: Project Lifecycle & Procurement',
-        title: 'Purchase Order Generation',
-        description: 'AI generates consolidated POs from project specification. Compares pricing across 4 sources, applies volume discounts, flags lead time issues. Expert reviews $3.2M package: furniture, AV, architectural walls.',
+        title: 'PO Generation',
+        description: 'AI generates consolidated POs from project spec, compares pricing across 4 sources, applies volume discounts, flags lead time issues. Expert reviews $3.2M package. TrackingAgent monitors 12 active POs — 9 ACKs received and auto-validated. AI detects Knoll ACK +4% price increase vs contract, auto-generates dispute draft.',
         app: 'transactions',
         role: 'Expert',
         highlightId: 'procurement-po-package',
@@ -173,14 +173,24 @@ export const CONTINUA_DEMO_STEPS: DemoStep[] = [
         id: '3.3',
         groupId: 3,
         groupTitle: 'Flow 3: Project Lifecycle & Procurement',
-        title: 'Order Tracking & ACK Validation',
-        description: 'TrackingAgent monitors 12 active POs. 9 ACKs received — auto-validated against POs (qty, price, delivery date). 3 pending with aging alerts. AI detects: Knoll ACK has +4% price increase on task chairs vs contract — auto-generates dispute draft with contractual evidence. Expert review dashboard with status by manufacturer.',
+        title: 'PO to Acknowledgement Conversion',
+        description: 'Quick Action review: contract compliance verification, quantity matching, delivery schedule validation, price verification against manufacturer catalogs. Expert converts validated PO package to Acknowledgement for $3.2M project.',
         app: 'transactions',
-        role: 'System',
-        highlightId: 'ack-tracking-dashboard',
+        role: 'Expert',
+        highlightId: 'po-ack-conversion',
     },
     {
         id: '3.4',
+        groupId: 3,
+        groupTitle: 'Flow 3: Project Lifecycle & Procurement',
+        title: 'Approval Chain',
+        description: 'Sequential approval for PO-to-ACK conversion: AI Compliance Agent auto-validates data integrity and contract terms, Expert David Park reviews manufacturer confirmations and volume discounts, Dealer Sara Chen gives final approval. 3-level chain with visual progression.',
+        app: 'transactions',
+        role: 'Dealer',
+        highlightId: 'approval-chain-progress',
+    },
+    {
+        id: '3.5',
         groupId: 3,
         groupTitle: 'Flow 3: Project Lifecycle & Procurement',
         title: 'Warehouse Receiving & QC',
@@ -190,7 +200,7 @@ export const CONTINUA_DEMO_STEPS: DemoStep[] = [
         highlightId: 'warehouse-receiving-qc',
     },
     {
-        id: '3.5',
+        id: '3.6',
         groupId: 3,
         groupTitle: 'Flow 3: Project Lifecycle & Procurement',
         title: 'Installation Schedule & Dispatch',
@@ -277,10 +287,11 @@ export const CONTINUA_DEMO_STEP_BEHAVIOR: Record<string, StepBehavior> = {
 
     // Flow 3: Project Lifecycle & Procurement
     '3.1': { mode: 'interactive', userAction: 'As the corporate client, review the workspace project request details (8 floors, 1,200 workstations, $3.2M). Click "Submit Project Request" to send to your dealer network.' },
-    '3.2': { mode: 'interactive', userAction: 'Review PO package: 12 manufacturers, $2.8M furniture + $280K AV + $120K architectural. Check contract vs list pricing. Flag lead time >8 weeks. Click "Submit PO Package"' },
-    '3.3': { mode: 'auto', duration: 22, aiSummary: 'TrackingAgent: monitoring 12 POs — validating 9 ACKs against purchase orders, flagging 3 pending, detecting Knoll price discrepancy +4%' },
-    '3.4': { mode: 'interactive', userAction: 'Review receiving: 47/50 items matched. QC flag: 2 chairs with fabric defect. Accept AI location assignment (Zone B, Rack 14). Click "Confirm Receiving"' },
-    '3.5': { mode: 'auto', duration: 10, aiSummary: 'InstallationAgent: generating schedule for floors 4-6 — coordinating 8 installers + 2 AV techs, re-sequencing around Herman Miller delay' },
+    '3.2': { mode: 'interactive', userAction: 'Review PO package and ACK tracking: 12 manufacturers, $3.2M total. Watch TrackingAgent validate 9 ACKs and detect Knoll +4% price discrepancy. Click "Next Step" when ready.' },
+    '3.3': { mode: 'interactive', userAction: 'Quick Action: review conversion checklist — contract compliance, quantities, delivery schedule, price verification. Click "Convert PO to Acknowledgement" when verified.' },
+    '3.4': { mode: 'interactive', userAction: 'Review approval chain for PO-to-ACK conversion: AI Compliance auto-validates, Expert David Park reviews, then click "Approve" as Dealer Sara Chen.' },
+    '3.5': { mode: 'interactive', userAction: 'Review receiving: 47/50 items matched. QC flag: 2 chairs with fabric defect. Accept AI location assignment (Zone B, Rack 14). Click "Confirm Receiving"' },
+    '3.6': { mode: 'auto', duration: 10, aiSummary: 'InstallationAgent: generating schedule for floors 4-6 — coordinating 8 installers + 2 AV techs, re-sequencing around Herman Miller delay' },
 
     // Flow 4: Sustainability & Client Reporting
     '4.1': { mode: 'auto', duration: 10, aiSummary: 'SustainabilityMetricsAgent: compiling impact data — 194 tons diverted, 78% carbon reduction, generating award submission narrative' },
@@ -377,18 +388,24 @@ export const CONTINUA_DEMO_STEP_MESSAGES: Record<string, string[]> = {
         'PO package ready: $2.8M furniture + $280K AV + $120K architectural',
     ],
     '3.3': [
-        'TrackingAgent: monitoring 12 active purchase orders...',
-        '9 ACKs received — auto-validating qty, price, delivery dates',
-        'Knoll ACK: price increase +4% on task chairs vs contract detected',
-        'Auto-generating dispute draft with contractual evidence — expert review pending',
+        'ConversionAgent: initiating PO-to-ACK conversion review...',
+        'Contract compliance: 12/12 manufacturers verified against master agreements',
+        'Price verification: cross-referencing 4 catalog sources — 45/46 items matched',
+        'Conversion package ready — pending approval chain',
     ],
     '3.4': [
+        'ApprovalEngine: initiating 3-level approval chain...',
+        'Level 1 — AI Compliance: data integrity + contract terms validated',
+        'Level 2 — Expert David Park: manufacturer confirmations reviewed',
+        'Level 3 — Dealer Sara Chen: final approval pending',
+    ],
+    '3.5': [
         'ReceivingAgent: processing 3 shipments at Chicago warehouse...',
         'QR scan → auto-matching against PO line items: 47/50 matched',
         'QC flag: 2 task chairs — fabric defect detected, photo evidence captured',
         'Inventory updated: Zone B, Rack 14 | Warehouse utilization: 72%',
     ],
-    '3.5': [
+    '3.6': [
         'InstallationAgent: generating schedule for floors 4-6 (phase 2)...',
         'Coordinating: 8 installers + 2 AV techs + delivery trucks',
         'Conflict detected: Herman Miller delivery delayed 3 days for floor 5',
@@ -435,7 +452,7 @@ export const CONTINUA_DEMO_STEP_MESSAGES: Record<string, string[]> = {
 export const CONTINUA_DEMO_SELF_INDICATED: string[] = [
     '1.1', '1.2', '1.3', '1.4', '1.5', '1.6',
     '2.1', '2.2', '2.5',
-    '3.1', '3.2', '3.3', '4.1', '4.5',
+    '3.1', '3.2', '3.3', '3.4', '4.1', '4.5',
 ];
 
 // ─── STEP TIMING PROFILES ────────────────────────────────────────────────────
@@ -465,9 +482,10 @@ export const CONTINUA_STEP_TIMING: Record<string, StepTiming> = {
     '2.5': { notifDelay: 2000, notifDuration: 5000, agentStagger: 700,  agentDone: 500,  breathing: 1000, resultsDur: 10000 },
     '3.1': { notifDelay: 2000, notifDuration: 6000, agentStagger: 0,    agentDone: 0,   breathing: 1500, resultsDur: 0 },
     '3.2': { notifDelay: 3000, notifDuration: 8000, agentStagger: 1200, agentDone: 800,  breathing: 2000, resultsDur: 0 },
-    '3.3': { notifDelay: 2000, notifDuration: 5000, agentStagger: 900,  agentDone: 600,  breathing: 1500, resultsDur: 12000 },
-    '3.4': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800,  agentDone: 500,  breathing: 1500, resultsDur: 0 },
-    '3.5': { notifDelay: 2000, notifDuration: 5000, agentStagger: 700,  agentDone: 500,  breathing: 1000, resultsDur: 10000 },
+    '3.3': { notifDelay: 2000, notifDuration: 5000, agentStagger: 600,  agentDone: 400,  breathing: 1200, resultsDur: 0 },
+    '3.4': { notifDelay: 2000, notifDuration: 5000, agentStagger: 0,    agentDone: 0,    breathing: 0,    resultsDur: 0 },
+    '3.5': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800,  agentDone: 500,  breathing: 1500, resultsDur: 0 },
+    '3.6': { notifDelay: 2000, notifDuration: 5000, agentStagger: 700,  agentDone: 500,  breathing: 1000, resultsDur: 10000 },
     '4.1': { notifDelay: 3000, notifDuration: 7000, agentStagger: 1100, agentDone: 700,  breathing: 2000, resultsDur: 12000 },
     '4.2': { notifDelay: 2500, notifDuration: 6000, agentStagger: 900,  agentDone: 600,  breathing: 1500, resultsDur: 0 },
     '4.3': { notifDelay: 2000, notifDuration: 5000, agentStagger: 800,  agentDone: 500,  breathing: 1200, resultsDur: 0 },

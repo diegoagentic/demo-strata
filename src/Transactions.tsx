@@ -10,7 +10,7 @@ import {
     CheckIcon, MapPinIcon, UserIcon, ClockIcon, ShoppingBagIcon, ExclamationTriangleIcon, PencilSquareIcon, CheckCircleIcon,
     ShoppingCartIcon, ClipboardDocumentCheckIcon, WrenchScrewdriverIcon, ChevronLeftIcon, CloudArrowUpIcon, DocumentPlusIcon,
     FunnelIcon, ArrowRightIcon, SparklesIcon, CheckBadgeIcon, ArrowDownTrayIcon, ArrowsRightLeftIcon, DocumentMagnifyingGlassIcon,
-    ArrowPathIcon
+    ArrowPathIcon, ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
@@ -40,7 +40,26 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 // ═══════════════════════════════════════════════════
 
 
-type ProcurementPhase = 'idle' | 'notification' | 'expert-question' | 'highlight' | 'lupa-active' | 'po-review' | 'price-check' | 'ready-convert' | 'converted'
+type ProcurementPhase = 'idle' | 'notification' | 'expert-question' | 'highlight' | 'lupa-active' | 'po-generated'
+
+// ─── Step 3.3: PO→ACK Conversion ──────────────────────────────────────────────
+type ConversionPhase = 'idle' | 'notification' | 'review' | 'price-check' | 'ready' | 'converted'
+
+const CONVERSION_CHECKLIST = [
+    { label: 'Contract Compliance', detail: '12/12 manufacturers verified against master agreements', status: 'pass' as const },
+    { label: 'Quantity Matching', detail: 'All line items match PO quantities — 1,500 items confirmed', status: 'pass' as const },
+    { label: 'Delivery Schedule', detail: '9 on-time, 3 with lead time adjustments (DIRTT: 12 weeks)', status: 'warning' as const },
+    { label: 'Pricing Reconciliation', detail: 'Pending price verification against manufacturer catalogs...', status: 'pending' as const },
+]
+
+// ─── Step 3.4: Approval Chain ─────────────────────────────────────────────────
+type ApprovalChainPhase = 'idle' | 'notification' | 'chain' | 'done'
+
+const CONVERSION_APPROVAL_STEPS = [
+    { id: 'ai' as const, role: 'AI Compliance Agent', detail: 'Validating PO-ACK data integrity, pricing compliance, contract terms...', status: 'pending' as const },
+    { id: 'expert' as const, role: 'Expert — David Park', detail: 'Reviewing manufacturer confirmations, lead times, volume discounts...', status: 'pending' as const },
+    { id: 'dealer' as const, role: 'Dealer — Sara Chen', detail: 'Final approval: PO-to-ACK conversion for $3.2M project package', status: 'pending' as const },
+]
 
 // ─── PO Review Data (Step 3.2 sub-phases) ─────────────────────────────────────
 const PO_LINE_ITEMS = [
@@ -393,59 +412,44 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
         return () => clearTimeout(t)
     }, [procPhase, setLupaStep])
 
-    // procCompleteStep signal from DemoProcessPanel → show PO review
-    const [priceChecksVisible, setPriceChecksVisible] = useState(0)
+    // procCompleteStep signal from DemoProcessPanel → show PO generated summary
     useEffect(() => {
-        if (procCompleteStep !== '3.2' || procPhase === 'po-review' || procPhase === 'price-check' || procPhase === 'ready-convert' || procPhase === 'converted') return
-        setProcPhase('po-review')
-        setPriceChecksVisible(0)
+        if (procCompleteStep !== '3.2' || procPhase === 'po-generated') return
+        setProcPhase('po-generated')
     }, [procCompleteStep, procPhase])
 
-    // po-review → after 2s → price-check
+    // po-generated → after 2s → chain to AckPhase
     useEffect(() => {
-        if (procPhase !== 'po-review') return
-        const t = setTimeout(() => setProcPhase('price-check'), 2000)
+        if (procPhase !== 'po-generated') return
+        const t = setTimeout(() => setAckPhase('notification'), 2000)
         return () => clearTimeout(t)
     }, [procPhase])
 
-    // price-check → stagger reveal checks → ready-convert
-    useEffect(() => {
-        if (procPhase !== 'price-check') return
-        setPriceChecksVisible(0)
-        const timers: ReturnType<typeof setTimeout>[] = []
-        PRICE_CHECKS.forEach((_, i) => {
-            timers.push(setTimeout(() => setPriceChecksVisible(i + 1), (i + 1) * 600))
-        })
-        timers.push(setTimeout(() => setProcPhase('ready-convert'), PRICE_CHECKS.length * 600 + 800))
-        return () => timers.forEach(clearTimeout)
-    }, [procPhase])
-
-    // ─── Continua Step 2.3: ACK Tracking & Validation ────────────────────────────
-    type AckPhase = 'idle' | 'notification' | 'tab-switch' | 'validating' | 'alert' | 'click-sim' | 'navigating'
+    // ─── Continua Step 3.2 (continued): ACK Tracking — chained from ProcurementPhase ──
+    type AckPhase = 'idle' | 'notification' | 'tab-switch' | 'validating' | 'alert' | 'done'
     const [ackPhase, setAckPhase] = useState<AckPhase>('idle')
     const ackPhaseRef = useRef(ackPhase)
     useEffect(() => { ackPhaseRef.current = ackPhase }, [ackPhase])
     const [ackValidatedCount, setAckValidatedCount] = useState(0)
     const [ackKnollAlert, setAckKnollAlert] = useState(false)
-    const [ackClickSim, setAckClickSim] = useState(false)
 
-    // 1.3 phase orchestration: idle → notification → tab-switch → validating → alert → click-sim → navigating
-    const tp23 = CONTINUA_STEP_TIMING['3.3']
+    // Reset AckPhase when leaving step 3.2
     useEffect(() => {
-        if (!isContinua || stepId !== '3.3') {
-            setAckPhase('idle'); setAckValidatedCount(0); setAckKnollAlert(false); setAckClickSim(false)
-            return
+        if (!isContinua || stepId !== '3.2') {
+            setAckPhase('idle'); setAckValidatedCount(0); setAckKnollAlert(false)
         }
-        setAckPhase('idle'); setAckValidatedCount(0); setAckKnollAlert(false); setAckClickSim(false)
-        const timers: ReturnType<typeof setTimeout>[] = []
-        timers.push(setTimeout(() => setAckPhase('notification'), tp23.notifDelay))
-        timers.push(setTimeout(() => {
-            if (ackPhaseRef.current === 'notification') setAckPhase('tab-switch')
-        }, tp23.notifDelay + tp23.notifDuration))
-        return () => timers.forEach(clearTimeout)
     }, [isContinua, stepId])
 
-    // 1.3: tab-switch → auto-switch to ACK tab, then → validating
+    // AckPhase notification auto-advance → tab-switch
+    useEffect(() => {
+        if (ackPhase !== 'notification') return
+        const t = setTimeout(() => {
+            if (ackPhaseRef.current === 'notification') setAckPhase('tab-switch')
+        }, 3000)
+        return () => clearTimeout(t)
+    }, [ackPhase])
+
+    // tab-switch → auto-switch to ACK tab, then → validating
     useEffect(() => {
         if (ackPhase !== 'tab-switch') return
         setLifecycleTab('acknowledgments')
@@ -454,17 +458,15 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
         return () => clearTimeout(t)
     }, [ackPhase])
 
-    // 1.3: validating → stagger validated badges, then → alert (Knoll)
+    // validating → stagger validated badges, then → alert (Knoll)
     useEffect(() => {
         if (ackPhase !== 'validating') return
         setAckValidatedCount(0)
         const timers: ReturnType<typeof setTimeout>[] = []
-        // Validate first 2 ACKs (Herman Miller, Steelcase) — skip Knoll
         for (let i = 0; i < 2; i++) {
-            timers.push(setTimeout(() => setAckValidatedCount(i + 1), (i + 1) * tp23.agentStagger))
+            timers.push(setTimeout(() => setAckValidatedCount(i + 1), (i + 1) * 900))
         }
-        // After validations done → Knoll alert
-        const alertDelay = 3 * tp23.agentStagger + tp23.breathing
+        const alertDelay = 3 * 900 + 1500
         timers.push(setTimeout(() => {
             setAckKnollAlert(true)
             setAckPhase('alert')
@@ -472,23 +474,94 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
         return () => timers.forEach(clearTimeout)
     }, [ackPhase])
 
-    // 1.3: alert → hold 2.5s → click-sim
+    // alert → hold 2.5s → done
     useEffect(() => {
         if (ackPhase !== 'alert') return
-        const t = setTimeout(() => setAckPhase('click-sim'), 2500)
+        const t = setTimeout(() => setAckPhase('done'), 2500)
         return () => clearTimeout(t)
     }, [ackPhase])
 
-    // 1.3: click-sim → simulate click on Knoll card → navigate to ack-detail
+    // ─── Continua Step 3.3: PO→ACK Conversion ────────────────────────────────────
+    const [convPhase, setConvPhase] = useState<ConversionPhase>('idle')
+    const convPhaseRef = useRef(convPhase)
+    useEffect(() => { convPhaseRef.current = convPhase }, [convPhase])
+    const [convChecklistVisible, setConvChecklistVisible] = useState(0)
+    const [priceChecksVisible, setPriceChecksVisible] = useState(0)
+
+    const tp33 = CONTINUA_STEP_TIMING['3.3']
     useEffect(() => {
-        if (ackPhase !== 'click-sim') return
-        setAckClickSim(true)
-        const t = setTimeout(() => {
-            setAckPhase('navigating')
-            onNavigateToDetail('ack-detail')
-        }, 800)
-        return () => clearTimeout(t)
-    }, [ackPhase, onNavigateToDetail])
+        if (!isContinua || stepId !== '3.3') { setConvPhase('idle'); setConvChecklistVisible(0); setPriceChecksVisible(0); return }
+        setConvPhase('idle'); setConvChecklistVisible(0); setPriceChecksVisible(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setConvPhase('notification'), tp33.notifDelay))
+        timers.push(setTimeout(() => {
+            if (convPhaseRef.current === 'notification') setConvPhase('review')
+        }, tp33.notifDelay + tp33.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // review → stagger checklist items → price-check
+    useEffect(() => {
+        if (convPhase !== 'review') return
+        setConvChecklistVisible(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        CONVERSION_CHECKLIST.forEach((_, i) => {
+            timers.push(setTimeout(() => setConvChecklistVisible(i + 1), (i + 1) * 600))
+        })
+        timers.push(setTimeout(() => setConvPhase('price-check'), CONVERSION_CHECKLIST.length * 600 + 800))
+        return () => timers.forEach(clearTimeout)
+    }, [convPhase])
+
+    // price-check → stagger price checks → ready
+    useEffect(() => {
+        if (convPhase !== 'price-check') return
+        setPriceChecksVisible(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        PRICE_CHECKS.forEach((_, i) => {
+            timers.push(setTimeout(() => setPriceChecksVisible(i + 1), (i + 1) * 600))
+        })
+        timers.push(setTimeout(() => setConvPhase('ready'), PRICE_CHECKS.length * 600 + 800))
+        return () => timers.forEach(clearTimeout)
+    }, [convPhase])
+
+    // ─── Continua Step 3.4: Approval Chain ────────────────────────────────────────
+    const [approvalPhase, setApprovalPhase] = useState<ApprovalChainPhase>('idle')
+    const approvalPhaseRef = useRef(approvalPhase)
+    useEffect(() => { approvalPhaseRef.current = approvalPhase }, [approvalPhase])
+    const [approvalSteps, setApprovalSteps] = useState(CONVERSION_APPROVAL_STEPS.map(s => ({ ...s })))
+
+    const tp34 = CONTINUA_STEP_TIMING['3.4']
+    useEffect(() => {
+        if (!isContinua || stepId !== '3.4') { setApprovalPhase('idle'); return }
+        setApprovalPhase('idle')
+        setApprovalSteps(CONVERSION_APPROVAL_STEPS.map(s => ({ ...s })))
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setApprovalPhase('notification'), tp34.notifDelay))
+        timers.push(setTimeout(() => {
+            if (approvalPhaseRef.current === 'notification') setApprovalPhase('chain')
+        }, tp34.notifDelay + tp34.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // chain → sequential approvals
+    useEffect(() => {
+        if (approvalPhase !== 'chain') return
+        setApprovalSteps(CONVERSION_APPROVAL_STEPS.map(s => ({ ...s })))
+        const timers: ReturnType<typeof setTimeout>[] = []
+        // AI auto-approves after 1.5s
+        timers.push(setTimeout(() =>
+            setApprovalSteps(prev => prev.map(s => s.id === 'ai' ? { ...s, status: 'approved' as const } : s))
+        , 1500))
+        // Expert auto-approves after 3s
+        timers.push(setTimeout(() =>
+            setApprovalSteps(prev => prev.map(s => s.id === 'expert' ? { ...s, status: 'approved' as const } : s))
+        , 3000))
+        // Dealer becomes pending-action after 4s
+        timers.push(setTimeout(() =>
+            setApprovalSteps(prev => prev.map(s => s.id === 'dealer' ? { ...s, status: 'pending-action' as const } : s))
+        , 4000))
+        return () => timers.forEach(clearTimeout)
+    }, [approvalPhase])
 
     // ─── Continua Step 1.5: Consignment & Vendor Returns ────────────────────────
     const [csgnPhase, setCsgnPhase] = useState<ConsignmentPhase>('idle')
@@ -1514,35 +1587,23 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                     </div>
                                 )}
 
-                                {/* ═══ CONTINUA STEP 3.2 — PO Review, Price Verification & Convert to ACK ═══ */}
-                                {isContinua && stepId === '3.2' && (procPhase === 'po-review' || procPhase === 'price-check' || procPhase === 'ready-convert' || procPhase === 'converted') && (
+                                {/* ═══ CONTINUA STEP 3.2 — PO Generated Summary ═══ */}
+                                {isContinua && stepId === '3.2' && procPhase === 'po-generated' && ackPhase === 'idle' && (
                                     <div className="space-y-4 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                         <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-                                            {/* Header */}
                                             <div className="p-4 border-b border-border/50 flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 rounded-lg bg-indigo-600 text-white">
                                                         <ClipboardDocumentCheckIcon className="h-5 w-5" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-sm font-bold text-foreground">PO Package Review — Corporate HQ</h3>
+                                                        <h3 className="text-sm font-bold text-foreground">PO Package Generated — Corporate HQ</h3>
                                                         <p className="text-[11px] text-muted-foreground mt-0.5">3 consolidated POs · 12 manufacturers · $3.2M total</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    {procPhase === 'converted' ? (
-                                                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">Converted to ACK</span>
-                                                    ) : procPhase === 'ready-convert' ? (
-                                                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 font-bold animate-pulse">Ready to Convert</span>
-                                                    ) : (
-                                                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold">Reviewing</span>
-                                                    )}
-                                                </div>
+                                                <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">Generated</span>
                                             </div>
-
-                                            {/* PO Line Items Table */}
                                             <div className="p-4">
-                                                <h4 className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">Purchase Order Line Items</h4>
                                                 <div className="space-y-2">
                                                     {PO_LINE_ITEMS.map((po, i) => (
                                                         <div key={i} className={cn("p-3 rounded-xl border flex items-center justify-between gap-4",
@@ -1557,14 +1618,10 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                 </div>
                                                                 <p className="text-[10px] text-muted-foreground mt-0.5">{po.items}</p>
                                                             </div>
-                                                            <div className="flex items-center gap-4 text-right shrink-0">
+                                                            <div className="flex items-center gap-3 text-right shrink-0">
                                                                 <div>
-                                                                    <p className="text-[10px] text-muted-foreground">PO Amount</p>
+                                                                    <p className="text-[10px] text-muted-foreground">Amount</p>
                                                                     <p className="text-xs font-bold text-foreground">{po.poAmount}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-[10px] text-muted-foreground">Catalog</p>
-                                                                    <p className="text-xs font-medium text-muted-foreground line-through">{po.catalogPrice}</p>
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-[10px] text-muted-foreground">Savings</p>
@@ -1575,100 +1632,18 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                     ))}
                                                 </div>
                                             </div>
-
-                                            {/* Price Verification */}
-                                            {(procPhase === 'price-check' || procPhase === 'ready-convert' || procPhase === 'converted') && (
-                                                <div className="mx-4 mb-4 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 animate-in fade-in duration-300">
-                                                    <h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-3 flex items-center gap-1.5">
-                                                        <DocumentMagnifyingGlassIcon className="h-4 w-4" />
-                                                        Price Verification — Manufacturer Catalogs
-                                                    </h4>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        {PRICE_CHECKS.map((check, i) => (
-                                                            <div key={i} className={cn(
-                                                                "p-2.5 rounded-lg border flex items-center justify-between transition-all duration-300",
-                                                                i < priceChecksVisible
-                                                                    ? check.status === 'pass'
-                                                                        ? "border-green-200 dark:border-green-500/20 bg-green-50/50 dark:bg-green-500/5"
-                                                                        : "border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5"
-                                                                    : "border-border bg-muted/20 opacity-40"
-                                                            )}>
-                                                                <div className="flex items-center gap-2">
-                                                                    {i < priceChecksVisible ? (
-                                                                        check.status === 'pass'
-                                                                            ? <CheckCircleIcon className="h-4 w-4 text-green-600 shrink-0" />
-                                                                            : <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 shrink-0" />
-                                                                    ) : (
-                                                                        <div className="h-4 w-4 rounded-full border-2 border-zinc-300 dark:border-zinc-600 shrink-0" />
-                                                                    )}
-                                                                    <span className="text-[11px] font-medium text-foreground">{check.source}</span>
-                                                                </div>
-                                                                {i < priceChecksVisible && (
-                                                                    <span className={cn("text-[10px] font-bold",
-                                                                        check.status === 'pass' ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"
-                                                                    )}>
-                                                                        {check.match}/{check.match + check.mismatch} matched
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    {priceChecksVisible >= PRICE_CHECKS.length && (
-                                                        <div className="mt-3 p-2 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 animate-in fade-in duration-300">
-                                                            <p className="text-[10px] text-green-700 dark:text-green-300 flex items-center gap-1.5">
-                                                                <CheckCircleIcon className="h-3.5 w-3.5" />
-                                                                <span><strong>Price verification complete.</strong> 45/46 items match contract pricing. 1 volume discount adjustment applied.</span>
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Convert to ACK / Confirmation */}
-                                            <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                                        <CurrencyDollarIcon className="h-3.5 w-3.5" />
-                                                        Total: <span className="font-bold text-foreground">$3.2M</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                                        <ClipboardDocumentListIcon className="h-3.5 w-3.5" />
-                                                        <span className="font-medium text-foreground">12 manufacturers</span>
-                                                    </div>
-                                                </div>
-
-                                                {procPhase === 'converted' ? (
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex items-center gap-1.5 text-[10px] text-green-700 dark:text-green-400 font-bold animate-in fade-in duration-300">
-                                                            <CheckCircleIcon className="h-3.5 w-3.5" />
-                                                            PO → ACK Conversion Submitted
-                                                        </div>
-                                                        <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
-                                                            Next Step
-                                                            <ArrowRightIcon className="h-3 w-3" />
-                                                        </button>
-                                                    </div>
-                                                ) : procPhase === 'ready-convert' ? (
-                                                    <button
-                                                        onClick={() => setProcPhase('converted')}
-                                                        className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] animate-pulse ring-2 ring-indigo-400 ring-offset-2 ring-offset-card"
-                                                    >
-                                                        <ArrowsRightLeftIcon className="h-4 w-4" />
-                                                        Convert PO → Acknowledgement
-                                                    </button>
-                                                ) : (
-                                                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                                        <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                                                        Verifying prices...
-                                                    </div>
-                                                )}
+                                            <div className="px-4 py-2 border-t border-border/50 bg-muted/20">
+                                                <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                                    <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                                                    Initiating ACK tracking for 12 purchase orders...
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* ═══ Continua Step 2.3 — ACK Tracking & Validation (inline) ═══ */}
-                                {isContinua && stepId === '3.3' && ackPhase !== 'idle' && (
+                                {/* ═══ CONTINUA STEP 3.2 — ACK Tracking (chained from PO Generation) ═══ */}
+                                {isContinua && stepId === '3.2' && ackPhase !== 'idle' && (
                                     <div data-demo-target="ack-tracking-dashboard" className="space-y-4 mb-6">
                                         {/* Notification banner */}
                                         {ackPhase === 'notification' && (
@@ -1698,7 +1673,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                         )}
 
                                         {/* Validation progress + Knoll alert */}
-                                        {(ackPhase === 'validating' || ackPhase === 'alert' || ackPhase === 'click-sim') && (
+                                        {(ackPhase === 'validating' || ackPhase === 'alert') && (
                                             <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
                                                 <div className="flex items-center gap-2 mb-3">
                                                     <AIAgentAvatar size="sm" />
@@ -1709,22 +1684,13 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                         }
                                                     </span>
                                                     {ackKnollAlert && (
-                                                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-600 text-white font-bold animate-pulse">
-                                                            Price +4%
-                                                        </span>
+                                                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-600 text-white font-bold animate-pulse">Price +4%</span>
                                                     )}
                                                 </div>
-                                                {/* Progress bar */}
                                                 <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
-                                                    <div
-                                                        className={cn(
-                                                            "h-full rounded-full transition-all duration-700 ease-linear",
-                                                            ackKnollAlert ? "bg-red-500" : "bg-indigo-500"
-                                                        )}
-                                                        style={{ width: `${ackKnollAlert ? 100 : Math.round((ackValidatedCount / 9) * 100)}%` }}
-                                                    />
+                                                    <div className={cn("h-full rounded-full transition-all duration-700 ease-linear", ackKnollAlert ? "bg-red-500" : "bg-indigo-500")}
+                                                        style={{ width: `${ackKnollAlert ? 100 : Math.round((ackValidatedCount / 9) * 100)}%` }} />
                                                 </div>
-                                                {/* Knoll alert detail */}
                                                 {ackKnollAlert && (
                                                     <div className="p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 animate-in fade-in duration-300">
                                                         <div className="flex items-center gap-2 text-xs">
@@ -1732,11 +1698,320 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                             <span className="font-bold text-red-700 dark:text-red-400">Knoll ACK: +4% price increase</span>
                                                             <span className="text-red-600/70 dark:text-red-400/70">on task chairs vs contract</span>
                                                         </div>
-                                                        <p className="text-[10px] text-red-600/80 dark:text-red-400/70 mt-1 ml-6">
-                                                            Auto-generating dispute draft with contractual evidence...
-                                                        </p>
+                                                        <p className="text-[10px] text-red-600/80 dark:text-red-400/70 mt-1 ml-6">Auto-generating dispute draft with contractual evidence...</p>
                                                     </div>
                                                 )}
+                                            </div>
+                                        )}
+
+                                        {/* Done — PO Package Validated + Next Step */}
+                                        {ackPhase === 'done' && (
+                                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                                                        <div>
+                                                            <p className="text-xs font-bold text-foreground">PO Package Validated — Ready for ACK Conversion</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-0.5">9/12 ACKs validated · Knoll dispute draft generated · 3 pending with aging alerts</p>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                                        Next Step
+                                                        <ArrowRightIcon className="h-3 w-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* ═══ CONTINUA STEP 3.3 — PO to ACK Conversion ═══ */}
+                                {isContinua && stepId === '3.3' && convPhase !== 'idle' && (
+                                    <div data-demo-target="po-ack-conversion" className="space-y-4 mb-6">
+                                        {/* Notification */}
+                                        {convPhase === 'notification' && (
+                                            <button onClick={() => setConvPhase('review')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="p-2 rounded-lg bg-indigo-600 text-white">
+                                                            <ArrowsRightLeftIcon className="h-4 w-4" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="text-xs font-bold text-foreground">Quick Action — PO to ACK Conversion</span>
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white font-bold">$3.2M</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-muted-foreground mt-1">
+                                                                Review conversion checklist: contract compliance, quantities, delivery schedule, and price verification before converting PO package to Acknowledgement.
+                                                            </p>
+                                                            <div className="flex items-center gap-1 mt-2 text-[10px] text-brand-700 dark:text-brand-400 font-medium">
+                                                                <span>Click to start conversion review</span>
+                                                                <ArrowRightIcon className="h-3 w-3" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        )}
+
+                                        {/* Review + Price Check + Convert */}
+                                        {(convPhase === 'review' || convPhase === 'price-check' || convPhase === 'ready' || convPhase === 'converted') && (
+                                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 rounded-lg bg-indigo-600 text-white">
+                                                                <ArrowsRightLeftIcon className="h-5 w-5" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-sm font-bold text-foreground">PO to ACK Conversion Review</h3>
+                                                                <p className="text-[11px] text-muted-foreground mt-0.5">Quick Action — Corporate HQ Project · $3.2M</p>
+                                                            </div>
+                                                        </div>
+                                                        <span className={cn("text-[10px] px-2.5 py-1 rounded-full font-bold",
+                                                            convPhase === 'converted' ? "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400"
+                                                                : convPhase === 'ready' ? "bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 animate-pulse"
+                                                                    : "bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
+                                                        )}>
+                                                            {convPhase === 'converted' ? 'Converted' : convPhase === 'ready' ? 'Ready' : 'Reviewing'}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Conversion Checklist */}
+                                                    <div className="p-4">
+                                                        <h4 className="text-xs font-bold text-foreground mb-3 uppercase tracking-wider">Conversion Checklist</h4>
+                                                        <div className="space-y-2">
+                                                            {CONVERSION_CHECKLIST.map((item, i) => (
+                                                                <div key={i} className={cn(
+                                                                    "p-3 rounded-xl border flex items-center gap-3 transition-all duration-300",
+                                                                    i < convChecklistVisible
+                                                                        ? item.status === 'pass' ? "border-green-200 dark:border-green-500/20 bg-green-50/50 dark:bg-green-500/5"
+                                                                            : item.status === 'warning' ? "border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5"
+                                                                                : "border-indigo-200 dark:border-indigo-500/20 bg-indigo-50/50 dark:bg-indigo-500/5"
+                                                                        : "border-border bg-muted/20 opacity-40"
+                                                                )}>
+                                                                    {i < convChecklistVisible ? (
+                                                                        item.status === 'pass' ? <CheckCircleIcon className="h-4 w-4 text-green-600 shrink-0" />
+                                                                            : item.status === 'warning' ? <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 shrink-0" />
+                                                                                : <ArrowPathIcon className="h-4 w-4 text-indigo-600 animate-spin shrink-0" />
+                                                                    ) : (
+                                                                        <div className="h-4 w-4 rounded-full border-2 border-zinc-300 dark:border-zinc-600 shrink-0" />
+                                                                    )}
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <p className="text-xs font-bold text-foreground">{item.label}</p>
+                                                                        <p className="text-[10px] text-muted-foreground mt-0.5">{item.detail}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Price Verification */}
+                                                    {(convPhase === 'price-check' || convPhase === 'ready' || convPhase === 'converted') && (
+                                                        <div className="mx-4 mb-4 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 animate-in fade-in duration-300">
+                                                            <h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-3 flex items-center gap-1.5">
+                                                                <DocumentMagnifyingGlassIcon className="h-4 w-4" />
+                                                                Price Verification — Manufacturer Catalogs
+                                                            </h4>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                {PRICE_CHECKS.map((check, i) => (
+                                                                    <div key={i} className={cn(
+                                                                        "p-2.5 rounded-lg border flex items-center justify-between transition-all duration-300",
+                                                                        i < priceChecksVisible
+                                                                            ? check.status === 'pass'
+                                                                                ? "border-green-200 dark:border-green-500/20 bg-green-50/50 dark:bg-green-500/5"
+                                                                                : "border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5"
+                                                                            : "border-border bg-muted/20 opacity-40"
+                                                                    )}>
+                                                                        <div className="flex items-center gap-2">
+                                                                            {i < priceChecksVisible ? (
+                                                                                check.status === 'pass'
+                                                                                    ? <CheckCircleIcon className="h-4 w-4 text-green-600 shrink-0" />
+                                                                                    : <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 shrink-0" />
+                                                                            ) : (
+                                                                                <div className="h-4 w-4 rounded-full border-2 border-zinc-300 dark:border-zinc-600 shrink-0" />
+                                                                            )}
+                                                                            <span className="text-[11px] font-medium text-foreground">{check.source}</span>
+                                                                        </div>
+                                                                        {i < priceChecksVisible && (
+                                                                            <span className={cn("text-[10px] font-bold",
+                                                                                check.status === 'pass' ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"
+                                                                            )}>
+                                                                                {check.match}/{check.match + check.mismatch} matched
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            {priceChecksVisible >= PRICE_CHECKS.length && (
+                                                                <div className="mt-3 p-2 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 animate-in fade-in duration-300">
+                                                                    <p className="text-[10px] text-green-700 dark:text-green-300 flex items-center gap-1.5">
+                                                                        <CheckCircleIcon className="h-3.5 w-3.5" />
+                                                                        <span><strong>Price verification complete.</strong> 45/46 items match contract pricing. 1 volume discount adjustment applied.</span>
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Footer: Convert button / Confirmation */}
+                                                    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                                                <CurrencyDollarIcon className="h-3.5 w-3.5" />
+                                                                Total: <span className="font-bold text-foreground">$3.2M</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                                                <ClipboardDocumentListIcon className="h-3.5 w-3.5" />
+                                                                <span className="font-medium text-foreground">12 manufacturers</span>
+                                                            </div>
+                                                        </div>
+                                                        {convPhase === 'converted' ? (
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="flex items-center gap-1.5 text-[10px] text-green-700 dark:text-green-400 font-bold animate-in fade-in duration-300">
+                                                                    <CheckCircleIcon className="h-3.5 w-3.5" />
+                                                                    PO Converted to Acknowledgement
+                                                                </div>
+                                                                <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                                                    Next Step
+                                                                    <ArrowRightIcon className="h-3 w-3" />
+                                                                </button>
+                                                            </div>
+                                                        ) : convPhase === 'ready' ? (
+                                                            <button onClick={() => setConvPhase('converted')}
+                                                                className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] animate-pulse ring-2 ring-indigo-400 ring-offset-2 ring-offset-card">
+                                                                <ArrowsRightLeftIcon className="h-4 w-4" />
+                                                                Convert PO to Acknowledgement
+                                                            </button>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                                                <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                                                                Verifying...
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* ═══ CONTINUA STEP 3.4 — Approval Chain ═══ */}
+                                {isContinua && stepId === '3.4' && approvalPhase !== 'idle' && (
+                                    <div data-demo-target="approval-chain-progress" className="space-y-4 mb-6">
+                                        {/* Notification */}
+                                        {approvalPhase === 'notification' && (
+                                            <button onClick={() => setApprovalPhase('chain')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="p-2 rounded-lg bg-indigo-600 text-white">
+                                                            <ShieldCheckIcon className="h-4 w-4" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="text-xs font-bold text-foreground">Approval Chain — PO to ACK Conversion</span>
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white font-bold">3-Level</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-muted-foreground mt-1">
+                                                                Sequential approval required: AI Compliance Agent, Expert David Park, and Dealer Sara Chen must approve the $3.2M conversion.
+                                                            </p>
+                                                            <div className="flex items-center gap-1 mt-2 text-[10px] text-brand-700 dark:text-brand-400 font-medium">
+                                                                <span>Click to start approval chain</span>
+                                                                <ArrowRightIcon className="h-3 w-3" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        )}
+
+                                        {/* Approval chain */}
+                                        {(approvalPhase === 'chain' || approvalPhase === 'done') && (
+                                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 rounded-lg bg-indigo-600 text-white">
+                                                                <ShieldCheckIcon className="h-5 w-5" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-sm font-bold text-foreground">Approval Chain</h3>
+                                                                <p className="text-[11px] text-muted-foreground mt-0.5">Sequential approval: AI → Expert → Dealer</p>
+                                                            </div>
+                                                        </div>
+                                                        <span className={cn("text-[10px] px-2.5 py-1 rounded-full font-bold",
+                                                            approvalSteps.every(s => s.status === 'approved')
+                                                                ? "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400"
+                                                                : "bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400"
+                                                        )}>
+                                                            {approvalSteps.filter(s => s.status === 'approved').length}/{approvalSteps.length} Approved
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="p-4 space-y-3">
+                                                        {approvalSteps.map((step, i) => (
+                                                            <div key={step.id} className={cn(
+                                                                "p-3 rounded-xl border flex items-center gap-4 transition-all duration-500",
+                                                                step.status === 'approved'
+                                                                    ? "border-green-200 dark:border-green-500/20 bg-green-50/50 dark:bg-green-500/5"
+                                                                    : step.status === 'pending-action'
+                                                                        ? "border-brand-400 dark:border-brand-500/40 bg-brand-50 dark:bg-brand-500/5 ring-2 ring-brand-400/30 animate-pulse"
+                                                                        : "border-border bg-muted/20 opacity-60"
+                                                            )}>
+                                                                {step.status === 'approved' ? (
+                                                                    <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center shrink-0">
+                                                                        <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                                                                    </div>
+                                                                ) : step.status === 'pending-action' ? (
+                                                                    <div className="h-8 w-8 rounded-full bg-brand-200 dark:bg-brand-500/20 flex items-center justify-center shrink-0">
+                                                                        <span className="text-xs font-bold text-zinc-900">{i + 1}</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                                                        <ClockIcon className="h-4 w-4 text-muted-foreground" />
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-xs font-bold text-foreground">{step.role}</p>
+                                                                    <p className="text-[10px] text-muted-foreground mt-0.5">{step.detail}</p>
+                                                                </div>
+                                                                {step.status === 'approved' ? (
+                                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-bold shrink-0">Approved</span>
+                                                                ) : step.status === 'pending-action' ? (
+                                                                    <button onClick={() => {
+                                                                        setApprovalSteps(prev => prev.map(s => s.id === step.id ? { ...s, status: 'approved' as const } : s))
+                                                                        setApprovalPhase('done')
+                                                                    }}
+                                                                        className="px-3 py-1.5 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[10px] font-bold shadow-sm transition-all hover:scale-[1.02] shrink-0">
+                                                                        Approve
+                                                                    </button>
+                                                                ) : (
+                                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium shrink-0">Waiting</span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
+                                                        {approvalSteps.every(s => s.status === 'approved') ? (
+                                                            <>
+                                                                <div className="flex items-center gap-2 text-[10px] text-green-700 dark:text-green-400 font-bold">
+                                                                    <CheckCircleIcon className="h-4 w-4" />
+                                                                    PO-to-ACK Conversion Approved — All levels cleared
+                                                                </div>
+                                                                <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                                                    Next Step
+                                                                    <ArrowRightIcon className="h-3 w-3" />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground w-full">
+                                                                <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                                                                Awaiting approval chain completion...
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -2148,9 +2423,8 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                     "group relative bg-card dark:bg-zinc-800 rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col",
                                                                     expandedIds.has(order.id) ? 'border-brand-400/50 ring-1 ring-brand-400/20 shadow-lg' : 'border-border shadow-sm hover:shadow-md',
                                                                     (procPhase === 'highlight' || procPhase === 'lupa-active') && order.id === '#ORD-2055' && isContinua && "ring-2 ring-brand-400 ring-offset-2 ring-offset-background shadow-xl shadow-brand-400/20 animate-pulse scale-[1.02]",
-                                                                    // Step 1.3: Knoll ACK card highlighting
-                                                                    ackPhase === 'alert' && order.id === 'Acknowledgement-8841' && isContinua && "ring-2 ring-red-500 ring-offset-2 ring-offset-background shadow-xl shadow-red-500/20 animate-pulse scale-[1.02]",
-                                                                    ackClickSim && order.id === 'Acknowledgement-8841' && isContinua && "scale-[0.96] ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 shadow-2xl transition-transform duration-200"
+                                                                    // Step 3.2: Knoll ACK card highlighting
+                                                                    ackPhase === 'alert' && order.id === 'Acknowledgement-8841' && isContinua && "ring-2 ring-red-500 ring-offset-2 ring-offset-background shadow-xl shadow-red-500/20 animate-pulse scale-[1.02]"
                                                                 )}
                                                             >
                                                                 <div className="p-4">
@@ -2171,7 +2445,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                                         </span>
                                                                                     )}
                                                                                     {/* Step 1.3: Validated badges on ACK cards */}
-                                                                                    {isContinua && lifecycleTab === 'acknowledgments' && (ackPhase === 'validating' || ackPhase === 'alert' || ackPhase === 'click-sim') && (
+                                                                                    {isContinua && lifecycleTab === 'acknowledgments' && (ackPhase === 'validating' || ackPhase === 'alert') && (
                                                                                         <>
                                                                                             {order.id === 'Acknowledgement-8839' && ackValidatedCount >= 1 && (
                                                                                                 <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px] font-bold uppercase tracking-wider animate-in fade-in duration-300">
@@ -2237,10 +2511,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                                 </button>
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); onNavigateToDetail(lifecycleTab === 'quotes' ? 'quote-detail' : lifecycleTab === 'acknowledgments' ? 'ack-detail' : 'order-detail'); }}
-                                                                                    className={cn(
-                                                                                        "p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all",
-                                                                                        ackClickSim && order.id === 'Acknowledgement-8841' && isContinua && "bg-red-500 text-white scale-110 ring-2 ring-red-400 shadow-lg"
-                                                                                    )}
+                                                                                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                                                                                     title="View Full Details"
                                                                                 >
                                                                                     <ArrowRightIcon className="h-4 w-4" />

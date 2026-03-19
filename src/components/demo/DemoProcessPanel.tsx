@@ -17,7 +17,7 @@ import ConfidenceScoreBadge from '../widgets/ConfidenceScoreBadge';
 
 // Steps that show the floating lupa panel (per profile)
 const COI_PANEL_STEPS = ['1.2', '1.3', '1.4'];
-const CONTINUA_PANEL_STEPS = ['1.3', '3.2', '3.4'];
+const CONTINUA_PANEL_STEPS = ['1.3', '3.2', '3.5'];
 
 // Simplified procurement phases for Continua 2.2 (human-friendly labels instead of technical agent names)
 const CONTINUA_PROC_PHASES = [
@@ -571,8 +571,8 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
 
             timers.push(setTimeout(pauseAware(() => nextStep()), D + 22000));
 
-        } else if (currentStep.id === '3.4' && isContinua) {
-            // Continua 3.4: Warehouse Receiving — QC inspection pipeline (20s)
+        } else if (currentStep.id === '3.5' && isContinua) {
+            // Continua 3.5: Warehouse Receiving — QC inspection pipeline (20s)
             timers.push(setTimeout(pauseAware(() => {
                 setAgentLogs(['ReceivingAgent: Processing inbound shipments for Project Meridian...']);
                 setPipelineAgents([
@@ -712,7 +712,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
             accentColor: 'amber',
             progressColor: 'bg-amber-500',
         },
-        'continua-3.4': {
+        'continua-3.5': {
             icon: <Cpu className="text-teal-600 dark:text-teal-400" size={18} />,
             title: 'Warehouse Receiving Agent',
             titleDone: 'Receiving Complete',
@@ -785,7 +785,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
         },
     };
 
-    const configKey = isContinua && ['1.3', '3.2', '3.4'].includes(currentStep.id)
+    const configKey = isContinua && ['1.3', '3.2', '3.5'].includes(currentStep.id)
         ? `continua-${currentStep.id}`
         : isOps && ['1.1', '1.3', '2.2', '2.4'].includes(currentStep.id)
         ? `ops-${currentStep.id}`

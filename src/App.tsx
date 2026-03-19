@@ -268,7 +268,7 @@ function App() {
 
       {/* FIXED NAVBAR (Unified) — hidden for email simulation & workspace/detail */}
       {(isDemoActive
-        ? currentStep.app !== 'email-marketplace' && !['1.8', '1.6', '2.1', '3.5'].includes(currentStep.id)
+        ? currentStep.app !== 'email-marketplace' && !['1.8', '1.6', '2.1'].includes(currentStep.id) && !(currentStep.id === '3.5' && !isContinua)
         : currentPage !== 'detail' && currentPage !== 'workspace'
       ) && (
         <div className="fixed top-0 left-0 right-0 z-[100]">

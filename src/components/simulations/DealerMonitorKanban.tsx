@@ -197,7 +197,7 @@ export default function DealerMonitorKanban(_props: { onNavigate?: (page: string
     const [priceAgents, setPriceAgents] = useState(PRICE_VERIFY_AGENTS.map(a => ({ ...a, visible: false, done: false })));
     const [priceProgress, setPriceProgress] = useState(0);
 
-    // Continua 3.3: orchestration
+    // Continua 1.3: orchestration (uses timing profile '3.3')
     const tp33 = CONTINUA_STEP_TIMING['3.3'];
     useEffect(() => {
         if (!isContinua || stepId !== '1.3') { setPricePhase('idle'); return; }

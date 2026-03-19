@@ -133,7 +133,7 @@ export default function MAC({ onLogout, onNavigateToDetail, onNavigateToWorkspac
 
     // Auto-select tab based on step
     useEffect(() => {
-        if (['1.5', '2.2', '2.5', '3.1', '3.2', '3.3', '3.4', '3.5', '4.1', '4.2', '4.3', '4.4', '4.5'].includes(currentStep?.id)) {
+        if (['1.5', '2.2', '2.5', '3.1', '3.2', '3.3', '3.4', '3.5', '3.6', '4.1', '4.2', '4.3', '4.4', '4.5'].includes(currentStep?.id)) {
             setActiveTab('punchlist');
         }
     }, [currentStep?.id]);

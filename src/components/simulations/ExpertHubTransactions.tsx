@@ -623,7 +623,7 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     // ─── Continua Step 1.3: ACK Tracking orchestration ────────────────────────
     const tp13 = CONTINUA_STEP_TIMING['1.3'];
     useEffect(() => {
-        if (!isContinua || stepId !== '3.3') { setAckPhase('idle'); return }
+        if (!isContinua || stepId !== '3.2') { setAckPhase('idle'); return }
         setAckPhase('idle')
         setAckAgents(ACK_TRACKING_AGENTS.map(a => ({ ...a, visible: false, done: false })))
         setLifecycleTab('acknowledgments')
@@ -3395,7 +3395,7 @@ IEA*1*000002055~`}
                 )}
 
                 {/* ═══ Continua Step 1.3 — ACK Tracking & Validation (auto 12s) ═══ */}
-                {isContinua && stepId === '3.3' && ackPhase !== 'idle' && (
+                {isContinua && stepId === '3.2' && ackPhase !== 'idle' && (
                     <div data-demo-target="ack-tracking-dashboard" className="space-y-4 mb-6">
                         {/* Notification */}
                         {ackPhase === 'notification' && (
