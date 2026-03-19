@@ -273,7 +273,7 @@ export const CONTINUA_DEMO_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     // Flow 1: Inventory & Asset Intelligence
     '1.1': { mode: 'interactive', userAction: 'Review inventory health: 2,400 items, 3 warehouses. Chicago at 85% capacity forecast. AI suggests relocating 120 items — $4,200/mo savings. Click "Apply Recommendations"' },
     '1.2': { mode: 'interactive', userAction: 'Review reuse assessment: 340 items from floor 7 teardown. 180 reusable, 95 recyclable, 65 EOL. $89,000 savings vs new. Click "Catalog Reusable Items"' },
-    '1.3': { mode: 'auto', duration: 10, aiSummary: 'PriceVerificationAgent: scanning 200+ manufacturer price lists — detecting 14 outdated costs, recalculating margins, flagging 6 items below 25%' },
+    '1.3': { mode: 'interactive', userAction: 'Price Verification Engine processes 200+ manufacturer price lists. Review results, then click "Continue to Quote Draft"' },
     '1.4': { mode: 'auto', duration: 8, aiSummary: 'LocationSyncAgent: synchronizing 3 warehouses + 2 job sites — optimizing delivery routing, consolidating shipments for $1,800 freight savings' },
     '1.5': { mode: 'interactive', userAction: 'Review consignment: 35 items, 12 approaching 90-day window. 4 RMA auto-generated. AI recommends converting 4 items to purchase (demand up 12%). Click "Process Decisions"' },
     '1.6': { mode: 'interactive', userAction: 'Emily Chen (UAL PM) reviews consolidated Inventory Intelligence Report — capacity, reuse, pricing, logistics, consignment. Click "Approve All Changes"' },
@@ -470,7 +470,7 @@ export interface StepTiming {
 export const CONTINUA_STEP_TIMING: Record<string, StepTiming> = {
     '1.1': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800,  agentDone: 500,  breathing: 1500, resultsDur: 0 },
     '1.2': { notifDelay: 2500, notifDuration: 7000, agentStagger: 1000, agentDone: 700,  breathing: 1800, resultsDur: 0 },
-    '1.3': { notifDelay: 2000, notifDuration: 5000, agentStagger: 800,  agentDone: 500,  breathing: 1000, resultsDur: 10000 },
+    '1.3': { notifDelay: 3000, notifDuration: 7000, agentStagger: 1200, agentDone: 800,  breathing: 2000, resultsDur: 0 },
     '1.4': { notifDelay: 1500, notifDuration: 4000, agentStagger: 600,  agentDone: 400,  breathing: 800,  resultsDur: 8000 },
     '1.5': { notifDelay: 2500, notifDuration: 7000, agentStagger: 900,  agentDone: 600,  breathing: 1500, resultsDur: 0 },
     '1.6': { notifDelay: 2000, notifDuration: 6000, agentStagger: 0,    agentDone: 0,    breathing: 0,    resultsDur: 0 },
