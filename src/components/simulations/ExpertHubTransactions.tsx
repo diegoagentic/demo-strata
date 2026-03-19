@@ -25,6 +25,7 @@ import { twMerge } from 'tailwind-merge'
 import AcknowledgementUploadModal from '../AcknowledgementUploadModal'
 import { useDemo } from '../../context/DemoContext'
 import { useDemoProfile } from '../../context/DemoProfileContext'
+import { CONTINUA_STEP_TIMING } from '../../config/profiles/continua-demo'
 import ConfidenceScoreBadge from '../widgets/ConfidenceScoreBadge'
 import AgentPipelineStrip from './AgentPipelineStrip'
 import DemoAvatar, { AIAgentAvatar } from './DemoAvatars'
@@ -172,6 +173,81 @@ const acksSummary = {
     on_time: { label: 'On Time Rate', value: '94%', sub: 'Vendor perf.', icon: <ArrowTrendingUpIcon className="w-5 h-5" />, color: 'purple' },
 }
 
+// ─── Continua Step 1.3: ACK Tracking Constants ────────────────────────────────
+const ACK_TRACKING_AGENTS = [
+    { name: 'POMonitor', detail: 'Scanning 12 active purchase orders...' },
+    { name: 'ACKValidator', detail: 'Cross-checking 9 ACKs against PO terms...' },
+    { name: 'PriceAudit', detail: 'Comparing contract vs ACK pricing...' },
+    { name: 'AgingTracker', detail: 'Flagging 3 pending ACKs — aging alerts...' },
+    { name: 'DisputeDrafter', detail: 'Generating dispute for Knoll +4% price increase...' },
+]
+
+const MANUFACTURER_ACKS = [
+    { manufacturer: 'MillerKnoll', pos: 4, acks: 4, status: 'validated' as const, match: '100%' },
+    { manufacturer: 'DIRTT Environmental', pos: 2, acks: 2, status: 'validated' as const, match: '98%' },
+    { manufacturer: 'AV Integration Partners', pos: 1, acks: 1, status: 'validated' as const, match: '100%' },
+    { manufacturer: 'Steelcase', pos: 2, acks: 1, status: 'pending' as const, match: '—' },
+    { manufacturer: 'Knoll (Task Seating)', pos: 2, acks: 1, status: 'dispute' as const, match: '96%', dispute: '+4% price increase on task chairs vs contract' },
+    { manufacturer: 'Shaw Contract', pos: 1, acks: 0, status: 'pending' as const, match: '—' },
+]
+
+// ─── Continua Step 2.2: Reuse Assessment & Cataloging Constants ──────────────
+const REUSE_AGENTS = [
+    { name: 'TeardownCataloger', detail: 'Scanning floor 7 teardown — 340 items inventoried...' },
+    { name: 'ConditionScorer', detail: 'AI condition scoring with photo evidence + wear analysis...' },
+    { name: 'MaterialClassifier', detail: 'Classifying: 180 reusable, 95 recyclable, 65 EOL...' },
+    { name: 'ValueEstimator', detail: 'Estimating refurbished value — $89,000 savings vs new...' },
+    { name: 'InventoryLister', detail: 'Auto-listing reusable items with "Refurbished" tag...' },
+]
+const REUSE_ITEMS = [
+    { name: 'Aeron Chair (Graphite)', qty: 45, condition: 4.2, category: 'reusable' as const, value: '$18,900', action: 'Refurbish + Relist' },
+    { name: 'Sit-Stand Desk Frame', qty: 32, condition: 3.8, category: 'reusable' as const, value: '$12,800', action: 'Refurbish + Relist' },
+    { name: 'Monitor Arm (Dual)', qty: 28, condition: 4.5, category: 'reusable' as const, value: '$5,600', action: 'Clean + Relist' },
+    { name: 'Task Light (LED)', qty: 40, condition: 3.2, category: 'reusable' as const, value: '$3,200', action: 'Test + Relist' },
+    { name: 'Cubicle Panel (Fabric)', qty: 60, condition: 2.1, category: 'recyclable' as const, value: '$1,800', action: 'Fabric Recycle' },
+    { name: 'Filing Cabinet (Metal)', qty: 35, condition: 2.5, category: 'recyclable' as const, value: '$2,100', action: 'Metal Recycle' },
+    { name: 'Keyboard Tray', qty: 65, condition: 1.4, category: 'eol' as const, value: '$0', action: 'Dispose' },
+]
+const REUSE_BREAKDOWN = [
+    { label: 'Reusable (Refurbish)', count: 180, pct: 53, color: 'bg-green-500' },
+    { label: 'Recyclable (Metal/Fabric)', count: 95, pct: 28, color: 'bg-blue-500' },
+    { label: 'End of Life', count: 65, pct: 19, color: 'bg-zinc-400' },
+]
+type ReusePhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+
+// ─── Continua Step 3.2: Client Project Portal Constants ──────────────────────
+const PORTAL_AGENTS = [
+    { name: 'PortalBuilder', detail: 'Generating client-facing project view...' },
+    { name: 'TimelineTracker', detail: 'Progress: 82% complete — 5 floors tracked...' },
+    { name: 'BudgetAnalyzer', detail: 'Budget: $2.65M of $3.2M invoiced...' },
+    { name: 'ChangeRouter', detail: 'Routing 1 client change request to PM...' },
+    { name: 'PortalPublisher', detail: 'Publishing portal update for facilities team...' },
+]
+const FLOOR_STATUS = [
+    { floor: 'Floor 4', progress: 100, status: 'Complete' as const, items: 280 },
+    { floor: 'Floor 5', progress: 85, status: 'In Progress' as const, items: 320 },
+    { floor: 'Floor 6', progress: 72, status: 'In Progress' as const, items: 180 },
+    { floor: 'Floor 7', progress: 45, status: 'Renovation' as const, items: 0 },
+    { floor: 'Floor 8', progress: 15, status: 'Planning' as const, items: 0 },
+]
+const OPEN_ITEMS = [
+    { type: 'Delivery' as const, desc: 'DIRTT wall panels — Floor 6', due: 'Apr 4', status: 'In Transit' },
+    { type: 'Delivery' as const, desc: 'AV equipment — Conference rooms 601-604', due: 'Apr 7', status: 'Scheduled' },
+    { type: 'Delivery' as const, desc: 'Steelcase task chairs — Floor 5 backorder', due: 'Apr 12', status: 'Pending' },
+    { type: 'Warranty' as const, desc: 'Aeron Chair fabric tear — 2 units', due: 'Active', status: 'Claim Filed' },
+]
+type PortalPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+
+// ─── FM Flow: Expert Review & Dispatch (F.3) ─────────────────────────────────
+type FMExpertPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+
+const FM_EXPERT_AGENTS = [
+    { name: 'WarrantyValidator', detail: 'Confirming Herman Miller warranty — active until 2027-06...' },
+    { name: 'ConsignmentMatcher', detail: 'Aeron Remastered in Zone A — 98% spec match, $0 cost...' },
+    { name: 'InstallerDispatch', detail: 'ProInstall LLC available tomorrow 9:00-12:00 AM...' },
+    { name: 'CostAnalyzer', detail: 'Total resolution cost: $0 (warranty + consignment)...' },
+]
+
 interface TransactionsProps {
     onLogout: () => void;
     onNavigateToDetail: (type: string) => void;
@@ -183,12 +259,22 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
     const { currentStep, nextStep, isDemoActive, isPaused } = useDemo();
     const { activeProfile } = useDemoProfile();
     const isOps = activeProfile.id === 'ops';
+    const isContinua = activeProfile.id === 'continua';
+    const stepId = currentStep?.id || '';
 
     // OPS state variables
     const [receivingApproved12, setReceivingApproved12] = useState(false);
     const [invoiceApproved14, setInvoiceApproved14] = useState(false);
     const [servicesApproved15, setServicesApproved15] = useState(false);
     const [coApproved23, setCoApproved23] = useState(false);
+
+    // ─── Continua Step 1.3: ACK Tracking ──────────────────────────────────────
+    type AckPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+    const [ackPhase, setAckPhase] = useState<AckPhase>('idle')
+    const ackPhaseRef = useRef(ackPhase)
+    useEffect(() => { ackPhaseRef.current = ackPhase }, [ackPhase])
+    const [ackAgents, setAckAgents] = useState(ACK_TRACKING_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+    const [ackProgress, setAckProgress] = useState(0)
 
     // Pause-aware timer helper
     const isPausedRef = useRef(isPaused);
@@ -533,6 +619,220 @@ export default function ExpertHubTransactions({ onLogout, onNavigateToDetail, on
         setServicesApproved15(false);
         setCoApproved23(false);
     }, [currentStep.id, isOps]);
+
+    // ─── Continua Step 1.3: ACK Tracking orchestration ────────────────────────
+    const tp13 = CONTINUA_STEP_TIMING['1.3'];
+    useEffect(() => {
+        if (!isContinua || stepId !== '2.3') { setAckPhase('idle'); return }
+        setAckPhase('idle')
+        setAckAgents(ACK_TRACKING_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setLifecycleTab('acknowledgments')
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(pauseAware(() => setAckPhase('notification')), tp13.notifDelay))
+        timers.push(setTimeout(pauseAware(() => {
+            if (ackPhaseRef.current === 'notification') setAckPhase('processing')
+        }), tp13.notifDelay + tp13.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // Continua 1.3: processing → breathing
+    useEffect(() => {
+        if (ackPhase !== 'processing') return
+        setAckAgents(ACK_TRACKING_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setAckProgress(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setAckProgress(100), 50))
+        ACK_TRACKING_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => {
+                setAckAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))
+            }), i * tp13.agentStagger))
+            timers.push(setTimeout(pauseAware(() => {
+                setAckAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))
+            }), i * tp13.agentStagger + tp13.agentDone))
+        })
+        const totalTime = ACK_TRACKING_AGENTS.length * tp13.agentStagger + tp13.agentDone
+        timers.push(setTimeout(pauseAware(() => setAckPhase('breathing')), totalTime))
+        return () => timers.forEach(clearTimeout)
+    }, [ackPhase])
+
+    // Continua 1.3: breathing → revealed
+    useEffect(() => {
+        if (ackPhase !== 'breathing') return
+        const t = setTimeout(pauseAware(() => setAckPhase('revealed')), tp13.breathing);
+        return () => clearTimeout(t);
+    }, [ackPhase])
+
+    // Continua 1.3: revealed → results
+    useEffect(() => {
+        if (ackPhase !== 'revealed') return
+        const t = setTimeout(pauseAware(() => setAckPhase('results')), 1500)
+        return () => clearTimeout(t)
+    }, [ackPhase])
+
+    // Continua 1.3: auto-advance (System role, from results)
+    useEffect(() => {
+        if (ackPhase !== 'results') return
+        const t = setTimeout(pauseAware(() => nextStep()), tp13.resultsDur)
+        return () => clearTimeout(t)
+    }, [ackPhase])
+
+    // ─── Continua Step 2.2: Reuse Assessment & Cataloging ───────────────────────
+    const [reusePhase, setReusePhase] = useState<ReusePhase>('idle')
+    const reusePhaseRef = useRef(reusePhase)
+    useEffect(() => { reusePhaseRef.current = reusePhase }, [reusePhase])
+    const [reuseAgents, setReuseAgents] = useState(REUSE_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+    const [reuseProgress, setReuseProgress] = useState(0)
+
+    // Continua 2.2: orchestration
+    const tp22 = CONTINUA_STEP_TIMING['2.2'];
+    useEffect(() => {
+        if (!isContinua || stepId !== '1.2') { setReusePhase('idle'); return }
+        setReusePhase('idle')
+        setReuseAgents(REUSE_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setLifecycleTab('orders')
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(pauseAware(() => setReusePhase('notification')), tp22.notifDelay))
+        timers.push(setTimeout(pauseAware(() => {
+            if (reusePhaseRef.current === 'notification') setReusePhase('processing')
+        }), tp22.notifDelay + tp22.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // Continua 2.2: processing → breathing
+    useEffect(() => {
+        if (reusePhase !== 'processing') return
+        setReuseAgents(REUSE_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setReuseProgress(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setReuseProgress(100), 50))
+        REUSE_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setReuseAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * tp22.agentStagger))
+            timers.push(setTimeout(pauseAware(() => setReuseAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * tp22.agentStagger + tp22.agentDone))
+        })
+        const totalTime = REUSE_AGENTS.length * tp22.agentStagger + tp22.agentDone
+        timers.push(setTimeout(pauseAware(() => setReusePhase('breathing')), totalTime))
+        return () => timers.forEach(clearTimeout)
+    }, [reusePhase])
+
+    // Continua 2.2: breathing → revealed
+    useEffect(() => {
+        if (reusePhase !== 'breathing') return
+        const t = setTimeout(pauseAware(() => setReusePhase('revealed')), tp22.breathing);
+        return () => clearTimeout(t);
+    }, [reusePhase])
+
+    // Continua 2.2: revealed → results
+    useEffect(() => {
+        if (reusePhase !== 'revealed') return
+        const t = setTimeout(pauseAware(() => setReusePhase('results')), 1500)
+        return () => clearTimeout(t)
+    }, [reusePhase])
+
+    // ─── FM Step F.3: Expert Review & Dispatch state ─────────────────────────────
+    const [fmExpertPhase, setFmExpertPhase] = useState<FMExpertPhase>('idle')
+    const fmExpertPhaseRef = useRef(fmExpertPhase)
+    useEffect(() => { fmExpertPhaseRef.current = fmExpertPhase }, [fmExpertPhase])
+    const [fmExpertAgents, setFmExpertAgents] = useState(FM_EXPERT_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+    const [fmExpertProgress, setFmExpertProgress] = useState(0)
+    const [fmApproved, setFmApproved] = useState(false)
+
+    // F.3 orchestration
+    const tpF3 = CONTINUA_STEP_TIMING['F.3'];
+    useEffect(() => {
+        if (!isContinua || stepId !== 'F.3') { setFmExpertPhase('idle'); setFmApproved(false); return }
+        setFmExpertPhase('idle')
+        setFmApproved(false)
+        setFmExpertAgents(FM_EXPERT_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(pauseAware(() => setFmExpertPhase('notification')), tpF3.notifDelay))
+        timers.push(setTimeout(pauseAware(() => {
+            if (fmExpertPhaseRef.current === 'notification') setFmExpertPhase('processing')
+        }), tpF3.notifDelay + tpF3.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // F.3: processing → breathing
+    useEffect(() => {
+        if (fmExpertPhase !== 'processing') return
+        setFmExpertAgents(FM_EXPERT_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setFmExpertProgress(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setFmExpertProgress(100), 50))
+        FM_EXPERT_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setFmExpertAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * tpF3.agentStagger))
+            timers.push(setTimeout(pauseAware(() => setFmExpertAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * tpF3.agentStagger + tpF3.agentDone))
+        })
+        timers.push(setTimeout(pauseAware(() => setFmExpertPhase('breathing')), FM_EXPERT_AGENTS.length * tpF3.agentStagger + tpF3.agentDone + 300))
+        return () => timers.forEach(clearTimeout)
+    }, [fmExpertPhase])
+
+    useEffect(() => {
+        if (fmExpertPhase !== 'breathing') return
+        const t = setTimeout(pauseAware(() => setFmExpertPhase('revealed')), tpF3.breathing);
+        return () => clearTimeout(t);
+    }, [fmExpertPhase])
+
+    useEffect(() => {
+        if (fmExpertPhase !== 'revealed') return
+        const t = setTimeout(pauseAware(() => setFmExpertPhase('results')), 1500)
+        return () => clearTimeout(t)
+    }, [fmExpertPhase])
+
+    // F.3: after approve, advance to next step
+    useEffect(() => {
+        if (!fmApproved) return
+        const t = setTimeout(pauseAware(() => nextStep()), 2000)
+        return () => clearTimeout(t)
+    }, [fmApproved])
+
+    // ─── Continua Step 3.2: Client Project Portal ───────────────────────────────
+    const [portalPhase, setPortalPhase] = useState<PortalPhase>('idle')
+    const portalPhaseRef = useRef(portalPhase)
+    useEffect(() => { portalPhaseRef.current = portalPhase }, [portalPhase])
+    const [portalAgents, setPortalAgents] = useState(PORTAL_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+    const [portalProgress, setPortalProgress] = useState(0)
+
+    const tp32 = CONTINUA_STEP_TIMING['3.2'];
+    useEffect(() => {
+        if (!isContinua || stepId !== '3.2') { setPortalPhase('idle'); return }
+        setPortalPhase('idle')
+        setPortalAgents(PORTAL_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setLifecycleTab('orders')
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(pauseAware(() => setPortalPhase('notification')), tp32.notifDelay))
+        timers.push(setTimeout(pauseAware(() => { if (portalPhaseRef.current === 'notification') setPortalPhase('processing') }), tp32.notifDelay + tp32.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // Continua 3.2: processing → breathing
+    useEffect(() => {
+        if (portalPhase !== 'processing') return
+        setPortalAgents(PORTAL_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setPortalProgress(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setPortalProgress(100), 50))
+        PORTAL_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setPortalAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * tp32.agentStagger))
+            timers.push(setTimeout(pauseAware(() => setPortalAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * tp32.agentStagger + tp32.agentDone))
+        })
+        const totalTime = PORTAL_AGENTS.length * tp32.agentStagger + tp32.agentDone
+        timers.push(setTimeout(pauseAware(() => setPortalPhase('breathing')), totalTime))
+        return () => timers.forEach(clearTimeout)
+    }, [portalPhase])
+
+    // Continua 3.2: breathing → revealed
+    useEffect(() => {
+        if (portalPhase !== 'breathing') return
+        const t = setTimeout(pauseAware(() => setPortalPhase('revealed')), tp32.breathing);
+        return () => clearTimeout(t);
+    }, [portalPhase])
+
+    // Continua 3.2: revealed → results
+    useEffect(() => {
+        if (portalPhase !== 'revealed') return
+        const t = setTimeout(pauseAware(() => setPortalPhase('results')), 1500)
+        return () => clearTimeout(t)
+    }, [portalPhase])
 
     // Dynamic URL Param Handling
     useEffect(() => {
@@ -3091,6 +3391,616 @@ IEA*1*000002055~`}
                                 Approve Receiving Doc
                             </button>
                         </div>
+                    </div>
+                )}
+
+                {/* ═══ Continua Step 1.3 — ACK Tracking & Validation (auto 12s) ═══ */}
+                {isContinua && stepId === '2.3' && ackPhase !== 'idle' && (
+                    <div data-demo-target="ack-tracking-dashboard" className="space-y-4 mb-6">
+                        {/* Notification */}
+                        {ackPhase === 'notification' && (
+                            <button onClick={() => setAckPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-brand-500 text-white"><ClipboardDocumentCheckIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">ACK Validation Initiated</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-white font-bold">Just now</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">TrackingAgent: Monitoring <span className="font-semibold text-foreground">12 active POs</span> — validating ACKs against purchase orders, checking pricing, flagging aging items.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to start validation <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {ackPhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-foreground">TrackingAgent Validating ACKs...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-brand-400 transition-all duration-[3500ms] ease-linear" style={{ width: `${ackProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {ackAgents.map(agent => (
+                                        <div key={agent.name} className={cn("flex items-center gap-2 text-[10px] transition-all duration-300", agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />}
+                                            <span className={cn("font-medium", agent.done ? "text-foreground" : "text-indigo-600 dark:text-indigo-400")}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {ackPhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(ackPhase === 'revealed' || ackPhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">TrackingAgent:</span> ACK validation complete — <span className="font-semibold">9/12 validated</span>, 3 pending, <span className="font-semibold text-amber-700 dark:text-amber-400">1 dispute detected</span> (Knoll +4% price increase).</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['PO Tracker', 'ACK Engine', 'Contract DB', 'Dispute Queue'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {ackPhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">ACK Status — Corporate HQ Project</h3>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">12 POs across 6 manufacturer groups</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">9 Validated</span>
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold">2 Pending</span>
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-bold">1 Dispute</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Manufacturer Table */}
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead><tr className="border-b border-border/50 bg-muted/30">
+                                                <th className="px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Manufacturer</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">POs</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">ACKs</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Match</th>
+                                                <th className="px-4 py-2.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+                                            </tr></thead>
+                                            <tbody>
+                                                {MANUFACTURER_ACKS.map(m => (
+                                                    <tr key={m.manufacturer} className={cn("border-b border-border/30 transition-colors", m.status === 'dispute' && "bg-red-50/50 dark:bg-red-500/5")}>
+                                                        <td className="px-4 py-3 text-xs font-medium text-foreground">{m.manufacturer}</td>
+                                                        <td className="px-4 py-3 text-xs text-muted-foreground">{m.pos}</td>
+                                                        <td className="px-4 py-3 text-xs text-muted-foreground">{m.acks}/{m.pos}</td>
+                                                        <td className="px-4 py-3 text-xs text-muted-foreground">{m.match}</td>
+                                                        <td className="px-4 py-3">
+                                                            <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-bold",
+                                                                m.status === 'validated' && "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400",
+                                                                m.status === 'pending' && "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                                                                m.status === 'dispute' && "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400",
+                                                            )}>
+                                                                {m.status === 'validated' ? 'Validated' : m.status === 'pending' ? 'Pending' : 'Dispute'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Dispute Highlight Card */}
+                                    <div className="m-4 p-4 rounded-xl bg-red-50 dark:bg-red-500/5 border border-red-200 dark:border-red-500/20">
+                                        <div className="flex items-start gap-3">
+                                            <ExclamationTriangleIcon className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="text-xs font-bold text-red-800 dark:text-red-300">Dispute Detected — Knoll Task Seating</h4>
+                                                <p className="text-[11px] text-red-700 dark:text-red-400 mt-1">ACK shows +4% price increase on task chairs ($1,149 vs contract $1,105). Affects 200 units — potential overcharge of <span className="font-bold">$8,800</span>.</p>
+                                                <div className="mt-3 p-3 rounded-lg bg-white/60 dark:bg-zinc-900/40 border border-red-100 dark:border-red-500/10">
+                                                    <p className="text-[10px] font-bold text-foreground mb-1">Auto-Generated Dispute Draft</p>
+                                                    <p className="text-[10px] text-muted-foreground italic">"Per Contract #MK-2024-HQ, Section 4.2: Pricing fixed for project duration. ACK #KN-4892 reflects $1,149/unit vs contractual $1,105/unit. Request correction to honor contracted pricing for all 200 task chair units."</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ Continua Step 2.2 — Reuse Assessment & Cataloging (interactive) ═══ */}
+                {isContinua && stepId === '1.2' && reusePhase !== 'idle' && (
+                    <div data-demo-target="reuse-assessment-catalog" className="space-y-4 mb-6">
+                        {/* Notification */}
+                        {reusePhase === 'notification' && (
+                            <button onClick={() => setReusePhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-green-600 text-white"><ArrowPathIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">Reuse Assessment — Floor 7 Teardown</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-600 text-white font-bold">340 items</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">SustainabilityAgent: Cataloging <span className="font-semibold text-foreground">340 items</span> from floor 7 pre-renovation teardown — AI condition scoring, material classification, value estimation.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review assessment <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {reusePhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-foreground">SustainabilityAgent Cataloging Teardown...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-green-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${reuseProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {reuseAgents.map(agent => (
+                                        <div key={agent.name} className={cn("flex items-center gap-2 text-[10px] transition-all duration-300", agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-green-600 animate-spin shrink-0" />}
+                                            <span className={cn("font-medium", agent.done ? "text-foreground" : "text-green-600 dark:text-green-400")}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {reusePhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(reusePhase === 'revealed' || reusePhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">SustainabilityAgent:</span> 340 items cataloged — <span className="font-semibold">180 reusable</span>, 95 recyclable, 65 EOL. Estimated savings: <span className="font-semibold">$89,000</span> vs new procurement.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['Condition AI', 'Material DB', 'Value Engine', 'Inventory WMS', 'Sustainability Tracker'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {reusePhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">Reuse Assessment — Floor 7 Teardown</h3>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">340 items evaluated · AI condition scoring · Photo evidence</p>
+                                        </div>
+                                        <span className="text-sm font-bold text-green-600 dark:text-green-400">$89K savings</span>
+                                    </div>
+
+                                    {/* Category Breakdown */}
+                                    <div className="p-4 border-b border-border/50">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            {REUSE_BREAKDOWN.map(cat => (
+                                                <div key={cat.label} className="flex items-center gap-1.5 text-[10px]">
+                                                    <div className={cn("w-2.5 h-2.5 rounded-full", cat.color)} />
+                                                    <span className="text-muted-foreground">{cat.label}</span>
+                                                    <span className="font-bold text-foreground">{cat.count}</span>
+                                                    <span className="text-muted-foreground">({cat.pct}%)</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* Stacked bar */}
+                                        <div className="h-3 rounded-full overflow-hidden flex">
+                                            {REUSE_BREAKDOWN.map(cat => (
+                                                <div key={cat.label} className={cn("h-full transition-all duration-700", cat.color)} style={{ width: `${cat.pct}%` }} />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Item Cards */}
+                                    <div className="p-4">
+                                        <div className="space-y-2">
+                                            {REUSE_ITEMS.map((item, i) => (
+                                                <div key={i} className={cn("flex items-center justify-between p-2.5 rounded-lg border",
+                                                    item.category === 'reusable' ? "border-green-200 dark:border-green-500/20 bg-green-50/30 dark:bg-green-500/5" :
+                                                    item.category === 'recyclable' ? "border-blue-200 dark:border-blue-500/20 bg-blue-50/30 dark:bg-blue-500/5" :
+                                                    "border-border bg-muted/20"
+                                                )}>
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                        <span className={cn("text-[9px] px-2 py-0.5 rounded-full font-bold shrink-0",
+                                                            item.category === 'reusable' ? "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400" :
+                                                            item.category === 'recyclable' ? "bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" :
+                                                            "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400"
+                                                        )}>{item.category === 'eol' ? 'EOL' : item.category}</span>
+                                                        <div className="min-w-0">
+                                                            <p className="text-[11px] font-medium text-foreground truncate">{item.name}</p>
+                                                            <p className="text-[10px] text-muted-foreground">Qty: {item.qty} · Score: {item.condition}/5 · {item.action}</p>
+                                                        </div>
+                                                    </div>
+                                                    <span className={cn("text-[11px] font-bold shrink-0 ml-2", item.value !== '$0' ? "text-green-600 dark:text-green-400" : "text-muted-foreground")}>{item.value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Savings Summary + CTA */}
+                                    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
+                                        <div>
+                                            <p className="text-[10px] text-muted-foreground">180 items auto-listed with "Refurbished" tag in inventory</p>
+                                            <p className="text-[11px] font-bold text-green-600 dark:text-green-400 mt-0.5">Total savings vs new: $89,000</p>
+                                        </div>
+                                        <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                            <CheckCircleIcon className="h-3.5 w-3.5" />Catalog Reusable Items<ArrowRightIcon className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ Continua Step 3.2 — Client Project Portal (Dealer interactive) ═══ */}
+                {isContinua && stepId === '3.2' && portalPhase !== 'idle' && (
+                    <div data-demo-target="client-project-portal" className="space-y-4 mb-6">
+                        {/* Notification */}
+                        {portalPhase === 'notification' && (
+                            <button onClick={() => setPortalPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-blue-600 text-white"><EyeIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">Client Portal Update — UAL HQ</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-bold">82% complete</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">ClientPortalAgent: Generating project view — <span className="font-semibold text-foreground">$2.65M/$3.2M invoiced</span>, 5 floors tracked, 3 pending deliveries, 1 warranty claim.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review portal <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {portalPhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-foreground">ClientPortalAgent Building View...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-blue-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${portalProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {portalAgents.map(agent => (
+                                        <div key={agent.name} className={cn("flex items-center gap-2 text-[10px] transition-all duration-300", agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-blue-500 animate-spin shrink-0" />}
+                                            <span className={cn("font-medium", agent.done ? "text-foreground" : "text-blue-600 dark:text-blue-400")}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {portalPhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(portalPhase === 'revealed' || portalPhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">ClientPortalAgent:</span> Portal ready — <span className="font-semibold">82% complete</span>, $2.65M invoiced. 3 deliveries pending, 1 warranty claim active. One contact, one contract, one invoice.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['Timeline Engine', 'Budget Tracker', 'Change Router', 'Invoice System', 'Portal CMS'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {portalPhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">Client Project Portal — UAL HQ</h3>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5 italic">"One contact, one contract, one invoice"</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-center">
+                                                <p className="text-lg font-bold text-blue-600 dark:text-blue-400">82%</p>
+                                                <p className="text-[9px] text-muted-foreground">Progress</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-lg font-bold text-foreground">$2.65M</p>
+                                                <p className="text-[9px] text-muted-foreground">of $3.2M</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Budget Bar */}
+                                    <div className="px-4 pt-4">
+                                        <div className="flex items-center justify-between text-[10px] mb-1">
+                                            <span className="text-muted-foreground">Budget Utilization</span>
+                                            <span className="font-bold text-foreground">$2.65M / $3.2M (82.8%)</span>
+                                        </div>
+                                        <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                                            <div className="h-full rounded-full bg-blue-500 transition-all duration-700" style={{ width: '82.8%' }} />
+                                        </div>
+                                    </div>
+
+                                    {/* Floor Status */}
+                                    <div className="p-4 grid grid-cols-5 gap-2">
+                                        {FLOOR_STATUS.map(f => (
+                                            <div key={f.floor} className={cn("p-2.5 rounded-xl border text-center",
+                                                f.progress === 100 ? "border-green-200 dark:border-green-500/20 bg-green-50/50 dark:bg-green-500/5" :
+                                                f.progress > 50 ? "border-blue-200 dark:border-blue-500/20 bg-blue-50/30 dark:bg-blue-500/5" :
+                                                "border-border bg-muted/20"
+                                            )}>
+                                                <p className="text-[10px] font-bold text-foreground">{f.floor}</p>
+                                                <div className="h-1.5 rounded-full bg-muted overflow-hidden my-1.5">
+                                                    <div className={cn("h-full rounded-full", f.progress === 100 ? "bg-green-500" : f.progress > 50 ? "bg-blue-500" : "bg-zinc-400")} style={{ width: `${f.progress}%` }} />
+                                                </div>
+                                                <p className="text-[9px] text-muted-foreground">{f.status}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Open Items */}
+                                    <div className="mx-4 mb-4 p-3 rounded-xl bg-muted/20 border border-border">
+                                        <h4 className="text-xs font-bold text-foreground mb-2">Open Items ({OPEN_ITEMS.length})</h4>
+                                        <div className="space-y-1.5">
+                                            {OPEN_ITEMS.map((item, i) => (
+                                                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-card border border-border/50">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={cn("text-[9px] px-2 py-0.5 rounded-full font-bold",
+                                                            item.type === 'Delivery' ? "bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" :
+                                                            "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                                        )}>{item.type}</span>
+                                                        <span className="text-[10px] text-foreground">{item.desc}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] text-muted-foreground">{item.due}</span>
+                                                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-muted text-foreground font-medium">{item.status}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Hero Tagline */}
+                                    <div className="py-5 text-center animate-in fade-in zoom-in-95 duration-700">
+                                        <p className="text-xl font-black tracking-tight">
+                                            <span className="text-primary">One</span> contact.{' '}
+                                            <span className="text-primary">One</span> contract.{' '}
+                                            <span className="text-primary">One</span> invoice.
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1.5">Single-pane-of-glass for facilities teams</p>
+                                    </div>
+
+                                    {/* CTA */}
+                                    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
+                                        <p className="text-[10px] text-muted-foreground">Portal ready for facilities team — real-time project tracking</p>
+                                        <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                            <CheckCircleIcon className="h-3.5 w-3.5" />Publish Portal Update<ArrowRightIcon className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ FM Step F.3 — Expert Review & Dispatch (interactive) ═══ */}
+                {isContinua && stepId === 'F.3' && fmExpertPhase !== 'idle' && (
+                    <div data-demo-target="fm-expert-dispatch" className="space-y-4 mb-6">
+                        {/* Notification */}
+                        {fmExpertPhase === 'notification' && (
+                            <button onClick={() => setFmExpertPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-violet-600 text-white"><ClipboardDocumentCheckIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">Expert Review — Service Request REQ-FM-2026-018</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500 text-white font-bold">SAFETY</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">TriageAgent has prepared a resolution plan — <span className="font-semibold text-foreground">warranty claim, consignment swap, installer dispatch</span>. Awaiting expert approval.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review plan <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {fmExpertPhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-foreground">Validating Resolution Plan...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-violet-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${fmExpertProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {fmExpertAgents.map(agent => (
+                                        <div key={agent.name} className={cn("flex items-center gap-2 text-[10px] transition-all duration-300", agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-violet-500 animate-spin shrink-0" />}
+                                            <span className={cn("font-medium", agent.done ? "text-foreground" : "text-violet-600 dark:text-violet-400")}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {fmExpertPhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Validation complete — preparing decision card...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(fmExpertPhase === 'revealed' || fmExpertPhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">TriageAgent:</span> Resolution plan validated. <span className="font-semibold">Warranty active, consignment match 98%, installer available tomorrow</span>. Total cost: $0.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">All Checks · Passed</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['Warranty', 'Consignment', 'Installer', 'Cost'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Decision Card — Results */}
+                        {fmExpertPhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">Decision Card — REQ-FM-2026-018</h3>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">AI-recommended resolution · Expert approval required</p>
+                                        </div>
+                                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 font-bold flex items-center gap-1"><SparklesIcon className="h-3 w-3" />AI Suggested</span>
+                                    </div>
+
+                                    <div className="p-4 space-y-3">
+                                        {/* Warranty Section */}
+                                        <div className="p-3 rounded-xl border border-green-200 dark:border-green-500/20 bg-green-50/50 dark:bg-green-500/5">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-xs font-bold text-foreground">Warranty Claim</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400 font-bold">AUTO-FILED</span>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground">CLM-FM-2026-018 — Herman Miller will replace gas cylinder under active warranty (exp. 2027-06)</p>
+                                        </div>
+
+                                        {/* Consignment Section */}
+                                        <div className="p-3 rounded-xl border border-brand-300 dark:border-brand-500/30 bg-brand-50/50 dark:bg-brand-500/5">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-xs font-bold text-foreground">Consignment Swap</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-200 text-brand-800 dark:bg-brand-500/10 dark:text-brand-400 font-bold">RECOMMENDED</span>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground">Aeron Remastered (SN: AER-CON-WH-003) from Warehouse Zone A — 98% spec match, consignment stock, $0 cost</p>
+                                        </div>
+
+                                        {/* Dispatch Section */}
+                                        <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-500/20 bg-blue-50/50 dark:bg-blue-500/5">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-xs font-bold text-foreground">Installer Dispatch</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 font-bold">SCHEDULED</span>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground">ProInstall LLC — James Mercer — Tomorrow 9:00-12:00 AM — Certified Herman Miller installer</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Approve & Notify CTA */}
+                                    <div className="px-4 py-3 border-t border-border/50 bg-muted/20">
+                                        {!fmApproved ? (
+                                            <button onClick={() => setFmApproved(true)} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-sm font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                                <CheckCircleIcon className="h-4 w-4" />Approve & Notify All Parties<ArrowRightIcon className="h-3.5 w-3.5" />
+                                            </button>
+                                        ) : (
+                                            <div className="space-y-2 animate-in fade-in duration-300">
+                                                <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400">
+                                                    <CheckCircleIcon className="h-5 w-5" />
+                                                    <span className="text-sm font-bold">Approved — Notifying stakeholders</span>
+                                                </div>
+                                                <div className="flex items-center justify-center gap-3">
+                                                    {[
+                                                        { initials: 'CR', name: 'Carlos Rivera', color: 'from-blue-500 to-blue-700' },
+                                                        { initials: 'SC', name: 'Sara Chen', color: 'from-emerald-500 to-emerald-700' },
+                                                        { initials: 'PI', name: 'ProInstall LLC', color: 'from-orange-500 to-orange-700' },
+                                                    ].map((p, i) => (
+                                                        <div key={i} className="flex items-center gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 200}ms` }}>
+                                                            <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${p.color} text-white flex items-center justify-center text-[9px] font-bold`}>{p.initials}</div>
+                                                            <span className="text-[10px] text-muted-foreground">{p.name}</span>
+                                                            <CheckCircleIcon className="h-3 w-3 text-green-500" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

@@ -16,7 +16,9 @@ import { useTenant } from './TenantContext'
 import Navbar from './components/Navbar'
 import Breadcrumbs from './components/Breadcrumbs'
 import { useDemo } from './context/DemoContext'
+import { useDemoProfile } from './context/DemoProfileContext'
 import ConfidenceScoreBadge from './components/widgets/ConfidenceScoreBadge'
+import { AIAgentAvatar } from './components/simulations/DemoAvatars'
 import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
 
 function cn(...inputs: (string | undefined | null | false)[]) {
@@ -501,7 +503,10 @@ interface DetailProps {
 }
 
 export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onNavigate, initialTab }: DetailProps) {
-    const { currentStep, isDemoActive } = useDemo()
+    const { currentStep, isDemoActive, nextStep } = useDemo()
+    const { activeProfile } = useDemoProfile()
+    const isContinua = activeProfile.id === 'continua'
+    const showAckSummary = isContinua && currentStep?.id === '2.3'
     const [activeTabIndex, setActiveTabIndex] = useState(initialTab || 0)
 
     // Auto-switch to AI Assistant tab when entering step 2.4
@@ -729,6 +734,103 @@ export default function AckDetail({ onBack, onLogout, onNavigateToWorkspace, onN
                 ))}
 
 
+
+                {/* ═══ Continua Step 1.3 — ACK Validation Summary ═══ */}
+                {showAckSummary && (
+                    <div className="px-6 py-4 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* AI Attribution */}
+                        <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
+                            <div className="flex items-center gap-2">
+                                <AIAgentAvatar size="sm" />
+                                <span className="text-xs font-bold text-red-700 dark:text-red-400">
+                                    TrackingAgent — Price Discrepancy Detected on Knoll ACK
+                                </span>
+                            </div>
+                            <ConfidenceScoreBadge score={96} label="Match Confidence" />
+                        </div>
+
+                        {/* Validation Summary Card */}
+                        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg">
+                            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-red-500/10 flex items-center justify-center">
+                                        <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-foreground">ACK Validation Report</h3>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">12 POs tracked · 9 ACKs validated · 1 discrepancy</p>
+                                    </div>
+                                </div>
+                                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
+                                    Dispute Required
+                                </span>
+                            </div>
+
+                            <div className="p-6 space-y-5">
+                                {/* Validation Steps */}
+                                <div className="space-y-2">
+                                    {[
+                                        { label: 'PO monitoring active', detail: '12 active purchase orders tracked across 4 manufacturers', ok: true },
+                                        { label: '9 ACKs validated', detail: 'Qty, price, delivery dates matched against PO terms', ok: true },
+                                        { label: '3 ACKs pending', detail: 'Aging alerts generated — supplier follow-up queued', ok: true },
+                                        { label: 'Knoll ACK discrepancy', detail: '+4% price increase on task chairs vs contracted rate', ok: false },
+                                    ].map((step, i) => (
+                                        <div key={i} className={cn(
+                                            "flex items-center gap-3 px-3 py-2.5 rounded-lg border",
+                                            step.ok
+                                                ? "bg-green-50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20"
+                                                : "bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20"
+                                        )}>
+                                            <div className={cn("w-6 h-6 rounded-full text-white flex items-center justify-center shrink-0",
+                                                step.ok ? "bg-green-500" : "bg-red-500"
+                                            )}>
+                                                {step.ok
+                                                    ? <CheckIcon className="w-3.5 h-3.5" />
+                                                    : <ExclamationTriangleIcon className="w-3.5 h-3.5" />
+                                                }
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-medium text-foreground">{step.label}</p>
+                                                <p className="text-[10px] text-muted-foreground">{step.detail}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Dispute Draft Preview */}
+                                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20">
+                                    <div className="flex items-center gap-2 text-xs mb-2">
+                                        <SparklesIcon className="w-3.5 h-3.5 text-amber-600" />
+                                        <span className="font-bold text-amber-700 dark:text-amber-400">Auto-Generated Dispute Draft</span>
+                                    </div>
+                                    <p className="text-[10px] text-amber-700/80 dark:text-amber-400/70">
+                                        "Per contract KN-2026-001 Section 4.2, unit price for Task Chair (Model GN-304) is fixed at $1,295.
+                                        ACK shows $1,347 (+4.01%). Requesting correction to contracted rate. Supporting documentation attached."
+                                    </p>
+                                </div>
+
+                                {/* Synced Systems */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] text-muted-foreground font-medium">Synced:</span>
+                                    {['Contract DB', 'PO Tracker', 'Vendor Portal', 'Dispute Queue'].map(sys => (
+                                        <span key={sys} className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 text-[10px] font-bold flex items-center gap-1">
+                                            <CheckCircleIcon className="w-3 h-3" /> {sys}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {/* CTA */}
+                                <button
+                                    onClick={() => { nextStep(); onBack(); }}
+                                    className="w-full px-5 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg transition-all shadow-sm hover:scale-[1.01] flex items-center justify-center gap-2"
+                                >
+                                    Continue to Step 1.4 — Warehouse Receiving
+                                    <ChevronRightIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Main Content Area */}
                 <div className="flex flex-col">

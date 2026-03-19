@@ -1,12 +1,17 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// Continua — Demo Profile (Demo 3)
-// Duplicated from OPS Demo 2 as starting point for Continua client demo.
-// Same flows and steps — to be customized for Continua's specific requirements.
+// Continua Interiors — Demo Profile (Demo 3)
+// Workplace integrator: Furniture + AV + Architectural solutions.
+// MillerKnoll Certified Dealer | 200+ manufacturers | Own fleet & installers
+// Multi-location warehousing with proprietary asset management & AI platform.
 //
-// Flows:
-// Flow 1: Receiving & Invoice Automation (8 steps)
-// Flow 2: Change Order Management (4 steps)
-// Flow 3: Financial Command Center (3 steps)
+// Narrative: Large corporate HQ project (8 floors, $3.2M) showcasing
+// full project lifecycle from RFP to post-occupancy.
+//
+// AI Automation + Expert-in-the-Loop (HITL) per flow:
+// Flow 1: Inventory & Asset Intelligence (5 steps) — Forecast→Reuse→Price→Sync→Consignment
+// Flow 2: Facility Management & Service Center (5 steps) — Request→Triage→Expert→Relocation→Resolution
+// Flow 3: Project Lifecycle & Procurement (5 steps) — RFP→PO→ACK→Receiving→Install
+// Flow 4: Sustainability & Client Reporting (5 steps) — Metrics→Portal→Finance→Survey→Warranty
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import type { DemoStep } from '../demoProfiles';
@@ -17,304 +22,436 @@ import type { StepBehavior } from '../../components/demo/DemoStepBanner';
 export const CONTINUA_DEMO_STEPS: DemoStep[] = [
 
     // ═══════════════════════════════════════════
-    // FLOW 1: Receiving & Invoice Automation (7 steps + 1 CRM = 8 steps)
-    // 3 automated + 3 HITL + 2 interactive
-    // Closes: Req #3 (Receiving→Invoice), Req #2 (Cost/Sell per line)
+    // FLOW 1: Inventory & Asset Intelligence (5 steps)
+    // Smart inventory management — new, reused, consignment, multi-location
+    // 2 auto (System) + 3 interactive (Expert)
     // ═══════════════════════════════════════════
     {
         id: '1.1',
         groupId: 1,
-        groupTitle: 'Flow 1: Receiving & Invoice Automation',
-        title: 'Delivery Notice Ingested',
-        description: 'ReceivingAgent auto-ingests ASN (Advance Shipment Notice) from supplier. Carrier confirms delivery of ORD-2055: 50 items across 3 shipments. System cross-references PO, matches line items, flags quantity differences. 14 agents processing in parallel — no manual document handling.',
-        app: 'expert-hub',
-        role: 'System',
-        highlightId: 'receiving-agent-pipeline',
+        groupTitle: 'Flow 1: Inventory & Asset Intelligence',
+        title: 'Inventory Health & Forecasting',
+        description: 'InventoryIntelAgent presents dashboard: 2,400 items across 3 warehouses (Chicago, Minneapolis, Madison). AI forecast: Chicago warehouse reaches 85% capacity in 2 weeks with incoming deliveries for UAL phase 3. Suggests relocating 120 items from staging to overflow — savings $4,200/month in storage. Expert reviews recommendations.',
+        app: 'inventory',
+        role: 'Expert',
+        highlightId: 'inventory-health-forecast',
     },
     {
         id: '1.2',
         groupId: 1,
-        groupTitle: 'Flow 1: Receiving & Invoice Automation',
-        title: 'Receiving Doc Review',
-        description: 'ReceivingDocAgent presents PO ↔ Delivery Receipt comparison: 47 lines auto-matched, 3 flagged. Flag 1: Task chairs 18/20 received — partial delivery (94% confidence). Flag 2: Delivery date 3 days early vs PO — auto-acceptable. Flag 3: Qty shortfall 2 units — AI suggests "Accept and note for invoice adjustment". Expert reviews flags, accepts or overrides — audit trail recorded.',
+        groupTitle: 'Flow 1: Inventory & Asset Intelligence',
+        title: 'Reuse Assessment & Cataloging',
+        description: 'SustainabilityAgent catalogs furniture from floor 7 teardown (pre-renovation). 340 items evaluated: 180 reusable (refurbish), 95 recyclable (metal/fabric), 65 end-of-life. AI assigns condition score (1-5) with photo evidence. Reusable items auto-listed in inventory with "Refurbished" tag and estimated value. Savings: $89,000 vs new procurement.',
         app: 'expert-hub',
         role: 'Expert',
-        highlightId: 'receiving-doc-review',
+        highlightId: 'reuse-assessment-catalog',
     },
     {
         id: '1.3',
         groupId: 1,
-        groupTitle: 'Flow 1: Receiving & Invoice Automation',
-        title: '3-Way Match Engine',
-        description: 'MatchingAgent executes PO ↔ Acknowledgement ↔ Delivery Receipt comparison across 50 line items. Result: 47 auto-matched (94%), 2 partial match (qty delta), 1 mismatch (item not received). Invoice draft auto-generated from matched lines — $41,150 from product delivery. Unmatched items excluded from invoice automatically.',
+        groupTitle: 'Flow 1: Inventory & Asset Intelligence',
+        title: 'Price Verification Engine',
+        description: 'PriceVerificationAgent scans 200+ manufacturer price lists (Q1 updates). Detects: 14 items in inventory with outdated cost basis (price increases). 3 consignment items from Herman Miller with 90-day review pending. AI recalculates margins: average 34% → recommends adjusting 6 items where margin <25%. Report with suggested price updates sent to expert.',
         app: 'dealer-kanban',
         role: 'System',
-        highlightId: 'three-way-match-engine',
+        highlightId: 'price-verification-engine',
     },
     {
         id: '1.4',
         groupId: 1,
-        groupTitle: 'Flow 1: Receiving & Invoice Automation',
-        title: 'Invoice Preview & Cost/Sell',
-        description: 'InvoicePreviewAgent generates INV-2055 with full cost/sell breakdown per line: Task Chairs (18 units): Cost $89 | Sell $142 | Margin 37.2%. Standing Desks (15 units): Cost $245 | Sell $395 | Margin 38.0%. Total: $41,150. Expert reviews line-by-line — margin per item visible. Partial delivery reflected: 18 of 20 chairs, $2,556 pending backorder resolution.',
-        app: 'expert-hub',
-        role: 'Expert',
-        highlightId: 'invoice-cost-sell-lines',
+        groupTitle: 'Flow 1: Inventory & Asset Intelligence',
+        title: 'Multi-Location Sync',
+        description: 'LocationSyncAgent synchronizes 3 warehouses + 2 active job sites in real-time. Tracking: 45 items in-transit (Chicago→project site), 12 pending QC (Minneapolis), 8 allocated but not shipped (Madison). AI optimizes routing: consolidate 2 deliveries to same project site — savings $1,800 in freight. Map view with status by location.',
+        app: 'inventory',
+        role: 'System',
+        highlightId: 'multi-location-sync',
     },
     {
         id: '1.5',
         groupId: 1,
-        groupTitle: 'Flow 1: Receiving & Invoice Automation',
-        title: 'Monthly Services Invoice',
-        description: 'ServicesInvoiceAgent generates SVC-03-2026 from Daily Log activity — not from a PO. March services: Installation labor 24hrs × $95 = $2,280 | Project management fee $850 | Delivery coordination 3 trips = $325. Total: $3,455. Generated from actual registered activity — zero re-entry. Expert validates logged hours vs approved before sending to QB.',
-        app: 'expert-hub',
+        groupTitle: 'Flow 1: Inventory & Asset Intelligence',
+        title: 'Consignment & Vendor Returns',
+        description: 'ConsignmentAgent manages 35 items on consignment from 4 manufacturers. 12 items approaching 90-day return window — AI prioritizes: 8 high-value chairs ($24,000 total) need decision this week. Auto-generates RMA requests for 4 confirmed returns. Expert reviews remaining 4 with AI recommendation: convert to purchase (demand trending up 12%).',
+        app: 'transactions',
         role: 'Expert',
-        highlightId: 'services-invoice-preview',
-    },
-    {
-        id: '1.6',
-        groupId: 1,
-        groupTitle: 'Flow 1: Receiving & Invoice Automation',
-        title: 'QuickBooks Sync Batch',
-        description: 'QB Sync panel shows batch ready: INV-2055 ($41,150 product) + SVC-03-2026 ($3,455 services) = $44,605 total. GL codes auto-mapped by category: Furniture → COGS-F01, Services → SVC-REV, Freight → SHIP-EXP. Tax rates applied per line. Customer "Apex Furniture" matched in QB. Dealer reviews GL mapping and confirms batch.',
-        app: 'dashboard',
-        role: 'Dealer',
-        highlightId: 'qb-sync-batch-panel',
-    },
-    {
-        id: '1.7',
-        groupId: 1,
-        groupTitle: 'Flow 1: Receiving & Invoice Automation',
-        title: 'Sync Confirmation',
-        description: 'QuickBooks confirms sync in real time: INV-2055 → QB Bill QB-4421 created ($41,150). SVC-03-2026 → QB Bill QB-4424 created ($3,455). GL accounts auto-reconciled. Dealer sees Bill IDs, GL category breakdown, and timestamp. Zero re-entry into QuickBooks — data flowed directly from Strata.',
-        app: 'dashboard',
-        role: 'Dealer',
-        highlightId: 'qb-sync-confirmation',
-    },
-    // CRM: Receiving Milestone (integrated at end of Flow 1)
-    {
-        id: '1.8',
-        groupId: 1,
-        groupTitle: 'Flow 1: Receiving & Invoice Automation',
-        title: 'CRM: Receiving Milestone',
-        description: 'ReceivingMilestoneAgent updates CRM project "Apex HQ Office Renovation": Delivery confirmed March 2026 — 47/50 SKUs received, $41,150 product invoiced, $3,455 services invoiced, QB Bills QB-4421 + QB-4424 created. Daily Log auto-updated: DL-004 "Receiving complete — partial delivery noted, backorder tracked". Project timeline advances — no manual CRM entry needed.',
-        app: 'crm',
-        role: 'System',
-        highlightId: 'crm-receiving-milestone',
+        highlightId: 'consignment-management',
     },
 
     // ═══════════════════════════════════════════
-    // FLOW 2: Change Order Management (4 steps)
-    // 2 automated + 1 HITL + 1 interactive
-    // Reinforces: Req #4 (Daily Log + CO → Invoice), Req #2 (cost/sell in CO)
+    // FLOW 2: Facility Management & Service Center (5 steps)
+    // End user reports issue → AI triage → Expert dispatch → Quick relocation → Resolution
+    // 2 auto (System) + 2 interactive (Expert/Dealer) + 1 interactive (End User)
+    // ═══════════════════════════════════════════
+    {
+        id: 'F.1',
+        groupId: 2,
+        groupTitle: 'Flow 2: Facility Management & Service Center',
+        title: 'Service Request Intake',
+        description: 'Carlos Rivera (Facilities Coordinator) reports a broken Aeron chair (gas cylinder failure — safety concern) and a flickering desk lamp in Office 3-214 via the Service Center. ServiceIntakeAgent extracts request details, identifies affected assets (AST-1847, AST-2103), cross-references warranty coverage, and classifies as Priority: HIGH with safety flag. Request REQ-FM-2026-018 created.',
+        app: 'mac',
+        role: 'End User',
+        highlightId: 'fm-service-request',
+    },
+    {
+        id: 'F.2',
+        groupId: 2,
+        groupTitle: 'Flow 2: Facility Management & Service Center',
+        title: 'AI Triage & Cross-Reference',
+        description: 'TriageAgent cross-references 4 databases: warranty system confirms Aeron chair covered until Mar 2027 (auto-claim eligible), inventory shows 3 replacement Aeron chairs in Warehouse Zone A (Herman Miller consignment), contracts database validates ProInstall LLC service agreement, scheduling identifies installer slot tomorrow 9AM-12PM. AI generates resolution plan: warranty claim + consignment swap ($0 cost) + temporary office relocation.',
+        app: 'mac',
+        role: 'System',
+        highlightId: 'fm-ai-triage',
+    },
+    {
+        id: 'F.3',
+        groupId: 2,
+        groupTitle: 'Flow 2: Facility Management & Service Center',
+        title: 'Expert Review & Dispatch',
+        description: 'David Park (Regional Sales Manager) reviews AI resolution plan in Expert Hub. Warranty claim CLM-2026-019 auto-drafted, consignment Aeron Remastered available ($0 cost — 98% match to original), ProInstall LLC dispatched for tomorrow. Expert validates consignment selection, approves dispatch, and sends notifications to Carlos Rivera (end user), Sara Chen (dealer), and ProInstall LLC (installer) with resolution timeline.',
+        app: 'expert-hub',
+        role: 'Expert',
+        highlightId: 'fm-expert-dispatch',
+    },
+    {
+        id: 'F.4',
+        groupId: 2,
+        groupTitle: 'Flow 2: Facility Management & Service Center',
+        title: 'Quick Action — Office Relocation',
+        description: 'While the chair replacement is in progress, Carlos needs a workspace. Sara Chen (dealer) opens Quick Transfer to relocate Carlos\'s workstation assets (laptop dock, 2 monitors, keyboard, personal items) from Office 3-214 to Office 3-216 (vacant). Drag-and-drop interface with AI ergonomic arrangement suggestion. Batch move committed — inventory locations update in real-time, Carlos notified of temporary workspace.',
+        app: 'inventory',
+        role: 'Dealer',
+        highlightId: 'fm-quick-relocation',
+    },
+    {
+        id: 'F.5',
+        groupId: 2,
+        groupTitle: 'Flow 2: Facility Management & Service Center',
+        title: 'Resolution & Installer Report',
+        description: 'ProInstall LLC completes the chair swap: old Aeron removed (warranty return), consignment Aeron Remastered installed in Office 3-214. Installer files completion report with photos, serial number transfer, and QC checklist. System updates: inventory reflects consignment conversion, warranty claim CLM-2026-019 filed with Herman Miller, Carlos relocated back to 3-214. All stakeholders notified. Total resolution: 26 hours, $0 cost.',
+        app: 'mac',
+        role: 'System',
+        highlightId: 'fm-resolution-report',
+    },
+
+    // ═══════════════════════════════════════════
+    // FLOW 3: Project Lifecycle & Procurement (5 steps)
+    // From RFP to installation — how Strata orchestrates a multi-manufacturer project
+    // 2 auto (System) + 2 interactive (Expert) + 1 interactive (Sales Rep)
     // ═══════════════════════════════════════════
     {
         id: '2.1',
-        groupId: 2,
-        groupTitle: 'Flow 2: Change Order Management',
-        title: 'CO Request Received',
-        description: 'End User submits CO-007 via Customer Portal: 22 line item changes requesting ergonomic task chair upgrade from standard model. Request auto-routed to Strata — CostAnalysisAgent begins impact calculation immediately. End User sees portal confirmation: "CO-007 received — under review". No emails, no phone calls to initiate.',
-        app: 'dashboard',
-        role: 'End User',
-        highlightId: 'co-request-incoming',
+        groupId: 3,
+        groupTitle: 'Flow 3: Project Lifecycle & Procurement',
+        title: 'Project Intake & Scope',
+        description: 'CRMAgent ingests RFP from corporate client (new HQ — 8 floors). Auto-extracts requirements: 1,200 workstations, 40 conference rooms, 2 cafeterias, AV integration. AI calculates preliminary estimate $3.2M, identifies required manufacturers (Herman Miller, Knoll, DIRTT), suggests project team based on capacity. Pipeline updated automatically.',
+        app: 'crm',
+        role: 'Sales Rep',
+        highlightId: 'crm-project-intake',
     },
     {
         id: '2.2',
-        groupId: 2,
-        groupTitle: 'Flow 2: Change Order Management',
-        title: 'CO Delta Analysis',
-        description: 'CODeltaAgent analyzes all 22 modified lines in parallel. Financial impact per line calculated: task chairs Cost $89/$142 → $140/$300 (ergonomic). Overall: Revenue +$3,200 | Cost +$2,010 | Margin 35.4% → 36.1% (improvement). Delivery impact: +7 days. Supplier pricing verified against current catalog. Full CO document assembled for expert review.',
-        app: 'dealer-kanban',
-        role: 'System',
-        highlightId: 'co-delta-analysis',
+        groupId: 3,
+        groupTitle: 'Flow 3: Project Lifecycle & Procurement',
+        title: 'Purchase Order Generation',
+        description: 'AI generates consolidated POs from project specification. Compares pricing across 4 sources, applies volume discounts, flags lead time issues. Expert reviews $3.2M package: furniture, AV, architectural walls.',
+        app: 'transactions',
+        role: 'Expert',
+        highlightId: 'procurement-po-package',
     },
     {
         id: '2.3',
-        groupId: 2,
-        groupTitle: 'Flow 2: Change Order Management',
-        title: 'CO Approval — Financial Impact',
-        description: 'Expert sees CO approval panel with 3 columns: Original | Delta | New Total per line. Task chairs: $89/$142/37.2% → $140/$300/53.3%. Overall: Revenue +$3,200 | Cost +$2,010 | Margin 35.4%→36.1% (improved). Delivery: +7 days. Customer approval already registered in portal. Expert can add note. One click approves — audit trail and PO amendment auto-transmitted to supplier.',
-        app: 'expert-hub',
-        role: 'Expert',
-        highlightId: 'co-approval-panel',
+        groupId: 3,
+        groupTitle: 'Flow 3: Project Lifecycle & Procurement',
+        title: 'Order Tracking & ACK Validation',
+        description: 'TrackingAgent monitors 12 active POs. 9 ACKs received — auto-validated against POs (qty, price, delivery date). 3 pending with aging alerts. AI detects: Knoll ACK has +4% price increase on task chairs vs contract — auto-generates dispute draft with contractual evidence. Expert review dashboard with status by manufacturer.',
+        app: 'transactions',
+        role: 'System',
+        highlightId: 'ack-tracking-dashboard',
     },
     {
         id: '2.4',
-        groupId: 2,
-        groupTitle: 'Flow 2: Change Order Management',
-        title: 'Invoice + QB Amendment',
-        description: 'Three systems update in parallel — zero human action: InvoiceDeltaAgent updates INV-2055 from $43,750 → $46,950 (+$3,200 CO-007). QuickBooksAgent amends Bill QB-4421 with memo "CO-007: ergonomic upgrade approved". Daily Log auto-records DL-007 "CO-007 Applied — $3,200 delta". Confirmation: "Amendment complete across all systems."',
-        app: 'dashboard',
+        groupId: 3,
+        groupTitle: 'Flow 3: Project Lifecycle & Procurement',
+        title: 'Warehouse Receiving & QC',
+        description: 'ReceivingAgent processes 3 incoming shipments at Chicago warehouse. QR scan → auto-match vs PO line items. 47/50 items matched. QC check: 2 task chairs with fabric defect — photographed and auto-reported to manufacturer via warranty claim. Inventory auto-updated with location assignment (Zone B, Rack 14). Warehouse utilization at 72%.',
+        app: 'inventory',
+        role: 'Expert',
+        highlightId: 'warehouse-receiving-qc',
+    },
+    {
+        id: '2.5',
+        groupId: 3,
+        groupTitle: 'Flow 3: Project Lifecycle & Procurement',
+        title: 'Installation Schedule & Dispatch',
+        description: 'InstallationAgent generates schedule for floors 4-6 (phase 2). Coordinates: 8 in-house installers, 2 AV techs, delivery truck schedule. Auto-detects conflict: Herman Miller delivery for floor 5 delayed 3 days — AI re-sequences to start with floor 6, notifies GC. Field verification checklist auto-generated with 120 items.',
+        app: 'mac',
         role: 'System',
-        highlightId: 'invoice-amendment-parallel',
+        highlightId: 'installation-dispatch',
     },
 
     // ═══════════════════════════════════════════
-    // FLOW 3: Financial Command Center (3 steps)
-    // 0 automated + 3 interactive — CFO/Controller executive view
-    // NEW gap closed: multi-project financial aggregation + budget vs actual
+    // FLOW 4: Sustainability & Client Reporting (5 steps)
+    // Impact metrics, compliance, and automated reporting
+    // 2 auto (System) + 2 interactive (Expert/Dealer) + 1 interactive (End User)
     // ═══════════════════════════════════════════
     {
         id: '3.1',
-        groupId: 3,
-        groupTitle: 'Flow 3: Financial Command Center',
-        title: 'Multi-Project Financial Dashboard',
-        description: 'Executive financial dashboard shows 3 active projects with real-time status: Apex Furniture ($46,950 | 82% delivered | QB synced | 1 CO), Workspace Group ($12,300 | invoiced | QB synced), Meridian Group ($98,400 | quote approved | 68% win probability). Pipeline total: $157,650. Each project shows invoice status, QB sync state, delivery %, open COs — one place, zero QB logins, zero Excel.',
+        groupId: 4,
+        groupTitle: 'Flow 4: Sustainability & Client Reporting',
+        title: 'Sustainability Dashboard',
+        description: 'SustainabilityMetricsAgent compiles UAL project impact: 194 tons diverted from landfill, 78% embodied carbon reduction, 2,000 items refurbished. Dashboard charts: carbon savings by category, tonnage by material type, cost savings from reuse program. AI generates narrative for Metropolis Award submission. Auto-benchmarks against industry standards.',
         app: 'dashboard',
-        role: 'Dealer',
-        highlightId: 'financial-command-center',
+        role: 'System',
+        highlightId: 'sustainability-dashboard',
     },
     {
         id: '3.2',
-        groupId: 3,
-        groupTitle: 'Flow 3: Financial Command Center',
-        title: 'QuickBooks Reconciliation',
-        description: 'QB Reconciliation Report for current period: INV-2055 $46,950 → QB-4421 ✓ | SVC-03-2026 $3,455 → QB-4424 ✓ | INV-2048 $12,300 → QB-4422 ✓. GL breakdown by category: Furniture $41,150 | Services $3,455 | Freight $2,345. Total posted to QB: $60,250. Aging AP: 0 items overdue. Controller exports directly — no manual reconciliation needed.',
-        app: 'dashboard',
+        groupId: 4,
+        groupTitle: 'Flow 4: Sustainability & Client Reporting',
+        title: 'Client Project Portal',
+        description: 'ClientPortalAgent generates view for facilities team: project timeline (82% complete), budget tracking ($2.65M of $3.2M invoiced), installation schedule by floor, open items (3 pending deliveries, 1 warranty claim). Single-pane-of-glass — "one contact, one contract, one invoice". Client change requests route to PM automatically.',
+        app: 'expert-hub',
         role: 'Dealer',
-        highlightId: 'qb-reconciliation-report',
+        highlightId: 'client-project-portal',
     },
     {
         id: '3.3',
-        groupId: 3,
-        groupTitle: 'Flow 3: Financial Command Center',
-        title: 'Budget vs. Actual Analysis',
-        description: 'Budget vs. Actual for Apex Furniture project: Quote original $43,750 (100% base) → CO-007 +$3,200 (+7.3%) → Services March +$3,455 (+7.9%) → Total actual $50,205. Variance +$6,455 — every dollar documented and approved. CFO sees each variance has justification: CO approved by expert + customer, services approved by expert. Zero surprises in billing.',
-        app: 'crm',
-        role: 'Sales Rep',
-        highlightId: 'budget-vs-actual-chart',
+        groupId: 4,
+        groupTitle: 'Flow 4: Sustainability & Client Reporting',
+        title: 'Financial Reconciliation',
+        description: 'FinancialAgent reconciles UAL project: 47 POs, 42 invoices, 38 payments received. 4 invoices pending >30 days — AI categorizes: 2 awaiting ACK resolution, 1 partial delivery pending, 1 client approval needed. Auto-generates aging report with recommended actions. Margin analysis: realized 33.2% vs quoted 34% — variance from price increase on 6 items.',
+        app: 'dealer-kanban',
+        role: 'Expert',
+        highlightId: 'financial-reconciliation',
+    },
+    {
+        id: '3.4',
+        groupId: 4,
+        groupTitle: 'Flow 4: Sustainability & Client Reporting',
+        title: 'Post-Occupancy Intelligence',
+        description: 'PostOccupancyAgent deploys conversational survey to floor 4 occupants (installed 60 days ago). Topics: workspace comfort, furniture ergonomics, AV quality, temperature, noise. AI analyzes 85 responses: 92% overall satisfaction, task chairs rated 4.6/5, conference room AV 3.8/5 (suggestion: recalibrate mic arrays). Auto-generates report for facilities team.',
+        app: 'survey',
+        role: 'End User',
+        highlightId: 'post-occupancy-survey',
+    },
+    {
+        id: '3.5',
+        groupId: 4,
+        groupTitle: 'Flow 4: Sustainability & Client Reporting',
+        title: 'Smart Warranty & Maintenance',
+        description: 'WarrantyAgent monitors 1,200 items under active warranty. AI predictive: 15 Aeron chairs approaching 12-year warranty end — recommends extended coverage ($180/chair vs $950 replacement). 3 maintenance requests auto-triaged: 1 urgent (broken gas cylinder, safety → dispatch today), 2 routine (stain cleaning, scheduled next window). Vendor warranty claims auto-filed.',
+        app: 'mac',
+        role: 'System',
+        highlightId: 'warranty-maintenance',
     },
 ];
 
 // ─── STEP BEHAVIOR ───────────────────────────────────────────────────────────
 
 export const CONTINUA_DEMO_STEP_BEHAVIOR: Record<string, StepBehavior> = {
-    // Flow 1: Receiving & Invoice Automation
-    '1.1': { mode: 'auto', duration: 14, aiSummary: 'ReceivingAgent ingesting ASN — cross-referencing PO ORD-2055 with delivery across 3 shipments' },
-    '1.2': { mode: 'interactive', userAction: 'Review 3 flagged discrepancies (47 auto-matched). Flag 1: partial delivery 18/20 chairs. Accept AI suggestions or override. Click "Approve Receiving Doc"' },
-    '1.3': { mode: 'auto', duration: 28, aiSummary: '3-Way Match: reconciling PO ↔ ACK ↔ Delivery Receipt across 50 lines — 47 auto-matched, generating invoice draft $41,150' },
-    '1.4': { mode: 'interactive', userAction: 'Review INV-2055 cost/sell: Task Chairs $89→$142 (37.2% margin), Standing Desks $245→$395 (38.0%). Partial delivery reflected. Click "Approve Invoice Draft"' },
-    '1.5': { mode: 'interactive', userAction: 'Review SVC-03-2026: $3,455 from Daily Log — 24hrs installation + PM fee + delivery. Verify hours vs approved. Click "Approve Services Invoice"' },
-    '1.6': { mode: 'interactive', userAction: 'QB Sync batch: $44,605 (INV-2055 $41,150 + SVC-03-2026 $3,455). GL codes auto-mapped — review and click "Sync to QuickBooks"' },
-    '1.7': { mode: 'interactive', userAction: 'QB confirmed: QB-4421 ($41,150) + QB-4424 ($3,455) created. Review Bill IDs and GL breakdown. Click "Done"' },
-    '1.8': { mode: 'auto', duration: 10, aiSummary: 'ReceivingMilestoneAgent: updating CRM project timeline and Daily Log — receiving confirmed, QB sync recorded' },
+    // Flow 1: Inventory & Asset Intelligence
+    '1.1': { mode: 'interactive', userAction: 'Review inventory health: 2,400 items, 3 warehouses. Chicago at 85% capacity forecast. AI suggests relocating 120 items — $4,200/mo savings. Click "Apply Recommendations"' },
+    '1.2': { mode: 'interactive', userAction: 'Review reuse assessment: 340 items from floor 7 teardown. 180 reusable, 95 recyclable, 65 EOL. $89,000 savings vs new. Click "Catalog Reusable Items"' },
+    '1.3': { mode: 'auto', duration: 10, aiSummary: 'PriceVerificationAgent: scanning 200+ manufacturer price lists — detecting 14 outdated costs, recalculating margins, flagging 6 items below 25%' },
+    '1.4': { mode: 'auto', duration: 8, aiSummary: 'LocationSyncAgent: synchronizing 3 warehouses + 2 job sites — optimizing delivery routing, consolidating shipments for $1,800 freight savings' },
+    '1.5': { mode: 'interactive', userAction: 'Review consignment: 35 items, 12 approaching 90-day window. 4 RMA auto-generated. AI recommends converting 4 items to purchase (demand up 12%). Click "Process Decisions"' },
 
-    // Flow 2: Change Order Management
-    '2.1': { mode: 'interactive', userAction: 'CO-007 received from Apex Furniture portal: 22 line item changes — ergonomic upgrade request. Review and click "Begin CO Analysis"' },
-    '2.2': { mode: 'auto', duration: 22, aiSummary: 'CODeltaAgent: analyzing 22 modified lines — calculating per-line financial impact, verifying supplier pricing' },
-    '2.3': { mode: 'interactive', userAction: 'Review CO-007: Revenue +$3,200, Margin 35.4%→36.1% (improves), Delivery +7 days. Customer already approved in portal. Click "Approve Change Order"' },
-    '2.4': { mode: 'auto', duration: 18, aiSummary: 'InvoiceDeltaAgent amending INV-2055 → $46,950 | QuickBooksAgent amending Bill QB-4421 | Daily Log DL-007 recording — all systems in parallel' },
+    // Flow 2: Facility Management & Service Center
+    'F.1': { mode: 'interactive', userAction: 'Carlos reports broken Aeron chair (gas cylinder — safety) + flickering lamp in Office 3-214. Watch AI extract details and classify priority. Click "Submit Request"' },
+    'F.2': { mode: 'auto', duration: 14, aiSummary: 'TriageAgent: cross-referencing warranty, inventory, contracts, and scheduling — generating resolution plan with consignment swap option' },
+    'F.3': { mode: 'interactive', userAction: 'Review AI resolution: warranty claim auto-drafted, consignment Aeron available ($0 cost, 98% match), installer dispatched tomorrow. Click "Approve & Notify"' },
+    'F.4': { mode: 'interactive', userAction: 'Sara opens Quick Transfer to relocate Carlos\'s workstation assets from Office 3-214 to 3-216 (vacant). Drag items to new office, then click "Commit Moves"' },
+    'F.5': { mode: 'auto', duration: 10, aiSummary: 'ResolutionAgent: processing installer report, updating inventory, filing warranty claim, notifying all stakeholders — $0 cost resolution' },
 
-    // Flow 3: Financial Command Center
-    '3.1': { mode: 'interactive', userAction: 'Review Financial Dashboard: Apex $46,950 | Workspace Group $12,300 | Meridian $98,400 pipeline = $157,650. No Excel, no QB login. Click "Open Apex Furniture"' },
-    '3.2': { mode: 'interactive', userAction: 'QB Reconciliation: $60,250 posted, 0 discrepancies, GL by category. Aging AP: 0 overdue. Click "Export to Controller"' },
-    '3.3': { mode: 'interactive', userAction: 'Budget vs. Actual: base $43,750 → actual $50,205. Variance +$6,455 (+14.7%) — all documented: CO-007 + March services. Click "Download Report"' },
+    // Flow 3: Project Lifecycle & Procurement
+    '2.1': { mode: 'interactive', userAction: 'Watch IntakeAgent process the incoming RFP. Review extracted scope ($3.2M, 1,200 workstations, Herman Miller/Knoll/DIRTT), confirm team assignments, then click "Confirm Team & Proceed"' },
+    '2.2': { mode: 'interactive', userAction: 'Review PO package: 12 manufacturers, $2.8M furniture + $280K AV + $120K architectural. Check contract vs list pricing. Flag lead time >8 weeks. Click "Submit PO Package"' },
+    '2.3': { mode: 'auto', duration: 22, aiSummary: 'TrackingAgent: monitoring 12 POs — validating 9 ACKs against purchase orders, flagging 3 pending, detecting Knoll price discrepancy +4%' },
+    '2.4': { mode: 'interactive', userAction: 'Review receiving: 47/50 items matched. QC flag: 2 chairs with fabric defect. Accept AI location assignment (Zone B, Rack 14). Click "Confirm Receiving"' },
+    '2.5': { mode: 'auto', duration: 10, aiSummary: 'InstallationAgent: generating schedule for floors 4-6 — coordinating 8 installers + 2 AV techs, re-sequencing around Herman Miller delay' },
+
+    // Flow 4: Sustainability & Client Reporting
+    '3.1': { mode: 'auto', duration: 10, aiSummary: 'SustainabilityMetricsAgent: compiling impact data — 194 tons diverted, 78% carbon reduction, generating award submission narrative' },
+    '3.2': { mode: 'interactive', userAction: 'Review client portal: timeline 82% complete, $2.65M/$3.2M invoiced, 3 pending deliveries, 1 warranty claim. Click "Publish Portal Update"' },
+    '3.3': { mode: 'interactive', userAction: 'Review reconciliation: 47 POs, 42 invoices, 38 payments. 4 invoices >30 days — AI categorized with actions. Margin 33.2% vs 34% quoted. Click "Export Aging Report"' },
+    '3.4': { mode: 'interactive', userAction: 'Review survey results: 85 responses, 92% satisfaction. Chairs 4.6/5, AV 3.8/5 (recalibrate mics). Click "Send Report to Client"' },
+    '3.5': { mode: 'auto', duration: 10, aiSummary: 'WarrantyAgent: monitoring 1,200 items — flagging 15 Aeron chairs near warranty end, triaging 3 maintenance requests, filing vendor claims' },
 };
 
 // ─── STEP MESSAGES ───────────────────────────────────────────────────────────
 
 export const CONTINUA_DEMO_STEP_MESSAGES: Record<string, string[]> = {
-    // Flow 1: Receiving & Invoice Automation
+    // Flow 1: Inventory & Asset Intelligence
     '1.1': [
-        'ReceivingAgent: ASN received from supplier — 3 shipments confirmed by carrier',
-        'Cross-referencing ORD-2055: 50 line items across 3 delivery zones',
-        '14 agents processing in parallel — no manual document handling needed',
-        'Quantity discrepancies detected: 3 items flagged for expert review',
+        'InventoryIntelAgent: analyzing 2,400 items across 3 warehouses...',
+        'Chicago: 68% → forecast 85% in 2 weeks with UAL phase 3 deliveries',
+        'Minneapolis: 52% | Madison: 41% — overflow capacity available',
+        'Recommendation: relocate 120 items from staging → savings $4,200/month',
     ],
     '1.2': [
-        'ReceivingDocAgent: PO ↔ Delivery Receipt comparison ready',
-        '47 lines auto-matched — green | 3 flagged — amber with AI suggestions',
-        'Flag 1: Task chairs 18/20 received — partial delivery, AI confidence 94%',
-        'Expert validating AI suggestions — not searching for errors',
+        'SustainabilityAgent: cataloging floor 7 teardown — 340 items...',
+        '180 reusable (refurbish) | 95 recyclable (metal/fabric) | 65 end-of-life',
+        'AI condition scoring: photo evidence + wear analysis per item',
+        'Reusable items auto-listed with "Refurbished" tag — estimated savings $89,000',
     ],
     '1.3': [
-        'MatchingAgent: PO ↔ Acknowledgement ↔ Delivery Receipt — 50 lines',
-        '47 auto-matched (94%) — invoice draft generating...',
-        '2 partial match (qty delta) | 1 mismatch (item not received)',
-        'INV-2055 draft: $41,150 — unmatched items excluded automatically',
+        'PriceVerificationAgent: scanning 200+ manufacturer price lists...',
+        '14 items detected with outdated cost basis — Q1 price increases',
+        '3 Herman Miller consignment items: 90-day review window approaching',
+        'Margin recalculation: avg 34% — 6 items flagged below 25% threshold',
     ],
     '1.4': [
-        'InvoicePreviewAgent: generating INV-2055 with cost/sell breakdown...',
-        'Task Chairs: cost $89 | sell $142 | margin 37.2%',
-        'Standing Desks: cost $245 | sell $395 | margin 38.0%',
-        'Partial delivery of 18/20 chairs reflected — $2,556 backorder noted',
+        'LocationSyncAgent: synchronizing 3 warehouses + 2 job sites...',
+        '45 items in-transit (Chicago → project site) | 12 pending QC (Minneapolis)',
+        '8 allocated but not shipped (Madison) — scheduling pickup',
+        'Route optimization: consolidating 2 deliveries — $1,800 freight savings',
     ],
     '1.5': [
-        'ServicesInvoiceAgent: consolidating Daily Log entries for March...',
-        'Installation: 24hrs × $95 = $2,280 | PM fee: $850 | Delivery: $325',
-        'SVC-03-2026 generated from actual activity — not re-entered manually',
-        'Linked to Apex Furniture — ready for approval and QB sync',
-    ],
-    '1.6': [
-        'QB Sync batch: INV-2055 ($41,150) + SVC-03-2026 ($3,455) = $44,605',
-        'GL codes auto-mapped: Furniture → COGS-F01 | Services → SVC-REV',
-        'Tax rates applied, customer matched in QuickBooks',
-        'Waiting for dealer confirmation before posting',
-    ],
-    '1.7': [
-        'QuickBooks sync processing...',
-        'INV-2055 → QB Bill QB-4421 created ($41,150) ✓',
-        'SVC-03-2026 → QB Bill QB-4424 created ($3,455) ✓',
-        'GL auto-reconciled — zero re-entry into QuickBooks',
-    ],
-    '1.8': [
-        'ReceivingMilestoneAgent: updating CRM project timeline...',
-        'Delivery confirmed: 47/50 SKUs | $41,150 product | $3,455 services invoiced',
-        'Daily Log DL-004: "Receiving complete — partial delivery, backorder tracked"',
-        'QB Bills QB-4421 + QB-4424 linked to project record',
+        'ConsignmentAgent: reviewing 35 items across 4 manufacturers...',
+        '12 items approaching 90-day return window — prioritizing high-value',
+        '8 chairs ($24,000) need decision this week — 4 RMA auto-generated',
+        'AI recommendation: convert remaining 4 to purchase — demand up 12%',
     ],
 
-    // Flow 2: Change Order Management
+    // Flow 2: Facility Management & Service Center
+    'F.1': [
+        'ServiceIntakeAgent: incoming request from Carlos Rivera — Office 3-214...',
+        'Extracting: broken Aeron chair (gas cylinder failure) + flickering desk lamp',
+        'Warranty check: AST-1847 covered until Mar 2027 — auto-claim eligible',
+        'Priority classified: HIGH (safety concern — gas cylinder failure)',
+    ],
+    'F.2': [
+        'TriageAgent: cross-referencing 4 databases for REQ-FM-2026-018...',
+        'Warranty DB: Aeron chair covered — auto-claim eligible',
+        'Inventory: 3 replacement Aeron chairs in Warehouse Zone A (consignment)',
+        'Resolution plan: warranty claim + consignment swap + temporary relocation',
+    ],
+    'F.3': [
+        'Expert review: David Park reviewing AI resolution plan...',
+        'Consignment match: Aeron Remastered from Zone A — 98% match, $0 cost',
+        'Installer dispatch: ProInstall LLC, tomorrow 9AM-12PM — certified vendor',
+        'Approval sent — notifications dispatched to Carlos, Sara, ProInstall',
+    ],
+    'F.4': [
+        'RelocationAgent: preparing asset transfer — Office 3-214 → 3-216...',
+        'Assets identified: laptop dock, 2 monitors, keyboard, personal items',
+        'Target: Office 3-216 (vacant workstation, same floor, ergonomic match)',
+        'Quick Transfer modal ready — drag-and-drop to commit moves',
+    ],
+    'F.5': [
+        'ResolutionAgent: installer report received from ProInstall LLC...',
+        'Chair swap complete: old Aeron removed, consignment Aeron installed',
+        'Inventory updated: AST-3201 activated, AST-1847 marked for warranty return',
+        'All stakeholders notified — REQ-FM-2026-018 resolved, $0 cost, 26h total',
+    ],
+
+    // Flow 3: Project Lifecycle & Procurement
     '2.1': [
-        'CO-007 received via Customer Portal — Apex Furniture',
-        '22 line item changes: ergonomic upgrade request submitted',
-        'CostAnalysisAgent queued — financial impact calculation starting',
+        'CRMAgent: RFP received — corporate HQ project, 8 floors',
+        'Auto-extracting requirements: 1,200 workstations, 40 conference rooms, 2 cafeterias',
+        'Preliminary estimate calculated: $3.2M across Herman Miller, Knoll, DIRTT',
+        'Project team suggested based on current capacity and expertise',
     ],
     '2.2': [
-        'CODeltaAgent: analyzing 22 modified lines in parallel...',
-        'Task chairs: $89/$142 → $140/$300 | Revenue impact: +$3,200',
-        'Overall: Cost +$2,010 | Margin 35.4% → 36.1% (improvement)',
-        'Delivery impact: +7 days | Supplier pricing verified vs. catalog',
+        'ProcurementAgent: generating consolidated POs for 12 manufacturers...',
+        'Contract pricing applied — tiered discounts for MillerKnoll products',
+        'Lead time flags: 3 items >8 weeks (DIRTT modular walls, custom desks)',
+        'PO package ready: $2.8M furniture + $280K AV + $120K architectural',
     ],
     '2.3': [
-        'CO-007: 22 lines modified — impact analysis complete',
-        'Revenue +$3,200 | Cost +$2,010 | Margin: 35.4% → 36.1% (improves)',
-        'Customer approval registered in portal — no calls needed',
-        'Expert approving — PO amendment will auto-transmit to supplier',
+        'TrackingAgent: monitoring 12 active purchase orders...',
+        '9 ACKs received — auto-validating qty, price, delivery dates',
+        'Knoll ACK: price increase +4% on task chairs vs contract detected',
+        'Auto-generating dispute draft with contractual evidence — expert review pending',
     ],
     '2.4': [
-        'InvoiceDeltaAgent: updating INV-2055 → $46,950 (+$3,200)...',
-        'QuickBooks Bill QB-4421 amended — memo "CO-007: $3,200 delta"',
-        'Daily Log DL-007 auto-recorded — full traceability maintained',
-        'All systems updated in parallel — zero re-entry',
+        'ReceivingAgent: processing 3 shipments at Chicago warehouse...',
+        'QR scan → auto-matching against PO line items: 47/50 matched',
+        'QC flag: 2 task chairs — fabric defect detected, photo evidence captured',
+        'Inventory updated: Zone B, Rack 14 | Warehouse utilization: 72%',
+    ],
+    '2.5': [
+        'InstallationAgent: generating schedule for floors 4-6 (phase 2)...',
+        'Coordinating: 8 installers + 2 AV techs + delivery trucks',
+        'Conflict detected: Herman Miller delivery delayed 3 days for floor 5',
+        'AI re-sequencing: start with floor 6 — GC notified, checklist generated (120 items)',
     ],
 
-    // Flow 3: Financial Command Center
+    // Flow 4: Sustainability & Client Reporting
     '3.1': [
-        'Financial Dashboard: aggregating data from 3 active projects...',
-        'Apex Furniture: $46,950 | QB synced | 1 CO applied | 82% delivered',
-        'Pipeline total: $157,650 — no Excel, no QB login, no calls',
+        'SustainabilityMetricsAgent: compiling UAL project impact data...',
+        '194 tons diverted from landfill | 78% embodied carbon reduction',
+        '2,000 items refurbished | Shaw carpet take-back: 103 tons recycled',
+        'Award narrative generated — benchmarked against industry standards',
     ],
     '3.2': [
-        'QB Reconciliation: crossing Strata invoices vs. QuickBooks Bills...',
-        '$60,250 total | 3 invoices | 0 discrepancies | 0 items overdue',
-        'GL breakdown: Furniture $41,150 | Services $3,455 | Freight $2,345',
-        'Controller-ready — zero manual adjustments required this period',
+        'ClientPortalAgent: generating single-pane view for facilities team...',
+        'Timeline: 82% complete | Budget: $2.65M of $3.2M invoiced',
+        'Open items: 3 pending deliveries, 1 warranty claim, 0 overdue invoices',
+        '"One contact, one contract, one invoice" — change requests routed to PM',
     ],
     '3.3': [
-        'Budget vs. Actual: Apex Furniture — complete project analysis',
-        'Base: $43,750 | CO-007: +$3,200 | Services: +$3,455 | Total: $50,205',
-        'Variance +14.7% — 100% documented, approved, audited',
-        'Report ready for CFO — zero surprises, zero manual work',
+        'FinancialAgent: reconciling UAL project — 47 POs, 42 invoices...',
+        '38 payments received | 4 invoices pending >30 days',
+        'AI categorization: 2 awaiting ACK, 1 partial delivery, 1 client approval',
+        'Margin analysis: 33.2% realized vs 34% quoted — 6 items with price variance',
+    ],
+    '3.4': [
+        'PostOccupancyAgent: deploying conversational survey — floor 4 occupants...',
+        '85 responses collected: workspace comfort, ergonomics, AV quality',
+        'Overall: 92% satisfaction | Task chairs: 4.6/5 | AV: 3.8/5',
+        'Recommendation: recalibrate conference room mic arrays — report generated',
+    ],
+    '3.5': [
+        'WarrantyAgent: monitoring 1,200 items under active warranty...',
+        'AI predictive: 15 Aeron chairs approaching 12-year warranty end',
+        'Extended coverage recommended: $180/chair vs $950 replacement',
+        '3 maintenance requests triaged: 1 urgent (safety), 2 routine — vendor claims filed',
     ],
 };
 
 // ─── SELF-INDICATED STEPS ────────────────────────────────────────────────────
 // Steps that handle their own AI indicator via DemoProcessPanel (lupa effect).
-// These 4 auto steps will display AgentPipelineStrip + timeline in the lupa panel.
-// All other steps use DemoAIIndicator for status messaging.
-// NOTE: DemoProcessPanel must be profile-aware when OPS steps are wired (Stage 1).
+// System-role auto steps display AgentPipelineStrip + timeline in the lupa panel.
 
 export const CONTINUA_DEMO_SELF_INDICATED: string[] = [
-    '1.1', '1.3', '2.2', '2.4',
+    '1.1', '1.3', '1.4',
+    'F.1', 'F.2', 'F.5',
+    '2.1', '2.2', '2.3', '3.1', '3.5',
 ];
+
+// ─── STEP TIMING PROFILES ────────────────────────────────────────────────────
+// Per-step timing for varied pacing. Hero steps (1.2, 2.2, 3.1) are slower;
+// System auto-steps (2.4) are faster. Interactive steps have resultsDur=0 (manual).
+export interface StepTiming {
+    notifDelay: number;     // ms before notification appears
+    notifDuration: number;  // ms notification stays before auto-advancing to processing
+    agentStagger: number;   // ms between each agent appearing
+    agentDone: number;      // ms after agent appears before checkmark
+    breathing: number;      // ms pause between processing complete and revealed banner
+    resultsDur: number;     // ms results shown before auto-advance (0 = manual/interactive)
+}
+
+export const CONTINUA_STEP_TIMING: Record<string, StepTiming> = {
+    '1.1': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800,  agentDone: 500,  breathing: 1500, resultsDur: 0 },
+    '1.2': { notifDelay: 2500, notifDuration: 7000, agentStagger: 1000, agentDone: 700,  breathing: 1800, resultsDur: 0 },
+    '1.3': { notifDelay: 2000, notifDuration: 5000, agentStagger: 800,  agentDone: 500,  breathing: 1000, resultsDur: 10000 },
+    '1.4': { notifDelay: 1500, notifDuration: 4000, agentStagger: 600,  agentDone: 400,  breathing: 800,  resultsDur: 8000 },
+    '1.5': { notifDelay: 2500, notifDuration: 7000, agentStagger: 900,  agentDone: 600,  breathing: 1500, resultsDur: 0 },
+    // Flow 2: FM & Service Center
+    'F.1': { notifDelay: 2000, notifDuration: 6000, agentStagger: 600,  agentDone: 400,  breathing: 1200, resultsDur: 0 },
+    'F.2': { notifDelay: 2000, notifDuration: 5000, agentStagger: 800,  agentDone: 500,  breathing: 1500, resultsDur: 12000 },
+    'F.3': { notifDelay: 2500, notifDuration: 7000, agentStagger: 900,  agentDone: 600,  breathing: 1500, resultsDur: 0 },
+    'F.4': { notifDelay: 2500, notifDuration: 5000, agentStagger: 0,    agentDone: 0,    breathing: 0,    resultsDur: 0 },
+    'F.5': { notifDelay: 2000, notifDuration: 5000, agentStagger: 700,  agentDone: 500,  breathing: 1000, resultsDur: 10000 },
+    '2.1': { notifDelay: 2000, notifDuration: 6000, agentStagger: 0,    agentDone: 0,   breathing: 1500, resultsDur: 0 },
+    '2.2': { notifDelay: 3000, notifDuration: 8000, agentStagger: 1200, agentDone: 800,  breathing: 2000, resultsDur: 0 },
+    '2.3': { notifDelay: 2000, notifDuration: 5000, agentStagger: 900,  agentDone: 600,  breathing: 1500, resultsDur: 12000 },
+    '2.4': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800,  agentDone: 500,  breathing: 1500, resultsDur: 0 },
+    '2.5': { notifDelay: 2000, notifDuration: 5000, agentStagger: 700,  agentDone: 500,  breathing: 1000, resultsDur: 10000 },
+    '3.1': { notifDelay: 3000, notifDuration: 7000, agentStagger: 1100, agentDone: 700,  breathing: 2000, resultsDur: 12000 },
+    '3.2': { notifDelay: 2500, notifDuration: 6000, agentStagger: 900,  agentDone: 600,  breathing: 1500, resultsDur: 0 },
+    '3.3': { notifDelay: 2000, notifDuration: 5000, agentStagger: 800,  agentDone: 500,  breathing: 1200, resultsDur: 0 },
+    '3.4': { notifDelay: 2500, notifDuration: 6000, agentStagger: 900,  agentDone: 600,  breathing: 1500, resultsDur: 0 },
+    '3.5': { notifDelay: 2000, notifDuration: 5000, agentStagger: 700,  agentDone: 500,  breathing: 1000, resultsDur: 10000 },
+};

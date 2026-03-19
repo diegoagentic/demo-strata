@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from 'react'
 import {
     CheckCircleIcon, ExclamationTriangleIcon, ArrowTrendingUpIcon,
     ClockIcon, SparklesIcon, ArrowPathIcon,
     BuildingOfficeIcon, DocumentTextIcon, ChartBarSquareIcon,
     BellAlertIcon, ArrowRightIcon, UserGroupIcon, CalendarDaysIcon,
     MapPinIcon, CubeIcon, LightBulbIcon, BoltIcon,
-    ClipboardDocumentListIcon, CurrencyDollarIcon, ReceiptPercentIcon
+    ClipboardDocumentListIcon, CurrencyDollarIcon, ReceiptPercentIcon,
+    ChevronDownIcon, ChevronUpIcon, PlusIcon, ArrowsRightLeftIcon
 } from '@heroicons/react/24/outline'
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -207,10 +208,11 @@ const DETAIL_TABS: { key: DetailTab; label: string; icon: React.ReactNode }[] = 
     { key: 'insights', label: 'AI Insights', icon: <SparklesIcon className="h-3.5 w-3.5" /> },
 ]
 
-function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
+function ProjectDetailCard({ isNewProject, isProjectIntake, inline }: { isNewProject: boolean; isProjectIntake?: boolean; inline?: boolean }) {
     const { nextStep } = useDemo()
     const [activeTab, setActiveTab] = useState<DetailTab>('overview')
     const [expandedSuggestion, setExpandedSuggestion] = useState<number | null>(null)
+    const [selectedTeam, setSelectedTeam] = useState<string[]>([])
 
     const suggestionStyles = {
         optimization: { bg: 'bg-blue-50 dark:bg-blue-500/10', border: 'border-blue-200 dark:border-blue-500/20', text: 'text-blue-600 dark:text-blue-400', icon: <BoltIcon className="h-3.5 w-3.5" /> },
@@ -218,10 +220,85 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
         upsell: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', border: 'border-emerald-200 dark:border-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400', icon: <LightBulbIcon className="h-3.5 w-3.5" /> },
     }
 
+    // Continua HQ project content
+    const CONTINUA_OVERVIEW = [
+        { label: 'Estimate', value: '$3.2M', icon: <CurrencyDollarIcon className="h-3 w-3" /> },
+        { label: 'Floors', value: '8', icon: <BuildingOfficeIcon className="h-3 w-3" /> },
+        { label: 'Workstations', value: '1,200', icon: <CubeIcon className="h-3 w-3" /> },
+        { label: 'Conf. Rooms', value: '40', icon: <UserGroupIcon className="h-3 w-3" /> },
+        { label: 'Manufacturers', value: '3 matched', icon: <Package className="h-3 w-3" /> },
+        { label: 'Client', value: 'Corporate HQ', icon: <BuildingOfficeIcon className="h-3 w-3" /> },
+    ]
+    const CONTINUA_SCOPE = [
+        { label: 'Workstations (Herman Miller)', qty: 1200, pct: 60 },
+        { label: 'Conference Tables (Knoll)', qty: 120, pct: 16 },
+        { label: 'Architectural Walls (DIRTT)', qty: 80, pct: 11 },
+        { label: 'AV Integration', qty: 56, pct: 7 },
+        { label: 'Soft Seating & Lounge', qty: 44, pct: 6 },
+    ]
+    const CONTINUA_MILESTONES = [
+        { milestone: 'RFP Received & Parsed', status: 'done' as const, date: 'Today' },
+        { milestone: 'Requirements Extracted (AI)', status: 'done' as const, date: 'Today' },
+        { milestone: 'Manufacturers Identified', status: 'done' as const, date: 'Today' },
+        { milestone: 'Estimate Calculated ($3.2M)', status: 'done' as const, date: 'Today' },
+        { milestone: 'Multi-Manufacturer POs', status: 'pending' as const, date: 'Next step' },
+        { milestone: 'Installation Complete', status: 'pending' as const, date: 'Est. 16 weeks' },
+    ]
+    const CONTINUA_TEAM = [
+        { id: 'pm', name: 'Sarah Chen', role: 'Project Manager', capacity: 72, recommended: true },
+        { id: 'de', name: 'Marcus Webb', role: 'Design Engineer', capacity: 85, recommended: true },
+        { id: 'av', name: 'Lisa Park', role: 'AV Specialist', capacity: 60, recommended: true },
+        { id: 'inst', name: 'James Rodriguez', role: 'Install Lead', capacity: 90, recommended: false },
+        { id: 'proc', name: 'Diana Osei', role: 'Procurement Analyst', capacity: 45, recommended: true },
+    ]
+    const CONTINUA_AI_SUGGESTIONS = [
+        {
+            type: 'optimization' as const,
+            title: 'Consolidate Herman Miller & Knoll POs',
+            detail: 'Both under MillerKnoll umbrella — combined order qualifies for Platinum tier pricing. Estimated savings: $84,000 (2.6%).',
+            confidence: 94,
+            impact: 'Save $84K',
+        },
+        {
+            type: 'risk' as const,
+            title: 'DIRTT Lead Time Alert',
+            detail: 'Architectural walls have 12-week lead time vs 8-week furniture. Recommend ordering DIRTT first to avoid installation delays on floors 5-8.',
+            confidence: 88,
+            impact: 'Avoid 4-week delay',
+        },
+        {
+            type: 'upsell' as const,
+            title: 'Reuse Assessment: Floor 3 Teardown',
+            detail: 'Client is vacating existing floor 3. AI identified 180 workstations compatible with project spec. Potential savings: $127,000 if refurbished.',
+            confidence: 82,
+            impact: '+$127K savings',
+        },
+    ]
+
+    const overviewFields = isProjectIntake ? CONTINUA_OVERVIEW : PROJECT_DETAIL_SECTIONS.overview
+    const scopeItems = isProjectIntake ? CONTINUA_SCOPE : [
+        { label: 'Workstations & Desks', qty: 82, pct: 41 },
+        { label: 'Executive Seating', qty: 35, pct: 17.5 },
+        { label: 'Lounge & Soft Seating', qty: 48, pct: 24 },
+        { label: 'Conference Tables & AV', qty: 20, pct: 10 },
+        { label: 'Filing & Storage', qty: 15, pct: 7.5 },
+    ]
+    const milestones = isProjectIntake ? CONTINUA_MILESTONES : [
+        { milestone: 'RFQ Received & Processed', status: 'done' as const, date: 'Today' },
+        { milestone: 'Quote Approved ($43,750)', status: 'done' as const, date: 'Today' },
+        { milestone: 'PO Generated & Transmitted', status: 'done' as const, date: 'Today' },
+        { milestone: 'Supplier Acknowledgements', status: 'pending' as const, date: 'Est. 3–5 days' },
+        { milestone: 'Delivery Starts (Zone A)', status: 'pending' as const, date: 'Est. Mar 28' },
+        { milestone: 'Installation Complete', status: 'pending' as const, date: 'Est. Apr 25' },
+    ]
+    const aiSuggestions = isProjectIntake ? CONTINUA_AI_SUGGESTIONS : PROJECT_DETAIL_SECTIONS.aiSuggestions
+
     return (
         <div className={cn(
-            "bg-card border border-border rounded-xl overflow-hidden",
-            isNewProject && "animate-in fade-in slide-in-from-bottom-4 duration-500 border-brand-400/30"
+            "bg-card overflow-hidden",
+            inline
+                ? "border-t border-brand-400/20"
+                : cn("border border-border rounded-xl", isNewProject && "animate-in fade-in slide-in-from-bottom-4 duration-500 border-brand-400/30")
         )}>
             {/* Header with project info + quick actions */}
             <div className="px-4 py-3 border-b border-border">
@@ -232,11 +309,20 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                         </div>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h4 className="text-xs font-semibold text-foreground">Apex HQ Office Renovation</h4>
+                                <h4 className="text-xs font-semibold text-foreground">
+                                    {isProjectIntake ? 'Corporate HQ — 8-Floor Fit-Out' : 'Apex HQ Office Renovation'}
+                                </h4>
                                 {isNewProject && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">New Project</span>}
-                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">Procurement</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium">
+                                    {isProjectIntake ? 'Scoping' : 'Procurement'}
+                                </span>
                             </div>
-                            <p className="text-[10px] text-muted-foreground">PRJ-001 · Quote #QT-1025 · PO #ORD-2055 · $43,750</p>
+                            <p className="text-[10px] text-muted-foreground">
+                                {isProjectIntake
+                                    ? 'PRJ-001 · RFP Intake · $3.2M estimate · Herman Miller, Knoll, DIRTT'
+                                    : 'PRJ-001 · Quote #QT-1025 · PO #ORD-2055 · $43,750'
+                                }
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -265,7 +351,7 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                             {tab.icon}
                             {tab.label}
                             {tab.key === 'insights' && (
-                                <span className="px-1 py-0.5 rounded-full bg-brand-300 dark:bg-brand-400 text-zinc-900 text-[8px] font-bold leading-none">{PROJECT_DETAIL_SECTIONS.aiSuggestions.length}</span>
+                                <span className="px-1 py-0.5 rounded-full bg-brand-300 dark:bg-brand-400 text-zinc-900 text-[8px] font-bold leading-none">{aiSuggestions.length}</span>
                             )}
                         </button>
                     ))}
@@ -278,7 +364,7 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                     <div className="space-y-4 animate-in fade-in duration-200">
                         {/* Key metrics grid */}
                         <div className="grid grid-cols-6 gap-2.5">
-                            {PROJECT_DETAIL_SECTIONS.overview.map(f => (
+                            {overviewFields.map(f => (
                                 <div key={f.label} className="p-2 rounded-lg bg-muted/30 border border-border">
                                     <div className="flex items-center gap-1 text-muted-foreground mb-0.5">{f.icon}<span className="text-[9px]">{f.label}</span></div>
                                     <p className="text-[11px] font-medium text-foreground leading-tight">{f.value}</p>
@@ -287,38 +373,82 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                         </div>
 
                         {/* Project scope summary */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className={cn("grid gap-4", isProjectIntake ? "grid-cols-3" : "grid-cols-2")}>
                             <div className="space-y-2">
                                 <h5 className="text-[11px] font-semibold text-foreground">Project Scope</h5>
                                 <div className="space-y-1.5">
-                                    {[
-                                        { label: 'Workstations & Desks', qty: 82, pct: 41 },
-                                        { label: 'Executive Seating', qty: 35, pct: 17.5 },
-                                        { label: 'Lounge & Soft Seating', qty: 48, pct: 24 },
-                                        { label: 'Conference Tables & AV', qty: 20, pct: 10 },
-                                        { label: 'Filing & Storage', qty: 15, pct: 7.5 },
-                                    ].map(cat => (
+                                    {scopeItems.map(cat => (
                                         <div key={cat.label} className="flex items-center gap-2">
-                                            <span className="text-[10px] text-foreground w-[140px] truncate">{cat.label}</span>
+                                            <span className="text-[10px] text-foreground w-[160px] truncate">{cat.label}</span>
                                             <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                                                <div className="h-full rounded-full bg-primary/60" style={{ width: `${cat.pct}%` }} />
+                                                <div className="h-full rounded-full bg-emerald-500 dark:bg-emerald-400" style={{ width: `${cat.pct}%` }} />
                                             </div>
-                                            <span className="text-[9px] text-muted-foreground tabular-nums w-7 text-right">{cat.qty}</span>
+                                            <span className="text-[9px] text-muted-foreground tabular-nums w-10 text-right">{cat.qty.toLocaleString()}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
+
+                            {/* Team Selection — Continua only */}
+                            {isProjectIntake && (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <h5 className="text-[11px] font-semibold text-foreground">Suggested Team</h5>
+                                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium">AI Recommended</span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {CONTINUA_TEAM.map(member => {
+                                            const isSelected = member.recommended || selectedTeam.includes(member.id)
+                                            return (
+                                                <div
+                                                    key={member.id}
+                                                    className={cn(
+                                                        "flex items-center gap-2 px-2 py-1.5 rounded-lg border transition-all",
+                                                        isSelected
+                                                            ? "border-brand-400/40 bg-brand-50/30 dark:bg-brand-500/5"
+                                                            : "border-border"
+                                                    )}
+                                                >
+                                                    <button
+                                                        onClick={() => setSelectedTeam(prev =>
+                                                            prev.includes(member.id) ? prev.filter(id => id !== member.id) : [...prev, member.id]
+                                                        )}
+                                                        className={cn(
+                                                            "h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                                                            isSelected ? "bg-brand-400 border-brand-400" : "border-zinc-300 dark:border-zinc-600"
+                                                        )}
+                                                    >
+                                                        {isSelected && <CheckCircleIcon className="h-3 w-3 text-zinc-900" />}
+                                                    </button>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-[10px] font-medium text-foreground truncate">{member.name}</p>
+                                                        <p className="text-[9px] text-muted-foreground">{member.role}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <p className={cn("text-[9px] font-medium tabular-nums mr-1",
+                                                            member.capacity < 50 ? "text-green-600 dark:text-green-400" :
+                                                            member.capacity < 80 ? "text-amber-600 dark:text-amber-400" :
+                                                            "text-red-600 dark:text-red-400"
+                                                        )}>{member.capacity}%</p>
+                                                        <button className="p-0.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Replace member">
+                                                            <ArrowsRightLeftIcon className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                    <button className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-brand-400/40 hover:bg-muted/30 transition-all">
+                                        <PlusIcon className="h-3 w-3" />
+                                        Add Team Member
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="space-y-2">
                                 <h5 className="text-[11px] font-semibold text-foreground">Key Milestones</h5>
                                 <div className="space-y-1.5">
-                                    {[
-                                        { milestone: 'RFQ Received & Processed', status: 'done' as const, date: 'Today' },
-                                        { milestone: 'Quote Approved ($43,750)', status: 'done' as const, date: 'Today' },
-                                        { milestone: 'PO Generated & Transmitted', status: 'done' as const, date: 'Today' },
-                                        { milestone: 'Supplier Acknowledgements', status: 'pending' as const, date: 'Est. 3–5 days' },
-                                        { milestone: 'Delivery Starts (Zone A)', status: 'pending' as const, date: 'Est. Mar 28' },
-                                        { milestone: 'Installation Complete', status: 'pending' as const, date: 'Est. Apr 25' },
-                                    ].map(m => (
+                                    {milestones.map(m => (
                                         <div key={m.milestone} className="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-border">
                                             {m.status === 'done' ? (
                                                 <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
@@ -333,23 +463,6 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                             </div>
                         </div>
 
-                        {/* CTA to next step + Data source footer */}
-                        <div className="flex items-center gap-3 pt-2 border-t border-border">
-                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-1">
-                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                <span>Data sourced from: Email Ingestion → AI Extraction → Expert Review → Dealer Approval — <strong className="text-foreground">zero manual entry</strong></span>
-                            </div>
-                            {isNewProject && (
-                                <button
-                                    onClick={nextStep}
-                                    className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]"
-                                >
-                                    <UserGroupIcon className="h-3.5 w-3.5" />
-                                    Review Customer Profile
-                                    <ArrowRightIcon className="h-3 w-3" />
-                                </button>
-                            )}
-                        </div>
                     </div>
                 )}
 
@@ -399,7 +512,7 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                         {/* Zone summary bar */}
                         <div className="flex items-center gap-1 h-2 rounded-full overflow-hidden bg-muted">
                             {PROJECT_DETAIL_SECTIONS.deliveryZones.map((z, i) => (
-                                <div key={i} className={cn("h-full rounded-full", ['bg-brand-500', 'bg-brand-400', 'bg-brand-300', 'bg-brand-200'][i])} style={{ width: `${(z.items / 200) * 100}%` }} title={`Zone ${String.fromCharCode(65 + i)}: ${z.items} items`} />
+                                <div key={i} className={cn("h-full rounded-full", ['bg-emerald-600', 'bg-emerald-500', 'bg-emerald-400', 'bg-emerald-300'][i])} style={{ width: `${(z.items / 200) * 100}%` }} title={`Zone ${String.fromCharCode(65 + i)}: ${z.items} items`} />
                             ))}
                         </div>
                     </div>
@@ -411,15 +524,24 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                         <div className="flex items-center gap-3 p-2.5 rounded-lg bg-brand-50 dark:bg-brand-500/5 border border-brand-200/50 dark:border-brand-500/20">
                             <AIAgentAvatar size="sm" />
                             <div className="flex-1">
-                                <p className="text-[10px] font-medium text-foreground">ProjectIntelligenceAgent analyzed this project</p>
-                                <p className="text-[9px] text-muted-foreground">3 suggestions based on quote data, customer history, and market rates</p>
+                                <p className="text-[10px] font-medium text-foreground">
+                                    {isProjectIntake ? 'IntakeAgent analyzed project scope & procurement options' : 'ProjectIntelligenceAgent analyzed this project'}
+                                </p>
+                                <p className="text-[9px] text-muted-foreground">
+                                    {isProjectIntake
+                                        ? `${aiSuggestions.length} suggestions based on RFP analysis, manufacturer data, and inventory`
+                                        : '3 suggestions based on quote data, customer history, and market rates'
+                                    }
+                                </p>
                             </div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Potential: +$7.9K savings</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">
+                                {isProjectIntake ? 'Potential: +$211K savings' : 'Potential: +$7.9K savings'}
+                            </span>
                         </div>
 
                         {/* Suggestion cards */}
                         <div className="space-y-2">
-                            {PROJECT_DETAIL_SECTIONS.aiSuggestions.map((s, i) => {
+                            {aiSuggestions.map((s, i) => {
                                 const style = suggestionStyles[s.type]
                                 const isExpanded = expandedSuggestion === i
                                 return (
@@ -485,48 +607,145 @@ function ProjectDetailCard({ isNewProject }: { isNewProject: boolean }) {
                     </div>
                 )}
             </div>
+
+            {/* CTA footer — always visible regardless of active tab */}
+            <div className="px-4 py-3 border-t border-border flex items-center gap-3">
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-1">
+                    <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                    <span>
+                        {isProjectIntake
+                            ? <>RFP parsed → Requirements extracted → Manufacturers matched → Estimate calculated — <strong className="text-foreground">zero manual entry</strong></>
+                            : <>Data sourced from: Email Ingestion → AI Extraction → Expert Review → Dealer Approval — <strong className="text-foreground">zero manual entry</strong></>
+                        }
+                    </span>
+                </div>
+                {isNewProject && (
+                    <button
+                        onClick={nextStep}
+                        className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]"
+                    >
+                        <UserGroupIcon className="h-3.5 w-3.5" />
+                        {isProjectIntake ? 'Confirm Team & Notify Expert' : 'Review Customer Profile'}
+                        <ArrowRightIcon className="h-3 w-3" />
+                    </button>
+                )}
+            </div>
         </div>
     )
 }
 
 // ═══════════════════════════════════════════════════
-// PROJECTS VIEW (Step 1.12)
-// Phased animation: notification → project reveal → detail card
+// PROJECTS VIEW (Step 1.12 + Continua Step 1.1)
+// Phased animation: notification → processing → project reveal → detail card
 // ═══════════════════════════════════════════════════
 
-type ProjectPhase = 'idle' | 'notification' | 'revealed' | 'detail'
+type ProjectPhase = 'idle' | 'notification' | 'processing' | 'revealed' | 'detail'
 
-function ProjectsView({ stepId, skipNotification }: { stepId: string; skipNotification?: boolean }) {
-    const isNewProject = stepId === '1.12'
+const INTAKE_AGENTS = [
+    { name: 'IntakeAgent', detail: 'Parsing RFP document...' },
+    { name: 'SpecAnalyzer', detail: 'Extracting 1,200 workstations, 40 conf. rooms...' },
+    { name: 'ManufacturerMatcher', detail: 'Matching Herman Miller, Knoll, DIRTT...' },
+    { name: 'EstimationEngine', detail: 'Calculating $3.2M preliminary estimate...' },
+    { name: 'CRMProjectCreator', detail: 'Creating project PRJ-001...' },
+]
+
+function ProjectsView({ stepId, skipNotification, isProjectIntake }: { stepId: string; skipNotification?: boolean; isProjectIntake?: boolean }) {
+    const isNewProject = stepId === '1.12' || !!isProjectIntake
     // If notification was already shown on Dashboard, skip straight to revealed
     const initialPhase: ProjectPhase = !isNewProject ? 'revealed' : skipNotification ? 'revealed' : 'idle'
     const [phase, setPhase] = useState<ProjectPhase>(initialPhase)
 
-    // Phased animation for step 1.12
+    // Processing agents state (for Continua intake)
+    const [processingAgents, setProcessingAgents] = useState(
+        INTAKE_AGENTS.map(a => ({ ...a, visible: false, done: false }))
+    )
+    const [progressWidth, setProgressWidth] = useState(0)
+
+    // Track phase in ref for setTimeout access
+    const phaseRef = useRef(phase)
+    useEffect(() => { phaseRef.current = phase }, [phase])
+
+    // Phased animation for step 1.12 (COI) or Continua intake
     useEffect(() => {
         if (!isNewProject) { setPhase('revealed'); return }
         if (skipNotification) {
-            // Coming from Dashboard — skip notification, go to revealed then detail
             setPhase('revealed')
             const timer = setTimeout(() => setPhase('detail'), 1500)
             return () => clearTimeout(timer)
         }
         setPhase('idle')
+        setProcessingAgents(INTAKE_AGENTS.map(a => ({ ...a, visible: false, done: false })))
         const timers: ReturnType<typeof setTimeout>[] = []
-        timers.push(setTimeout(() => setPhase('notification'), 2000))
-        timers.push(setTimeout(() => setPhase('revealed'), 5000))
-        timers.push(setTimeout(() => setPhase('detail'), 7000))
-        return () => timers.forEach(clearTimeout)
-    }, [isNewProject, skipNotification])
 
-    // Allow clicking notification to skip to reveal
+        if (isProjectIntake) {
+            // Continua: notification → click/auto → processing → revealed → detail
+            timers.push(setTimeout(() => setPhase('notification'), 1500))
+            // Auto-advance from notification after 4s if user doesn't click
+            timers.push(setTimeout(() => {
+                if (phaseRef.current === 'notification') setPhase('processing')
+            }, 5500))
+        } else {
+            // COI step 1.12: notification → revealed → detail (no processing)
+            timers.push(setTimeout(() => setPhase('notification'), 2000))
+            timers.push(setTimeout(() => setPhase('revealed'), 5000))
+            timers.push(setTimeout(() => setPhase('detail'), 7000))
+        }
+        return () => timers.forEach(clearTimeout)
+    }, [isNewProject, skipNotification, isProjectIntake])
+
+    // Processing phase: animate agents sequentially + progress bar
+    useEffect(() => {
+        if (phase !== 'processing' || !isProjectIntake) return
+        setProcessingAgents(INTAKE_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setProgressWidth(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        // Start progress bar after a brief delay
+        timers.push(setTimeout(() => setProgressWidth(100), 50))
+        INTAKE_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(() => {
+                setProcessingAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))
+            }, i * 600))
+            timers.push(setTimeout(() => {
+                setProcessingAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))
+            }, i * 600 + 450))
+        })
+        // After all agents done → revealed
+        const totalTime = INTAKE_AGENTS.length * 600 + 800
+        timers.push(setTimeout(() => setPhase('revealed'), totalTime))
+        return () => timers.forEach(clearTimeout)
+    }, [phase, isProjectIntake])
+
+    // Simulated hover + click on Apex row before expanding (Continua)
+    const [rowHovered, setRowHovered] = useState(false)
+    const [rowClicked, setRowClicked] = useState(false)
+
+    // Transition revealed → detail with simulated hover+click (Continua)
+    useEffect(() => {
+        if (phase !== 'revealed' || !isProjectIntake) return
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setRowHovered(true), 800))
+        timers.push(setTimeout(() => setRowClicked(true), 1500))
+        timers.push(setTimeout(() => { setRowClicked(false); setRowHovered(false); setPhase('detail') }, 1900))
+        return () => timers.forEach(clearTimeout)
+    }, [phase, isProjectIntake])
+
+    // Allow clicking notification to skip to processing (Continua) or detail (COI)
     const handleNotificationClick = useCallback(() => {
-        if (phase === 'notification') setPhase('detail')
-    }, [phase])
+        if (phase === 'notification') setPhase(isProjectIntake ? 'processing' : 'detail')
+    }, [phase, isProjectIntake])
 
     const showApexRow = !isNewProject || phase === 'revealed' || phase === 'detail'
     const showDetailCard = !isNewProject || phase === 'detail'
     const projectCount = showApexRow ? MOCK_PROJECTS.length : MOCK_PROJECTS.length - 1
+    const detailRef = useRef<HTMLDivElement>(null)
+    const [rowExpanded, setRowExpanded] = useState(true)
+
+    // Auto-scroll to detail card when it appears
+    useEffect(() => {
+        if (showDetailCard && isNewProject && detailRef.current) {
+            setTimeout(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 200)
+        }
+    }, [showDetailCard, isNewProject])
 
     return (
         <div className="space-y-4">
@@ -543,14 +762,24 @@ function ProjectsView({ stepId, skipNotification }: { stepId: string; skipNotifi
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-foreground">New Project Auto-Created</span>
+                                    <span className="text-xs font-bold text-foreground">
+                                        {isProjectIntake ? 'Incoming RFP Detected' : 'New Project Auto-Created'}
+                                    </span>
                                     <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Just now</span>
                                 </div>
                                 <p className="text-[11px] text-muted-foreground mt-1">
-                                    <strong className="text-foreground">ProjectCreationAgent</strong> created project from Quote #QT-1025 — <strong className="text-foreground">Apex Furniture</strong>, $43,750, 200 line items.
+                                    {isProjectIntake ? (
+                                        <>
+                                            <strong className="text-foreground">IntakeAgent</strong> received RFP from corporate client — <strong className="text-foreground">new HQ, 8 floors</strong>. 1,200 workstations, 40 conference rooms, AV integration. Click to process.
+                                        </>
+                                    ) : (
+                                        <>
+                                            <strong className="text-foreground">ProjectCreationAgent</strong> created project from Quote #QT-1025 — <strong className="text-foreground">Apex Furniture</strong>, $43,750, 200 line items.
+                                        </>
+                                    )}
                                 </p>
                                 <div className="flex items-center gap-1 mt-2 text-[10px] text-brand-700 dark:text-brand-400 font-medium">
-                                    <span>Click to view project</span>
+                                    <span>{isProjectIntake ? 'Click to start AI processing' : 'Click to view project'}</span>
                                     <ArrowRightIcon className="h-3 w-3" />
                                 </div>
                             </div>
@@ -559,19 +788,90 @@ function ProjectsView({ stepId, skipNotification }: { stepId: string; skipNotifi
                 </button>
             )}
 
+            {/* AI Processing Phase — Continua intake pipeline */}
+            {isProjectIntake && phase === 'processing' && (
+                <div className="bg-card border border-indigo-200 dark:border-indigo-500/20 rounded-xl p-4 animate-in fade-in duration-300">
+                    <div className="flex items-start gap-3">
+                        <AIAgentAvatar size="sm" />
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 text-xs">
+                                <span className="font-semibold text-foreground">IntakeAgent</span>
+                                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">Processing RFP...</span>
+                            </div>
+                            {/* Progress bar */}
+                            <div className="mt-2.5 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-indigo-500 rounded-full transition-all duration-[3000ms] ease-out" style={{ width: `${progressWidth}%` }} />
+                            </div>
+                            {/* Agent pipeline */}
+                            <div className="mt-3 space-y-1.5">
+                                {processingAgents.map((agent) => (
+                                    <div key={agent.name} className={cn(
+                                        "flex items-center gap-2 text-[10px] transition-all duration-300",
+                                        agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
+                                    )}>
+                                        {agent.done ? (
+                                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                        ) : (
+                                            <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />
+                                        )}
+                                        <span className={cn("font-medium", agent.done ? "text-foreground" : "text-indigo-600 dark:text-indigo-400")}>{agent.name}</span>
+                                        <span className="text-muted-foreground">{agent.detail}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* AI Agent Confirmation — after reveal */}
             {isNewProject && (phase === 'revealed' || phase === 'detail') && (
-                <div className="bg-card border border-green-200 dark:border-green-800/30 rounded-xl p-3 flex items-center gap-3 animate-in fade-in duration-300">
-                    <AIAgentAvatar size="sm" />
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 text-xs">
-                            <span className="font-medium text-foreground">ProjectCreationAgent</span>
-                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
-                            <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">Project created successfully</span>
+                <div className={cn(
+                    "rounded-xl p-4 animate-in fade-in duration-300",
+                    isProjectIntake
+                        ? "bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30"
+                        : "bg-card border border-green-200 dark:border-green-800/30"
+                )}>
+                    <div className="flex items-start gap-3">
+                        <AIAgentAvatar size="sm" />
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 text-xs">
+                                <span className="font-semibold text-foreground">{isProjectIntake ? 'IntakeAgent' : 'ProjectCreationAgent'}:</span>
+                                <span className="text-[11px] text-foreground">
+                                    {isProjectIntake
+                                        ? 'RFP processing complete — project created with full scope, manufacturers matched, estimate calculated. Zero manual entry.'
+                                        : 'Project created from Quote #QT-1025 — Apex Furniture, $43,750, zero manual CRM entry.'
+                                    }
+                                </span>
+                            </div>
+                            {isProjectIntake && (
+                                <>
+                                    <div className="flex items-center gap-2 mt-2.5">
+                                        <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                        {[
+                                            { icon: <FileText className="h-3 w-3" />, label: 'RFP Document Parser' },
+                                            { icon: <Package className="h-3 w-3" />, label: 'Herman Miller (API)' },
+                                            { icon: <Package className="h-3 w-3" />, label: 'Knoll Catalog' },
+                                            { icon: <Package className="h-3 w-3" />, label: 'DIRTT Configurator' },
+                                            { icon: <CurrencyDollarIcon className="h-3 w-3" />, label: 'Estimation Engine' },
+                                            { icon: <UserGroupIcon className="h-3 w-3" />, label: 'Team Capacity DB' },
+                                        ].map(sys => (
+                                            <span key={sys.label} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                {sys.icon}
+                                                {sys.label}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                            {!isProjectIntake && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    Apex Furniture · Quote #QT-1025 · PO #ORD-2055 · $43,750 — zero manual CRM entry
+                                </p>
+                            )}
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                            Apex Furniture · Quote #QT-1025 · PO #ORD-2055 · $43,750 — zero manual CRM entry
-                        </p>
                     </div>
                 </div>
             )}
@@ -598,55 +898,87 @@ function ProjectsView({ stepId, skipNotification }: { stepId: string; skipNotifi
                         {MOCK_PROJECTS.map(project => {
                             const isApex = project.id === 'PRJ-001'
                             if (isApex && isNewProject && !showApexRow) return null
+                            const isApexExpanded = isApex && isNewProject && isProjectIntake && showDetailCard && rowExpanded
                             return (
-                                <tr key={project.id} className={cn(
-                                    'border-b border-border last:border-0 hover:bg-muted/20 transition-all',
-                                    isApex && isNewProject ? 'bg-brand-50/50 dark:bg-brand-500/5 ring-2 ring-inset ring-brand-400/30 animate-in fade-in slide-in-from-top-2 duration-500' : 'bg-white dark:bg-zinc-800'
-                                )}>
-                                    <td className="px-4 py-2.5">
-                                        <div className="flex items-center gap-2">
-                                            {isApex && isNewProject && (
-                                                <span className="px-1.5 py-0.5 rounded bg-brand-500 text-zinc-900 text-[8px] font-bold uppercase shrink-0">New</span>
-                                            )}
-                                            <div>
-                                                <p className="font-medium text-foreground text-[11px]">{project.name}</p>
-                                                <p className="text-[10px] text-muted-foreground">{project.id} · {project.items} items · {project.zones} zones</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-[11px] text-foreground">{project.customer}</td>
-                                    <td className="px-3 py-2.5">
-                                        <p className="text-[11px] text-foreground">{project.quote}</p>
-                                        <p className="text-[10px] text-muted-foreground">{project.po}</p>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-right">
-                                        <span className="text-[11px] font-medium text-foreground tabular-nums">${project.value.toLocaleString()}</span>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        <StageBadge stage={project.stage} />
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        <ProjectStatusBadge status={project.status} />
-                                    </td>
-                                    <td className="px-4 py-2.5 text-right">
-                                        {project.stage === 'Complete' ? (
-                                            <span className="text-[10px] text-green-600 font-medium">100%</span>
-                                        ) : project.deliveryRate > 0 ? (
-                                            <span className="text-[10px] text-foreground tabular-nums">{project.deliveryRate}%</span>
-                                        ) : (
-                                            <span className="text-[10px] text-muted-foreground">—</span>
+                                <Fragment key={project.id}>
+                                    <tr
+                                        className={cn(
+                                            'border-b border-border last:border-0 transition-all',
+                                            isApex && isNewProject
+                                                ? cn(
+                                                    'bg-brand-50/50 dark:bg-brand-500/5 animate-in fade-in slide-in-from-top-2 duration-500',
+                                                    !isApexExpanded && 'ring-2 ring-inset ring-brand-400/30',
+                                                    rowHovered && 'bg-brand-100 dark:bg-brand-500/10 cursor-pointer shadow-sm',
+                                                    rowClicked && 'bg-brand-200/60 dark:bg-brand-500/15 scale-[0.998] shadow-inner'
+                                                )
+                                                : 'bg-white dark:bg-zinc-800 hover:bg-muted/20',
+                                            isApexExpanded && 'border-b-0 bg-brand-50/80 dark:bg-brand-500/8'
                                         )}
-                                    </td>
-                                </tr>
+                                        onClick={isApex && isNewProject && isProjectIntake && showDetailCard ? () => setRowExpanded(prev => !prev) : undefined}
+                                        style={isApex && isNewProject && isProjectIntake && showDetailCard ? { cursor: 'pointer' } : undefined}
+                                    >
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex items-center gap-2">
+                                                {isApex && isNewProject && (
+                                                    <span className="px-1.5 py-0.5 rounded bg-brand-500 text-zinc-900 text-[8px] font-bold uppercase shrink-0">New</span>
+                                                )}
+                                                <div>
+                                                    <p className="font-medium text-foreground text-[11px]">{project.name}</p>
+                                                    <p className="text-[10px] text-muted-foreground">{project.id} · {project.items} items · {project.zones} zones</p>
+                                                </div>
+                                                {isApex && isNewProject && isProjectIntake && showDetailCard && (
+                                                    rowExpanded
+                                                        ? <ChevronUpIcon className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+                                                        : <ChevronDownIcon className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-[11px] text-foreground">{project.customer}</td>
+                                        <td className="px-3 py-2.5">
+                                            <p className="text-[11px] text-foreground">{project.quote}</p>
+                                            <p className="text-[10px] text-muted-foreground">{project.po}</p>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right">
+                                            <span className="text-[11px] font-medium text-foreground tabular-nums">${project.value.toLocaleString()}</span>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <StageBadge stage={project.stage} />
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <ProjectStatusBadge status={project.status} />
+                                        </td>
+                                        <td className="px-4 py-2.5 text-right">
+                                            {project.stage === 'Complete' ? (
+                                                <span className="text-[10px] text-green-600 font-medium">100%</span>
+                                            ) : project.deliveryRate > 0 ? (
+                                                <span className="text-[10px] text-foreground tabular-nums">{project.deliveryRate}%</span>
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground">—</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                    {/* Inline expandable detail — Continua intake */}
+                                    {isApexExpanded && (
+                                        <tr>
+                                            <td colSpan={7} className="p-0 border-b border-brand-400/30 bg-card">
+                                                <div ref={detailRef} className="animate-in fade-in slide-in-from-top-2 duration-400">
+                                                    <ProjectDetailCard isNewProject={isNewProject} isProjectIntake={isProjectIntake} inline />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </Fragment>
                             )
                         })}
                     </tbody>
                 </table>
             </div>
 
-            {/* Apex Project Detail Card — expanded with AI suggestions */}
-            {showDetailCard && (
-                <ProjectDetailCard isNewProject={isNewProject} />
+            {/* Project Detail Card — separate card for COI (non-intake) */}
+            {showDetailCard && !isProjectIntake && (
+                <div ref={detailRef}>
+                    <ProjectDetailCard isNewProject={isNewProject} />
+                </div>
             )}
         </div>
     )
@@ -2052,6 +2384,7 @@ export default function CRMSimulation({ onNavigate, activePage }: CRMSimulationP
     const { currentStep, nextStep, isPaused } = useDemo()
     const { activeProfile } = useDemoProfile();
     const isOps = activeProfile.id === 'ops';
+    const isContinua = activeProfile.id === 'continua';
     const stepId = currentStep?.id || '1.12'
 
     // Pause-aware timer helper
@@ -2078,9 +2411,15 @@ export default function CRMSimulation({ onNavigate, activePage }: CRMSimulationP
     useMemo(() => {
         const mapped = STEP_TO_TAB[stepId]
         if (mapped) setActiveTab(mapped)
-        setCrmPage(stepId === '1.12' ? 'dashboard' : 'crm')
+        // Continua step 2.1 goes straight to CRM projects (no dashboard phase)
+        if (isContinua && stepId === '2.1') {
+            setCrmPage('crm')
+            setActiveTab('projects')
+        } else {
+            setCrmPage(stepId === '1.12' ? 'dashboard' : 'crm')
+        }
         setNotificationShown(false)
-    }, [stepId])
+    }, [stepId, isContinua])
 
     // React to navbar clicks (Dashboard / CRM toggle)
     useEffect(() => {
@@ -2390,7 +2729,7 @@ export default function CRMSimulation({ onNavigate, activePage }: CRMSimulationP
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
-                {activeTab === 'projects' && <ProjectsView stepId={stepId} skipNotification={notificationShown} />}
+                {activeTab === 'projects' && <ProjectsView stepId={stepId} skipNotification={notificationShown} isProjectIntake={isContinua && stepId === '2.1'} />}
                 {activeTab === 'customer360' && <Customer360View stepId={stepId} />}
                 {activeTab === 'timeline' && <OrderTimelineView stepId={stepId} />}
                 {activeTab === 'invoicing' && <InvoicingView />}

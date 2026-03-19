@@ -9,7 +9,8 @@ import {
     ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, EyeIcon, PencilIcon, TrashIcon,
     CheckIcon, MapPinIcon, UserIcon, ClockIcon, ShoppingBagIcon, ExclamationTriangleIcon, PencilSquareIcon, CheckCircleIcon,
     ShoppingCartIcon, ClipboardDocumentCheckIcon, WrenchScrewdriverIcon, ChevronLeftIcon, CloudArrowUpIcon, DocumentPlusIcon,
-    FunnelIcon, ArrowRightIcon, SparklesIcon, CheckBadgeIcon, ArrowDownTrayIcon, ArrowsRightLeftIcon, DocumentMagnifyingGlassIcon
+    FunnelIcon, ArrowRightIcon, SparklesIcon, CheckBadgeIcon, ArrowDownTrayIcon, ArrowsRightLeftIcon, DocumentMagnifyingGlassIcon,
+    ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
@@ -27,9 +28,112 @@ import AckReconciliationModal from './components/AckReconciliationModal'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { useDemo } from './context/DemoContext'
+import { useDemoProfile } from './context/DemoProfileContext'
+import { AIAgentAvatar } from './components/simulations/DemoAvatars'
+import { CONTINUA_STEP_TIMING } from './config/profiles/continua-demo'
 function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs))
 }
+
+// ═══════════════════════════════════════════════════
+// CONTINUA STEP 2.2 — Purchase Order Generation
+// ═══════════════════════════════════════════════════
+
+
+type ProcurementPhase = 'idle' | 'notification' | 'expert-question' | 'highlight' | 'lupa-active' | 'done'
+
+// ─── Continua Step 1.5: Consignment & Vendor Returns Constants ──────────────
+const CONSIGNMENT_AGENTS = [
+    { name: 'ConsignmentTracker', detail: 'Reviewing 35 consignment items across 4 manufacturers...' },
+    { name: 'WindowAnalyzer', detail: '12 items approaching 90-day return window...' },
+    { name: 'RMAGenerator', detail: 'Auto-generating RMA for 4 confirmed returns...' },
+    { name: 'DemandAnalyzer', detail: 'Analyzing demand trends — 4 items trending up 12%...' },
+    { name: 'DecisionRouter', detail: 'Routing recommendations: return vs convert-to-purchase...' },
+]
+const CONSIGNMENT_ITEMS = [
+    { name: 'Aeron Chair (Mineral)', manufacturer: 'MillerKnoll', daysLeft: 8, qty: 4, value: '$3,580', decision: 'return' as const, reason: 'Low demand, surplus stock' },
+    { name: 'Embody Chair (Black)', manufacturer: 'MillerKnoll', daysLeft: 12, qty: 2, value: '$3,190', decision: 'return' as const, reason: 'Duplicate allocation' },
+    { name: 'Cosm Chair (Glacier)', manufacturer: 'MillerKnoll', daysLeft: 18, qty: 1, value: '$1,295', decision: 'return' as const, reason: 'Color mismatch for project' },
+    { name: 'Sayl Chair (Fog)', manufacturer: 'MillerKnoll', daysLeft: 22, qty: 1, value: '$695', decision: 'return' as const, reason: 'Superseded by spec change' },
+    { name: 'Gesture Chair (Graphite)', manufacturer: 'Steelcase', daysLeft: 15, qty: 2, value: '$2,190', decision: 'purchase' as const, reason: 'Demand trending up 18%' },
+    { name: 'Think Chair (Licorice)', manufacturer: 'Steelcase', daysLeft: 25, qty: 1, value: '$1,095', decision: 'purchase' as const, reason: 'Spec match for UAL phase 3' },
+    { name: 'Diffrient World', manufacturer: 'Humanscale', daysLeft: 30, qty: 3, value: '$2,685', decision: 'purchase' as const, reason: 'Demand up 12%, pipeline match' },
+    { name: 'Freedom Chair (Graphite)', manufacturer: 'Humanscale', daysLeft: 45, qty: 1, value: '$1,295', decision: 'purchase' as const, reason: 'Client request — UAL exec suite' },
+]
+type ConsignmentPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+
+// ─── Projects Tab: Orders nested by project ────────────────────────────────────
+const DEMO_PROJECTS = [
+    {
+        id: 'PRJ-2026-001',
+        name: 'United Airlines HQ — 8 Floor Buildout',
+        client: 'United Airlines',
+        pm: 'Sarah Mitchell',
+        fm: 'Carlos Rivera',
+        status: 'In Progress' as const,
+        totalBudget: '$3.2M',
+        spent: '$2.1M',
+        completion: 65,
+        orders: [
+            { id: 'PO-HQ-001', supplier: 'MillerKnoll', amount: '$2.8M', status: 'In Production', deliveryDate: 'Mar 15', progress: 70 },
+            { id: 'PO-HQ-002', supplier: 'DIRTT Environmental', amount: '$120K', status: 'Awaiting ACK', deliveryDate: 'Apr 20', progress: 15 },
+            { id: 'PO-HQ-003', supplier: 'AV Integration Partners', amount: '$280K', status: 'Shipped', deliveryDate: 'Feb 28', progress: 90 },
+        ],
+        milestones: [
+            { name: 'Floors 1-2 Furniture', date: 'Mar 1', status: 'completed' as const },
+            { name: 'Floors 3-4 Delivery', date: 'Mar 15', status: 'in-progress' as const },
+            { name: 'AV Integration', date: 'Apr 1', status: 'pending' as const },
+            { name: 'Final Punch List', date: 'Apr 15', status: 'pending' as const },
+        ],
+        fmActions: [
+            { action: 'Approve furniture relocation — Floor 3', priority: 'high' as const },
+            { action: 'Review space allocation changes', priority: 'medium' as const },
+            { action: 'Schedule existing AV maintenance', priority: 'low' as const },
+        ]
+    },
+    {
+        id: 'PRJ-2026-002',
+        name: 'Apex Furniture — New HQ Fitout',
+        client: 'Apex Furniture',
+        pm: 'Diego Morales',
+        fm: 'Carlos Rivera',
+        status: 'Planning' as const,
+        totalBudget: '$540K',
+        spent: '$43K',
+        completion: 8,
+        orders: [
+            { id: 'QT-1025', supplier: 'Multiple', amount: '$43.7K', status: 'Quote Negotiating', deliveryDate: 'TBD', progress: 0 },
+        ],
+        milestones: [
+            { name: 'Design Approval', date: 'Feb 15', status: 'completed' as const },
+            { name: 'Quote Finalization', date: 'Feb 28', status: 'in-progress' as const },
+        ],
+        fmActions: []
+    },
+    {
+        id: 'PRJ-2026-003',
+        name: 'BioLife Inc — Lab Expansion',
+        client: 'BioLife Inc',
+        pm: 'Sarah Mitchell',
+        fm: 'Carlos Rivera',
+        status: 'In Progress' as const,
+        totalBudget: '$890K',
+        spent: '$210K',
+        completion: 24,
+        orders: [
+            { id: 'PO-BL-001', supplier: 'Steelcase', amount: '$340K', status: 'In Production', deliveryDate: 'Mar 20', progress: 45 },
+            { id: 'PO-BL-002', supplier: 'Humanscale', amount: '$95K', status: 'Ready to Ship', deliveryDate: 'Mar 5', progress: 85 },
+        ],
+        milestones: [
+            { name: 'Lab Furniture Order', date: 'Feb 1', status: 'completed' as const },
+            { name: 'Office Furniture Delivery', date: 'Mar 20', status: 'in-progress' as const },
+            { name: 'Installation', date: 'Apr 10', status: 'pending' as const },
+        ],
+        fmActions: [
+            { action: 'Coordinate lab equipment relocation', priority: 'high' as const },
+        ]
+    }
+]
 
 const inventoryData = [
     { name: 'Seating', value: 78, amt: 480 },
@@ -233,7 +337,183 @@ interface TransactionsProps {
 }
 
 export default function Transactions({ onLogout, onNavigateToDetail, onNavigateToWorkspace, onNavigate }: TransactionsProps) {
-    const { currentStep, nextStep, isDemoActive } = useDemo();
+    const { currentStep, nextStep, isDemoActive, setLupaStep, procCompleteStep } = useDemo();
+    const { activeProfile } = useDemoProfile()
+    const isContinua = activeProfile.id === 'continua'
+    const stepId = currentStep?.id || ''
+
+    // ── Continua Step 2.2 Procurement state ──
+    const [procPhase, setProcPhase] = useState<ProcurementPhase>('idle')
+    const [expertAnswer, setExpertAnswer] = useState<string | null>(null)
+    const procPhaseRef = useRef(procPhase)
+    useEffect(() => { procPhaseRef.current = procPhase }, [procPhase])
+
+    // Phase orchestration: idle → notification → expert-question → (answer triggers lupa) → highlight → done
+    const tp22 = CONTINUA_STEP_TIMING['2.2']
+    useEffect(() => {
+        if (!isContinua || stepId !== '2.2') { setProcPhase('idle'); return }
+        setProcPhase('idle')
+        setExpertAnswer(null)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setProcPhase('notification'), tp22.notifDelay))
+        timers.push(setTimeout(() => {
+            if (procPhaseRef.current === 'notification') setProcPhase('expert-question')
+        }, tp22.notifDelay + tp22.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // Expert answer → highlight card first, then trigger lupa
+    useEffect(() => {
+        if (procPhase !== 'expert-question' || !expertAnswer) return
+        const t = setTimeout(() => setProcPhase('highlight'), 1200)
+        return () => clearTimeout(t)
+    }, [procPhase, expertAnswer])
+
+    // Highlight card → after 1.5s trigger lupa (DemoProcessPanel)
+    useEffect(() => {
+        if (procPhase !== 'highlight') return
+        const t = setTimeout(() => {
+            setProcPhase('lupa-active')
+            setLupaStep('2.2')
+        }, 1500)
+        return () => clearTimeout(t)
+    }, [procPhase, setLupaStep])
+
+    // procCompleteStep signal from DemoProcessPanel → done with chip
+    useEffect(() => {
+        if (procCompleteStep !== '2.2' || procPhase === 'done') return
+        setProcPhase('done')
+    }, [procCompleteStep, procPhase])
+
+    // done → show chip 1.2s → simulate click (scale down) → navigate to order detail
+    const [clickSimActive, setClickSimActive] = useState(false)
+    useEffect(() => {
+        if (procPhase !== 'done' || !isContinua || currentStep?.id !== '2.2') return
+        const t1 = setTimeout(() => setClickSimActive(true), 1200)      // flash "click"
+        const t2 = setTimeout(() => onNavigateToDetail('order-detail'), 1800) // navigate
+        return () => { clearTimeout(t1); clearTimeout(t2) }
+    }, [procPhase, isContinua, currentStep?.id, onNavigateToDetail])
+
+    // ─── Continua Step 2.3: ACK Tracking & Validation ────────────────────────────
+    type AckPhase = 'idle' | 'notification' | 'tab-switch' | 'validating' | 'alert' | 'click-sim' | 'navigating'
+    const [ackPhase, setAckPhase] = useState<AckPhase>('idle')
+    const ackPhaseRef = useRef(ackPhase)
+    useEffect(() => { ackPhaseRef.current = ackPhase }, [ackPhase])
+    const [ackValidatedCount, setAckValidatedCount] = useState(0)
+    const [ackKnollAlert, setAckKnollAlert] = useState(false)
+    const [ackClickSim, setAckClickSim] = useState(false)
+
+    // 1.3 phase orchestration: idle → notification → tab-switch → validating → alert → click-sim → navigating
+    const tp23 = CONTINUA_STEP_TIMING['2.3']
+    useEffect(() => {
+        if (!isContinua || stepId !== '2.3') {
+            setAckPhase('idle'); setAckValidatedCount(0); setAckKnollAlert(false); setAckClickSim(false)
+            return
+        }
+        setAckPhase('idle'); setAckValidatedCount(0); setAckKnollAlert(false); setAckClickSim(false)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setAckPhase('notification'), tp23.notifDelay))
+        timers.push(setTimeout(() => {
+            if (ackPhaseRef.current === 'notification') setAckPhase('tab-switch')
+        }, tp23.notifDelay + tp23.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // 1.3: tab-switch → auto-switch to ACK tab, then → validating
+    useEffect(() => {
+        if (ackPhase !== 'tab-switch') return
+        setLifecycleTab('acknowledgments')
+        setViewMode('pipeline')
+        const t = setTimeout(() => setAckPhase('validating'), 800)
+        return () => clearTimeout(t)
+    }, [ackPhase])
+
+    // 1.3: validating → stagger validated badges, then → alert (Knoll)
+    useEffect(() => {
+        if (ackPhase !== 'validating') return
+        setAckValidatedCount(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        // Validate first 2 ACKs (Herman Miller, Steelcase) — skip Knoll
+        for (let i = 0; i < 2; i++) {
+            timers.push(setTimeout(() => setAckValidatedCount(i + 1), (i + 1) * tp23.agentStagger))
+        }
+        // After validations done → Knoll alert
+        const alertDelay = 3 * tp23.agentStagger + tp23.breathing
+        timers.push(setTimeout(() => {
+            setAckKnollAlert(true)
+            setAckPhase('alert')
+        }, alertDelay))
+        return () => timers.forEach(clearTimeout)
+    }, [ackPhase])
+
+    // 1.3: alert → hold 2.5s → click-sim
+    useEffect(() => {
+        if (ackPhase !== 'alert') return
+        const t = setTimeout(() => setAckPhase('click-sim'), 2500)
+        return () => clearTimeout(t)
+    }, [ackPhase])
+
+    // 1.3: click-sim → simulate click on Knoll card → navigate to ack-detail
+    useEffect(() => {
+        if (ackPhase !== 'click-sim') return
+        setAckClickSim(true)
+        const t = setTimeout(() => {
+            setAckPhase('navigating')
+            onNavigateToDetail('ack-detail')
+        }, 800)
+        return () => clearTimeout(t)
+    }, [ackPhase, onNavigateToDetail])
+
+    // ─── Continua Step 1.5: Consignment & Vendor Returns ────────────────────────
+    const [csgnPhase, setCsgnPhase] = useState<ConsignmentPhase>('idle')
+    const csgnPhaseRef = useRef(csgnPhase)
+    useEffect(() => { csgnPhaseRef.current = csgnPhase }, [csgnPhase])
+    const [csgnAgents, setCsgnAgents] = useState(CONSIGNMENT_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+    const [csgnProgress, setCsgnProgress] = useState(0)
+
+    // Continua 2.5: orchestration
+    const tp15 = CONTINUA_STEP_TIMING['1.5']
+    useEffect(() => {
+        if (!isContinua || stepId !== '1.5') { setCsgnPhase('idle'); return }
+        setCsgnPhase('idle')
+        setCsgnAgents(CONSIGNMENT_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setCsgnPhase('notification'), tp15.notifDelay))
+        timers.push(setTimeout(() => {
+            if (csgnPhaseRef.current === 'notification') setCsgnPhase('processing')
+        }, tp15.notifDelay + tp15.notifDuration))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    // Continua 2.5: processing → breathing
+    useEffect(() => {
+        if (csgnPhase !== 'processing') return
+        setCsgnAgents(CONSIGNMENT_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setCsgnProgress(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setCsgnProgress(100), 50))
+        CONSIGNMENT_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(() => setCsgnAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a)), i * tp15.agentStagger))
+            timers.push(setTimeout(() => setCsgnAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a)), i * tp15.agentStagger + tp15.agentDone))
+        })
+        timers.push(setTimeout(() => setCsgnPhase('breathing'), CONSIGNMENT_AGENTS.length * tp15.agentStagger + 800))
+        return () => timers.forEach(clearTimeout)
+    }, [csgnPhase])
+
+    // Continua 2.5: breathing → revealed
+    useEffect(() => {
+        if (csgnPhase !== 'breathing') return
+        const t = setTimeout(() => setCsgnPhase('revealed'), tp15.breathing)
+        return () => clearTimeout(t)
+    }, [csgnPhase])
+
+    // Continua 2.5: revealed → results
+    useEffect(() => {
+        if (csgnPhase !== 'revealed') return
+        const t = setTimeout(() => setCsgnPhase('results'), 1500)
+        return () => clearTimeout(t)
+    }, [csgnPhase])
+
     const [viewMode, setViewMode] = useState<'list' | 'pipeline'>('pipeline');
     const [showMetrics, setShowMetrics] = useState(false);
     const [txTimePeriod, setTxTimePeriod] = useState<TimePeriod>('Month');
@@ -301,7 +581,7 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
     const [selectedLocation, setSelectedLocation] = useState('All Locations')
 
     const [activeTab, setActiveTab] = useState<'metrics' | 'active' | 'completed' | 'all'>('active')
-    const [lifecycleTab, setLifecycleTab] = useState<'quotes' | 'orders' | 'acknowledgments'>('orders')
+    const [lifecycleTab, setLifecycleTab] = useState<'quotes' | 'orders' | 'acknowledgments' | 'projects'>('orders')
     const [highlightedSection, setHighlightedSection] = useState<string | null>(null);
 
     useEffect(() => {
@@ -513,6 +793,18 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                         >
                             <ClipboardDocumentCheckIcon className="w-4 h-4" />
                             Acknowledgements
+                        </button>
+                        <button
+                            onClick={() => setLifecycleTab('projects')}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all",
+                                lifecycleTab === 'projects'
+                                    ? "bg-brand-300 dark:bg-brand-500 text-zinc-900 shadow-sm"
+                                    : "text-muted-foreground hover:bg-brand-300 dark:hover:bg-brand-600/50 hover:text-zinc-900 dark:hover:text-white"
+                            )}
+                        >
+                            <ClipboardDocumentListIcon className="w-4 h-4" />
+                            Projects
                         </button>
                     </div>
                 </div>
@@ -1107,6 +1399,305 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
 
                             {/* Main Content Area */}
                             <div className="p-6 bg-zinc-50/50 dark:bg-black/20 min-h-[500px]">
+
+                                {/* ═══ CONTINUA STEP 2.2 — Procurement: Notification + Expert Question (inline) ═══ */}
+                                {isContinua && stepId === '2.2' && (procPhase === 'notification' || procPhase === 'expert-question') && (
+                                    <div className="space-y-4 mb-6">
+                                        {/* Notification */}
+                                        {procPhase === 'notification' && (
+                                            <button onClick={() => setProcPhase('expert-question')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="h-9 w-9 rounded-lg bg-brand-500 flex items-center justify-center shrink-0">
+                                                            <ClipboardDocumentListIcon className="h-5 w-5 text-zinc-900" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="text-xs font-bold text-foreground">PO Package Generation — Corporate HQ Project</span>
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">12 manufacturers</span>
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-bold">$3.2M project</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-muted-foreground mt-1">
+                                                                <strong className="text-foreground">ProcurementAgent</strong> will parse 1,500 line items, compare contract vs list pricing across <strong className="text-foreground">4 price sources</strong>, apply 5 business rules, and generate consolidated POs.
+                                                            </p>
+                                                            <div className="mt-2 flex items-center gap-3 text-[10px] text-muted-foreground">
+                                                                <span>Orders: <strong className="text-foreground">3 consolidated POs</strong> from 12 manufacturers</span>
+                                                                <span>·</span>
+                                                                <span>Part of: <strong className="text-foreground">Corporate HQ — Phase 2</strong></span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1 mt-2 text-[10px] text-brand-700 dark:text-brand-400 font-medium">
+                                                                <span>Click to review procurement decisions</span>
+                                                                <ArrowRightIcon className="h-3 w-3" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        )}
+
+                                        {/* Expert Question — inline before lupa */}
+                                        {procPhase === 'expert-question' && (
+                                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                {/* Expert question card */}
+                                                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-500/5 border-2 border-amber-300 dark:border-amber-500/30">
+                                                    <div className="flex items-start gap-3">
+                                                        <AIAgentAvatar size="sm" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <span className="text-xs font-bold text-amber-800 dark:text-amber-300">Expert Review Required</span>
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-200 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold">Decision needed</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-amber-800 dark:text-amber-200">
+                                                                DIRTT architectural walls have a <strong>12-week lead time</strong> (exceeds 8-week threshold). This impacts floor 5 installation schedule. Should we:
+                                                            </p>
+                                                            <div className="mt-3 space-y-2">
+                                                                <button
+                                                                    onClick={() => setExpertAnswer('priority')}
+                                                                    className={cn("w-full text-left p-2.5 rounded-lg border transition-all text-[11px]",
+                                                                        expertAnswer === 'priority'
+                                                                            ? "border-green-400 bg-green-50 dark:bg-green-500/10 text-green-800 dark:text-green-200 ring-2 ring-green-400/30"
+                                                                            : "border-amber-200 dark:border-amber-500/20 bg-white/60 dark:bg-zinc-900/40 text-foreground hover:border-amber-300 hover:bg-amber-50/50"
+                                                                    )}
+                                                                >
+                                                                    <span className="font-bold">A. Priority order DIRTT now</span> — Submit PO-HQ-002 immediately, before the full package. Prevents further delays.
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setExpertAnswer('resequence')}
+                                                                    className={cn("w-full text-left p-2.5 rounded-lg border transition-all text-[11px]",
+                                                                        expertAnswer === 'resequence'
+                                                                            ? "border-green-400 bg-green-50 dark:bg-green-500/10 text-green-800 dark:text-green-200 ring-2 ring-green-400/30"
+                                                                            : "border-amber-200 dark:border-amber-500/20 bg-white/60 dark:bg-zinc-900/40 text-foreground hover:border-amber-300 hover:bg-amber-50/50"
+                                                                    )}
+                                                                >
+                                                                    <span className="font-bold">B. Resequence installation</span> — Start with floors 4 & 6, push floor 5 to week 12+. Notify GC of schedule change.
+                                                                </button>
+                                                            </div>
+                                                            {expertAnswer && (
+                                                                <div className="mt-3 p-2 rounded-lg bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 animate-in fade-in duration-300">
+                                                                    <p className="text-[10px] text-green-700 dark:text-green-300 flex items-center gap-1.5">
+                                                                        <CheckCircleIcon className="h-3.5 w-3.5" />
+                                                                        <span><strong>Expert decision recorded.</strong> {expertAnswer === 'priority' ? 'PO-HQ-002 flagged for priority submission.' : 'Installation re-sequence initiated — GC notification queued.'} Processing PO package...</span>
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* ═══ Continua Step 2.3 — ACK Tracking & Validation (inline) ═══ */}
+                                {isContinua && stepId === '2.3' && ackPhase !== 'idle' && (
+                                    <div data-demo-target="ack-tracking-dashboard" className="space-y-4 mb-6">
+                                        {/* Notification banner */}
+                                        {ackPhase === 'notification' && (
+                                            <button onClick={() => setAckPhase('tab-switch')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="p-2 rounded-lg bg-indigo-600 text-white">
+                                                            <DocumentMagnifyingGlassIcon className="h-4 w-4" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="text-xs font-bold text-foreground">TrackingAgent — ACK Validation</span>
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-indigo-600 text-white font-bold">12 POs</span>
+                                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 font-bold">9 ACKs received</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-muted-foreground mt-1">
+                                                                Monitoring <strong className="text-foreground">12 active purchase orders</strong>. 9 ACKs received — auto-validating qty, price, and delivery dates against POs.
+                                                            </p>
+                                                            <div className="flex items-center gap-1 mt-2 text-[10px] text-brand-700 dark:text-brand-400 font-medium">
+                                                                <span>Click to view validation</span>
+                                                                <ArrowRightIcon className="h-3 w-3" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        )}
+
+                                        {/* Validation progress + Knoll alert */}
+                                        {(ackPhase === 'validating' || ackPhase === 'alert' || ackPhase === 'click-sim') && (
+                                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <AIAgentAvatar size="sm" />
+                                                    <span className="text-xs font-bold text-foreground">
+                                                        {ackKnollAlert
+                                                            ? 'Discrepancy Detected — Knoll ACK'
+                                                            : `TrackingAgent Validating ACKs... (${ackValidatedCount}/9)`
+                                                        }
+                                                    </span>
+                                                    {ackKnollAlert && (
+                                                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-600 text-white font-bold animate-pulse">
+                                                            Price +4%
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {/* Progress bar */}
+                                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                                    <div
+                                                        className={cn(
+                                                            "h-full rounded-full transition-all duration-700 ease-linear",
+                                                            ackKnollAlert ? "bg-red-500" : "bg-indigo-500"
+                                                        )}
+                                                        style={{ width: `${ackKnollAlert ? 100 : Math.round((ackValidatedCount / 9) * 100)}%` }}
+                                                    />
+                                                </div>
+                                                {/* Knoll alert detail */}
+                                                {ackKnollAlert && (
+                                                    <div className="p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 animate-in fade-in duration-300">
+                                                        <div className="flex items-center gap-2 text-xs">
+                                                            <ExclamationTriangleIcon className="h-4 w-4 text-red-600 shrink-0" />
+                                                            <span className="font-bold text-red-700 dark:text-red-400">Knoll ACK: +4% price increase</span>
+                                                            <span className="text-red-600/70 dark:text-red-400/70">on task chairs vs contract</span>
+                                                        </div>
+                                                        <p className="text-[10px] text-red-600/80 dark:text-red-400/70 mt-1 ml-6">
+                                                            Auto-generating dispute draft with contractual evidence...
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* ═══ Continua Step 1.5 — Consignment & Vendor Returns (interactive) ═══ */}
+                                {isContinua && stepId === '1.5' && csgnPhase !== 'idle' && (
+                                    <div data-demo-target="consignment-decisions" className="space-y-4 mb-6">
+                                        {/* Notification */}
+                                        {csgnPhase === 'notification' && (
+                                            <button onClick={() => setCsgnPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="p-2 rounded-lg bg-amber-600 text-white"><ClockIcon className="h-4 w-4" /></div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-foreground">Consignment Review — 90-Day Window</span>
+                                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-600 text-white font-bold">12 urgent</span>
+                                                            </div>
+                                                            <p className="text-[11px] text-muted-foreground mt-1">ConsignmentAgent: <span className="font-semibold text-foreground">35 items on consignment</span> from 4 manufacturers. 12 approaching 90-day return window — decisions needed this week.</p>
+                                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review decisions <ArrowRightIcon className="h-3 w-3" /></p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        )}
+
+                                        {/* Processing */}
+                                        {csgnPhase === 'processing' && (
+                                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <AIAgentAvatar size="sm" />
+                                                    <span className="text-xs font-bold text-foreground">ConsignmentAgent Analyzing Items...</span>
+                                                </div>
+                                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                                    <div className="h-full rounded-full bg-amber-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${csgnProgress}%` }} />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    {csgnAgents.map(agent => (
+                                                        <div key={agent.name} className={cn("flex items-center gap-2 text-[10px] transition-all duration-300", agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+                                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-amber-500 animate-spin shrink-0" />}
+                                                            <span className={cn("font-medium", agent.done ? "text-foreground" : "text-amber-600 dark:text-amber-400")}>{agent.name}</span>
+                                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Breathing */}
+                                        {csgnPhase === 'breathing' && (
+                                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                                            </div>
+                                        )}
+
+                                        {/* Confirmed */}
+                                        {(csgnPhase === 'revealed' || csgnPhase === 'results') && (
+                                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                                <div className="flex items-start gap-2">
+                                                    <AIAgentAvatar size="sm" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">ConsignmentAgent:</span> 35 items reviewed — <span className="font-semibold">4 RMA auto-generated</span> ($8,760). AI recommends converting 4 items to purchase (demand up 12%).</p>
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                                        </div>
+                                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                                            {['Consignment DB', 'RMA Portal', 'Demand Forecast', 'Inventory WMS', 'Vendor Portal'].map(sys => (
+                                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Results */}
+                                        {csgnPhase === 'results' && (
+                                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                                    {/* Header */}
+                                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                                        <div>
+                                                            <h3 className="text-sm font-bold text-foreground">Consignment Decisions — 4 Manufacturers</h3>
+                                                            <p className="text-[11px] text-muted-foreground mt-0.5">35 items total · 12 approaching window · 4 RMA generated · 4 convert-to-purchase</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-bold">4 Return</span>
+                                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">4 Purchase</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Items */}
+                                                    <div className="p-4 space-y-2">
+                                                        {CONSIGNMENT_ITEMS.map((item, i) => (
+                                                            <div key={i} className={cn("flex items-center justify-between p-3 rounded-xl border",
+                                                                item.decision === 'return' ? "border-red-200 dark:border-red-500/20 bg-red-50/30 dark:bg-red-500/5" :
+                                                                "border-green-200 dark:border-green-500/20 bg-green-50/30 dark:bg-green-500/5"
+                                                            )}>
+                                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                                    <span className={cn("text-[9px] px-2 py-0.5 rounded-full font-bold shrink-0",
+                                                                        item.decision === 'return' ? "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400" :
+                                                                        "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400"
+                                                                    )}>{item.decision === 'return' ? 'RMA' : 'Purchase'}</span>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-[11px] font-medium text-foreground truncate">{item.name}</p>
+                                                                        <p className="text-[10px] text-muted-foreground">{item.manufacturer} · Qty: {item.qty} · {item.reason}</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                                    <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-bold",
+                                                                        item.daysLeft <= 14 ? "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400" :
+                                                                        item.daysLeft <= 30 ? "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400" :
+                                                                        "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400"
+                                                                    )}>{item.daysLeft}d left</span>
+                                                                    <span className="text-[11px] font-bold text-foreground">{item.value}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Summary + CTA */}
+                                                    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
+                                                        <div>
+                                                            <p className="text-[10px] text-muted-foreground">4 RMA auto-generated · 4 items recommended for purchase (demand up 12%)</p>
+                                                            <p className="text-[11px] font-bold text-foreground mt-0.5">Return value: $8,760 · Purchase value: $7,265</p>
+                                                        </div>
+                                                        <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                                            <CheckCircleIcon className="h-3.5 w-3.5" />Process Decisions<ArrowRightIcon className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Metrics View special handling */}
                                 {activeTab === 'metrics' ? (
                                     <div className="space-y-8">
@@ -1243,7 +1834,12 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                     {filteredData.map((order: any) => (
                                                         <Fragment key={order.id}>
                                                             <tr
-                                                                className="group hover:bg-muted/50 transition-colors cursor-pointer"
+                                                                className={cn(
+                                                                    "group hover:bg-muted/50 transition-all cursor-pointer",
+                                                                    (procPhase === 'highlight' || procPhase === 'lupa-active') && order.id === '#ORD-2055' && "ring-2 ring-brand-400 ring-offset-2 ring-offset-background bg-brand-50/30 dark:bg-brand-500/5 shadow-lg animate-pulse",
+                                                                    procPhase === 'done' && order.id === '#ORD-2055' && isContinua && !clickSimActive && "ring-2 ring-brand-400 ring-offset-2 ring-offset-background bg-brand-50/30 dark:bg-brand-500/5 shadow-lg",
+                                                                    clickSimActive && order.id === '#ORD-2055' && isContinua && "scale-[0.97] ring-2 ring-brand-500 bg-brand-100 dark:bg-brand-500/20 shadow-2xl transition-transform duration-200"
+                                                                )}
                                                                 onClick={() => toggleExpand(order.id)}
                                                             >
                                                                 <td className="p-4">
@@ -1258,6 +1854,11 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                                 {order.id === '#ORD-7829' && (
                                                                                     <span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] font-bold uppercase tracking-wider">
                                                                                         New
+                                                                                    </span>
+                                                                                )}
+                                                                                {isContinua && order.id === '#ORD-2055' && procPhase === 'done' && (
+                                                                                    <span className="px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px] font-bold uppercase tracking-wider animate-in fade-in duration-500">
+                                                                                        PO Generated
                                                                                     </span>
                                                                                 )}
                                                                             </div>
@@ -1371,7 +1972,16 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                         {stageOrders.map(order => (
                                                             <div
                                                                 key={order.id}
-                                                                className={`group relative bg-card dark:bg-zinc-800 rounded-2xl border ${expandedIds.has(order.id) ? 'border-brand-400/50 ring-1 ring-brand-400/20 shadow-lg' : 'border-border shadow-sm hover:shadow-md'} transition-all duration-200 overflow-hidden flex flex-col`}
+                                                                className={cn(
+                                                                    "group relative bg-card dark:bg-zinc-800 rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col",
+                                                                    expandedIds.has(order.id) ? 'border-brand-400/50 ring-1 ring-brand-400/20 shadow-lg' : 'border-border shadow-sm hover:shadow-md',
+                                                                    (procPhase === 'highlight' || procPhase === 'lupa-active') && order.id === '#ORD-2055' && isContinua && "ring-2 ring-brand-400 ring-offset-2 ring-offset-background shadow-xl shadow-brand-400/20 animate-pulse scale-[1.02]",
+                                                                    procPhase === 'done' && order.id === '#ORD-2055' && isContinua && !clickSimActive && "ring-2 ring-brand-400 ring-offset-2 ring-offset-background shadow-xl",
+                                                                    clickSimActive && order.id === '#ORD-2055' && isContinua && "scale-[0.96] ring-2 ring-brand-500 bg-brand-100 dark:bg-brand-500/20 shadow-2xl transition-transform duration-200",
+                                                                    // Step 1.3: Knoll ACK card highlighting
+                                                                    ackPhase === 'alert' && order.id === 'Acknowledgement-8841' && isContinua && "ring-2 ring-red-500 ring-offset-2 ring-offset-background shadow-xl shadow-red-500/20 animate-pulse scale-[1.02]",
+                                                                    ackClickSim && order.id === 'Acknowledgement-8841' && isContinua && "scale-[0.96] ring-2 ring-red-500 bg-red-50 dark:bg-red-500/10 shadow-2xl transition-transform duration-200"
+                                                                )}
                                                             >
                                                                 <div className="p-4">
                                                                     <div className="flex items-center justify-between mb-3">
@@ -1389,6 +1999,31 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                                         <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] font-bold uppercase tracking-wider">
                                                                                             New
                                                                                         </span>
+                                                                                    )}
+                                                                                    {isContinua && order.id === '#ORD-2055' && procPhase === 'done' && (
+                                                                                        <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px] font-bold uppercase tracking-wider animate-in fade-in duration-500">
+                                                                                            PO Generated
+                                                                                        </span>
+                                                                                    )}
+                                                                                    {/* Step 1.3: Validated badges on ACK cards */}
+                                                                                    {isContinua && lifecycleTab === 'acknowledgments' && (ackPhase === 'validating' || ackPhase === 'alert' || ackPhase === 'click-sim') && (
+                                                                                        <>
+                                                                                            {order.id === 'Acknowledgement-8839' && ackValidatedCount >= 1 && (
+                                                                                                <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px] font-bold uppercase tracking-wider animate-in fade-in duration-300">
+                                                                                                    Validated ✓
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {order.id === 'Acknowledgement-8840' && ackValidatedCount >= 2 && (
+                                                                                                <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-[10px] font-bold uppercase tracking-wider animate-in fade-in duration-300">
+                                                                                                    Validated ✓
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {order.id === 'Acknowledgement-8841' && ackKnollAlert && (
+                                                                                                <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 text-[10px] font-bold uppercase tracking-wider animate-in fade-in duration-300">
+                                                                                                    Dispute ⚠
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </>
                                                                                     )}
                                                                                 </div>
                                                                             </div>
@@ -1437,7 +2072,11 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                                                                                 </button>
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); onNavigateToDetail(lifecycleTab === 'quotes' ? 'quote-detail' : lifecycleTab === 'acknowledgments' ? 'ack-detail' : 'order-detail'); }}
-                                                                                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                                                                                    className={cn(
+                                                                                        "p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-all",
+                                                                                        clickSimActive && order.id === '#ORD-2055' && isContinua && "bg-brand-300 text-zinc-900 scale-110 ring-2 ring-brand-400 shadow-lg",
+                                                                                        ackClickSim && order.id === 'Acknowledgement-8841' && isContinua && "bg-red-500 text-white scale-110 ring-2 ring-red-400 shadow-lg"
+                                                                                    )}
                                                                                     title="View Full Details"
                                                                                 >
                                                                                     <ArrowRightIcon className="h-4 w-4" />
@@ -1723,6 +2362,175 @@ export default function Transactions({ onLogout, onNavigateToDetail, onNavigateT
                     </div>
                 </Dialog>
             </Transition>
+
+            {/* ═══ PROJECTS TAB CONTENT ═══ */}
+            {lifecycleTab === 'projects' && (
+                <div className="space-y-6">
+                    {/* Project Summary Header */}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-bold text-foreground">Active Projects</h2>
+                            <p className="text-sm text-muted-foreground">{DEMO_PROJECTS.length} projects · Orders grouped by project</p>
+                        </div>
+                    </div>
+
+                    {/* Project Cards */}
+                    {DEMO_PROJECTS.map(project => (
+                        <div key={project.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+                            {/* Project Header */}
+                            <div className="p-6 border-b border-border">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="text-base font-bold text-foreground truncate">{project.name}</h3>
+                                            <span className={cn(
+                                                "text-[10px] px-2 py-0.5 rounded-full font-bold uppercase whitespace-nowrap",
+                                                project.status === 'In Progress' ? "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300" :
+                                                project.status === 'Planning' ? "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300" :
+                                                "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300"
+                                            )}>
+                                                {project.status}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                            <span className="flex items-center gap-1"><UserIcon className="w-3 h-3" /> Client: <strong className="text-foreground">{project.client}</strong></span>
+                                            <span className="flex items-center gap-1"><ClipboardDocumentListIcon className="w-3 h-3" /> PM: {project.pm}</span>
+                                            <span className="flex items-center gap-1"><WrenchScrewdriverIcon className="w-3 h-3" /> FM: {project.fm}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <div className="text-xs text-muted-foreground">Budget</div>
+                                        <div className="text-sm font-bold text-foreground">{project.spent} <span className="text-muted-foreground font-normal">/ {project.totalBudget}</span></div>
+                                    </div>
+                                </div>
+                                {/* Progress Bar */}
+                                <div className="mt-4">
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                        <span className="text-muted-foreground">Overall Progress</span>
+                                        <span className="font-bold text-foreground">{project.completion}%</span>
+                                    </div>
+                                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                        <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${project.completion}%` }} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-border">
+                                {/* Orders Column */}
+                                <div className="p-5">
+                                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Orders ({project.orders.length})</h4>
+                                    <div className="space-y-3">
+                                        {project.orders.map(order => (
+                                            <div key={order.id} className="p-3 rounded-xl bg-muted/30 border border-border/50 hover:border-border transition-colors">
+                                                <div className="flex items-center justify-between mb-1.5">
+                                                    <span className="text-xs font-bold text-foreground">{order.id}</span>
+                                                    <span className={cn(
+                                                        "text-[9px] px-1.5 py-0.5 rounded-full font-bold",
+                                                        order.status === 'Shipped' || order.status === 'Ready to Ship' ? "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300" :
+                                                        order.status === 'In Production' ? "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300" :
+                                                        order.status === 'Awaiting ACK' || order.status === 'Quote Negotiating' ? "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300" :
+                                                        "bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                                                    )}>
+                                                        {order.status}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                                    <span>{order.supplier}</span>
+                                                    <span className="font-semibold text-foreground">{order.amount}</span>
+                                                </div>
+                                                <div className="mt-2">
+                                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div className="h-full bg-primary/70 rounded-full transition-all" style={{ width: `${order.progress}%` }} />
+                                                    </div>
+                                                    <div className="flex items-center justify-between mt-1 text-[9px] text-muted-foreground">
+                                                        <span>Delivery: {order.deliveryDate}</span>
+                                                        <span>{order.progress}%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Milestones Column */}
+                                <div className="p-5">
+                                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Milestones</h4>
+                                    <div className="space-y-3 relative">
+                                        {project.milestones.map((ms, idx) => (
+                                            <div key={idx} className="flex items-start gap-3">
+                                                <div className="flex flex-col items-center">
+                                                    <div className={cn(
+                                                        "w-3 h-3 rounded-full border-2 shrink-0",
+                                                        ms.status === 'completed' ? "bg-green-500 border-green-500" :
+                                                        ms.status === 'in-progress' ? "bg-blue-500 border-blue-500 animate-pulse" :
+                                                        "bg-background border-muted-foreground/30"
+                                                    )} />
+                                                    {idx < project.milestones.length - 1 && (
+                                                        <div className={cn(
+                                                            "w-0.5 h-6 mt-1",
+                                                            ms.status === 'completed' ? "bg-green-300 dark:bg-green-700" : "bg-border"
+                                                        )} />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0 -mt-0.5">
+                                                    <p className={cn("text-xs font-medium truncate", ms.status === 'completed' ? "text-muted-foreground line-through" : "text-foreground")}>{ms.name}</p>
+                                                    <p className="text-[10px] text-muted-foreground">{ms.date}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* FM Actions Column */}
+                                <div className="p-5">
+                                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                                        <WrenchScrewdriverIcon className="w-3 h-3" />
+                                        FM Actions
+                                    </h4>
+                                    {project.fmActions.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {project.fmActions.map((fm, idx) => (
+                                                <div key={idx} className={cn(
+                                                    "p-3 rounded-xl border text-xs",
+                                                    fm.priority === 'high' ? "bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20" :
+                                                    fm.priority === 'medium' ? "bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20" :
+                                                    "bg-muted/30 border-border/50"
+                                                )}>
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <p className="text-foreground font-medium">{fm.action}</p>
+                                                        <span className={cn(
+                                                            "text-[8px] px-1.5 py-0.5 rounded font-bold uppercase shrink-0",
+                                                            fm.priority === 'high' ? "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400" :
+                                                            fm.priority === 'medium' ? "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400" :
+                                                            "bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400"
+                                                        )}>
+                                                            {fm.priority}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex gap-2 mt-2">
+                                                        <button onClick={() => triggerToast('Action Approved', `"${fm.action}" has been approved and assigned.`, 'success')} className="text-[9px] px-2 py-1 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition-colors">
+                                                            Approve
+                                                        </button>
+                                                        <button onClick={() => triggerToast('Details Requested', 'Request sent to facilities team for more information.', 'info')} className="text-[9px] px-2 py-1 rounded-lg border border-border text-muted-foreground font-bold hover:bg-muted transition-colors">
+                                                            Details
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-6 text-muted-foreground">
+                                            <CheckCircleIcon className="w-6 h-6 mx-auto mb-2 text-green-500" />
+                                            <p className="text-xs">No pending FM actions</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             <CreateOrderModal isOpen={isCreateOrderOpen} onClose={() => setIsCreateOrderOpen(false)} />
             <AcknowledgementUploadModal isOpen={isAckModalOpen} onClose={() => setIsAckModalOpen(false)} />
             <BatchAckModal isOpen={isBatchAckOpen} onClose={() => setIsBatchAckOpen(false)} />

@@ -22,11 +22,39 @@ function resolveRoleLabel(role: string, app: string): string {
     return role;
 }
 
+// Data threads — mini-summaries for completed Continua steps
+function getStepDataThread(stepId: string): string | null {
+    const threads: Record<string, string> = {
+        '1.1': 'Health score 87% — 3 alerts',
+        '1.2': '12 items cataloged for reuse',
+        '1.3': 'Price verified — $110K savings',
+        '1.4': '4 locations synced',
+        '1.5': '4 RMA, 4 convert-to-purchase',
+        '2.1': '3 manufacturers, $3.2M scope',
+        '2.2': '3 POs generated, $3.2M',
+        '2.3': '9 ACKs validated across suppliers',
+        '2.4': 'QC passed — 1,320 items received',
+        '2.5': 'Installation dispatched — 8 floors',
+        'F.1': 'REQ-FM-2026-018 — safety flag',
+        'F.2': 'Warranty + consignment + relocation plan',
+        'F.3': 'Dispatch approved — ProInstall tomorrow',
+        'F.4': 'Assets relocated to Office 3-216',
+        'F.5': 'Resolved — $0 cost, 26h total',
+        '3.1': '194 tons diverted, A- rating',
+        '3.2': 'Portal published — 82% progress',
+        '3.3': '$11,550 reconciled',
+        '3.4': '92% satisfaction, AV flagged',
+        '3.5': '3 warranty claims processed',
+    };
+    return threads[stepId] || null;
+}
+
 export default function DemoSidebar() {
     const { currentStepIndex, steps, nextStep, prevStep, goToStep, isDemoActive, setIsDemoActive, isSidebarCollapsed, setIsSidebarCollapsed, isPaused, togglePause } = useDemo();
     const { activeProfile } = useDemoProfile();
     const { theme } = useTheme();
     const STEP_BEHAVIOR = activeProfile.stepBehavior;
+    const isContinua = activeProfile.id === 'continua';
 
     // Invert: when app is dark → sidebar is light, when app is light → sidebar is dark
     const isDarkSidebar = theme === 'light';
@@ -209,6 +237,11 @@ export default function DemoSidebar() {
                                                 </span>
                                             );
                                         })()}
+                                        {(step.id.startsWith('F.') || ['3.4', '3.5'].includes(step.id)) && isContinua && (
+                                            <span className={`text-[9px] px-1.5 py-0.5 rounded-sm border ${isDarkSidebar ? 'border-blue-800/50 bg-blue-900/30 text-blue-400' : 'border-blue-200 bg-blue-50 text-blue-700'} font-bold`}>
+                                                + FM
+                                            </span>
+                                        )}
                                         {STEP_BEHAVIOR[step.id]?.mode === 'auto' && (
                                             <span className={`text-[9px] px-1 py-0.5 rounded flex items-center gap-0.5 ${isActive ? `${c.bgBadgeActive} ${c.textBadgeActive}` : `${c.bgBadge} ${c.textBadge}`}`}>
                                                 <Loader2 size={8} className={isActive ? 'animate-spin' : ''} />
@@ -222,6 +255,11 @@ export default function DemoSidebar() {
                                     {isActive && (
                                         <p className={`text-[11px] ${c.textMuted} leading-relaxed animate-in fade-in slide-in-from-top-1 duration-300`}>
                                             {step.description}
+                                        </p>
+                                    )}
+                                    {isCompleted && isContinua && getStepDataThread(step.id) && (
+                                        <p className={`text-[8px] italic ${c.textDim} leading-tight`}>
+                                            → {getStepDataThread(step.id)}
                                         </p>
                                     )}
                                 </div>

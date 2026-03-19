@@ -40,6 +40,7 @@ import {
   BanknotesIcon,
   WrenchScrewdriverIcon,
   UserGroupIcon,
+  ArchiveBoxIcon,
 } from '@heroicons/react/24/outline'
 
 import logoLightBrand from './assets/logo-light-brand.png'
@@ -59,6 +60,13 @@ function App() {
       setCurrentPage(currentStep.id === '1.12' ? 'dashboard' : 'crm')
     }
   }, [isDemoActive, currentStep?.app, currentStep?.id])
+
+  // Reset in-demo detail navigation when step changes
+  useEffect(() => {
+    if (isDemoActive && (currentPage === 'order-detail' || currentPage === 'quote-detail' || currentPage === 'ack-detail')) {
+      setCurrentPage('transactions')
+    }
+  }, [currentStep?.id])
 
   const handleNavigate = (page: string) => {
     if (page === 'overview') {
@@ -95,6 +103,7 @@ function App() {
   }
 
   // --- SIMULATION CONFIGURATIONS ---
+  const isContinua = demoProfile.id === 'continua';
   const getSimulationConfig = () => {
     if (!isDemoActive) return { appName: undefined, companyName: undefined, customNavigation: undefined };
 
@@ -108,127 +117,26 @@ function App() {
       : 'Dealer Experience';
     const resolvedCompany = isExpert ? 'Strata Services' : demoProfile.companyName;
 
-    switch (currentStep.app) {
-      case 'expert-hub':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'service-now':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'dealer-kanban':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'catalog':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'email-marketplace':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'quote-po':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'dashboard':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'ack-detail':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'transactions':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'mac':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'quote-detail':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'inventory':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      case 'crm':
-        return {
-          appName: resolvedAppName, companyName: resolvedCompany,
-          customNavigation: [
-            { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-            { name: 'CRM', page: 'crm', icon: UserGroupIcon },
-            { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-          ]
-        };
-      default:
-        return { appName: undefined, companyName: undefined, customNavigation: undefined };
-    }
+    // Continua profile: 4-tab nav including Inventory with "Connected" badge
+    const continuaNav = [
+      { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
+      { name: 'Inventory', page: 'inventory', icon: ArchiveBoxIcon, badge: 'Connected' },
+      { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
+      { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
+    ];
+    const expertNav = [
+      { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
+      { name: 'Service Center', page: 'mac', icon: WrenchScrewdriverIcon },
+      { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
+    ];
+    const crmNav = [
+      { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
+      { name: 'CRM', page: 'crm', icon: UserGroupIcon },
+      { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
+    ];
+
+    const nav = currentStep.app === 'crm' ? crmNav : isContinua ? continuaNav : expertNav;
+    return { appName: resolvedAppName, companyName: resolvedCompany, customNavigation: nav };
   };
 
   const { appName, companyName, customNavigation } = getSimulationConfig();
@@ -257,6 +165,13 @@ function App() {
 
   // --- INDEPENDENT SIMULATION ROUTING ---
   const renderSimulation = () => {
+    // Allow in-demo navigation to detail pages (e.g. step 1.2 → order-detail)
+    if (currentPage === 'order-detail') {
+      return <OrderDetail onBack={() => setCurrentPage('transactions')} onLogout={handleLogout} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />;
+    }
+    if (currentPage === 'ack-detail') {
+      return <AckDetail onBack={() => setCurrentPage('transactions')} onLogout={handleLogout} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />;
+    }
     switch (currentStep.app) {
       case 'expert-hub':
         return (

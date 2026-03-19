@@ -68,7 +68,7 @@ function resolveProfileKey(role: string | undefined, app: string | undefined): s
 // Update supported tabs
 export type NavTab = 'Overview' | 'Inventory' | 'Catalogs' | 'Service Center' | 'Transactions' | 'CRM' | 'Pricing';
 
-function NavItem({ icon, label, active = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) {
+function NavItem({ icon, label, active = false, badge, onClick }: { icon: React.ReactNode, label: string, active?: boolean, badge?: string, onClick: () => void }) {
     return (
         <button
             onClick={onClick}
@@ -78,6 +78,11 @@ function NavItem({ icon, label, active = false, onClick }: { icon: React.ReactNo
             <span className={`ml-2 text-sm font-medium whitespace-nowrap max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-300 ease-in-out ${active ? 'max-w-xs opacity-100' : ''}`}>
                 {label}
             </span>
+            {badge && (
+                <span className={`ml-1 text-[7px] px-1.5 py-0.5 rounded font-bold uppercase border whitespace-nowrap max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-300 ease-in-out ${active ? 'max-w-xs opacity-100 bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20' : 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20'}`}>
+                    {badge}
+                </span>
+            )}
         </button>
     )
 }
@@ -90,7 +95,7 @@ interface NavbarProps {
     onOpenDemoGuide?: () => void;
     appName?: string;
     companyName?: string;
-    customNavigation?: { name: string, page: string, icon: any }[];
+    customNavigation?: { name: string, page: string, icon: any, badge?: string }[];
 }
 
 export default function Navbar({
@@ -193,6 +198,7 @@ export default function Navbar({
                             icon={<item.icon className="w-4 h-4" />}
                             label={item.name}
                             active={activeTab === item.page}
+                            badge={(item as any).badge}
                             onClick={() => onNavigate(item.page)}
                         />
                     ))}
@@ -234,6 +240,11 @@ export default function Navbar({
                                             >
                                                 <item.icon className="w-4 h-4" />
                                                 {item.name}
+                                                {(item as any).badge && (
+                                                    <span className="text-[7px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500 font-bold uppercase border border-indigo-500/20">
+                                                        {(item as any).badge}
+                                                    </span>
+                                                )}
                                             </button>
                                         ))}
                                         <div className="h-px bg-border my-2 mx-1"></div>

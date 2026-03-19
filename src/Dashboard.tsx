@@ -441,6 +441,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
     const { currentStep, nextStep, isDemoActive, isPaused } = useDemo()
     const { activeProfile } = useDemoProfile();
     const isOps = activeProfile.id === 'ops';
+    const isContinua = activeProfile.id === 'continua';
+    const stepId = currentStep?.id || '';
 
     // Pause-aware timer helper (same pattern as DemoProcessPanel)
     const isPausedRef = useRef(isPaused);
@@ -453,6 +455,64 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
             }, 200);
         };
     }, []);
+
+    // ─── Continua Step 3.1: Sustainability Dashboard ──────────────────────────
+    type SustPhase = 'idle' | 'notification' | 'processing' | 'revealed' | 'results'
+    const SUST_AGENTS = [
+        { name: 'MetricsCompiler', detail: 'Compiling UAL project impact metrics...' },
+        { name: 'CarbonCalculator', detail: 'Calculating embodied carbon reduction — 78%...' },
+        { name: 'NarrativeGenerator', detail: 'Generating Metropolis Award submission narrative...' },
+        { name: 'BenchmarkEngine', detail: 'Benchmarking against industry standards...' },
+        { name: 'ReportPublisher', detail: 'Publishing sustainability dashboard...' },
+    ]
+    const SUST_CATEGORIES = [
+        { label: 'Seating', diverted: 82, carbon: 45, savings: '$142K' },
+        { label: 'Workstations', diverted: 48, carbon: 18, savings: '$98K' },
+        { label: 'Storage', diverted: 32, carbon: 8, savings: '$45K' },
+        { label: 'Architectural', diverted: 20, carbon: 5, savings: '$38K' },
+        { label: 'AV Equipment', diverted: 12, carbon: 2, savings: '$17K' },
+    ]
+    const [sustPhase, setSustPhase] = useState<SustPhase>('idle')
+    const sustPhaseRef = useRef(sustPhase)
+    useEffect(() => { sustPhaseRef.current = sustPhase }, [sustPhase])
+    const [sustAgents, setSustAgents] = useState(SUST_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+    const [sustProgress, setSustProgress] = useState(0)
+
+    useEffect(() => {
+        if (!isContinua || stepId !== '3.1') { setSustPhase('idle'); return }
+        setSustPhase('idle')
+        setSustAgents(SUST_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(pauseAware(() => setSustPhase('notification')), 1500))
+        timers.push(setTimeout(pauseAware(() => { if (sustPhaseRef.current === 'notification') setSustPhase('processing') }), 5500))
+        return () => timers.forEach(clearTimeout)
+    }, [isContinua, stepId])
+
+    useEffect(() => {
+        if (sustPhase !== 'processing') return
+        setSustAgents(SUST_AGENTS.map(a => ({ ...a, visible: false, done: false })))
+        setSustProgress(0)
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setSustProgress(100), 50))
+        SUST_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setSustAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * 600))
+            timers.push(setTimeout(pauseAware(() => setSustAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * 600 + 450))
+        })
+        timers.push(setTimeout(pauseAware(() => setSustPhase('revealed')), SUST_AGENTS.length * 600 + 800))
+        return () => timers.forEach(clearTimeout)
+    }, [sustPhase])
+
+    useEffect(() => {
+        if (sustPhase !== 'revealed') return
+        const t = setTimeout(pauseAware(() => setSustPhase('results')), 1500)
+        return () => clearTimeout(t)
+    }, [sustPhase])
+
+    useEffect(() => {
+        if (sustPhase !== 'results') return
+        const t = setTimeout(pauseAware(() => nextStep()), 8000)
+        return () => clearTimeout(t)
+    }, [sustPhase])
 
     // Step 3.4: End User mobile report state
     const [punchComment, setPunchComment] = useState('')
@@ -2271,6 +2331,135 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                 {/* ═══════════════════════════════════════════ */}
                 {/* OPS DEMO: Financial Command Center (Flow 3) */}
                 {/* ═══════════════════════════════════════════ */}
+
+                {/* ═══ Continua Step 3.1 — Sustainability Dashboard (auto 10s) ═══ */}
+                {isContinua && stepId === '3.1' && sustPhase !== 'idle' && (
+                    <div data-demo-target="sustainability-dashboard" className="space-y-4 mb-6">
+                        {/* Notification */}
+                        {sustPhase === 'notification' && (
+                            <button onClick={() => setSustPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-green-600 text-white"><ChartBarIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">Sustainability Impact Report</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-600 text-white font-bold">UAL Project</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">SustainabilityMetricsAgent: Compiling <span className="font-semibold text-foreground">194 tons diverted</span> from landfill, <span className="font-semibold text-green-600 dark:text-green-400">78% carbon reduction</span>, 2,000 items refurbished.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to view metrics <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {sustPhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-foreground">SustainabilityMetricsAgent Compiling...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-green-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${sustProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {sustAgents.map(agent => (
+                                        <div key={agent.name} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"}`}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-green-600 animate-spin shrink-0" />}
+                                            <span className={`font-medium ${agent.done ? "text-foreground" : "text-green-600 dark:text-green-400"}`}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(sustPhase === 'revealed' || sustPhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">SustainabilityMetricsAgent:</span> Report complete — <span className="font-semibold">194 tons diverted</span>, 78% carbon reduction, <span className="font-semibold">$340K savings</span> from reuse program. Award submission narrative ready.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['Carbon Engine', 'Waste Tracker', 'Award Portal', 'Benchmark DB', 'Report Service'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {sustPhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">Sustainability Impact — UAL HQ Project</h3>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">Full lifecycle impact · Metropolis Award eligible</p>
+                                        </div>
+                                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">78% Carbon Reduction</span>
+                                    </div>
+
+                                    {/* Big Metrics */}
+                                    <div className="p-4 grid grid-cols-4 gap-3">
+                                        {[
+                                            { label: 'Tons Diverted', value: '194', sub: 'from landfill', color: 'text-green-600 dark:text-green-400' },
+                                            { label: 'Carbon Reduction', value: '78%', sub: 'embodied carbon', color: 'text-emerald-600 dark:text-emerald-400' },
+                                            { label: 'Items Refurbished', value: '2,000', sub: 'reuse program', color: 'text-blue-600 dark:text-blue-400' },
+                                            { label: 'Cost Savings', value: '$340K', sub: 'vs new procurement', color: 'text-amber-600 dark:text-amber-400' },
+                                        ].map(m => (
+                                            <div key={m.label} className="text-center p-3 rounded-xl bg-muted/20 border border-border">
+                                                <p className={`text-xl font-bold ${m.color}`}>{m.value}</p>
+                                                <p className="text-[11px] font-medium text-foreground mt-0.5">{m.label}</p>
+                                                <p className="text-[10px] text-muted-foreground">{m.sub}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Category Breakdown */}
+                                    <div className="mx-4 mb-4 p-4 rounded-xl bg-muted/20 border border-border">
+                                        <h4 className="text-xs font-bold text-foreground mb-3">Impact by Category</h4>
+                                        <div className="space-y-2">
+                                            {SUST_CATEGORIES.map(cat => (
+                                                <div key={cat.label} className="flex items-center gap-3">
+                                                    <span className="text-[10px] text-muted-foreground w-20 shrink-0">{cat.label}</span>
+                                                    <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                                                        <div className="h-full rounded-full bg-green-500 transition-all duration-700" style={{ width: `${(cat.diverted / 82) * 100}%` }} />
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-foreground w-10 text-right">{cat.diverted}t</span>
+                                                    <span className="text-[10px] text-green-600 dark:text-green-400 w-14 text-right">{cat.savings}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Award Narrative */}
+                                    <div className="mx-4 mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20">
+                                        <h4 className="text-xs font-bold text-amber-800 dark:text-amber-300 mb-1.5 flex items-center gap-1.5"><SparklesIcon className="h-3.5 w-3.5" />AI-Generated Award Narrative</h4>
+                                        <p className="text-[10px] text-amber-700 dark:text-amber-400 italic leading-relaxed">"Continua Interiors' UAL HQ project exemplifies circular economy principles in commercial interiors. Through systematic reuse, refurbishment, and material recovery, the project diverted 194 tons from landfill while achieving a 78% reduction in embodied carbon — setting a new benchmark for sustainable workplace transformation."</p>
+                                    </div>
+
+                                    {/* Auto-advance footer */}
+                                    <div className="px-4 py-3 border-t border-border/50 bg-muted/20 flex items-center justify-between">
+                                        <p className="text-[10px] text-muted-foreground">Dashboard auto-published · Award narrative ready for submission</p>
+                                        <span className="text-[10px] px-3 py-1.5 rounded-lg bg-muted text-muted-foreground font-medium">Auto-advancing...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* OPS Step 3.1 — Multi-Project Financial Dashboard (interactive) */}
                 {currentStep.id === '3.1' && isOps && (

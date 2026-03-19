@@ -17,6 +17,10 @@ interface DemoContextType {
     setIsSidebarCollapsed: (collapsed: boolean) => void;
     isPaused: boolean;
     togglePause: () => void;
+    procCompleteStep: string | null;
+    setProcCompleteStep: (step: string | null) => void;
+    lupaStep: string | null;
+    setLupaStep: (step: string | null) => void;
 }
 
 const DemoContext = createContext<DemoContextType | undefined>(undefined);
@@ -29,12 +33,22 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isDemoActive, setIsDemoActive] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
+    const [procCompleteStep, setProcCompleteStep] = useState<string | null>(null);
+    const [lupaStep, setLupaStep] = useState<string | null>(null);
 
     // Reset step index when profile changes — keep isDemoActive as-is
     useEffect(() => {
         setCurrentStepIndex(0);
         setIsPaused(false);
+        setProcCompleteStep(null);
+        setLupaStep(null);
     }, [activeProfile.id]);
+
+    // Reset signals when step changes
+    useEffect(() => {
+        setProcCompleteStep(null);
+        setLupaStep(null);
+    }, [currentStepIndex]);
 
     const togglePause = () => setIsPaused(prev => !prev);
 
@@ -70,7 +84,11 @@ export const DemoProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 isSidebarCollapsed,
                 setIsSidebarCollapsed,
                 isPaused,
-                togglePause
+                togglePause,
+                procCompleteStep,
+                setProcCompleteStep,
+                lupaStep,
+                setLupaStep
             }}
         >
             {children}

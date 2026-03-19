@@ -14,10 +14,53 @@ import {
     FileText,
     Cpu,
 } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { CheckCircleIcon, ArrowPathIcon, ArrowRightIcon, ExclamationTriangleIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { useDemo } from '../../context/DemoContext';
 import { useDemoProfile } from '../../context/DemoProfileContext';
+import { CONTINUA_STEP_TIMING } from '../../config/profiles/continua-demo';
 import { useTheme } from 'strata-design-system';
+import { AIAgentAvatar } from './DemoAvatars';
 import ThreeWayMatchView, { type MatchLine } from '../widgets/ThreeWayMatchView';
+
+// ─── Continua Step 2.3: Price Verification Engine Constants ─────────────────
+const PRICE_VERIFY_AGENTS = [
+    { name: 'PriceListScanner', detail: 'Scanning 200+ manufacturer price lists (Q1 updates)...' },
+    { name: 'CostBasisChecker', detail: 'Detecting 14 items with outdated cost basis...' },
+    { name: 'ConsignmentReviewer', detail: '3 HM consignment items — 90-day review approaching...' },
+    { name: 'MarginCalculator', detail: 'Recalculating margins — avg 34%, flagging 6 below 25%...' },
+    { name: 'ReportSender', detail: 'Generating price update report for expert review...' },
+]
+const PRICE_DISCREPANCIES = [
+    { item: 'Aeron Chair (Graphite)', manufacturer: 'MillerKnoll', oldCost: 895, newCost: 945, change: '+5.6%', margin: '28.1%', flag: false },
+    { item: 'DIRTT Wall Panel 8×10', manufacturer: 'DIRTT', oldCost: 1200, newCost: 1280, change: '+6.7%', margin: '22.4%', flag: true },
+    { item: 'Standing Desk Frame', manufacturer: 'Steelcase', oldCost: 425, newCost: 445, change: '+4.7%', margin: '31.2%', flag: false },
+    { item: 'Task Light LED Pro', manufacturer: 'Humanscale', oldCost: 185, newCost: 198, change: '+7.0%', margin: '19.8%', flag: true },
+    { item: 'Monitor Arm Dual', manufacturer: 'Ergotron', oldCost: 142, newCost: 149, change: '+4.9%', margin: '24.3%', flag: true },
+    { item: 'Conference Table Base', manufacturer: 'Knoll', oldCost: 680, newCost: 715, change: '+5.1%', margin: '26.7%', flag: false },
+]
+const CONSIGNMENT_ALERTS = [
+    { item: 'Aeron Chair (Mineral)', manufacturer: 'MillerKnoll', daysLeft: 12, qty: 8, value: '$7,160' },
+    { item: 'Embody Chair (Black)', manufacturer: 'MillerKnoll', daysLeft: 18, qty: 3, value: '$4,785' },
+    { item: 'Cosm Chair (Glacier)', manufacturer: 'MillerKnoll', daysLeft: 25, qty: 4, value: '$5,180' },
+]
+type PricePhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+
+// ─── Continua Step 3.3: Financial Reconciliation Constants ──────────────────
+const RECON_AGENTS = [
+    { name: 'ReconciliationEngine', detail: 'Matching 47 POs → 42 invoices → 38 payments...' },
+    { name: 'PaymentTracker', detail: 'Identifying 4 invoices pending >30 days...' },
+    { name: 'AgingCategorizer', detail: 'Categorizing aging: 2 ACK, 1 partial delivery, 1 client...' },
+    { name: 'MarginAnalyzer', detail: 'Margin analysis: 33.2% realized vs 34% quoted...' },
+    { name: 'ReportGenerator', detail: 'Generating aging report with recommended actions...' },
+]
+const AGING_INVOICES = [
+    { id: 'INV-3042', vendor: 'MillerKnoll', amount: '$42,500', days: 45, reason: 'ACK resolution — Knoll pricing dispute', action: 'Escalate to vendor' },
+    { id: 'INV-3056', vendor: 'Steelcase', amount: '$18,200', days: 38, reason: 'ACK resolution — qty mismatch on task chairs', action: 'Request revised ACK' },
+    { id: 'INV-3061', vendor: 'DIRTT', amount: '$28,400', days: 33, reason: 'Partial delivery — wall panels pending', action: 'Hold until complete' },
+    { id: 'INV-3068', vendor: 'UAL Corp (Client)', amount: '$156,000', days: 31, reason: 'Client approval needed — change order pending', action: 'Follow up with PM' },
+]
+type ReconPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
 
 // Mini preview config for each lupa step — matches DemoProcessPanel titles/content
 const STEP_CARD_PREVIEW: Record<string, {
@@ -115,9 +158,125 @@ const CARD5_PANEL_STEPS = ['2.2', '2.3'];
 
 export default function DealerMonitorKanban(_props: { onNavigate?: (page: string) => void }) {
     const { theme } = useTheme();
-    const { currentStep } = useDemo();
+    const { currentStep, nextStep, isPaused } = useDemo();
     const { activeProfile } = useDemoProfile();
     const isOps = activeProfile.id === 'ops';
+    const isContinua = activeProfile.id === 'continua';
+    const stepId = currentStep?.id || '';
+
+    // Pause-aware timer helper
+    const isPausedRef = useRef(isPaused);
+    useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+    const pauseAware = useCallback((fn: () => void) => {
+        return () => {
+            if (!isPausedRef.current) { fn(); return; }
+            const poll = setInterval(() => {
+                if (!isPausedRef.current) { clearInterval(poll); fn(); }
+            }, 200);
+        };
+    }, []);
+
+    // ─── Continua Step 2.3: Price Verification Engine ───────────────────────────
+    const [pricePhase, setPricePhase] = useState<PricePhase>('idle');
+    const pricePhaseRef = useRef(pricePhase);
+    useEffect(() => { pricePhaseRef.current = pricePhase; }, [pricePhase]);
+    const [priceAgents, setPriceAgents] = useState(PRICE_VERIFY_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+    const [priceProgress, setPriceProgress] = useState(0);
+
+    // Continua 2.3: orchestration
+    const tp23 = CONTINUA_STEP_TIMING['2.3'];
+    useEffect(() => {
+        if (!isContinua || stepId !== '1.3') { setPricePhase('idle'); return; }
+        setPricePhase('idle');
+        setPriceAgents(PRICE_VERIFY_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(pauseAware(() => setPricePhase('notification')), tp23.notifDelay));
+        timers.push(setTimeout(pauseAware(() => {
+            if (pricePhaseRef.current === 'notification') setPricePhase('processing');
+        }), tp23.notifDelay + tp23.notifDuration));
+        return () => timers.forEach(clearTimeout);
+    }, [isContinua, stepId]);
+
+    // Continua 2.3: processing → breathing
+    useEffect(() => {
+        if (pricePhase !== 'processing') return;
+        setPriceAgents(PRICE_VERIFY_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        setPriceProgress(0);
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(() => setPriceProgress(100), 50));
+        PRICE_VERIFY_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setPriceAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * tp23.agentStagger));
+            timers.push(setTimeout(pauseAware(() => setPriceAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * tp23.agentStagger + tp23.agentDone));
+        });
+        timers.push(setTimeout(pauseAware(() => setPricePhase('breathing')), PRICE_VERIFY_AGENTS.length * tp23.agentStagger + tp23.agentDone + 300));
+        return () => timers.forEach(clearTimeout);
+    }, [pricePhase]);
+
+    // Continua 2.3: breathing → revealed
+    useEffect(() => {
+        if (pricePhase !== 'breathing') return;
+        const t = setTimeout(pauseAware(() => setPricePhase('revealed')), tp23.breathing);
+        return () => clearTimeout(t);
+    }, [pricePhase]);
+
+    // Continua 2.3: revealed → results
+    useEffect(() => {
+        if (pricePhase !== 'revealed') return;
+        const t = setTimeout(pauseAware(() => setPricePhase('results')), 1500);
+        return () => clearTimeout(t);
+    }, [pricePhase]);
+
+    // Continua 2.3: auto-advance (System role)
+    useEffect(() => {
+        if (pricePhase !== 'results') return;
+        const t = setTimeout(pauseAware(() => nextStep()), tp23.resultsDur);
+        return () => clearTimeout(t);
+    }, [pricePhase]);
+
+    // ─── Continua Step 3.3: Financial Reconciliation ────────────────────────────
+    const tp33 = CONTINUA_STEP_TIMING['3.3'];
+    const [reconPhase, setReconPhase] = useState<ReconPhase>('idle');
+    const reconPhaseRef = useRef(reconPhase);
+    useEffect(() => { reconPhaseRef.current = reconPhase; }, [reconPhase]);
+    const [reconAgents, setReconAgents] = useState(RECON_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+    const [reconProgress, setReconProgress] = useState(0);
+
+    useEffect(() => {
+        if (!isContinua || stepId !== '3.3') { setReconPhase('idle'); return; }
+        setReconPhase('idle');
+        setReconAgents(RECON_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(pauseAware(() => setReconPhase('notification')), tp33.notifDelay));
+        timers.push(setTimeout(pauseAware(() => { if (reconPhaseRef.current === 'notification') setReconPhase('processing'); }), tp33.notifDelay + tp33.notifDuration));
+        return () => timers.forEach(clearTimeout);
+    }, [isContinua, stepId]);
+
+    useEffect(() => {
+        if (reconPhase !== 'processing') return;
+        setReconAgents(RECON_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        setReconProgress(0);
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(() => setReconProgress(100), 50));
+        RECON_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setReconAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * tp33.agentStagger));
+            timers.push(setTimeout(pauseAware(() => setReconAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * tp33.agentStagger + tp33.agentDone));
+        });
+        timers.push(setTimeout(pauseAware(() => setReconPhase('breathing')), RECON_AGENTS.length * tp33.agentStagger + tp33.agentDone + 300));
+        return () => timers.forEach(clearTimeout);
+    }, [reconPhase]);
+
+    // Continua 3.3: breathing → revealed
+    useEffect(() => {
+        if (reconPhase !== 'breathing') return;
+        const t = setTimeout(pauseAware(() => setReconPhase('revealed')), tp33.breathing);
+        return () => clearTimeout(t);
+    }, [reconPhase]);
+
+    useEffect(() => {
+        if (reconPhase !== 'revealed') return;
+        const t = setTimeout(pauseAware(() => setReconPhase('results')), 1500);
+        return () => clearTimeout(t);
+    }, [reconPhase]);
 
     const displayCards = CARDS.filter(c => {
         if (c.id === 5 && !['2.2', '2.3'].includes(currentStep.id) && !(isOps && currentStep.id === '1.3')) return false;
@@ -345,6 +504,311 @@ export default function DealerMonitorKanban(_props: { onNavigate?: (page: string
                         </div>
                     ))}
                 </div>
+
+                {/* ═══ Continua Step 2.3 — Price Verification Engine (auto 10s) ═══ */}
+                {isContinua && stepId === '1.3' && pricePhase !== 'idle' && (
+                    <div data-demo-target="price-verification-engine" className="space-y-4">
+                        {/* Notification */}
+                        {pricePhase === 'notification' && (
+                            <button onClick={() => setPricePhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-indigo-600 text-white"><CurrencyDollarIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Price Verification Scan</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-indigo-600 text-white font-bold">200+ lists</span>
+                                            </div>
+                                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">PriceVerificationAgent: Scanning <span className="font-semibold text-zinc-900 dark:text-zinc-100">200+ manufacturer price lists</span> for Q1 updates — detecting cost changes, recalculating margins, flagging items below threshold.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to start scan <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {pricePhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">PriceVerificationAgent Scanning Price Lists...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-indigo-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${priceProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {priceAgents.map(agent => (
+                                        <div key={agent.name} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"}`}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />}
+                                            <span className={`font-medium ${agent.done ? "text-zinc-900 dark:text-zinc-100" : "text-indigo-600 dark:text-indigo-400"}`}>{agent.name}</span>
+                                            <span className="text-zinc-500 dark:text-zinc-400">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {pricePhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(pricePhase === 'revealed' || pricePhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">PriceVerificationAgent:</span> Scan complete — <span className="font-semibold">14 items with outdated cost basis</span>. 6 flagged below 25% margin. 3 consignment items approaching 90-day review.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['Price List API', 'Cost Engine', 'Margin Calculator', 'Consignment DB', 'Report Service'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {pricePhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-gray-200 dark:border-zinc-700 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Price Verification Report — Q1 2026</h3>
+                                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">200+ price lists scanned · 14 discrepancies · Avg margin 34%</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold">6 Below 25%</span>
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold">Avg 34%</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Discrepancy Table */}
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900/50">
+                                                    <th className="px-4 py-2.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Item</th>
+                                                    <th className="px-4 py-2.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Manufacturer</th>
+                                                    <th className="px-4 py-2.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">Old Cost</th>
+                                                    <th className="px-4 py-2.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">New Cost</th>
+                                                    <th className="px-4 py-2.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">Change</th>
+                                                    <th className="px-4 py-2.5 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-right">Margin</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {PRICE_DISCREPANCIES.map((row, i) => (
+                                                    <tr key={i} className={`border-b border-gray-100 dark:border-zinc-700/50 ${row.flag ? "bg-red-50/50 dark:bg-red-500/5" : "hover:bg-gray-50 dark:hover:bg-zinc-900/30"}`}>
+                                                        <td className="px-4 py-2.5 text-[11px] font-medium text-zinc-900 dark:text-zinc-100">{row.item}</td>
+                                                        <td className="px-4 py-2.5 text-[11px] text-zinc-500 dark:text-zinc-400">{row.manufacturer}</td>
+                                                        <td className="px-4 py-2.5 text-[11px] text-right text-zinc-500 dark:text-zinc-400">${row.oldCost}</td>
+                                                        <td className="px-4 py-2.5 text-[11px] text-right font-bold text-zinc-900 dark:text-zinc-100">${row.newCost}</td>
+                                                        <td className="px-4 py-2.5 text-[11px] text-right text-red-600 dark:text-red-400 font-medium">{row.change}</td>
+                                                        <td className="px-4 py-2.5 text-right">
+                                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${row.flag ? "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400" : "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400"}`}>{row.margin}</span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Consignment Alerts */}
+                                    <div className="mx-4 my-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20">
+                                        <h4 className="text-xs font-bold text-amber-800 dark:text-amber-300 mb-2 flex items-center gap-1.5"><ExclamationTriangleIcon className="h-4 w-4" />Consignment Review — 90-Day Window</h4>
+                                        <div className="space-y-2">
+                                            {CONSIGNMENT_ALERTS.map((ca, i) => (
+                                                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/60 dark:bg-zinc-900/40 border border-amber-100 dark:border-amber-500/10">
+                                                    <div>
+                                                        <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">{ca.item}</p>
+                                                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">{ca.manufacturer} · Qty: {ca.qty}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${ca.daysLeft <= 14 ? "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400" : "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"}`}>{ca.daysLeft}d left</span>
+                                                        <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100">{ca.value}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Summary Footer */}
+                                    <div className="px-4 py-3 border-t border-gray-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-zinc-900/30 flex items-center justify-between">
+                                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Report auto-sent to expert · 6 items need price adjustment · 3 consignment decisions pending</p>
+                                        <span className="text-[10px] px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 font-medium">Auto-advancing...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ Continua Step 3.3 — Financial Reconciliation (Expert interactive) ═══ */}
+                {isContinua && stepId === '3.3' && reconPhase !== 'idle' && (
+                    <div data-demo-target="financial-reconciliation" className="space-y-4">
+                        {/* Notification */}
+                        {reconPhase === 'notification' && (
+                            <button onClick={() => setReconPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-amber-600 text-white"><CurrencyDollarIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Financial Reconciliation — UAL Project</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-600 text-white font-bold">4 aging</span>
+                                            </div>
+                                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">FinancialAgent: Reconciling <span className="font-semibold text-zinc-900 dark:text-zinc-100">47 POs → 42 invoices → 38 payments</span>. 4 invoices aging &gt;30 days — AI-categorized with actions.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review reconciliation <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {reconPhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">FinancialAgent Reconciling...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-gray-200 dark:bg-zinc-700 overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-amber-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${reconProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {reconAgents.map(agent => (
+                                        <div key={agent.name} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"}`}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-amber-500 animate-spin shrink-0" />}
+                                            <span className={`font-medium ${agent.done ? "text-zinc-900 dark:text-zinc-100" : "text-amber-600 dark:text-amber-400"}`}>{agent.name}</span>
+                                            <span className="text-zinc-500 dark:text-zinc-400">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {reconPhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(reconPhase === 'revealed' || reconPhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">FinancialAgent:</span> Reconciliation complete — <span className="font-semibold">47 POs, 42 invoices, 38 payments</span>. 4 aging invoices categorized. Margin: 33.2% vs 34% quoted.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['ERP System', 'Payment Gateway', 'Aging Engine', 'Margin Calculator', 'Report Service'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {reconPhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-gray-200 dark:border-zinc-700 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Financial Reconciliation — UAL HQ</h3>
+                                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">47 POs · 42 invoices · 38 payments received</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold">4 Aging</span>
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">33.2% Margin</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Reconciliation Summary */}
+                                    <div className="p-4 grid grid-cols-3 gap-3">
+                                        {[
+                                            { label: 'Purchase Orders', value: '47', sub: 'All tracked', color: 'text-blue-600 dark:text-blue-400' },
+                                            { label: 'Invoices', value: '42', sub: '5 pending', color: 'text-indigo-600 dark:text-indigo-400' },
+                                            { label: 'Payments', value: '38', sub: '$2.45M received', color: 'text-green-600 dark:text-green-400' },
+                                        ].map(m => (
+                                            <div key={m.label} className="text-center p-3 rounded-xl bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-700">
+                                                <p className={`text-lg font-bold ${m.color}`}>{m.value}</p>
+                                                <p className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100">{m.label}</p>
+                                                <p className="text-[10px] text-zinc-500 dark:text-zinc-400">{m.sub}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Aging Invoices */}
+                                    <div className="mx-4 mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20">
+                                        <h4 className="text-xs font-bold text-amber-800 dark:text-amber-300 mb-3 flex items-center gap-1.5"><ExclamationTriangleIcon className="h-4 w-4" />Aging Invoices — &gt;30 Days</h4>
+                                        <div className="space-y-2">
+                                            {AGING_INVOICES.map(inv => (
+                                                <div key={inv.id} className="flex items-center justify-between p-2.5 rounded-lg bg-white/60 dark:bg-zinc-900/40 border border-amber-100 dark:border-amber-500/10">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-[10px] font-mono font-bold text-zinc-900 dark:text-zinc-100">{inv.id}</span>
+                                                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{inv.vendor}</span>
+                                                        </div>
+                                                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">{inv.reason}</p>
+                                                        <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium">Action: {inv.action}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-bold">{inv.days}d</span>
+                                                        <span className="text-[11px] font-bold text-zinc-900 dark:text-zinc-100">{inv.amount}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Margin Analysis */}
+                                    <div className="mx-4 mb-4 p-3 rounded-xl bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-700">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Margin Analysis</p>
+                                                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5">Realized 33.2% vs quoted 34% — variance from Q1 price increases on 6 items</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-lg font-bold text-amber-600 dark:text-amber-400">33.2%</p>
+                                                <p className="text-[9px] text-zinc-500 dark:text-zinc-400">quoted 34%</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* CTA */}
+                                    <div className="px-4 py-3 border-t border-gray-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-zinc-900/30 flex items-center justify-between">
+                                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Aging report ready with AI-recommended actions for each invoice</p>
+                                        <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                            <CheckCircleIcon className="h-3.5 w-3.5" />Export Aging Report<ArrowRightIcon className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* OPS: Three-Way Match View — shows during OPS step 1.3 */}
                 {isOps && currentStep.id === '1.3' && (

@@ -7,6 +7,10 @@ import InventoryLocations from './components/InventoryLocations';
 import ChangeStatusModal from './components/ChangeStatusModal';
 import QuickMovementsModal from './components/QuickMovementsModal';
 import { useTenant } from './TenantContext';
+import { useDemo } from './context/DemoContext';
+import { useDemoProfile } from './context/DemoProfileContext';
+import { CONTINUA_STEP_TIMING } from './config/profiles/continua-demo';
+import { AIAgentAvatar } from './components/simulations/DemoAvatars';
 import Breadcrumbs from './components/Breadcrumbs';
 import {
     MagnifyingGlassIcon,
@@ -40,7 +44,9 @@ import {
     LightBulbIcon,
     ComputerDesktopIcon,
     TableCellsIcon,
-    ArchiveBoxIcon
+    ArchiveBoxIcon,
+    ArrowRightIcon,
+    ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -199,6 +205,67 @@ const colorStyles: Record<string, string> = {
     indigo: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300 ring-1 ring-inset ring-indigo-600/20 dark:ring-indigo-400/30',
 };
 
+// ─── Continua Step 1.4: Warehouse Receiving Constants ──────────────────────────
+const RECEIVING_AGENTS = [
+    { name: 'ShipmentScanner', detail: 'Processing 3 shipments at Chicago warehouse...' },
+    { name: 'QRMatcher', detail: 'Auto-matching QR scans vs PO line items — 47/50...' },
+    { name: 'QCInspector', detail: 'Quality check: 2 task chairs flagged — fabric defect...' },
+    { name: 'LocationAssigner', detail: 'Assigning Zone B, Rack 14 — utilization 72%...' },
+    { name: 'WarrantyReporter', detail: 'Auto-reporting defects to manufacturer...' },
+]
+
+const SHIPMENT_DATA = [
+    { id: 'SHP-001', manufacturer: 'MillerKnoll', items: 25, matched: 24, status: 'partial' as const, defects: 1 },
+    { id: 'SHP-002', manufacturer: 'DIRTT Environmental', items: 15, matched: 15, status: 'complete' as const, defects: 0 },
+    { id: 'SHP-003', manufacturer: 'Steelcase', items: 10, matched: 8, status: 'partial' as const, defects: 1 },
+]
+
+const QC_FLAGS = [
+    { item: 'Aeron Task Chair (Graphite)', sku: 'HM-AER-GR-001', defect: 'Fabric tear on left armrest', severity: 'Major' as const },
+    { item: 'Aeron Task Chair (Graphite)', sku: 'HM-AER-GR-002', defect: 'Seat mesh discoloration', severity: 'Minor' as const },
+]
+
+type ReceivingPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+
+// ─── Continua Step 2.1: Inventory Health & Forecasting Constants ───────────
+const INVENTORY_HEALTH_AGENTS = [
+    { name: 'InventoryScanner', detail: 'Scanning 2,400 items across 3 warehouses...' },
+    { name: 'CapacityForecaster', detail: 'Projecting Chicago warehouse → 85% in 2 weeks (UAL phase 3)...' },
+    { name: 'OverflowOptimizer', detail: 'Identifying 120 items for relocation to overflow...' },
+    { name: 'CostAnalyzer', detail: 'Calculating storage savings — $4,200/month if relocated...' },
+    { name: 'ReportGenerator', detail: 'Generating executive summary with recommendations...' },
+]
+const WAREHOUSE_DATA = [
+    { name: 'Chicago', current: 68, forecast: 85, items: 1420, alert: true, alertText: 'Reaches 85% in 2 weeks with UAL phase 3 deliveries' },
+    { name: 'Minneapolis', current: 52, items: 640, alert: false, forecast: 52 },
+    { name: 'Madison', current: 41, items: 340, alert: false, forecast: 41 },
+]
+const RELOCATION_RECS = [
+    { from: 'Chicago — Staging Area B', to: 'Minneapolis — Overflow Bay 3', items: 80, type: 'Furniture (staging)', savings: '$2,800/mo' },
+    { from: 'Chicago — Rack 12-14', to: 'Madison — Bay 7', items: 40, type: 'AV Equipment (allocated)', savings: '$1,400/mo' },
+]
+type HealthPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+
+// ─── Continua Step 2.4: Multi-Location Sync Constants ──────────────────────
+const LOCATION_SYNC_AGENTS = [
+    { name: 'LocationSync', detail: 'Synchronizing 3 warehouses + 2 active job sites...' },
+    { name: 'TransitTracker', detail: '45 items in-transit Chicago → project site...' },
+    { name: 'QCMonitor', detail: '12 items pending QC at Minneapolis...' },
+    { name: 'RouteOptimizer', detail: 'Consolidating 2 deliveries to same site — $1,800 savings...' },
+    { name: 'MapUpdater', detail: 'Updating real-time location map for all assets...' },
+]
+const LOCATION_STATUS = [
+    { name: 'Chicago Warehouse', type: 'Warehouse' as const, items: 1420, inTransit: 45, status: 'Active' as const, utilization: 68 },
+    { name: 'Minneapolis Warehouse', type: 'Warehouse' as const, items: 640, pendingQC: 12, status: 'Active' as const, utilization: 52 },
+    { name: 'Madison Warehouse', type: 'Warehouse' as const, items: 340, allocated: 8, status: 'Active' as const, utilization: 41 },
+    { name: 'UAL HQ — Floors 4-6', type: 'Job Site' as const, items: 180, receiving: true, status: 'Receiving' as const },
+    { name: 'UAL HQ — Floor 7', type: 'Job Site' as const, items: 0, status: 'Teardown' as const },
+]
+type SyncPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results'
+
+// ─── FM Flow: Quick Action Relocation (F.4) ──────────────────────────────────
+type FMRelocPhase = 'idle' | 'notification' | 'modal-open' | 'committed'
+
 // --- Components ---
 
 interface PageProps {
@@ -210,6 +277,207 @@ interface PageProps {
 
 export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWorkspace, onNavigate }: PageProps) {
     const { currentTenant } = useTenant();
+    const { currentStep, nextStep, isPaused } = useDemo();
+    const { activeProfile } = useDemoProfile();
+    const isContinua = activeProfile.id === 'continua';
+    const stepId = currentStep?.id || '';
+
+    // Pause-aware timer helper
+    const isPausedRef = useRef(isPaused);
+    useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+    const pauseAware = React.useCallback((fn: () => void) => {
+        return () => {
+            if (!isPausedRef.current) { fn(); return; }
+            const poll = setInterval(() => {
+                if (!isPausedRef.current) { clearInterval(poll); fn(); }
+            }, 200);
+        };
+    }, []);
+
+    // ─── Continua Step 1.4: Warehouse Receiving ───────────────────────────────
+    const [rcvPhase, setRcvPhase] = useState<ReceivingPhase>('idle');
+    const rcvPhaseRef = useRef(rcvPhase);
+    useEffect(() => { rcvPhaseRef.current = rcvPhase; }, [rcvPhase]);
+    const [rcvAgents, setRcvAgents] = useState(RECEIVING_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+    const [rcvProgress, setRcvProgress] = useState(0);
+
+    // Continua 1.4: orchestration
+    const tp14 = CONTINUA_STEP_TIMING['1.4'];
+    useEffect(() => {
+        if (!isContinua || stepId !== '2.4') { setRcvPhase('idle'); return; }
+        setRcvPhase('idle');
+        setRcvAgents(RECEIVING_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(pauseAware(() => setRcvPhase('notification')), tp14.notifDelay));
+        timers.push(setTimeout(pauseAware(() => {
+            if (rcvPhaseRef.current === 'notification') setRcvPhase('processing');
+        }), tp14.notifDelay + tp14.notifDuration));
+        return () => timers.forEach(clearTimeout);
+    }, [isContinua, stepId]);
+
+    // Continua 1.4: processing → breathing
+    useEffect(() => {
+        if (rcvPhase !== 'processing') return;
+        setRcvAgents(RECEIVING_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        setRcvProgress(0);
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(() => setRcvProgress(100), 50));
+        RECEIVING_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setRcvAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * tp14.agentStagger));
+            timers.push(setTimeout(pauseAware(() => setRcvAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * tp14.agentStagger + tp14.agentDone));
+        });
+        timers.push(setTimeout(pauseAware(() => setRcvPhase('breathing')), RECEIVING_AGENTS.length * tp14.agentStagger + tp14.agentDone + 300));
+        return () => timers.forEach(clearTimeout);
+    }, [rcvPhase]);
+
+    // Continua 1.4: breathing → revealed
+    useEffect(() => {
+        if (rcvPhase !== 'breathing') return;
+        const t = setTimeout(pauseAware(() => setRcvPhase('revealed')), tp14.breathing);
+        return () => clearTimeout(t);
+    }, [rcvPhase]);
+
+    // Continua 1.4: revealed → results
+    useEffect(() => {
+        if (rcvPhase !== 'revealed') return;
+        const t = setTimeout(pauseAware(() => setRcvPhase('results')), 1500);
+        return () => clearTimeout(t);
+    }, [rcvPhase]);
+
+    // ─── Continua Step 2.1: Inventory Health & Forecasting ──────────────────────
+    const [hlthPhase, setHlthPhase] = useState<HealthPhase>('idle');
+    const hlthPhaseRef = useRef(hlthPhase);
+    useEffect(() => { hlthPhaseRef.current = hlthPhase; }, [hlthPhase]);
+    const [hlthAgents, setHlthAgents] = useState(INVENTORY_HEALTH_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+    const [hlthProgress, setHlthProgress] = useState(0);
+
+    // Continua 2.1: orchestration
+    const tp21 = CONTINUA_STEP_TIMING['2.1'];
+    useEffect(() => {
+        if (!isContinua || stepId !== '1.1') { setHlthPhase('idle'); return; }
+        setHlthPhase('idle');
+        setHlthAgents(INVENTORY_HEALTH_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        setActiveTab('inventory');
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(pauseAware(() => setHlthPhase('notification')), tp21.notifDelay));
+        timers.push(setTimeout(pauseAware(() => {
+            if (hlthPhaseRef.current === 'notification') setHlthPhase('processing');
+        }), tp21.notifDelay + tp21.notifDuration));
+        return () => timers.forEach(clearTimeout);
+    }, [isContinua, stepId]);
+
+    // Continua 2.1: processing → breathing
+    useEffect(() => {
+        if (hlthPhase !== 'processing') return;
+        setHlthAgents(INVENTORY_HEALTH_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        setHlthProgress(0);
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(() => setHlthProgress(100), 50));
+        INVENTORY_HEALTH_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setHlthAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * tp21.agentStagger));
+            timers.push(setTimeout(pauseAware(() => setHlthAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * tp21.agentStagger + tp21.agentDone));
+        });
+        timers.push(setTimeout(pauseAware(() => setHlthPhase('breathing')), INVENTORY_HEALTH_AGENTS.length * tp21.agentStagger + tp21.agentDone + 300));
+        return () => timers.forEach(clearTimeout);
+    }, [hlthPhase]);
+
+    // Continua 2.1: breathing → revealed
+    useEffect(() => {
+        if (hlthPhase !== 'breathing') return;
+        const t = setTimeout(pauseAware(() => setHlthPhase('revealed')), tp21.breathing);
+        return () => clearTimeout(t);
+    }, [hlthPhase]);
+
+    // Continua 2.1: revealed → results
+    useEffect(() => {
+        if (hlthPhase !== 'revealed') return;
+        const t = setTimeout(pauseAware(() => setHlthPhase('results')), 1500);
+        return () => clearTimeout(t);
+    }, [hlthPhase]);
+
+    // ─── Continua Step 2.4: Multi-Location Sync ─────────────────────────────────
+    const [syncPhase, setSyncPhase] = useState<SyncPhase>('idle');
+    const syncPhaseRef = useRef(syncPhase);
+    useEffect(() => { syncPhaseRef.current = syncPhase; }, [syncPhase]);
+    const [syncAgents, setSyncAgents] = useState(LOCATION_SYNC_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+    const [syncProgress, setSyncProgress] = useState(0);
+
+    // Continua 2.4: orchestration
+    const tp24 = CONTINUA_STEP_TIMING['2.4'];
+    useEffect(() => {
+        if (!isContinua || stepId !== '1.4') { setSyncPhase('idle'); return; }
+        setSyncPhase('idle');
+        setSyncAgents(LOCATION_SYNC_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        setActiveTab('locations');
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(pauseAware(() => setSyncPhase('notification')), tp24.notifDelay));
+        timers.push(setTimeout(pauseAware(() => {
+            if (syncPhaseRef.current === 'notification') setSyncPhase('processing');
+        }), tp24.notifDelay + tp24.notifDuration));
+        return () => timers.forEach(clearTimeout);
+    }, [isContinua, stepId]);
+
+    // Continua 2.4: processing → breathing
+    useEffect(() => {
+        if (syncPhase !== 'processing') return;
+        setSyncAgents(LOCATION_SYNC_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        setSyncProgress(0);
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(() => setSyncProgress(100), 50));
+        LOCATION_SYNC_AGENTS.forEach((_, i) => {
+            timers.push(setTimeout(pauseAware(() => setSyncAgents(prev => prev.map((a, j) => j === i ? { ...a, visible: true } : a))), i * tp24.agentStagger));
+            timers.push(setTimeout(pauseAware(() => setSyncAgents(prev => prev.map((a, j) => j === i ? { ...a, done: true } : a))), i * tp24.agentStagger + tp24.agentDone));
+        });
+        timers.push(setTimeout(pauseAware(() => setSyncPhase('breathing')), LOCATION_SYNC_AGENTS.length * tp24.agentStagger + tp24.agentDone + 300));
+        return () => timers.forEach(clearTimeout);
+    }, [syncPhase]);
+
+    // Continua 2.4: breathing → revealed
+    useEffect(() => {
+        if (syncPhase !== 'breathing') return;
+        const t = setTimeout(pauseAware(() => setSyncPhase('revealed')), tp24.breathing);
+        return () => clearTimeout(t);
+    }, [syncPhase]);
+
+    // Continua 2.4: revealed → results
+    useEffect(() => {
+        if (syncPhase !== 'revealed') return;
+        const t = setTimeout(pauseAware(() => setSyncPhase('results')), 1500);
+        return () => clearTimeout(t);
+    }, [syncPhase]);
+
+    // Continua 2.4: auto-advance (System role, from results)
+    useEffect(() => {
+        if (syncPhase !== 'results') return;
+        const t = setTimeout(pauseAware(() => nextStep()), tp24.resultsDur);
+        return () => clearTimeout(t);
+    }, [syncPhase]);
+
+    // ─── FM Step F.4: Quick Action Relocation state ──────────────────────────
+    const [fmRelocPhase, setFmRelocPhase] = useState<FMRelocPhase>('idle')
+
+    // F.4 orchestration — notification → auto-open modal → committed
+    const tpF4 = CONTINUA_STEP_TIMING['F.4'];
+    useEffect(() => {
+        if (!isContinua || stepId !== 'F.4') { setFmRelocPhase('idle'); return; }
+        setFmRelocPhase('idle');
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        timers.push(setTimeout(pauseAware(() => setFmRelocPhase('notification')), tpF4.notifDelay));
+        return () => timers.forEach(clearTimeout);
+    }, [isContinua, stepId]);
+
+    // F.4: when notification is clicked, open modal
+    useEffect(() => {
+        if (fmRelocPhase !== 'modal-open') return;
+        setIsQuickMovementsModalOpen(true);
+    }, [fmRelocPhase]);
+
+    // F.4: committed → next step
+    useEffect(() => {
+        if (fmRelocPhase !== 'committed') return;
+        const t = setTimeout(pauseAware(() => nextStep()), 2000);
+        return () => clearTimeout(t);
+    }, [fmRelocPhase]);
 
     // State
     const [inventoryData, setInventoryData] = useState<InventoryItem[]>(MOCK_INVENTORY);
@@ -608,6 +876,495 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
                 )
                 }
 
+
+                {/* ═══ Continua Step 1.4 — Warehouse Receiving & QC ═══ */}
+                {isContinua && stepId === '2.4' && rcvPhase !== 'idle' && (
+                    <div className="space-y-4 mb-6">
+                        {/* Notification */}
+                        {rcvPhase === 'notification' && (
+                            <button onClick={() => setRcvPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-brand-500 text-white"><TruckIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">Shipment Receiving Initiated</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-white font-bold">3 shipments</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">ReceivingAgent: Processing <span className="font-semibold text-foreground">3 incoming shipments</span> at Chicago warehouse — QR scan, PO matching, QC inspection.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to start receiving <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {rcvPhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-foreground">ReceivingAgent Processing Shipments...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-brand-400 transition-all duration-[3500ms] ease-linear" style={{ width: `${rcvProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {rcvAgents.map(agent => (
+                                        <div key={agent.name} className={cn("flex items-center gap-2 text-[10px] transition-all duration-300", agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />}
+                                            <span className={cn("font-medium", agent.done ? "text-foreground" : "text-indigo-600 dark:text-indigo-400")}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {rcvPhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(rcvPhase === 'revealed' || rcvPhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">ReceivingAgent:</span> 3 shipments processed — <span className="font-semibold">47/50 items matched</span>. 2 QC flags raised, warranty claims auto-filed.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['QR Scanner', 'PO Match Engine', 'QC Database', 'Warranty Portal', 'WMS'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {rcvPhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">Receiving Summary — Chicago Warehouse</h3>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">3 shipments processed · 47/50 matched · Utilization 72%</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">47 Matched</span>
+                                            <span className="text-[10px] px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 font-bold">2 QC Flags</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Shipment Cards */}
+                                    <div className="p-4 grid grid-cols-3 gap-3">
+                                        {SHIPMENT_DATA.map(s => (
+                                            <div key={s.id} className={cn("p-3 rounded-xl border", s.defects > 0 ? "border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5" : "border-border bg-muted/20")}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[10px] font-bold text-foreground">{s.id}</span>
+                                                    <span className={cn("text-[9px] px-2 py-0.5 rounded-full font-bold", s.status === 'complete' ? "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400" : "bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400")}>{s.status === 'complete' ? 'Complete' : 'Partial'}</span>
+                                                </div>
+                                                <p className="text-[11px] font-medium text-foreground">{s.manufacturer}</p>
+                                                <p className="text-[10px] text-muted-foreground mt-1">{s.matched}/{s.items} items matched</p>
+                                                {s.defects > 0 && <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1"><ExclamationTriangleIcon className="h-3 w-3" />{s.defects} defect{s.defects > 1 ? 's' : ''} flagged</p>}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* QC Flags */}
+                                    <div className="mx-4 mb-4 p-4 rounded-xl bg-red-50 dark:bg-red-500/5 border border-red-200 dark:border-red-500/20">
+                                        <h4 className="text-xs font-bold text-red-800 dark:text-red-300 mb-2 flex items-center gap-1.5"><ExclamationTriangleIcon className="h-4 w-4" />QC Flags — Auto-Reported to Manufacturer</h4>
+                                        <div className="space-y-2">
+                                            {QC_FLAGS.map((qc, i) => (
+                                                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/60 dark:bg-zinc-900/40 border border-red-100 dark:border-red-500/10">
+                                                    <div>
+                                                        <p className="text-[11px] font-medium text-foreground">{qc.item}</p>
+                                                        <p className="text-[10px] text-muted-foreground">{qc.sku} · {qc.defect}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={cn("text-[9px] px-2 py-0.5 rounded-full font-bold", qc.severity === 'Major' ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700")}>{qc.severity}</span>
+                                                        <PhotoIcon className="h-4 w-4 text-muted-foreground" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Location & CTA */}
+                                    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><MapPinIcon className="h-3.5 w-3.5" /><span className="font-medium text-foreground">Zone B, Rack 14</span></div>
+                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground"><ChartBarIcon className="h-3.5 w-3.5" />Utilization: <span className="font-medium text-foreground">72%</span></div>
+                                        </div>
+                                        <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                            <ClipboardDocumentCheckIcon className="h-3.5 w-3.5" />Confirm Receiving<ArrowRightIcon className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ Continua Step 2.1 — Inventory Health & Forecasting ═══ */}
+                {isContinua && stepId === '1.1' && hlthPhase !== 'idle' && (
+                    <div data-demo-target="inventory-health-forecast" className="space-y-4 mb-6">
+                        {/* Notification */}
+                        {hlthPhase === 'notification' && (
+                            <button onClick={() => setHlthPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-brand-500 text-white"><ChartBarIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">Inventory Health Analysis</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold">Capacity Alert</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">InventoryIntelAgent: <span className="font-semibold text-foreground">2,400 items</span> across 3 warehouses — Chicago warehouse forecast to reach <span className="font-semibold text-amber-600 dark:text-amber-400">85% capacity</span> in 2 weeks.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review analysis <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {hlthPhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-foreground">InventoryIntelAgent Analyzing Warehouses...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-brand-400 transition-all duration-[3500ms] ease-linear" style={{ width: `${hlthProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {hlthAgents.map(agent => (
+                                        <div key={agent.name} className={cn("flex items-center gap-2 text-[10px] transition-all duration-300", agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />}
+                                            <span className={cn("font-medium", agent.done ? "text-foreground" : "text-indigo-600 dark:text-indigo-400")}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {hlthPhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(hlthPhase === 'revealed' || hlthPhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">InventoryIntelAgent:</span> Analysis complete — <span className="font-semibold">Chicago at 68%</span>, forecast 85% in 2 weeks. 120 items recommended for relocation — <span className="font-semibold">$4,200/mo savings</span>.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['WMS', 'Capacity Planner', 'Cost Engine', 'Logistics API', 'Forecast Model'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {hlthPhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">Warehouse Capacity Overview</h3>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">2,400 items · 3 locations · Forecast: 2-week horizon</p>
+                                        </div>
+                                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold">1 Alert</span>
+                                    </div>
+
+                                    {/* Warehouse Gauges */}
+                                    <div className="p-4 grid grid-cols-3 gap-3">
+                                        {WAREHOUSE_DATA.map(wh => (
+                                            <div key={wh.name} className={cn("p-3 rounded-xl border", wh.alert ? "border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5" : "border-border bg-muted/20")}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[11px] font-bold text-foreground">{wh.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground">{wh.items} items</span>
+                                                </div>
+                                                {/* Gauge bar */}
+                                                <div className="h-2 rounded-full bg-muted overflow-hidden mb-1.5">
+                                                    <div className={cn("h-full rounded-full transition-all duration-700", wh.current > 70 ? "bg-amber-500" : wh.current > 50 ? "bg-brand-400" : "bg-green-500")} style={{ width: `${wh.current}%` }} />
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className={cn("text-xs font-bold", wh.current > 70 ? "text-amber-600 dark:text-amber-400" : "text-foreground")}>{wh.current}%</span>
+                                                    {wh.alert && <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium">→ {wh.forecast}% in 2wk</span>}
+                                                </div>
+                                                {wh.alert && <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1"><ExclamationTriangleIcon className="h-3 w-3 shrink-0" />{wh.alertText}</p>}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Relocation Recommendations */}
+                                    <div className="mx-4 mb-4 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20">
+                                        <h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-3 flex items-center gap-1.5"><LightBulbIcon className="h-4 w-4" />AI Relocation Recommendations</h4>
+                                        <div className="space-y-2">
+                                            {RELOCATION_RECS.map((rec, i) => (
+                                                <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-white/60 dark:bg-zinc-900/40 border border-indigo-100 dark:border-indigo-500/10">
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-[11px] font-medium text-foreground">{rec.items} items · {rec.type}</p>
+                                                        <p className="text-[10px] text-muted-foreground mt-0.5">{rec.from} → {rec.to}</p>
+                                                    </div>
+                                                    <span className="text-[10px] px-2 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold shrink-0 ml-2">{rec.savings}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-3 flex items-center justify-between p-2.5 rounded-lg bg-green-100 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
+                                            <span className="text-[11px] font-bold text-green-800 dark:text-green-300">Total Monthly Savings</span>
+                                            <span className="text-sm font-bold text-green-700 dark:text-green-400">$4,200/mo</span>
+                                        </div>
+                                    </div>
+
+                                    {/* CTA */}
+                                    <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between bg-muted/20">
+                                        <p className="text-[10px] text-muted-foreground">Relocating 120 items optimizes capacity and reduces storage costs.</p>
+                                        <button onClick={nextStep} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 dark:bg-brand-400 dark:hover:bg-brand-300 text-zinc-900 text-[11px] font-bold shadow-sm transition-all hover:scale-[1.02]">
+                                            <CheckCircleIcon className="h-3.5 w-3.5" />Apply Recommendations<ArrowRightIcon className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ Continua Step 2.4 — Multi-Location Sync (auto 8s) ═══ */}
+                {isContinua && stepId === '1.4' && syncPhase !== 'idle' && (
+                    <div data-demo-target="multi-location-sync" className="space-y-4 mb-6">
+                        {/* Notification */}
+                        {syncPhase === 'notification' && (
+                            <button onClick={() => setSyncPhase('processing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-blue-600 text-white"><MapPinIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">Multi-Location Sync</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-bold">5 locations</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">LocationSyncAgent: Synchronizing <span className="font-semibold text-foreground">3 warehouses + 2 job sites</span> — tracking in-transit items, pending QC, optimizing delivery routes.</p>
+                                            <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to start sync <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Processing */}
+                        {syncPhase === 'processing' && (
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar size="sm" />
+                                    <span className="text-xs font-bold text-foreground">LocationSyncAgent Synchronizing...</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-blue-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${syncProgress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {syncAgents.map(agent => (
+                                        <div key={agent.name} className={cn("flex items-center gap-2 text-[10px] transition-all duration-300", agent.visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2")}>
+                                            {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-blue-500 animate-spin shrink-0" />}
+                                            <span className={cn("font-medium", agent.done ? "text-foreground" : "text-blue-600 dark:text-blue-400")}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Breathing */}
+                        {syncPhase === 'breathing' && (
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-muted-foreground">Processing complete — syncing external systems...</span>
+                            </div>
+                        )}
+
+                        {/* Confirmed */}
+                        {(syncPhase === 'revealed' || syncPhase === 'results') && (
+                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30 animate-in fade-in duration-300">
+                                <div className="flex items-start gap-2">
+                                    <AIAgentAvatar size="sm" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-green-800 dark:text-green-200"><span className="font-bold">LocationSyncAgent:</span> All locations synced — <span className="font-semibold">45 in-transit</span>, 12 pending QC, 8 allocated. Route optimization: <span className="font-semibold">$1,800 freight savings</span>.</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">External Systems · Synced</span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                            {['WMS', 'GPS Tracker', 'QC System', 'Route Engine', 'Map Service'].map(sys => (
+                                                <span key={sys} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                    <CheckCircleIcon className="h-3 w-3" />{sys}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {syncPhase === 'results' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    {/* Header */}
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground">Location Sync Status</h3>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">5 locations · 2,580 total items · Real-time tracking</p>
+                                        </div>
+                                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">All Synced</span>
+                                    </div>
+
+                                    {/* Location Cards */}
+                                    <div className="p-4 space-y-2">
+                                        {LOCATION_STATUS.map(loc => (
+                                            <div key={loc.name} className={cn("flex items-center justify-between p-3 rounded-xl border",
+                                                loc.type === 'Job Site' ? "border-blue-200 dark:border-blue-500/20 bg-blue-50/30 dark:bg-blue-500/5" : "border-border bg-muted/20"
+                                            )}>
+                                                <div className="flex items-center gap-3">
+                                                    <MapPinIcon className={cn("h-4 w-4 shrink-0", loc.type === 'Job Site' ? "text-blue-500" : "text-muted-foreground")} />
+                                                    <div>
+                                                        <p className="text-[11px] font-medium text-foreground">{loc.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground">
+                                                            {loc.items} items
+                                                            {loc.inTransit ? ` · ${loc.inTransit} in-transit` : ''}
+                                                            {loc.pendingQC ? ` · ${loc.pendingQC} pending QC` : ''}
+                                                            {loc.allocated ? ` · ${loc.allocated} allocated` : ''}
+                                                            {loc.receiving ? ' · Receiving active' : ''}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {loc.utilization && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
+                                                                <div className={cn("h-full rounded-full", loc.utilization > 60 ? "bg-amber-500" : "bg-green-500")} style={{ width: `${loc.utilization}%` }} />
+                                                            </div>
+                                                            <span className="text-[10px] font-medium text-foreground">{loc.utilization}%</span>
+                                                        </div>
+                                                    )}
+                                                    <span className={cn("text-[9px] px-2 py-0.5 rounded-full font-bold",
+                                                        loc.status === 'Active' ? "bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400" :
+                                                        loc.status === 'Receiving' ? "bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400" :
+                                                        "bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400"
+                                                    )}>{loc.status}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Route Optimization */}
+                                    <div className="mx-4 mb-4 p-3 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <TruckIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                                <div>
+                                                    <p className="text-[11px] font-bold text-green-800 dark:text-green-300">Route Optimization Applied</p>
+                                                    <p className="text-[10px] text-green-700 dark:text-green-400">2 deliveries consolidated to UAL HQ — same-day schedule</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-sm font-bold text-green-600 dark:text-green-400">-$1,800</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Auto-advance footer */}
+                                    <div className="px-4 py-3 border-t border-border/50 bg-muted/20 flex items-center justify-between">
+                                        <p className="text-[10px] text-muted-foreground">All 5 locations synchronized · Transit and QC status updated in real-time</p>
+                                        <span className="text-[10px] px-3 py-1.5 rounded-lg bg-muted text-muted-foreground font-medium">Auto-advancing...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ FM Step F.4 — Quick Action Office Relocation (interactive) ═══ */}
+                {isContinua && stepId === 'F.4' && fmRelocPhase !== 'idle' && (
+                    <div className="space-y-4 mb-6">
+                        {/* Notification Banner */}
+                        {fmRelocPhase === 'notification' && (
+                            <button onClick={() => setFmRelocPhase('modal-open')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
+                                <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-300 dark:border-blue-500/30 shadow-lg hover:shadow-blue-500/20 transition-shadow cursor-pointer">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-blue-500 text-white"><ArrowPathRoundedSquareIcon className="h-4 w-4" /></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-foreground">Quick Action — Office Relocation</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-500 text-white font-bold">TEMPORARY</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-1">While Carlos's chair is being replaced, relocate his workstation assets from <span className="font-semibold text-foreground">Office 3-214 → Office 3-216</span> (vacant). Use drag-and-drop Quick Transfer.</p>
+                                            <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1">Click to open Quick Transfer <ArrowRightIcon className="h-3 w-3" /></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* Modal is open state */}
+                        {fmRelocPhase === 'modal-open' && (
+                            <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 animate-in fade-in duration-300 flex items-center gap-3">
+                                <ArrowPathRoundedSquareIcon className="h-5 w-5 text-blue-500 animate-pulse" />
+                                <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">Quick Transfer modal is open — drag assets from Office 3-214 to Office 3-216, then click Commit Moves</span>
+                            </div>
+                        )}
+
+                        {/* Committed confirmation */}
+                        {fmRelocPhase === 'committed' && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
+                                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30">
+                                    <div className="flex items-start gap-3">
+                                        <CheckCircleIcon className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-green-800 dark:text-green-200">Assets Relocated Successfully</p>
+                                            <p className="text-[11px] text-green-700 dark:text-green-300 mt-1">Workstation assets moved from Office 3-214 → Office 3-216. Carlos can continue working while the Aeron is replaced. Inventory updated in real-time.</p>
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                                                {['Laptop Dock', 'Monitor (2x)', 'Keyboard + Mouse', 'Desk Lamp'].map(item => (
+                                                    <span key={item} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[10px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                        <CheckCircleIcon className="h-3 w-3" />{item}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground py-1">
+                                    <ArrowPathIcon className="h-3 w-3 animate-spin" />
+                                    <span>Inventory updated — advancing to resolution...</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Main Content (Tabs Logic) */}
                 {
@@ -1036,7 +1793,10 @@ export default function Inventory({ onLogout, onNavigateToDetail, onNavigateToWo
 
             <QuickMovementsModal
                 isOpen={isQuickMovementsModalOpen}
-                onClose={() => setIsQuickMovementsModalOpen(false)}
+                onClose={() => {
+                    setIsQuickMovementsModalOpen(false);
+                    if (fmRelocPhase === 'modal-open') setFmRelocPhase('committed');
+                }}
             />
         </div >
     );

@@ -17,6 +17,15 @@ import ConfidenceScoreBadge from '../widgets/ConfidenceScoreBadge';
 
 // Steps that show the floating lupa panel (per profile)
 const COI_PANEL_STEPS = ['1.2', '1.3', '1.4'];
+const CONTINUA_PANEL_STEPS = ['2.2', '2.4'];
+
+// Simplified procurement phases for Continua 2.2 (human-friendly labels instead of technical agent names)
+const CONTINUA_PROC_PHASES = [
+    { name: 'Analyzing specifications', detail: '1,500 line items from project spec' },
+    { name: 'Comparing prices', detail: 'Contract vs list across 4 sources — $110K savings found' },
+    { name: 'Applying business rules', detail: '5 rules · consolidation · volume discounts' },
+    { name: 'Generating orders', detail: '3 consolidated POs · $3.2M · 12 manufacturers' },
+];
 const OPS_PANEL_STEPS_IDS = ['1.1', '1.3', '2.2', '2.4'];
 
 interface DemoProcessPanelProps {
@@ -27,15 +36,20 @@ interface DemoProcessPanelProps {
 const PANEL_REVEAL_DELAY = 2025;
 
 export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) {
-    const { currentStep, nextStep, isDemoActive, isPaused } = useDemo();
+    const { currentStep, nextStep, isDemoActive, isPaused, setProcCompleteStep, lupaStep } = useDemo();
     const { activeProfile } = useDemoProfile();
     const isOps = activeProfile.id === 'ops';
+    const isContinua = activeProfile.id === 'continua';
 
     const [panelVisible, setPanelVisible] = useState(false);
     const [agentProgress, setAgentProgress] = useState(0);
     const [agentLogs, setAgentLogs] = useState<string[]>([]);
     const [pipelineAgents, setPipelineAgents] = useState<AgentStep[]>([]);
     const [confidenceFields, setConfidenceFields] = useState<{ field: string; score: number }[]>([]);
+
+    // Continua 2.2 — expert question + summary states
+    const [procPhases, setProcPhases] = useState<{ name: string; detail: string; visible: boolean; done: boolean }[]>([]);
+    const [summaryVisible, setSummaryVisible] = useState(false);
 
     // Ref tracks pause state so timer callbacks can check it without re-triggering effects
     const isPausedRef = useRef(isPaused);
@@ -52,19 +66,25 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
     }, []);
 
     // Delayed panel reveal — audience sees the kanban first, then the lupa zooms in
+    // For Continua 2.2: panel is signal-driven (lupaStep), not auto-delayed
     useEffect(() => {
-        const panelSteps = isOps ? OPS_PANEL_STEPS_IDS : COI_PANEL_STEPS;
+        const panelSteps = isOps ? OPS_PANEL_STEPS_IDS : isContinua ? CONTINUA_PANEL_STEPS : COI_PANEL_STEPS;
         if (!isDemoActive || !panelSteps.includes(currentStep.id)) {
             setPanelVisible(false);
             return;
         }
+        // Continua 2.2: wait for lupaStep signal from Transactions
+        if (isContinua && currentStep.id === '2.2') {
+            setPanelVisible(lupaStep === '2.2');
+            return;
+        }
         const revealTimer = setTimeout(() => setPanelVisible(true), PANEL_REVEAL_DELAY);
         return () => { clearTimeout(revealTimer); setPanelVisible(false); };
-    }, [isDemoActive, currentStep.id, isOps]);
+    }, [isDemoActive, currentStep.id, isOps, isContinua, lupaStep]);
 
     // Reset + run timeline for each step (timelines shifted by PANEL_REVEAL_DELAY)
     useEffect(() => {
-        const panelSteps = isOps ? OPS_PANEL_STEPS_IDS : COI_PANEL_STEPS;
+        const panelSteps = isOps ? OPS_PANEL_STEPS_IDS : isContinua ? CONTINUA_PANEL_STEPS : COI_PANEL_STEPS;
         if (!isDemoActive || !panelSteps.includes(currentStep.id)) return;
 
         // Reset
@@ -77,8 +97,40 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
         // All timeline delays are offset so animations start after the panel appears
         const D = PANEL_REVEAL_DELAY;
 
-        if (currentStep.id === '1.2') {
-            // Show completed state when panel appears (processing happened in modal at 1.1)
+        if (currentStep.id === '2.2' && isContinua) {
+            // Continua 2.2: Simplified procurement phases → summary verde
+            // Expert question is handled inline in Transactions — panel appears AFTER expert answer via lupaStep
+            if (lupaStep !== '2.2') return; // Don't start timeline until signal received
+            setProcPhases(CONTINUA_PROC_PHASES.map(p => ({ ...p, visible: false, done: false })));
+            setSummaryVisible(false);
+
+            const stagger = 1800;
+            const phaseDone = 1200;
+
+            CONTINUA_PROC_PHASES.forEach((_, i) => {
+                timers.push(setTimeout(pauseAware(() => {
+                    setProcPhases(prev => prev.map((p, j) => j === i ? { ...p, visible: true } : p));
+                    setAgentProgress(Math.round(((i + 0.5) / CONTINUA_PROC_PHASES.length) * 100));
+                }), i * stagger));
+
+                timers.push(setTimeout(pauseAware(() => {
+                    setProcPhases(prev => prev.map((p, j) => j === i ? { ...p, done: true } : p));
+                    setAgentProgress(Math.round(((i + 1) / CONTINUA_PROC_PHASES.length) * 100));
+                }), i * stagger + phaseDone));
+            });
+
+            // After all phases complete → show summary verde → signal completion
+            const totalPhaseTime = CONTINUA_PROC_PHASES.length * stagger + 800;
+            timers.push(setTimeout(pauseAware(() => {
+                setSummaryVisible(true);
+            }), totalPhaseTime));
+            timers.push(setTimeout(pauseAware(() => {
+                setProcCompleteStep('2.2');
+                setPanelVisible(false);
+            }), totalPhaseTime + 2500));
+
+        } else if (currentStep.id === '1.2' && !isContinua) {
+            // COI profile: Show completed extraction state
             timers.push(setTimeout(pauseAware(() => {
                 setAgentProgress(100);
                 setPipelineAgents([
@@ -95,7 +147,6 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                     { field: 'Freight', score: 42 },
                 ]);
             }), D));
-            // Auto-advance after panel is visible for ~27s (presenter explains extraction results)
             timers.push(setTimeout(pauseAware(() => nextStep()), D + 27000));
 
         } else if (currentStep.id === '1.3' && !isOps) {
@@ -461,6 +512,62 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
 
             timers.push(setTimeout(pauseAware(() => nextStep()), D + 22000));
 
+        } else if (currentStep.id === '2.4' && isContinua) {
+            // Continua 2.4: Warehouse Receiving — QC inspection pipeline (20s)
+            timers.push(setTimeout(pauseAware(() => {
+                setAgentLogs(['ReceivingAgent: Processing inbound shipments for Project Meridian...']);
+                setPipelineAgents([
+                    { id: 'scan', name: 'ScanVerify', status: 'running' },
+                    { id: 'qc', name: 'QCInspect', status: 'pending' },
+                    { id: 'catalog', name: 'CatalogMatch', status: 'pending' },
+                    { id: 'stage', name: 'StageRouter', status: 'pending' },
+                ]);
+            }), D));
+
+            const continuaWhTimeline = [
+                { delay: D + 4000, log: 'ScanVerify: Scanned 1,320 items across 3 pallets. All barcodes matched.' },
+                { delay: D + 8000, log: 'QCInspect: Visual + spec inspection complete. 1,318/1,320 passed.' },
+                { delay: D + 13000, log: 'CatalogMatch: Items matched to PO lines. 2 damaged flagged for RMA.' },
+                { delay: D + 18000, log: 'StageRouter: Routed to 8 floors per installation schedule. Ready for dispatch.' },
+            ];
+
+            continuaWhTimeline.forEach(({ delay, log }, index) => {
+                timers.push(setTimeout(pauseAware(() => {
+                    setAgentProgress((index + 1) * 25);
+                    setAgentLogs(prev => [...prev, log]);
+
+                    if (index === 0) {
+                        setPipelineAgents([
+                            { id: 'scan', name: 'ScanVerify', status: 'done', detail: '1,320 items' },
+                            { id: 'qc', name: 'QCInspect', status: 'running' },
+                            { id: 'catalog', name: 'CatalogMatch', status: 'pending' },
+                            { id: 'stage', name: 'StageRouter', status: 'pending' },
+                        ]);
+                    }
+                    if (index === 1) {
+                        setPipelineAgents(prev => prev.map(a =>
+                            a.id === 'qc' ? { ...a, status: 'done' as const, detail: '99.8%' } :
+                            a.id === 'catalog' ? { ...a, status: 'running' as const } : a
+                        ));
+                    }
+                    if (index === 3) {
+                        setPipelineAgents(prev => prev.map(a =>
+                            a.id === 'catalog' ? { ...a, status: 'done' as const, detail: '2 RMA' } :
+                            a.id === 'stage' ? { ...a, status: 'done' as const, detail: '8 floors' } : a
+                        ));
+                        setAgentProgress(100);
+                        setConfidenceFields([
+                            { field: 'Barcode Match', score: 100 },
+                            { field: 'QC Pass Rate', score: 99 },
+                            { field: 'PO Match', score: 98 },
+                            { field: 'Staging', score: 100 },
+                        ]);
+                    }
+                }), delay));
+            });
+
+            timers.push(setTimeout(pauseAware(() => nextStep()), D + 20000));
+
         } else if (currentStep.id === '2.4') {
             // OPS: Invoice Reconciliation (18s)
             timers.push(setTimeout(pauseAware(() => {
@@ -515,10 +622,11 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
         }
 
         return () => timers.forEach(clearTimeout);
-    }, [isDemoActive, currentStep.id, nextStep, pauseAware, isOps]);
+    }, [isDemoActive, currentStep.id, nextStep, pauseAware, isOps, isContinua, lupaStep]);
+
 
     // Don't render at all if not in a panel step
-    const panelSteps = isOps ? OPS_PANEL_STEPS_IDS : COI_PANEL_STEPS;
+    const panelSteps = isOps ? OPS_PANEL_STEPS_IDS : isContinua ? CONTINUA_PANEL_STEPS : COI_PANEL_STEPS;
     if (!isDemoActive || !panelSteps.includes(currentStep.id)) return null;
     // Don't render until the reveal delay has passed — audience sees normal page first
     if (!panelVisible) return null;
@@ -531,6 +639,20 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
         accentColor: 'green' | 'amber' | 'blue' | 'purple' | 'red';
         progressColor: string;
     }> = {
+        'continua-2.2': {
+            icon: <Cpu className="text-indigo-600 dark:text-indigo-400" size={18} />,
+            title: 'PO Package Generation',
+            titleDone: 'Procurement Complete',
+            accentColor: 'blue',
+            progressColor: 'bg-indigo-500',
+        },
+        'continua-2.4': {
+            icon: <Cpu className="text-teal-600 dark:text-teal-400" size={18} />,
+            title: 'Warehouse Receiving Agent',
+            titleDone: 'Receiving Complete',
+            accentColor: 'green',
+            progressColor: 'bg-teal-500',
+        },
         '1.2': {
             icon: <Sparkles className="text-emerald-600 dark:text-emerald-400 animate-pulse" size={18} />,
             title: 'Extraction Complete',
@@ -597,7 +719,9 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
         },
     };
 
-    const configKey = isOps && ['1.1', '1.3', '2.2', '2.4'].includes(currentStep.id)
+    const configKey = isContinua && ['2.2', '2.4'].includes(currentStep.id)
+        ? `continua-${currentStep.id}`
+        : isOps && ['1.1', '1.3', '2.2', '2.4'].includes(currentStep.id)
         ? `ops-${currentStep.id}`
         : currentStep.id;
     const config = stepConfig[configKey];
@@ -669,7 +793,7 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
                     </div>
                 )}
                 {/* Source badges for Flow 1 extraction steps (COI) */}
-                {['1.2', '1.3', '1.4'].includes(currentStep.id) && !isOps && (
+                {['1.2', '1.3', '1.4'].includes(currentStep.id) && !isOps && !isContinua && (
                     <div className="px-6 pb-2">
                         <div className="flex items-center gap-1.5 mb-1">
                             <span className="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">External Systems · Synced</span>
@@ -742,8 +866,48 @@ export default function DemoProcessPanel({ onNavigate }: DemoProcessPanelProps) 
 
                 {/* ─── Step-specific completion content ─── */}
 
-                {/* Step 1.2: Extraction Summary */}
-                {currentStep.id === '1.2' && (
+                {/* Step 2.2 Continua: Simplified procurement phases + summary verde */}
+                {currentStep.id === '2.2' && isContinua && (
+                    <div className="px-6 pb-5 space-y-4">
+                        {/* Simplified procurement phases */}
+                        {procPhases.some(p => p.visible) && !summaryVisible && (
+                            <div className="space-y-1.5">
+                                {procPhases.map((phase, i) => (
+                                    <div key={i} className={`flex items-center gap-2 text-[11px] transition-all duration-300 ${phase.visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                                        {phase.done ? (
+                                            <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+                                        ) : phase.visible ? (
+                                            <div className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                                        ) : null}
+                                        <span className={`font-medium ${phase.done ? 'text-zinc-800 dark:text-zinc-200' : 'text-indigo-600 dark:text-indigo-400'}`}>{phase.name}</span>
+                                        <span className="text-zinc-400 dark:text-zinc-500 flex-1">{phase.detail}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Summary verde */}
+                        {summaryVisible && (
+                            <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="rounded-xl p-4 bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30">
+                                    <p className="text-xs text-green-800 dark:text-green-200">
+                                        <span className="font-bold">ProcurementAgent:</span> PO package generated — 3 consolidated POs, $3.2M, 12 manufacturers. Expert decision applied.
+                                    </p>
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                                        {['MillerKnoll Portal', 'DIRTT Configurator', 'AV Partners API', 'Contract Pricing DB'].map(sys => (
+                                            <span key={sys} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-300 text-[9px] font-medium border border-green-200/50 dark:border-green-500/20">
+                                                <CheckCircle2 size={10} />{sys}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Step 1.2 COI: Extraction Summary */}
+                {currentStep.id === '1.2' && !isContinua && (
                     <div className="px-6 pb-5 space-y-4">
                         {/* PDF ↔ SIF Side-by-Side */}
                         <div className="grid grid-cols-2 gap-3">

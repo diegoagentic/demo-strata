@@ -16,6 +16,7 @@ import { useTenant } from './TenantContext'
 import Navbar from './components/Navbar'
 import Breadcrumbs from './components/Breadcrumbs'
 import { useDemo } from './context/DemoContext'
+import { useDemoProfile } from './context/DemoProfileContext'
 import BackorderTraceCard from './components/widgets/BackorderTraceCard'
 import type { BackorderLine } from './components/widgets/BackorderTraceCard'
 import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
@@ -363,7 +364,10 @@ const BACKORDER_LINES: BackorderLine[] = [
 ];
 
 export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, onNavigate }: DetailProps) {
-    const { currentStep, nextStep, isDemoActive } = useDemo();
+    const { currentStep, nextStep, isDemoActive, procCompleteStep } = useDemo();
+    const { activeProfile } = useDemoProfile();
+    const isContinua = activeProfile.id === 'continua';
+    const showPOSummary = isContinua && procCompleteStep === '2.2';
     const [isDemoOrder, setIsDemoOrder] = useState(false);
     const [isFlow1Order, setIsFlow1Order] = useState(false);
     useEffect(() => {
@@ -887,6 +891,103 @@ export default function OrderDetail({ onBack, onLogout, onNavigateToWorkspace, o
                 ))}
 
 
+
+                {/* Continua 1.2 — PO Generation Summary */}
+                {showPOSummary && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {/* AI Attribution */}
+                        <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
+                            <div className="flex items-center gap-2">
+                                <AIAgentAvatar />
+                                <span className="text-xs font-bold text-green-700 dark:text-green-400">ProcurementAgent — PO Package Generated Successfully</span>
+                            </div>
+                            <ConfidenceScoreBadge score={98} label="Accuracy" size="md" />
+                        </div>
+
+                        {/* PO Summary Card */}
+                        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg">
+                            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center">
+                                        <ClipboardDocumentListIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-foreground">Purchase Order Package</h3>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">3 consolidated POs · 12 manufacturers · $3.2M total</p>
+                                    </div>
+                                </div>
+                                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400">
+                                    Complete
+                                </span>
+                            </div>
+
+                            <div className="p-6 space-y-5">
+                                {/* Processing Steps — all complete */}
+                                <div className="space-y-2">
+                                    {[
+                                        { label: 'Specifications analyzed', detail: '1,500 line items from project spec' },
+                                        { label: 'Prices compared', detail: 'Contract vs list across 4 sources — $110K savings found' },
+                                        { label: 'Business rules applied', detail: '5 rules · consolidation · volume discounts' },
+                                        { label: 'Orders generated', detail: '3 consolidated POs · $3.2M · 12 manufacturers' },
+                                    ].map((step, i) => (
+                                        <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                            <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0">
+                                                <CheckIcon className="w-3.5 h-3.5" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-medium text-foreground">{step.label}</p>
+                                                <p className="text-[10px] text-muted-foreground">{step.detail}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* PO Grid Summary */}
+                                <div className="grid grid-cols-3 gap-3">
+                                    {[
+                                        { po: 'PO-2055-A', vendor: 'DIRTT Environmental', value: '$1.4M', items: 580 },
+                                        { po: 'PO-2055-B', vendor: 'Steelcase', value: '$1.1M', items: 620 },
+                                        { po: 'PO-2055-C', vendor: 'Herman Miller', value: '$0.7M', items: 300 },
+                                    ].map((po, i) => (
+                                        <div key={i} className="p-3 rounded-xl bg-muted/50 border border-border">
+                                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold block">{po.po}</span>
+                                            <span className="text-sm font-bold text-foreground block mt-1">{po.vendor}</span>
+                                            <div className="flex items-center justify-between mt-2">
+                                                <span className="text-xs font-bold text-green-600 dark:text-green-400">{po.value}</span>
+                                                <span className="text-[10px] text-muted-foreground">{po.items} items</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Expert Decision Applied */}
+                                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20">
+                                    <SparklesIcon className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
+                                    <span className="text-[10px] text-indigo-700 dark:text-indigo-400">Expert decision applied: DIRTT 12-week lead time accepted — phased delivery schedule configured. Volume discount of $110K secured across all POs.</span>
+                                </div>
+
+                                {/* Synced Systems Badges */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] text-muted-foreground font-medium">Synced:</span>
+                                    {['ERP', 'Warehouse', 'Logistics', 'Finance'].map(sys => (
+                                        <span key={sys} className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 text-[10px] font-bold flex items-center gap-1">
+                                            <CheckCircleIcon className="w-3 h-3" /> {sys}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {/* Next Step CTA */}
+                                <button
+                                    onClick={() => { nextStep(); onBack(); }}
+                                    className="w-full px-5 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg transition-all shadow-sm hover:scale-[1.01] flex items-center justify-center gap-2"
+                                >
+                                    Continue to Next Step
+                                    <ChevronRightIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Main Content Area */}
                 <div className="flex flex-col">

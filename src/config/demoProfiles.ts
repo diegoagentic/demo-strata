@@ -89,9 +89,9 @@ export const DEMO_PROFILES: DemoProfile[] = [
     {
         id: 'continua',
         name: 'Continua (Demo 3)',
-        companyName: 'Continua',
-        description: 'Receiving, invoicing & financial control',
-        icon: '🔄',
+        companyName: 'Continua Interiors',
+        description: 'Project lifecycle, inventory intelligence & sustainability',
+        icon: '🏗️',
         steps: CONTINUA_DEMO_STEPS,
         stepBehavior: CONTINUA_DEMO_STEP_BEHAVIOR,
         stepMessages: CONTINUA_DEMO_STEP_MESSAGES,
