@@ -499,11 +499,7 @@ export default function MACPunchList() {
         return () => clearTimeout(t);
     }, [fmResPhase]);
 
-    useEffect(() => {
-        if (fmResPhase !== 'results') return;
-        const t = setTimeout(pauseAware(() => nextStep()), tpF5.resultsDur);
-        return () => clearTimeout(t);
-    }, [fmResPhase]);
+    // 2.5: results — wait for manual "Complete Flow" click (no auto-advance)
 
     // Step 3.1: Email extraction animation → then validation checklist
     useEffect(() => {
@@ -2219,7 +2215,7 @@ export default function MACPunchList() {
                             </div>
                         )}
 
-                        {/* Results: Installer Report + Notifications */}
+                        {/* Results: Installer Report + Relocation Tracking + Notifications */}
                         {fmResPhase === 'results' && (
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-4">
                                 {/* Installer Report Card */}
@@ -2245,6 +2241,86 @@ export default function MACPunchList() {
                                                 <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-bold">{item.status}</span>
                                             </div>
                                         ))}
+                                    </div>
+                                </div>
+
+                                {/* ─── Relocation Tracking & Evidence ─── */}
+                                <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+                                    <div className="p-4 border-b border-border/50 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <TruckIcon className="h-4 w-4 text-blue-500" />
+                                            <div>
+                                                <h3 className="text-sm font-bold text-foreground">Relocation Tracking</h3>
+                                                <p className="text-[11px] text-muted-foreground mt-0.5">Office 3-214 → 3-216 → 3-214 · REQ-FM-2026-018</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold">TRACKED</span>
+                                    </div>
+                                    <div className="p-4">
+                                        {/* Timeline */}
+                                        <div className="relative pl-6">
+                                            {/* Timeline Line */}
+                                            <div className="absolute left-[9px] top-2 bottom-2 w-0.5 bg-zinc-200 dark:bg-zinc-700" />
+
+                                            <div className="space-y-5">
+                                                {[
+                                                    { title: 'Service Request Filed', desc: 'Carlos Rivera reported broken Aeron chair + flickering desk lamp', time: 'Mar 17, 9:14 AM', actor: 'Carlos Rivera', location: 'Office 3-214', status: 'completed' as const },
+                                                    { title: 'AI Triage Completed', desc: 'TriageAgent cross-referenced 4 databases — resolution plan generated', time: 'Mar 17, 9:15 AM', actor: 'TriageAgent', location: 'System', status: 'completed' as const },
+                                                    { title: 'Temp Relocation Executed', desc: 'Workstation assets moved: Laptop Dock, 2× Monitor, Keyboard + Mouse, Desk Lamp', time: 'Mar 17, 10:30 AM', actor: 'Sara Chen', location: 'Office 3-214 → 3-216', status: 'completed' as const,
+                                                      evidence: [
+                                                          { type: 'photo' as const, label: 'Office 3-216 — Setup complete' },
+                                                          { type: 'note' as const, label: 'Carlos confirmed workspace functional' },
+                                                      ]
+                                                    },
+                                                    { title: 'Installer Dispatched', desc: 'ProInstall LLC — James Mercer scheduled for Aeron swap', time: 'Mar 18, 9:00 AM', actor: 'ProInstall LLC', location: 'En route → Office 3-214', status: 'completed' as const },
+                                                    { title: 'Chair Swap Completed', desc: 'Defective Aeron removed, consignment Aeron Remastered installed. QC passed.', time: 'Mar 18, 10:32 AM', actor: 'James Mercer', location: 'Office 3-214', status: 'completed' as const,
+                                                      evidence: [
+                                                          { type: 'photo' as const, label: 'New Aeron installed — SN: AER-CON-WH-003' },
+                                                          { type: 'photo' as const, label: 'Old unit packaged for warranty return' },
+                                                          { type: 'signature' as const, label: 'QC sign-off — James Mercer' },
+                                                      ]
+                                                    },
+                                                    { title: 'Return Relocation', desc: "Carlos's assets returned from Office 3-216 to 3-214. Temp workspace released.", time: 'Mar 18, 11:15 AM', actor: 'Sara Chen', location: 'Office 3-216 to 3-214', status: 'completed' as const },
+                                                ].map((step, i) => (
+                                                    <div key={i} className="relative flex items-start">
+                                                        {/* Dot */}
+                                                        <div className={`absolute -left-6 h-5 w-5 rounded-full flex items-center justify-center border-2 z-10 bg-card ${
+                                                            step.status === 'completed' ? 'border-green-500 text-green-500' : 'border-blue-500 text-blue-500 animate-pulse'
+                                                        }`}>
+                                                            {step.status === 'completed' ? <CheckCircleIcon className="w-3.5 h-3.5" /> : <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                                                        </div>
+
+                                                        <div className="flex-1 ml-2">
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <h4 className="text-[11px] font-bold text-foreground">{step.title}</h4>
+                                                                <span className="text-[9px] text-muted-foreground whitespace-nowrap bg-muted/50 px-1.5 py-0.5 rounded shrink-0">{step.time}</span>
+                                                            </div>
+                                                            <p className="text-[10px] text-muted-foreground mt-0.5">{step.desc}</p>
+
+                                                            {/* Meta */}
+                                                            <div className="flex flex-wrap gap-2 mt-1.5 text-[9px] text-zinc-500 dark:text-zinc-400">
+                                                                <span className="flex items-center gap-0.5"><UserGroupIcon className="w-3 h-3" />{step.actor}</span>
+                                                                <span className="flex items-center gap-0.5"><MapPinIcon className="w-3 h-3" />{step.location}</span>
+                                                            </div>
+
+                                                            {/* Evidence */}
+                                                            {step.evidence && (
+                                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                                    {step.evidence.map((ev, j) => (
+                                                                        <div key={j} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/50 border border-border text-[9px] font-medium text-muted-foreground">
+                                                                            {ev.type === 'photo' && <CameraIcon className="w-3 h-3 text-indigo-500" />}
+                                                                            {ev.type === 'signature' && <PencilIcon className="w-3 h-3 text-blue-500" />}
+                                                                            {ev.type === 'note' && <DocumentTextIcon className="w-3 h-3 text-amber-500" />}
+                                                                            {ev.label}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -2282,11 +2358,14 @@ export default function MACPunchList() {
                                     </div>
                                 </div>
 
-                                {/* Auto-advance footer */}
-                                <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground py-2">
-                                    <ArrowPathIcon className="h-3 w-3 animate-spin" />
-                                    <span>Service request complete — advancing...</span>
-                                </div>
+                                {/* Next Step button */}
+                                <button
+                                    onClick={() => nextStep()}
+                                    className="w-full py-2.5 bg-brand-300 hover:bg-brand-400 text-zinc-900 text-xs font-bold rounded-xl transition-colors shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircleIcon className="h-4 w-4" />
+                                    Complete Flow
+                                </button>
                             </div>
                         )}
                     </div>
