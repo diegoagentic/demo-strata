@@ -240,12 +240,7 @@ export default function DealerMonitorKanban(_props: { onNavigate?: (page: string
         return () => clearTimeout(t);
     }, [pricePhase]);
 
-    // Continua 3.3: auto-advance (System role)
-    useEffect(() => {
-        if (pricePhase !== 'results') return;
-        const t = setTimeout(pauseAware(() => nextStep()), tp33.resultsDur);
-        return () => clearTimeout(t);
-    }, [pricePhase]);
+    // Continua 1.3: no auto-advance — waits for "Continue to Quote Draft" in DemoProcessPanel
 
     // ─── Continua Step 4.3: Financial Reconciliation ────────────────────────────
     const tp43 = CONTINUA_STEP_TIMING['4.3'];
