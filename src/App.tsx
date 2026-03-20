@@ -230,11 +230,26 @@ function App() {
       case 'crm':
         return <CRMSimulation onNavigate={handleNavigate} activePage={currentPage} />;
       case 'dupler-pdf':
-        return <DuplerPdfProcessor onNavigate={handleNavigate} />;
+        return (
+          <>
+            <DuplerPdfProcessor onNavigate={handleNavigate} />
+            <Transactions onLogout={handleLogout} onNavigateToDetail={(type) => setCurrentPage(type as any)} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
+          </>
+        );
       case 'dupler-warehouse':
-        return <DuplerWarehouse onNavigate={handleNavigate} />;
+        return (
+          <>
+            <DuplerWarehouse onNavigate={handleNavigate} />
+            <Inventory onLogout={handleLogout} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
+          </>
+        );
       case 'dupler-reporting':
-        return <DuplerReporting onNavigate={handleNavigate} />;
+        return (
+          <>
+            <DuplerReporting onNavigate={handleNavigate} />
+            <Dashboard onLogout={handleLogout} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
+          </>
+        );
       default:
         return (
           <ExpertHubTransactions

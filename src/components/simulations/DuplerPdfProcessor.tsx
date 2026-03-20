@@ -366,6 +366,8 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
     // RENDER
     // ═══════════════════════════════════════════════════════════════════════════
 
+    if (!stepId.startsWith('d1.')) return null;
+
     return (
         <div className="p-6 space-y-4 max-w-5xl mx-auto">
             {/* ── d1.1: Document Intake & OCR ── */}

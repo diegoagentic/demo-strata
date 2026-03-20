@@ -246,7 +246,7 @@ export default function DemoSidebar() {
                                 <div className="space-y-0.5 min-w-0">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isActive ? `${c.bgBadgeActive} ${c.textBadgeActive}` : `${c.bgBadge} ${c.textBadge}`}`}>
-                                            STEP {step.id}
+                                            STEP {step.id.replace(/^d/, '')}
                                         </span>
                                         {(() => {
                                             const label = resolveRoleLabel(step.role, step.app);
