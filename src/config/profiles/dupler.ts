@@ -13,7 +13,7 @@ export const DUPLER_STEPS: DemoStep[] = [
         id: 'd1.1',
         groupId: 1,
         groupTitle: 'Flow 1: PDF to SIF Spec Check',
-        title: 'Document Intake & OCR',
+        title: 'PDF Extraction',
         description: 'National Furniture quote PDF received — 8 pages. OCR engine extracts 32 line items with part numbers, quantities, and list pricing — 99.2% accuracy.',
         app: 'dupler-pdf',
         role: 'System',
@@ -23,7 +23,7 @@ export const DUPLER_STEPS: DemoStep[] = [
         groupId: 1,
         groupTitle: 'Flow 1: PDF to SIF Spec Check',
         title: 'Smart Normalization & SIF Mapping',
-        description: 'AI maps National part numbers to SIF catalog entries. Expert reviews 5 exceptions: 3 discontinued models with substitution suggestions, 2 description mismatches vs PMX catalog. 27 items auto-mapped at 95%+ confidence.',
+        description: 'AI maps National part numbers to SIF catalog entries. Expert reviews 5 exceptions: 3 discontinued models with substitution suggestions, 2 description mismatches vs SIF catalog. 27 items auto-mapped at 95%+ confidence.',
         app: 'dupler-pdf',
         role: 'Expert',
     },
@@ -42,7 +42,7 @@ export const DUPLER_STEPS: DemoStep[] = [
         groupTitle: 'Flow 1: PDF to SIF Spec Check',
         title: 'Dealer Review, Approval & Export',
         description: 'Dealer receives SIF from Expert, reviews document with regional tax adjustments, adds comments. After approval, 2-level compliance chain runs and SIF exports to Core (SCS).',
-        app: 'dupler-pdf',
+        app: 'dashboard',
         role: 'Dealer',
     },
 
@@ -100,7 +100,6 @@ export const DUPLER_STEPS: DemoStep[] = [
         description: 'Sarah Chen (Dealer) reviews consolidated warehouse intelligence report. Staging checklist: 24/26 items ready. Approves dispatch for Interior Installations Thursday 8AM.',
         app: 'dashboard',
         role: 'Dealer',
-        highlightId: 'mobile-client-review',
     },
 
     // ── Flow 3: Inventory Intelligence & Reporting ────────────────────────────
@@ -148,7 +147,7 @@ export const DUPLER_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     // Flow 1: PDF to SIF Spec Check
     'd1.1': { mode: 'interactive', userAction: 'Click "Convert to SIF" in Quick Actions to upload a manufacturer PDF quote. OCR extraction runs automatically after upload.' },
     'd1.2': { mode: 'interactive', userAction: 'Review SIF mapping: 3 discontinued models, 2 description mismatches. Approve when all 5 exceptions reviewed.' },
-    'd1.3': { mode: 'interactive', userAction: 'Review price discrepancies: $1,788 across 4 lines (incl. 2 regional tax adjustments). Resolve each flag, then click "Validate & Continue".' },
+    'd1.3': { mode: 'interactive', userAction: 'Review price discrepancies: $1,788 across 4 lines (incl. 2 regional tax adjustments). Resolve each flag, then click "Validate & Generate SIF".' },
     'd1.4': { mode: 'interactive', userAction: 'Dealer receives SIF from Expert. Review document, add comments if needed, then click "Approve SIF" to trigger compliance chain and export.' },
 
     // Flow 2: Warehouse & Inventory Intelligence

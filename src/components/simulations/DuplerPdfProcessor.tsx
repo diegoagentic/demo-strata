@@ -1617,3 +1617,281 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
         </div>
     );
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DuplerDealerSifReview — Standalone d1.4 for Dashboard Follow Up tab
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export function DuplerDealerSifReview({ onNavigate }: { onNavigate: (page: string) => void }) {
+    const { currentStep, nextStep, prevStep, isPaused } = useDemo();
+    const isPausedRef = useRef(isPaused);
+    useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+    const pauseAware = useCallback((fn: () => void) => {
+        return () => {
+            if (!isPausedRef.current) { fn(); return; }
+            const poll = setInterval(() => { if (!isPausedRef.current) { clearInterval(poll); fn(); } }, 200);
+        };
+    }, []);
+
+    const [phase, setPhase] = useState<ExportPhase>('idle');
+    const [approvalStep, setApprovalStep] = useState(0);
+    const [genProgress, setGenProgress] = useState(0);
+    const [exported, setExported] = useState(false);
+    const [comments, setComments] = useState<{ id: number; text: string; timestamp: string }[]>([]);
+    const [commentText, setCommentText] = useState('');
+
+    // Init: show notification after delay
+    useEffect(() => {
+        if (currentStep.id !== 'd1.4') return;
+        setPhase('idle');
+        setApprovalStep(0);
+        setGenProgress(0);
+        setExported(false);
+        setComments([]);
+        setCommentText('');
+        const t = setTimeout(pauseAware(() => setPhase('notification')), 1500);
+        return () => clearTimeout(t);
+    }, [currentStep.id]);
+
+    const handleApprove = () => {
+        setTimeout(pauseAware(() => {
+            setPhase('approval-chain');
+            setTimeout(pauseAware(() => setApprovalStep(1)), 1500);
+            setTimeout(pauseAware(() => {
+                setApprovalStep(2);
+                setTimeout(pauseAware(() => {
+                    setPhase('generating');
+                    setTimeout(() => setGenProgress(100), 50);
+                    setTimeout(pauseAware(() => setPhase('revealed')), 3000);
+                }), 1000);
+            }), 3500);
+        }), 500);
+    };
+
+    const addComment = () => {
+        if (!commentText.trim()) return;
+        setComments(prev => [...prev, { id: Date.now(), text: commentText.trim(), timestamp: 'Just now' }]);
+        setCommentText('');
+    };
+
+    if (currentStep.id !== 'd1.4') return null;
+
+    return (
+        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
+            {/* Notification phase */}
+            {phase === 'notification' && (
+                <button onClick={() => setPhase('dealer-review')} className="w-full text-left">
+                    <div className="p-5 bg-brand-50 dark:bg-brand-500/10 border-b-2 border-brand-400">
+                        <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-lg bg-brand-500 text-zinc-900"><PaperAirplaneIcon className="h-4 w-4" /></div>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-foreground">SIF Document Received for Review</span>
+                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Just now</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">Expert David Park sent SIF DUP-0412 (32 items, $94,200). Review the document, add comments if needed, and approve to proceed with export.</p>
+                                <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to start <ArrowRightIcon className="h-3 w-3" /></p>
+                            </div>
+                        </div>
+                    </div>
+                </button>
+            )}
+
+            {/* Dealer Review phase */}
+            {phase === 'dealer-review' && (
+                <div className="animate-in fade-in duration-500">
+                    {/* Header */}
+                    <div className="p-4 bg-blue-50 dark:bg-blue-500/5 border-b border-blue-200 dark:border-blue-500/20 flex items-center gap-2">
+                        <PaperAirplaneIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-xs font-medium text-blue-800 dark:text-blue-200">SIF DUP-0412 received from Expert David Park — awaiting your review</span>
+                    </div>
+
+                    <div className="p-5 space-y-4">
+                        {/* SIF Document metadata + table */}
+                        <div className="rounded-xl border border-border overflow-hidden">
+                            <div className="bg-muted/50 px-4 py-2.5 border-b border-border flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <DocumentTextIcon className="h-4 w-4 text-brand-500" />
+                                    <span className="text-xs font-bold text-foreground">SIF Document — DUP-0412</span>
+                                </div>
+                                <span className="text-[9px] px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold">PENDING REVIEW</span>
+                            </div>
+                            <div className="p-4 space-y-3">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-1 text-[10px]">
+                                    <div className="flex justify-between"><span className="text-muted-foreground">SIF ID:</span><span className="font-mono font-bold text-foreground">DUP-0412</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Vendor:</span><span className="text-foreground">National Furniture Co.</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Line Items:</span><span className="font-bold text-foreground">32</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Total Value:</span><span className="font-bold text-foreground">$94,200</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Exceptions:</span><span className="text-foreground">5 of 5 Resolved</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Tax Adjustments:</span><span className="font-semibold text-purple-600 dark:text-purple-400">IL (6.7%), NYC (8.0%)</span></div>
+                                </div>
+                                <div className="border-t border-border pt-3">
+                                    <table className="w-full text-[10px]">
+                                        <thead>
+                                            <tr className="text-muted-foreground border-b border-border">
+                                                <th className="text-left py-1 font-medium">Line</th>
+                                                <th className="text-left py-1 font-medium">SIF Code</th>
+                                                <th className="text-left py-1 font-medium">Description</th>
+                                                <th className="text-right py-1 font-medium">Qty</th>
+                                                <th className="text-right py-1 font-medium">Unit $</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {SIF_ITEMS.slice(0, 6).map(item => (
+                                                <tr key={item.line} className="border-b border-border/50">
+                                                    <td className="py-1 text-muted-foreground">{item.line}</td>
+                                                    <td className="py-1 font-mono text-foreground">{item.sifCode || item.substituteSku || item.sku}</td>
+                                                    <td className="py-1 text-foreground truncate max-w-[200px]">{item.substituteDesc || item.description}</td>
+                                                    <td className="py-1 text-right text-foreground">{item.qty}</td>
+                                                    <td className="py-1 text-right font-medium text-foreground">${item.unitPrice.toLocaleString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    <div className="text-[10px] text-muted-foreground mt-1.5 px-1">+ 26 more items &bull; Total: $94,200</div>
+                                </div>
+                                {/* Tax callout */}
+                                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-purple-50 dark:bg-purple-500/5 border border-purple-200 dark:border-purple-500/20 text-[10px]">
+                                    <svg className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                                    <span className="text-purple-700 dark:text-purple-300">Regional tax applied: Cook County IL (+$616) &bull; NYC (+$1,122) = <span className="font-bold">+$1,738 total</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Comments */}
+                        <div className="rounded-xl border border-border overflow-hidden">
+                            <div className="bg-muted/50 px-4 py-2.5 border-b border-border flex items-center gap-2">
+                                <ChatBubbleLeftEllipsisIcon className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-xs font-bold text-foreground">Dealer Comments</span>
+                                {comments.length > 0 && <span className="text-[9px] text-muted-foreground">({comments.length})</span>}
+                            </div>
+                            <div className="p-4 space-y-3">
+                                {comments.map(c => (
+                                    <div key={c.id} className="flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                        <div className="w-7 h-7 rounded-full bg-brand-300 flex items-center justify-center text-[10px] font-bold text-zinc-900 shrink-0">SC</div>
+                                        <div className="flex-1 p-2.5 rounded-lg bg-muted/30 border border-border">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-[10px] font-bold text-foreground">Sarah Chen</span>
+                                                <span className="text-[9px] text-muted-foreground">{c.timestamp}</span>
+                                            </div>
+                                            <p className="text-[11px] text-foreground">{c.text}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={commentText}
+                                        onChange={e => setCommentText(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter') addComment(); }}
+                                        placeholder="Add a comment about this SIF..."
+                                        className="flex-1 px-3 py-2 rounded-lg border border-border bg-card text-foreground text-[11px] focus:outline-none focus:ring-2 focus:ring-brand-400/50 focus:border-brand-400 transition-colors placeholder:text-muted-foreground"
+                                    />
+                                    <button onClick={addComment} className="px-3 py-2 rounded-lg bg-brand-300 hover:bg-brand-400 text-zinc-900 text-[10px] font-bold transition-colors">Comment</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => prevStep()} className="px-4 py-2.5 rounded-xl border border-border bg-card hover:bg-muted/50 text-foreground font-medium text-sm flex items-center gap-2 transition-colors">
+                                <ChevronLeftIcon className="h-4 w-4" />
+                                Request Changes
+                            </button>
+                            <button onClick={handleApprove} className="flex-[2] py-2.5 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-900 font-bold text-sm shadow-lg shadow-brand-400/20 animate-pulse flex items-center justify-center gap-2 transition-colors">
+                                <ShieldCheckIcon className="h-4 w-4" />
+                                Approve SIF — Proceed to Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Approval Chain */}
+            {phase === 'approval-chain' && (
+                <div className="p-5 animate-in fade-in duration-300 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                        <ShieldCheckIcon className="h-5 w-5 text-brand-500" />
+                        <span className="text-sm font-bold text-foreground">Approval Chain</span>
+                    </div>
+                    {[
+                        { label: 'AI Compliance Agent', detail: 'Validating data integrity, pricing compliance, contract terms...', step: 1 },
+                        { label: 'Expert — David Park', detail: 'Reviewing SIF mapping accuracy and pricing decisions...', step: 2 },
+                    ].map(ap => (
+                        <div key={ap.step} className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-500 ${
+                            approvalStep >= ap.step ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' :
+                            approvalStep === ap.step - 1 ? 'border-brand-300 dark:border-brand-500/30 bg-brand-50/50 dark:bg-brand-500/5' :
+                            'border-border bg-muted/30'
+                        }`}>
+                            {approvalStep >= ap.step ? <CheckCircleIcon className="h-5 w-5 text-green-500 shrink-0" /> :
+                             approvalStep === ap.step - 1 ? <ArrowPathIcon className="h-5 w-5 text-brand-500 animate-spin shrink-0" /> :
+                             <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 shrink-0" />}
+                            <div className="flex-1">
+                                <span className="text-xs font-bold text-foreground">{ap.label}</span>
+                                <p className="text-[10px] text-muted-foreground">{ap.detail}</p>
+                            </div>
+                            {approvalStep >= ap.step && <span className="text-[9px] font-bold text-green-600 dark:text-green-400 uppercase">Approved</span>}
+                        </div>
+                    ))}
+                    <div className="text-center text-[10px] text-muted-foreground mt-2">{approvalStep}/2 Approved</div>
+                </div>
+            )}
+
+            {/* Generating */}
+            {phase === 'generating' && (
+                <div className="p-5 animate-in fade-in duration-300 space-y-3">
+                    <div className="flex items-center gap-2">
+                        <AIAgentAvatar />
+                        <span className="text-xs font-bold text-foreground">Generating SIF File...</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-brand-400 transition-all duration-[2500ms] ease-linear" style={{ width: `${genProgress}%` }} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">SIFGeneratorAgent: Building compliant file — 32 items, $94,200 total...</p>
+                </div>
+            )}
+
+            {/* Revealed / Export */}
+            {phase === 'revealed' && (
+                <div className="p-5 animate-in fade-in duration-500 space-y-4">
+                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30">
+                        <div className="flex items-center gap-2 mb-3">
+                            <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                            <span className="text-sm font-bold text-green-800 dark:text-green-200">SIF File DUP-0412 Generated</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-4">
+                            {[
+                                { label: 'Line Items', value: '32' },
+                                { label: 'Total Value', value: '$94,200' },
+                                { label: 'Exceptions Resolved', value: '5' },
+                                { label: 'Errors', value: '0' },
+                            ].map(m => (
+                                <div key={m.label} className="text-center">
+                                    <div className="text-lg font-bold text-foreground">{m.value}</div>
+                                    <div className="text-[10px] text-muted-foreground">{m.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-500/20 text-[10px] text-green-700 dark:text-green-300">
+                            Approval: AI Compliance ✓ · Expert David Park ✓ · Audit trail: 9 decisions documented
+                        </div>
+                    </div>
+                    {!exported ? (
+                        <button
+                            onClick={() => { setExported(true); setTimeout(pauseAware(() => nextStep()), 2000); }}
+                            className="w-full py-3 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-900 font-bold text-sm shadow-lg shadow-brand-400/20 animate-pulse flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <ArrowDownTrayIcon className="h-4 w-4" />
+                            Export to Core (SCS)
+                        </button>
+                    ) : (
+                        <div className="w-full py-3 rounded-xl bg-green-500 text-white font-bold text-sm text-center flex items-center justify-center gap-2">
+                            <CheckCircleIcon className="h-4 w-4" />
+                            SIF DUP-0412 exported successfully — PMX/SPEC import confirmed
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
