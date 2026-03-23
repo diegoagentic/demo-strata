@@ -545,11 +545,14 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                             {/* KPI cards */}
                             {renderKPIGrid(INVENTORY_KPIS)}
 
-                            {syncPhase === 'results' && (
-                                <div className="text-center text-[10px] text-muted-foreground animate-pulse">
-                                    Auto-advancing to reconciliation...
-                                </div>
-                            )}
+                            {/* CTA button */}
+                            <button
+                                onClick={() => nextStep()}
+                                className="w-full py-3 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-900 font-bold text-sm shadow-lg shadow-brand-400/20 animate-pulse flex items-center justify-center gap-2 transition-colors"
+                            >
+                                Continue to Reconciliation
+                                <ArrowRightIcon className="h-4 w-4" />
+                            </button>
                         </div>
                     )}
                 </>

@@ -159,7 +159,7 @@ export const DUPLER_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     'd2.6': { mode: 'interactive', userAction: 'Sarah Chen (Dealer) reviews consolidated report. Verify staging checklist, then click "Approve All & Dispatch".' },
 
     // Flow 3: Inventory Intelligence & Reporting
-    'd3.1': { mode: 'auto', duration: 10, aiSummary: 'Syncing inventory data — 1,840 items across 3 warehouses, 9 active POs ($890K)...' },
+    'd3.1': { mode: 'interactive', userAction: 'Review inventory sync results: 1,840 items, health score 78/100. Click "Continue to Reconciliation" to proceed.' },
     'd3.2': { mode: 'interactive', userAction: 'Review inventory reconciliation: 97.2% match, 3 discrepancies. Resolve each, then click "Acknowledge & Continue".' },
     'd3.3': { mode: 'auto', duration: 8, aiSummary: 'Assembling inventory health report — stock availability, capacity forecast, backorder analysis, AI recommendations...' },
     'd3.4': { mode: 'interactive', userAction: 'Review inventory intelligence report sections. Click "Export PDF & Send to Team" to distribute.' },
@@ -297,7 +297,7 @@ export const DUPLER_STEP_TIMING: Record<string, DuplerStepTiming> = {
     'd2.6': { notifDelay: 2000, notifDuration: 5000, agentStagger: 0,   agentDone: 0,   breathing: 0,    resultsDur: 0 },
 
     // Flow 3: Unified Reporting
-    'd3.1': { notifDelay: 2000, notifDuration: 6000, agentStagger: 900, agentDone: 600, breathing: 1500, resultsDur: 10000 },
+    'd3.1': { notifDelay: 2000, notifDuration: 6000, agentStagger: 900, agentDone: 600, breathing: 1500, resultsDur: 0 },
     'd3.2': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800, agentDone: 500, breathing: 1200, resultsDur: 0 },
     'd3.3': { notifDelay: 1500, notifDuration: 5000, agentStagger: 700, agentDone: 500, breathing: 1000, resultsDur: 8000 },
     'd3.4': { notifDelay: 2000, notifDuration: 5000, agentStagger: 0,   agentDone: 0,   breathing: 0,    resultsDur: 0 },
