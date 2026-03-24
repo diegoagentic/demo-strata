@@ -1644,41 +1644,139 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                                 <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">AI ASSISTED</span>
                             </div>
                             <div className="space-y-2">
-                                {DISCOUNT_TIERS.map(dt => (
+                                {DISCOUNT_TIERS.map(dt => {
+                                    const effectiveRate = getEffectiveRate(dt);
+                                    const netTotal = Math.round(dt.listTotal * (1 - effectiveRate / 100));
+                                    const isAdjusting = adjustingTier === dt.id;
+                                    const applied = discountsApplied[dt.id];
+
+                                    return (
                                     <div key={dt.id} className={`p-3 rounded-xl border-2 transition-all duration-300 ${
-                                        discountsApplied[dt.id] ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-blue-200 dark:border-blue-500/20 bg-blue-50/50 dark:bg-blue-500/5'
+                                        applied === 'ai' ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' :
+                                        applied === 'adjusted' ? 'border-indigo-300 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/5' :
+                                        applied === 'escalated' ? 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5' :
+                                        'border-blue-200 dark:border-blue-500/20 bg-blue-50/50 dark:bg-blue-500/5'
                                     }`}>
                                         <div className="flex items-center justify-between mb-1">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-xs font-bold text-foreground">{dt.manufacturer}</span>
                                                 <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-700 dark:text-blue-400 font-bold">{dt.discountType}</span>
+                                                {applied === 'adjusted' && <span className="text-[8px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-500/20">SC ADJUSTED</span>}
+                                                {applied === 'escalated' && <span className="text-[8px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-500/20">PENDING APPROVAL</span>}
                                             </div>
-                                            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{dt.rate}%</span>
+                                            <span className={`text-sm font-bold ${applied === 'adjusted' ? 'text-indigo-600 dark:text-indigo-400' : 'text-blue-600 dark:text-blue-400'}`}>
+                                                {effectiveRate !== dt.rate ? <><span className="line-through text-muted-foreground text-xs mr-1">{dt.rate}%</span>{effectiveRate}%</> : `${dt.rate}%`}
+                                            </span>
                                         </div>
-                                        <p className="text-[10px] text-muted-foreground mb-2">{dt.source} — {dt.items} items, list ${dt.listTotal.toLocaleString()} → <span className="font-bold text-foreground">${Math.round(dt.listTotal * (1 - dt.rate / 100)).toLocaleString()}</span></p>
-                                        {!discountsApplied[dt.id] ? (
-                                            <button onClick={() => setDiscountsApplied(p => ({ ...p, [dt.id]: true }))}
-                                                className="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold transition-colors">Apply {dt.rate}% Discount</button>
+                                        <p className="text-[10px] text-muted-foreground mb-2">
+                                            {dt.source} — {dt.items} items, list ${dt.listTotal.toLocaleString()} → <span className="font-bold text-foreground">${netTotal.toLocaleString()}</span>
+                                        </p>
+
+                                        {/* Adjust Rate Panel */}
+                                        {isAdjusting && !applied && (
+                                            <div className="p-3 mb-3 rounded-lg bg-card border border-border space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-[10px] font-bold text-foreground w-20">Rate:</span>
+                                                    <input type="range" min={0} max={60} step={1} value={adjustedRates[dt.id] ?? dt.rate}
+                                                        onChange={e => setAdjustedRates(p => ({ ...p, [dt.id]: Number(e.target.value) }))}
+                                                        className="flex-1 h-1.5 accent-indigo-500" />
+                                                    <div className="flex items-center gap-1">
+                                                        <input type="number" min={0} max={60} value={adjustedRates[dt.id] ?? dt.rate}
+                                                            onChange={e => setAdjustedRates(p => ({ ...p, [dt.id]: Math.min(60, Math.max(0, Number(e.target.value))) }))}
+                                                            className="w-14 px-2 py-1 text-[10px] rounded border border-border bg-card text-foreground text-center font-bold focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                                                        <span className="text-[10px] text-muted-foreground font-bold">%</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                                                    <span>AI suggested: {dt.rate}%</span>
+                                                    <span>Net: <span className="font-bold text-foreground">${netTotal.toLocaleString()}</span> (savings ${Math.round(dt.listTotal * effectiveRate / 100).toLocaleString()})</span>
+                                                </div>
+                                                <div>
+                                                    <input type="text" placeholder="Justification note (optional)..." value={discountNotes[dt.id] || ''}
+                                                        onChange={e => setDiscountNotes(p => ({ ...p, [dt.id]: e.target.value }))}
+                                                        className="w-full px-2.5 py-1.5 text-[10px] rounded border border-border bg-card text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => { setDiscountsApplied(p => ({ ...p, [dt.id]: effectiveRate !== dt.rate ? 'adjusted' : 'ai' })); setAdjustingTier(null); }}
+                                                        className="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold transition-colors">
+                                                        Apply {effectiveRate}%
+                                                    </button>
+                                                    <button onClick={() => { setAdjustingTier(null); setAdjustedRates(p => { const n = { ...p }; delete n[dt.id]; return n; }); }}
+                                                        className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted/50 text-foreground text-[10px] font-medium transition-colors">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {!applied ? (
+                                            !isAdjusting && (
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <button onClick={() => setDiscountsApplied(p => ({ ...p, [dt.id]: 'ai' }))}
+                                                        className="px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold transition-colors">
+                                                        Apply {dt.rate}% Discount
+                                                    </button>
+                                                    <button onClick={() => setAdjustingTier(dt.id)}
+                                                        className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted/50 text-foreground text-[10px] font-medium transition-colors flex items-center gap-1">
+                                                        <PencilSquareIcon className="h-3 w-3" /> Adjust Rate
+                                                    </button>
+                                                    <button onClick={() => setDiscountsApplied(p => ({ ...p, [dt.id]: 'escalated' }))}
+                                                        className="px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-500/30 hover:bg-amber-50 dark:hover:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-medium transition-colors flex items-center gap-1">
+                                                        <ExclamationTriangleIcon className="h-3 w-3" /> Request Approval
+                                                    </button>
+                                                </div>
+                                            )
                                         ) : (
-                                            <div className="flex items-center gap-2 text-[10px] text-green-600 dark:text-green-400">
-                                                <CheckCircleIcon className="h-4 w-4" /><span className="font-bold">Discount Applied</span>
+                                            <div className="space-y-1.5">
+                                                <div className={`flex items-center gap-2 text-[10px] ${
+                                                    applied === 'escalated' ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400'
+                                                }`}>
+                                                    <CheckCircleIcon className="h-4 w-4" />
+                                                    <span className="font-bold">
+                                                        {applied === 'ai' ? 'AI Discount Applied' :
+                                                         applied === 'adjusted' ? `Custom Rate Applied (${effectiveRate}%)` :
+                                                         'Escalated — Awaiting Manager Approval'}
+                                                    </span>
+                                                </div>
+                                                {discountNotes[dt.id] && (
+                                                    <p className="text-[9px] text-muted-foreground italic pl-6">"{discountNotes[dt.id]}"</p>
+                                                )}
                                             </div>
                                         )}
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
 
                         {/* Running total */}
                         {allDiscountsApplied && (
-                            <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 animate-in fade-in duration-300">
+                            <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 animate-in fade-in duration-300 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-bold text-green-800 dark:text-green-200">Discounted Total</span>
                                     <span className="text-lg font-bold text-green-700 dark:text-green-300">${Math.round(discountedTotal).toLocaleString()}</span>
                                 </div>
-                                <p className="text-[10px] text-green-600 dark:text-green-400 mt-1">
+                                <p className="text-[10px] text-green-600 dark:text-green-400">
                                     Savings: ${(PROJECT_TOTAL - Math.round(discountedTotal)).toLocaleString()} ({Math.round((1 - discountedTotal / PROJECT_TOTAL) * 100)}% average discount)
                                 </p>
+                                {/* Breakdown badges */}
+                                <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-green-200 dark:border-green-500/20">
+                                    {Object.values(discountsApplied).filter(v => v === 'ai').length > 0 && (
+                                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
+                                            {Object.values(discountsApplied).filter(v => v === 'ai').length} AI APPLIED
+                                        </span>
+                                    )}
+                                    {Object.values(discountsApplied).filter(v => v === 'adjusted').length > 0 && (
+                                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
+                                            {Object.values(discountsApplied).filter(v => v === 'adjusted').length} SC ADJUSTED
+                                        </span>
+                                    )}
+                                    {Object.values(discountsApplied).filter(v => v === 'escalated').length > 0 && (
+                                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+                                            {Object.values(discountsApplied).filter(v => v === 'escalated').length} PENDING APPROVAL
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         )}
 
