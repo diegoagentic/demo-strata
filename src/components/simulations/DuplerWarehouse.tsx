@@ -24,6 +24,12 @@ import {
     ShieldCheckIcon,
     MapIcon,
     LinkIcon,
+    MagnifyingGlassIcon,
+    BellAlertIcon,
+    ClockIcon,
+    ArrowUturnLeftIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { DUPLER_STEP_TIMING, type DuplerStepTiming } from '../../config/profiles/dupler';
 
@@ -73,11 +79,40 @@ const EXCEPTIONS_RECEIVING = RECEIVING_ITEMS.filter(i => i.status !== 'matched')
 
 // d2.3 — Price Verification
 const PO_PRICE_CHECKS = [
+    // Page 1
     { item: 'Acuity Task Chair (×8)', mfr: 'Allsteel', poPrice: 685, currentPrice: 715, change: '+4.4%', margin: '29.2%', flag: false },
     { item: 'Stride Bench 60" (×4)', mfr: 'Allsteel', poPrice: 920, currentPrice: 920, change: '0%', margin: '34.1%', flag: false },
     { item: 'Terrace Lounge (×6)', mfr: 'Allsteel', poPrice: 1450, currentPrice: 1520, change: '+4.8%', margin: '23.8%', flag: true },
     { item: 'Beyond Open Desk (×10)', mfr: 'Allsteel', poPrice: 780, currentPrice: 780, change: '0%', margin: '32.5%', flag: false },
     { item: 'Park Table (×2)', mfr: 'Allsteel', poPrice: 2100, currentPrice: 2240, change: '+6.7%', margin: '21.4%', flag: true },
+    // Page 2
+    { item: 'Involve Workstation 66" (×12)', mfr: 'Allsteel', poPrice: 2450, currentPrice: 2525, change: '+3.1%', margin: '31.0%', flag: false },
+    { item: 'Executive Credenza 72" (×4)', mfr: 'Gunlock', poPrice: 3200, currentPrice: 3200, change: '0%', margin: '38.2%', flag: false },
+    { item: 'Conference Table 96" (×2)', mfr: 'Gunlock', poPrice: 4500, currentPrice: 4500, change: '0%', margin: '36.5%', flag: false },
+    { item: 'Waveworks Desk 60" (×10)', mfr: 'National', poPrice: 2080, currentPrice: 2180, change: '+4.8%', margin: '28.4%', flag: false },
+    { item: 'Realize Desk 60" (×4)', mfr: 'National', poPrice: 1500, currentPrice: 1580, change: '+5.3%', margin: '27.1%', flag: false },
+    // Page 3
+    { item: 'Exhibit Collab Table (×4)', mfr: 'National', poPrice: 1180, currentPrice: 1240, change: '+5.1%', margin: '30.6%', flag: false },
+    { item: 'Lobby Lounge Table (×3)', mfr: 'National', poPrice: 840, currentPrice: 890, change: '+6.0%', margin: '26.8%', flag: false },
+    { item: 'Filing Cabinet 3-Drawer (×16)', mfr: 'Allsteel', poPrice: 420, currentPrice: 420, change: '0%', margin: '35.8%', flag: false },
+    { item: 'Monitor Arm Dual (×24)', mfr: 'Allsteel', poPrice: 185, currentPrice: 195, change: '+5.4%', margin: '42.1%', flag: false },
+    { item: 'Task Light LED (×24)', mfr: 'Allsteel', poPrice: 125, currentPrice: 125, change: '0%', margin: '48.3%', flag: false },
+];
+const PO_PRICE_PAGE_SIZE = 5;
+
+const MARGIN_ALERTS = [
+    {
+        id: 'ma1', item: 'Terrace Lounge (×6)', mfr: 'Allsteel', margin: '23.8%', threshold: '25%',
+        poPrice: 1450, currentPrice: 1520, change: '+4.8%',
+        reason: 'Q1 2026 price increase not reflected in PO — margin dropped below 25% dealer minimum.',
+        aiNote: 'Allsteel published +4.8% effective Jan 15, 2026. PO was issued Dec 2025 at prior pricing.',
+    },
+    {
+        id: 'ma2', item: 'Park Table (×2)', mfr: 'Allsteel', margin: '21.4%', threshold: '25%',
+        poPrice: 2100, currentPrice: 2240, change: '+6.7%',
+        reason: 'Material surcharge added — raw steel cost adjustment pushed margin below threshold.',
+        aiNote: 'Allsteel Bulletin #2026-03: +6.7% material surcharge on Park series. Recommend renegotiating PO or applying client markup.',
+    },
 ];
 
 const TAX_COMPLIANCE = [
@@ -104,9 +139,12 @@ const SHIPMENTS = [
 
 // d2.5 — Vendor Claims
 const VENDOR_CLAIMS = [
-    { id: 'CLM-2026-052', item: 'Acuity Chair — Fog (×2)', mfr: 'Allsteel', type: 'wrong-finish' as const, status: 'RMA Approved', credit: '$1,370', action: 'Return & Replace' },
-    { id: 'CLM-2026-048', item: 'Terrace Lounge (×1)', mfr: 'Allsteel', type: 'packaging-damage' as const, status: 'Under Review', credit: '$480', action: 'Inspect & Decide' },
-    { id: 'CLM-2026-045', item: 'Stride Bench (×1)', mfr: 'Allsteel', type: 'warranty-claim' as const, status: 'Warranty Valid', credit: '$920', action: 'Repair in Place' },
+    { id: 'CLM-2026-052', item: 'Acuity Chair — Fog (×2)', mfr: 'Allsteel', type: 'wrong-finish' as const, status: 'RMA Approved', credit: '$1,370', action: 'Return & Replace',
+      aiNote: 'RMA #RMA-2026-1184 approved by Allsteel on Mar 20. Replacement ETA: 5 business days. Original Graphite finish confirmed in PO.' },
+    { id: 'CLM-2026-048', item: 'Terrace Lounge (×1)', mfr: 'Allsteel', type: 'packaging-damage' as const, status: 'Under Review', credit: '$480', action: 'Inspect & Decide',
+      aiNote: 'Damage photos uploaded Mar 18. Allsteel reviewing — typical resolution: 3-5 days. Item is functional but cosmetically impaired (corner dent).' },
+    { id: 'CLM-2026-045', item: 'Stride Bench (×1)', mfr: 'Allsteel', type: 'warranty-claim' as const, status: 'Warranty Valid', credit: '$920', action: 'Repair in Place',
+      aiNote: 'Warranty expires Apr 28 — 35 days remaining. Height mechanism issue reported. Allsteel offers on-site repair for this model.' },
 ];
 
 const WARRANTY_ALERTS = [
@@ -224,6 +262,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     useEffect(() => { recRef.current = recPhase; }, [recPhase]);
     const [recAgents, setRecAgents] = useState(RECEIVING_AGENTS.map(a => ({ ...a })));
     const [recProgress, setRecProgress] = useState(0);
+    const [exceptionActions, setExceptionActions] = useState<Record<number, string>>({});
 
     // ── d2.3 State: Price Verification ──
     const [pricePhase, setPricePhase] = useState<PricePhase>('idle');
@@ -231,6 +270,11 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     useEffect(() => { priceRef.current = pricePhase; }, [pricePhase]);
     const [priceAgents, setPriceAgents] = useState(PRICE_AGENTS.map(a => ({ ...a })));
     const [priceProgress, setPriceProgress] = useState(0);
+    const [pricePage, setPricePage] = useState(0);
+    const priceTotalPages = Math.ceil(PO_PRICE_CHECKS.length / PO_PRICE_PAGE_SIZE);
+    const pricePageItems = PO_PRICE_CHECKS.slice(pricePage * PO_PRICE_PAGE_SIZE, (pricePage + 1) * PO_PRICE_PAGE_SIZE);
+    const [marginActions, setMarginActions] = useState<Record<string, string>>({});
+    const allMarginResolved = Object.keys(marginActions).length >= MARGIN_ALERTS.length;
 
     // ── d2.4 State: Multi-Warehouse Sync ──
     const [syncPhase, setSyncPhase] = useState<SyncPhase>('idle');
@@ -246,8 +290,8 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     useEffect(() => { transitRef.current = transitPhase; }, [transitPhase]);
     const [transitAgents, setTransitAgents] = useState(TRANSIT_AGENTS.map(a => ({ ...a })));
     const [transitProgress, setTransitProgress] = useState(0);
-    const [freightClaimed, setFreightClaimed] = useState(false);
-    const [alertAcknowledged, setAlertAcknowledged] = useState(false);
+    const [alertAction, setAlertAction] = useState<string | null>(null);
+    const [freightAction, setFreightAction] = useState<string | null>(null);
 
     // ── d2.6 State: Vendor Claims ──
     const [claimsPhase, setClaimsPhase] = useState<ClaimsPhase>('idle');
@@ -255,6 +299,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     useEffect(() => { claimsRef.current = claimsPhase; }, [claimsPhase]);
     const [claimsAgents, setClaimsAgents] = useState(CLAIMS_AGENTS.map(a => ({ ...a })));
     const [claimsProgress, setClaimsProgress] = useState(0);
+    const [claimActions, setClaimActions] = useState<Record<string, string>>({});
+    const [warrantyActions, setWarrantyActions] = useState<Record<number, string>>({});
+    const allClaimsResolved = Object.keys(claimActions).length >= VENDOR_CLAIMS.length && Object.keys(warrantyActions).length >= WARRANTY_ALERTS.length;
 
     // ── Timing helpers ──
     const tp = (id: string): DuplerStepTiming => DUPLER_STEP_TIMING[id] || DUPLER_STEP_TIMING['d2.1'];
@@ -420,12 +467,11 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
         return () => clearTimeout(t);
     }, [syncPhase]);
 
-    // Animate location cards + auto-advance
+    // Animate location cards
     useEffect(() => {
         if (syncPhase !== 'results') return;
         const t1 = setTimeout(pauseAware(() => setSyncCardsAnimated(true)), 2000);
-        const t2 = setTimeout(pauseAware(() => nextStep()), tp('d2.4').resultsDur);
-        return () => { clearTimeout(t1); clearTimeout(t2); };
+        return () => { clearTimeout(t1); };
     }, [syncPhase]);
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -433,12 +479,12 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     // ═══════════════════════════════════════════════════════════════════════════
 
     useEffect(() => {
-        if (stepId !== 'd2.5') { setTransitPhase('idle'); setFreightClaimed(false); setAlertAcknowledged(false); return; }
+        if (stepId !== 'd2.5') { setTransitPhase('idle'); setAlertAction(null); setFreightAction(null); return; }
         setTransitPhase('idle');
         setTransitAgents(TRANSIT_AGENTS.map(a => ({ ...a })));
         setTransitProgress(0);
-        setFreightClaimed(false);
-        setAlertAcknowledged(false);
+        setAlertAction(null);
+        setFreightAction(null);
         const t = tp('d2.5');
         const timer = setTimeout(pauseAware(() => setTransitPhase('notification')), t.notifDelay);
         return () => clearTimeout(timer);
@@ -807,47 +853,96 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
 
                             {/* Exceptions */}
                             <div className="space-y-3">
-                                {EXCEPTIONS_RECEIVING.map(item => (
-                                    <div key={item.line} className={`p-4 rounded-xl border-2 ${
-                                        item.status === 'missing'
-                                            ? 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'
-                                            : 'border-red-300 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/5'
-                                    }`}>
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                                                        item.status === 'missing' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-red-500/20 text-red-700 dark:text-red-400'
-                                                    }`}>{item.status === 'missing' ? 'Missing' : 'Wrong Item'}</span>
-                                                    <span className="text-[10px] text-muted-foreground">Line #{item.line}</span>
+                                {EXCEPTIONS_RECEIVING.map(item => {
+                                    const resolved = exceptionActions[item.line];
+                                    const actions = item.status === 'missing'
+                                        ? [
+                                            { key: 'source-alt', label: 'Source Alternative', icon: <MagnifyingGlassIcon className="h-3 w-3" /> },
+                                            { key: 'notify-client', label: 'Notify Client', icon: <BellAlertIcon className="h-3 w-3" /> },
+                                            { key: 'accept-backorder', label: 'Accept Backorder', icon: <ClockIcon className="h-3 w-3" /> },
+                                        ]
+                                        : [
+                                            { key: 'initiate-return', label: 'Initiate Return', icon: <ArrowUturnLeftIcon className="h-3 w-3" /> },
+                                            { key: 'accept-substitute', label: 'Accept as Substitute', icon: <CheckCircleIcon className="h-3 w-3" /> },
+                                            { key: 'escalate-vendor', label: 'Escalate to Vendor', icon: <ExclamationTriangleIcon className="h-3 w-3" /> },
+                                        ];
+                                    return (
+                                        <div key={item.line} className={`p-4 rounded-xl border-2 transition-colors duration-300 ${
+                                            resolved
+                                                ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5'
+                                                : item.status === 'missing'
+                                                    ? 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'
+                                                    : 'border-red-300 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/5'
+                                        }`}>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                                            resolved ? 'bg-green-500/20 text-green-700 dark:text-green-400'
+                                                            : item.status === 'missing' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-red-500/20 text-red-700 dark:text-red-400'
+                                                        }`}>{resolved ? 'Resolved' : item.status === 'missing' ? 'Missing' : 'Wrong Item'}</span>
+                                                        <span className="text-[10px] text-muted-foreground">Line #{item.line}</span>
+                                                    </div>
+                                                    <div className="text-[11px] mt-1">
+                                                        <span className="font-mono text-foreground">{item.sku}</span>
+                                                        <span className="text-muted-foreground ml-2">{item.description}</span>
+                                                    </div>
+                                                    {item.note && (
+                                                        <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                                                            <AIAgentAvatar /><span className="italic">{item.note}</span>
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                <div className="text-[11px] mt-1">
-                                                    <span className="font-mono text-foreground">{item.sku}</span>
-                                                    <span className="text-muted-foreground ml-2">{item.description}</span>
-                                                </div>
-                                                {item.note && (
-                                                    <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
-                                                        <AIAgentAvatar /><span className="italic">{item.note}</span>
-                                                    </p>
+                                                {resolved ? (
+                                                    <div className="flex items-center gap-1.5 text-[10px] text-green-600 dark:text-green-400 shrink-0">
+                                                        <CheckCircleIcon className="h-3.5 w-3.5" /><span className="font-semibold">{resolved}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                                                        item.status === 'missing' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                                                    }`}>ACTION NEEDED</span>
                                                 )}
                                             </div>
-                                            {item.status === 'missing' ? (
-                                                <div className="flex items-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 shrink-0">
-                                                    <ExclamationTriangleIcon className="h-3.5 w-3.5" /><span className="font-semibold">Backorder tracked</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-1.5 text-[10px] text-red-600 dark:text-red-400 shrink-0">
-                                                    <XCircleIcon className="h-3.5 w-3.5" /><span className="font-semibold">Claim drafted</span>
+                                            {!resolved && (
+                                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                                                    <span className="text-[9px] text-muted-foreground mr-1">AI Suggested Actions:</span>
+                                                    {actions.map(action => (
+                                                        <button
+                                                            key={action.key}
+                                                            onClick={() => setExceptionActions(prev => ({ ...prev, [item.line]: action.label }))}
+                                                            className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all ${
+                                                                item.status === 'missing'
+                                                                    ? 'border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/10'
+                                                                    : 'border-red-300 dark:border-red-500/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/10'
+                                                            }`}
+                                                        >
+                                                            {action.icon}{action.label}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* CTA */}
-                            <button onClick={() => nextStep()} className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
-                                <span className="flex items-center justify-center gap-2"><ClipboardDocumentCheckIcon className="h-4 w-4" /> Confirm Receiving — 28 Matched, 2 Exceptions Handled</span>
+                            <button
+                                onClick={() => nextStep()}
+                                disabled={Object.keys(exceptionActions).length < EXCEPTIONS_RECEIVING.length}
+                                className={`w-full py-3 rounded-xl text-xs font-bold shadow-lg transition-all ${
+                                    Object.keys(exceptionActions).length >= EXCEPTIONS_RECEIVING.length
+                                        ? 'bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-brand-500/20'
+                                        : 'bg-muted text-muted-foreground cursor-not-allowed shadow-none'
+                                }`}
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    <ClipboardDocumentCheckIcon className="h-4 w-4" />
+                                    {Object.keys(exceptionActions).length >= EXCEPTIONS_RECEIVING.length
+                                        ? 'Confirm Receiving — 28 Matched, 2 Exceptions Resolved'
+                                        : `Resolve Exceptions (${Object.keys(exceptionActions).length}/${EXCEPTIONS_RECEIVING.length})`
+                                    }
+                                </span>
                             </button>
                         </div>
                     )}
@@ -865,7 +960,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                             <p>PriceListScanner: Scanning Allsteel, Kimball, National price lists against PO-2026-0389. Verifying regional tax compliance for OH and IL delivery addresses.</p>
                         </div>,
                         handlePriceStart,
-                        '5 ITEMS CHECKED'
+                        '15 ITEMS CHECKED'
                     )}
                     {pricePhase === 'processing' && renderAgentPipeline(priceAgents, priceProgress, 'Price Verification Pipeline — Checking margins...')}
                     {pricePhase === 'breathing' && renderBreathing('Verification complete — compiling report...')}
@@ -873,18 +968,21 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                         <div className="animate-in fade-in duration-500 space-y-4">
                             {renderRevealed(
                                 <CurrencyDollarIcon className="h-4 w-4" />,
-                                <><span className="font-bold">PriceListScanner:</span> 5 items verified — <span className="font-semibold">2 with margin below 25%</span> flagged. Tax compliance auto-verified.</>,
+                                <><span className="font-bold">PriceListScanner:</span> {PO_PRICE_CHECKS.length} items verified — <span className="font-semibold">2 with margin below 25%</span> flagged. Tax compliance auto-verified.</>,
                                 ['Price Lists', 'Contract DB', 'Margin Calculator', 'Compliance Reporter']
                             )}
                             <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
                                 <SystemChips systems={[{ label: 'PRICE LISTS', color: 'blue' }, { label: 'CONTRACT DB', color: 'teal' }, { label: 'MARGIN CALC', color: 'purple' }]} />
                             </div>
 
-                            {/* Price checks table */}
+                            {/* Price checks table with pagination */}
                             <div className="rounded-xl border border-border overflow-hidden">
                                 <div className="bg-muted/50 px-4 py-2 border-b border-border flex items-center justify-between">
                                     <span className="text-xs font-bold text-foreground">Price Verification Results</span>
-                                    <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">2 items flagged</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[10px] text-muted-foreground font-medium">{PO_PRICE_CHECKS.length} items across PO-2026-0389</span>
+                                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">2 flagged</span>
+                                    </div>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-[11px]">
@@ -899,8 +997,8 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-border">
-                                            {PO_PRICE_CHECKS.map((pc, i) => (
-                                                <tr key={i} className={pc.flag ? 'bg-amber-50/50 dark:bg-amber-500/5' : ''}>
+                                            {pricePageItems.map((pc, i) => (
+                                                <tr key={pricePage * PO_PRICE_PAGE_SIZE + i} className={pc.flag ? 'bg-amber-50/50 dark:bg-amber-500/5' : ''}>
                                                     <td className="px-4 py-2 text-foreground font-medium">{pc.item}</td>
                                                     <td className="px-3 py-2 text-muted-foreground">{pc.mfr}</td>
                                                     <td className="px-3 py-2 text-right text-foreground">${pc.poPrice.toLocaleString()}</td>
@@ -915,6 +1013,139 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                         </tbody>
                                     </table>
                                 </div>
+                                {/* Pagination */}
+                                <div className="bg-muted/30 px-4 py-2 border-t border-border flex items-center justify-between">
+                                    <span className="text-[10px] text-muted-foreground">
+                                        Showing {pricePage * PO_PRICE_PAGE_SIZE + 1}–{Math.min((pricePage + 1) * PO_PRICE_PAGE_SIZE, PO_PRICE_CHECKS.length)} of {PO_PRICE_CHECKS.length} items
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => setPricePage(p => Math.max(0, p - 1))}
+                                            disabled={pricePage === 0}
+                                            className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <ChevronLeftIcon className="h-3.5 w-3.5 text-foreground" />
+                                        </button>
+                                        {Array.from({ length: priceTotalPages }, (_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setPricePage(i)}
+                                                className={`text-[10px] font-semibold w-6 h-6 rounded transition-colors ${
+                                                    pricePage === i
+                                                        ? 'bg-brand-400 text-zinc-900'
+                                                        : 'text-muted-foreground hover:bg-muted'
+                                                }`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                        <button
+                                            onClick={() => setPricePage(p => Math.min(priceTotalPages - 1, p + 1))}
+                                            disabled={pricePage >= priceTotalPages - 1}
+                                            className="p-1 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <ChevronRightIcon className="h-3.5 w-3.5 text-foreground" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Summary bar */}
+                            <div className="grid grid-cols-4 gap-3">
+                                <div className="p-3 rounded-xl bg-muted/30 border border-border text-center">
+                                    <div className="text-[10px] text-muted-foreground mb-1">Total Items</div>
+                                    <div className="text-sm font-bold text-foreground">{PO_PRICE_CHECKS.length}</div>
+                                </div>
+                                <div className="p-3 rounded-xl bg-muted/30 border border-border text-center">
+                                    <div className="text-[10px] text-muted-foreground mb-1">PO Value</div>
+                                    <div className="text-sm font-bold text-foreground">${PO_PRICE_CHECKS.reduce((s, p) => s + p.poPrice, 0).toLocaleString()}</div>
+                                </div>
+                                <div className="p-3 rounded-xl bg-muted/30 border border-border text-center">
+                                    <div className="text-[10px] text-muted-foreground mb-1">Current Value</div>
+                                    <div className="text-sm font-bold text-foreground">${PO_PRICE_CHECKS.reduce((s, p) => s + p.currentPrice, 0).toLocaleString()}</div>
+                                </div>
+                                <div className={`p-3 rounded-xl border text-center transition-colors duration-300 ${
+                                    allMarginResolved
+                                        ? 'bg-green-50/50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20'
+                                        : 'bg-amber-50/50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20'
+                                }`}>
+                                    <div className={`text-[10px] mb-1 ${allMarginResolved ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>Margin Alerts</div>
+                                    <div className={`text-sm font-bold ${allMarginResolved ? 'text-green-700 dark:text-green-300' : 'text-amber-700 dark:text-amber-300'}`}>
+                                        {allMarginResolved ? `${MARGIN_ALERTS.length} Resolved` : `${Object.keys(marginActions).length}/${MARGIN_ALERTS.length}`}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Margin alert cards */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-foreground flex items-center gap-2">
+                                        <ExclamationTriangleIcon className="h-4 w-4 text-amber-500" /> Margin Alerts — Below 25% Threshold
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground">{Object.keys(marginActions).length}/{MARGIN_ALERTS.length} resolved</span>
+                                </div>
+                                {MARGIN_ALERTS.map(alert => {
+                                    const resolved = marginActions[alert.id];
+                                    return (
+                                        <div key={alert.id} className={`p-4 rounded-xl border-2 transition-colors duration-300 ${
+                                            resolved
+                                                ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5'
+                                                : 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'
+                                        }`}>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                                            resolved ? 'bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                                                        }`}>{resolved ? 'Resolved' : 'LOW MARGIN'}</span>
+                                                        <span className="text-[10px] text-muted-foreground">{alert.mfr}</span>
+                                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                                            resolved ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'
+                                                        }`}>{alert.margin} (min {alert.threshold})</span>
+                                                    </div>
+                                                    <div className="text-[11px] font-semibold text-foreground mt-1">{alert.item}</div>
+                                                    <div className="text-[10px] text-muted-foreground mt-1 grid grid-cols-3 gap-3">
+                                                        <span>PO: <span className="text-foreground font-medium">${alert.poPrice.toLocaleString()}</span></span>
+                                                        <span>Current: <span className="text-foreground font-medium">${alert.currentPrice.toLocaleString()}</span></span>
+                                                        <span>Change: <span className="text-red-600 dark:text-red-400 font-semibold">{alert.change}</span></span>
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground mt-2 italic">{alert.reason}</p>
+                                                    <p className="text-[10px] text-muted-foreground mt-1.5 flex items-start gap-1">
+                                                        <AIAgentAvatar /><span className="italic">{alert.aiNote}</span>
+                                                    </p>
+                                                </div>
+                                                {resolved && (
+                                                    <div className="flex items-center gap-1.5 text-[10px] text-green-600 dark:text-green-400 shrink-0">
+                                                        <CheckCircleIcon className="h-3.5 w-3.5" /><span className="font-semibold">{resolved}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {!resolved && (
+                                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                                                    <span className="text-[9px] text-muted-foreground mr-1">Actions:</span>
+                                                    <button
+                                                        onClick={() => setMarginActions(prev => ({ ...prev, [alert.id]: 'Price Updated to Current' }))}
+                                                        className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-brand-300 dark:border-brand-500/30 text-zinc-900 dark:text-brand-300 bg-brand-400/80 hover:bg-brand-400 transition-all"
+                                                    >
+                                                        <CurrencyDollarIcon className="h-3 w-3" />Update PO Price
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setMarginActions(prev => ({ ...prev, [alert.id]: 'Margin Override Approved' }))}
+                                                        className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/10 transition-all"
+                                                    >
+                                                        <ShieldCheckIcon className="h-3 w-3" />Override Margin
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setMarginActions(prev => ({ ...prev, [alert.id]: 'Escalated to SC' }))}
+                                                        className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-all"
+                                                    >
+                                                        <ExclamationCircleIcon className="h-3 w-3" />Escalate to SC
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             {/* Tax compliance — minimized informative note */}
@@ -924,8 +1155,22 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                             </div>
 
                             {/* CTA */}
-                            <button onClick={() => nextStep()} className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
-                                <span className="flex items-center justify-center gap-2"><CheckCircleIcon className="h-4 w-4" /> Approve Pricing — 2 Margin Alerts Acknowledged</span>
+                            <button
+                                onClick={() => nextStep()}
+                                disabled={!allMarginResolved}
+                                className={`w-full py-3 rounded-xl text-xs font-bold shadow-lg transition-all ${
+                                    allMarginResolved
+                                        ? 'bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-brand-500/20'
+                                        : 'bg-muted text-muted-foreground cursor-not-allowed shadow-none'
+                                }`}
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    <CheckCircleIcon className="h-4 w-4" />
+                                    {allMarginResolved
+                                        ? 'Approve Pricing — 2 Margin Alerts Resolved'
+                                        : `Resolve Margin Alerts (${Object.keys(marginActions).length}/${MARGIN_ALERTS.length})`
+                                    }
+                                </span>
                             </button>
                         </div>
                     )}
@@ -1023,11 +1268,36 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 <span className="text-[11px] font-bold text-green-700 dark:text-green-400">-$1,200</span>
                             </div>
 
-                            {syncPhase === 'results' && (
-                                <div className="text-center text-[10px] text-muted-foreground animate-pulse">
-                                    Auto-advancing to in-transit intelligence...
+                            {/* Pending transit — narrative bridge to d2.5 */}
+                            <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <TruckIcon className="h-3.5 w-3.5 text-blue-500" />
+                                    <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300">Pending Transit Intelligence</span>
+                                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 ml-auto">SYNC DETECTED</span>
                                 </div>
-                            )}
+                                <div className="grid grid-cols-3 gap-2 text-[10px]">
+                                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                        <span>3 shipments on-time</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                        <span>1 potential delay</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                        <span>1 billing discrepancy</span>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-2 italic flex items-center gap-1">
+                                    <AIAgentAvatar />Sync complete — routing to transit analysis for detailed tracking...
+                                </p>
+                            </div>
+
+                            {/* CTA */}
+                            <button onClick={() => nextStep()} className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
+                                <span className="flex items-center justify-center gap-2"><TruckIcon className="h-4 w-4" /> Analyze Transit & Freight — 5 Shipments Detected</span>
+                            </button>
                         </div>
                     )}
                 </>
@@ -1040,8 +1310,12 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                         <TruckIcon className="h-4 w-4" />,
                         'In-Transit Intelligence',
                         <div className="space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">FROM WAREHOUSE SYNC</span>
+                                <span className="text-[10px] text-muted-foreground">5 shipments identified during sync</span>
+                            </div>
                             <SystemChips systems={[{ label: 'CARRIER API', color: 'blue' }, { label: 'PREDICTIVE ENGINE', color: 'purple' }, { label: 'FREIGHT AUDITOR', color: 'red' }]} />
-                            <p>TransitTracker: 5 active shipments — 1 delay predicted (weather), 1 freight billing discrepancy. Split-shipment reconciliation pending.</p>
+                            <p>TransitTracker: Analyzing 5 active shipments from synced data — 1 delay predicted (weather), 1 freight billing discrepancy. Split-shipment reconciliation pending.</p>
                         </div>,
                         handleTransitStart,
                         '5 SHIPMENTS'
@@ -1055,8 +1329,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 <><span className="font-bold">TransitTracker:</span> 5 shipments tracked — <span className="font-semibold">1 weather delay predicted (+2 days)</span>. Freight audit: $340 overcharge on SH-004. Split-shipment: 28/30 received, 2 backordered.</>,
                                 ['Transit Tracker', 'Predictive Engine', 'Freight Auditor', 'Split Reconciler']
                             )}
-                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-between">
                                 <SystemChips systems={[{ label: 'CARRIER API', color: 'blue' }, { label: 'PREDICTIVE ENGINE', color: 'purple' }, { label: 'FREIGHT AUDITOR', color: 'red' }]} />
+                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">FROM WAREHOUSE SYNC</span>
                             </div>
 
                             {/* Section A: Shipment Tracker */}
@@ -1093,34 +1368,46 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
 
                             {/* Section B: Predictive Alert */}
                             {PREDICTIVE_ALERTS.map(alert => (
-                                <div key={alert.shipmentId} className={`p-4 rounded-xl border-2 transition-all duration-300 ${alertAcknowledged ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'}`}>
+                                <div key={alert.shipmentId} className={`p-4 rounded-xl border-2 transition-all duration-300 ${alertAction ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'}`}>
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-400">Predictive Alert</span>
+                                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${alertAction ? 'bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-amber-500/20 text-amber-700 dark:text-amber-400'}`}>{alertAction ? 'Resolved' : 'Predictive Alert'}</span>
                                         <span className="text-[10px] font-mono text-muted-foreground">{alert.shipmentId}</span>
                                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold ml-auto">{alert.confidence}% confidence</span>
                                     </div>
                                     <p className="text-[11px] text-foreground">
                                         <span className="font-bold">{alert.manufacturer}</span> — {alert.prediction === 'weather-delay' ? 'Weather delay' : 'Delay'} predicted <span className="font-semibold text-amber-700 dark:text-amber-400">+{alert.delayDays} days</span>.
                                     </p>
-                                    <p className="text-[10px] text-muted-foreground mt-1">Impact: {alert.impact}. Suggested: notify client + prepare alternative staging.</p>
-                                    {alertAcknowledged ? (
-                                        <div className="flex items-center gap-1.5 mt-2">
+                                    <p className="text-[10px] text-muted-foreground mt-1">Impact: {alert.impact}.</p>
+                                    <p className="text-[10px] text-muted-foreground mt-1 flex items-start gap-1">
+                                        <AIAgentAvatar /><span className="italic">Recommended: notify Mercy Health PM of revised ETA and stage available inventory at Columbus Main as contingency.</span>
+                                    </p>
+                                    {alertAction ? (
+                                        <div className="flex items-center gap-1.5 mt-3">
                                             <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
-                                            <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">Alert Acknowledged — Client Notified</span>
+                                            <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">{alertAction}</span>
                                         </div>
                                     ) : (
-                                        <button onClick={() => setAlertAcknowledged(true)} className="mt-2 px-3 py-1.5 bg-brand-400 hover:bg-brand-500 text-zinc-900 text-[10px] font-bold rounded-lg transition-colors">
-                                            Acknowledge Alert
-                                        </button>
+                                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                                            <span className="text-[9px] text-muted-foreground mr-1">Actions:</span>
+                                            <button onClick={() => setAlertAction('Client notified — revised ETA sent')} className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-brand-300 dark:border-brand-500/30 text-zinc-900 dark:text-brand-300 bg-brand-400/80 hover:bg-brand-400 transition-all">
+                                                <BellAlertIcon className="h-3 w-3" />Notify Client
+                                            </button>
+                                            <button onClick={() => setAlertAction('Staging rerouted to Columbus Main')} className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/10 transition-all">
+                                                <ArrowPathIcon className="h-3 w-3" />Reroute Staging
+                                            </button>
+                                            <button onClick={() => setAlertAction('Expedited shipping requested to carrier')} className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-all">
+                                                <TruckIcon className="h-3 w-3" />Request Expedite
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             ))}
 
                             {/* Section C: Freight Audit */}
                             {FREIGHT_AUDIT.map(fa => (
-                                <div key={fa.shipmentId} className={`p-4 rounded-xl border-2 transition-all duration-300 ${freightClaimed ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-red-300 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/5'}`}>
+                                <div key={fa.shipmentId} className={`p-4 rounded-xl border-2 transition-all duration-300 ${freightAction ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-red-300 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/5'}`}>
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-red-500/20 text-red-700 dark:text-red-400">Freight Discrepancy</span>
+                                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${freightAction ? 'bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-red-500/20 text-red-700 dark:text-red-400'}`}>{freightAction ? 'Resolved' : 'Freight Discrepancy'}</span>
                                         <span className="text-[10px] font-mono text-muted-foreground">{fa.shipmentId}</span>
                                     </div>
                                     <div className="grid grid-cols-3 gap-3 text-[11px] mb-2">
@@ -1129,15 +1416,27 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                         <div><span className="text-muted-foreground">Overcharge:</span> <span className="font-bold text-red-700 dark:text-red-400">${fa.overcharge}</span></div>
                                     </div>
                                     <p className="text-[10px] text-muted-foreground">{fa.carrier} — {fa.reason}</p>
-                                    {freightClaimed ? (
-                                        <div className="flex items-center gap-1.5 mt-2">
+                                    <p className="text-[10px] text-muted-foreground mt-1 flex items-start gap-1">
+                                        <AIAgentAvatar /><span className="italic">BOL #SAIA-44821 does not include accessorial. Carrier invoice ref: INV-2026-8847. Recommend filing formal claim with supporting docs.</span>
+                                    </p>
+                                    {freightAction ? (
+                                        <div className="flex items-center gap-1.5 mt-3">
                                             <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
-                                            <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">Freight Claim Filed — ${fa.overcharge} Recovery Initiated</span>
+                                            <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">{freightAction}</span>
                                         </div>
                                     ) : (
-                                        <button onClick={() => setFreightClaimed(true)} className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-lg transition-colors">
-                                            File Freight Claim — ${fa.overcharge}
-                                        </button>
+                                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                                            <span className="text-[9px] text-muted-foreground mr-1">Actions:</span>
+                                            <button onClick={() => setFreightAction(`Claim filed — $${fa.overcharge} recovery initiated`)} className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-red-300 dark:border-red-500/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/10 transition-all">
+                                                <ExclamationCircleIcon className="h-3 w-3" />File Freight Claim
+                                            </button>
+                                            <button onClick={() => setFreightAction('Dispute sent to SAIA — awaiting response')} className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/10 transition-all">
+                                                <ExclamationTriangleIcon className="h-3 w-3" />Dispute with Carrier
+                                            </button>
+                                            <button onClick={() => setFreightAction('Charge accepted — no further action')} className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-all">
+                                                <CheckCircleIcon className="h-3 w-3" />Accept Charge
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -1164,10 +1463,35 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 </div>
                             ))}
 
-                            {/* CTA */}
-                            <button onClick={() => nextStep()} className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
-                                <span className="flex items-center justify-center gap-2"><CheckCircleIcon className="h-4 w-4" /> Continue to Claims & Returns</span>
-                            </button>
+                            {/* Trigger notification for d2.6 — appears when both actions resolved */}
+                            {alertAction && freightAction ? (
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 p-4 rounded-xl bg-amber-50/50 dark:bg-amber-500/5 border-2 border-amber-300 dark:border-amber-500/30 shadow-lg">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-lg bg-amber-500/20 shrink-0">
+                                            <ExclamationCircleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs font-bold text-foreground">Vendor Claims Detected</span>
+                                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 font-bold">3 ACTIVE CLAIMS</span>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground">
+                                                Freight audit triggered CLM-2026-055. Combined with 2 existing claims (CLM-2026-052 wrong finish, CLM-2026-048 backorder), total pending credits: <span className="font-semibold text-foreground">$2,770</span>.
+                                            </p>
+                                            <p className="text-[10px] text-muted-foreground mt-1 flex items-start gap-1">
+                                                <AIAgentAvatar /><span className="italic">Claims pipeline ready — 1 RMA approved, 4 warranty items approaching expiry.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => nextStep()} className="w-full mt-3 py-2.5 rounded-lg text-[11px] font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-md shadow-brand-500/20 transition-all">
+                                        <span className="flex items-center justify-center gap-2"><ExclamationCircleIcon className="h-3.5 w-3.5" /> Review Claims & Returns — $2,770 Pending</span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="p-3 rounded-xl bg-muted/30 border border-border text-center">
+                                    <span className="text-[10px] text-muted-foreground">Resolve transit issues above to continue ({(alertAction ? 1 : 0) + (freightAction ? 1 : 0)}/2)</span>
+                                </div>
+                            )}
                         </div>
                     )}
                 </>
@@ -1201,69 +1525,182 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
 
                             {/* Claim cards */}
                             <div className="space-y-3">
-                                {VENDOR_CLAIMS.map(claim => (
-                                    <div key={claim.id} className={`p-4 rounded-xl border-2 ${
-                                        claim.type === 'wrong-finish' ? 'border-red-300 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/5' :
-                                        claim.type === 'packaging-damage' ? 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5' :
-                                        'border-blue-300 dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-500/5'
-                                    }`}>
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                                                        claim.type === 'wrong-finish' ? 'bg-red-500/20 text-red-700 dark:text-red-400' :
-                                                        claim.type === 'packaging-damage' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' :
-                                                        'bg-blue-500/20 text-blue-700 dark:text-blue-400'
-                                                    }`}>{claim.action}</span>
-                                                    <span className="text-[10px] font-mono text-muted-foreground">{claim.id}</span>
+                                {VENDOR_CLAIMS.map(claim => {
+                                    const resolved = claimActions[claim.id];
+                                    const actions = claim.type === 'wrong-finish'
+                                        ? [
+                                            { key: 'Process RMA return', icon: <ArrowUturnLeftIcon className="h-3 w-3" />, label: 'Process Return', style: 'brand' as const },
+                                            { key: 'Accept credit — keep units', icon: <CurrencyDollarIcon className="h-3 w-3" />, label: 'Credit Only', style: 'amber' as const },
+                                            { key: 'Escalated — quality review requested', icon: <ExclamationTriangleIcon className="h-3 w-3" />, label: 'Quality Escalation', style: 'neutral' as const },
+                                        ]
+                                        : claim.type === 'packaging-damage'
+                                        ? [
+                                            { key: 'Inspection scheduled — field tech assigned', icon: <MagnifyingGlassIcon className="h-3 w-3" />, label: 'Schedule Inspection', style: 'brand' as const },
+                                            { key: 'Accepted as-is — credit applied', icon: <CheckCircleIcon className="h-3 w-3" />, label: 'Accept As-Is', style: 'amber' as const },
+                                            { key: 'Full replacement requested from vendor', icon: <ArrowPathIcon className="h-3 w-3" />, label: 'Request Replacement', style: 'neutral' as const },
+                                        ]
+                                        : [
+                                            { key: 'On-site repair scheduled', icon: <ShieldCheckIcon className="h-3 w-3" />, label: 'Schedule Repair', style: 'brand' as const },
+                                            { key: 'Warranty replacement requested', icon: <ArrowUturnLeftIcon className="h-3 w-3" />, label: 'Warranty Replace', style: 'amber' as const },
+                                            { key: 'Extended warranty purchased', icon: <ClockIcon className="h-3 w-3" />, label: 'Extend Warranty', style: 'neutral' as const },
+                                        ];
+                                    return (
+                                        <div key={claim.id} className={`p-4 rounded-xl border-2 transition-colors duration-300 ${
+                                            resolved ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5'
+                                            : claim.type === 'wrong-finish' ? 'border-red-300 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/5'
+                                            : claim.type === 'packaging-damage' ? 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'
+                                            : 'border-blue-300 dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-500/5'
+                                        }`}>
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                                            resolved ? 'bg-green-500/20 text-green-700 dark:text-green-400'
+                                                            : claim.type === 'wrong-finish' ? 'bg-red-500/20 text-red-700 dark:text-red-400'
+                                                            : claim.type === 'packaging-damage' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                                                            : 'bg-blue-500/20 text-blue-700 dark:text-blue-400'
+                                                        }`}>{resolved ? 'Resolved' : claim.action}</span>
+                                                        <span className="text-[10px] font-mono text-muted-foreground">{claim.id}</span>
+                                                    </div>
+                                                    <div className="text-[11px] font-semibold text-foreground">{claim.item}</div>
+                                                    <div className="text-[10px] text-muted-foreground mt-0.5">{claim.mfr} — {claim.status}</div>
+                                                    <p className="text-[10px] text-muted-foreground mt-1.5 flex items-start gap-1">
+                                                        <AIAgentAvatar /><span className="italic">{claim.aiNote}</span>
+                                                    </p>
                                                 </div>
-                                                <div className="text-[11px] font-semibold text-foreground">{claim.item}</div>
-                                                <div className="text-[10px] text-muted-foreground mt-0.5">{claim.mfr} — {claim.status}</div>
+                                                <div className="text-right shrink-0">
+                                                    <span className="text-sm font-bold text-foreground">{claim.credit}</span>
+                                                    {resolved && (
+                                                        <div className="flex items-center gap-1 mt-1 text-[10px] text-green-600 dark:text-green-400">
+                                                            <CheckCircleIcon className="h-3 w-3" /><span className="font-semibold">{resolved}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <span className="text-sm font-bold text-foreground">{claim.credit}</span>
+                                            {!resolved && (
+                                                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50">
+                                                    <span className="text-[9px] text-muted-foreground mr-1">Actions:</span>
+                                                    {actions.map(a => (
+                                                        <button
+                                                            key={a.key}
+                                                            onClick={() => setClaimActions(prev => ({ ...prev, [claim.id]: a.key }))}
+                                                            className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all ${
+                                                                a.style === 'brand' ? 'border-brand-300 dark:border-brand-500/30 text-zinc-900 dark:text-brand-300 bg-brand-400/80 hover:bg-brand-400'
+                                                                : a.style === 'amber' ? 'border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/10'
+                                                                : 'border-border text-muted-foreground hover:bg-muted'
+                                                            }`}
+                                                        >
+                                                            {a.icon}{a.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Warranty alerts */}
                             <div className="rounded-xl border border-border overflow-hidden">
                                 <div className="bg-muted/50 px-4 py-2 border-b border-border flex items-center justify-between">
                                     <span className="text-xs font-bold text-foreground">Warranty Alerts</span>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold">4 items</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-muted-foreground">{Object.keys(warrantyActions).length}/{WARRANTY_ALERTS.length} actioned</span>
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold">4 items</span>
+                                    </div>
                                 </div>
                                 <div className="divide-y divide-border">
-                                    {WARRANTY_ALERTS.map((wa, i) => (
-                                        <div key={i} className="px-4 py-2.5 flex items-center justify-between text-[11px]">
-                                            <div>
-                                                <span className="font-semibold text-foreground">{wa.item}</span>
-                                                <span className="text-muted-foreground ml-2">({wa.mfr})</span>
+                                    {WARRANTY_ALERTS.map((wa, i) => {
+                                        const resolved = warrantyActions[i];
+                                        return (
+                                            <div key={i} className={`px-4 py-3 transition-colors duration-300 ${resolved ? 'bg-green-50/30 dark:bg-green-500/[0.03]' : ''}`}>
+                                                <div className="flex items-center justify-between text-[11px]">
+                                                    <div>
+                                                        <span className="font-semibold text-foreground">{wa.item}</span>
+                                                        <span className="text-muted-foreground ml-2">({wa.mfr})</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-muted-foreground">{wa.value}</span>
+                                                        <span className={`text-[10px] font-semibold ${wa.daysLeft <= 15 ? 'text-red-600 dark:text-red-400' : wa.daysLeft <= 30 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                                                            {wa.daysLeft}d left
+                                                        </span>
+                                                        {resolved ? (
+                                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-green-500/10 text-green-600 dark:text-green-400">{resolved}</span>
+                                                        ) : (
+                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                                                wa.action === 'Extend' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
+                                                                wa.action === 'Review' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                                                                'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400'
+                                                            }`}>{wa.action}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {!resolved && (
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        {wa.action === 'Extend' && (
+                                                            <>
+                                                                <button onClick={() => setWarrantyActions(p => ({ ...p, [i]: 'Extended' }))} className="text-[9px] font-semibold px-2 py-1 rounded-md border border-red-300 dark:border-red-500/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/10 transition-all">Extend Warranty</button>
+                                                                <button onClick={() => setWarrantyActions(p => ({ ...p, [i]: 'Claim Filed' }))} className="text-[9px] font-semibold px-2 py-1 rounded-md border border-border text-muted-foreground hover:bg-muted transition-all">File Claim Now</button>
+                                                            </>
+                                                        )}
+                                                        {wa.action === 'Review' && (
+                                                            <>
+                                                                <button onClick={() => setWarrantyActions(p => ({ ...p, [i]: 'Inspection Set' }))} className="text-[9px] font-semibold px-2 py-1 rounded-md border border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/10 transition-all">Schedule Inspection</button>
+                                                                <button onClick={() => setWarrantyActions(p => ({ ...p, [i]: 'Extended' }))} className="text-[9px] font-semibold px-2 py-1 rounded-md border border-border text-muted-foreground hover:bg-muted transition-all">Extend Warranty</button>
+                                                            </>
+                                                        )}
+                                                        {wa.action === 'Monitor' && (
+                                                            <>
+                                                                <button onClick={() => setWarrantyActions(p => ({ ...p, [i]: 'Monitoring' }))} className="text-[9px] font-semibold px-2 py-1 rounded-md border border-border text-muted-foreground hover:bg-muted transition-all">Acknowledge</button>
+                                                                <button onClick={() => setWarrantyActions(p => ({ ...p, [i]: 'Alert Set' }))} className="text-[9px] font-semibold px-2 py-1 rounded-md border border-border text-muted-foreground hover:bg-muted transition-all">Set Reminder</button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-muted-foreground">{wa.value}</span>
-                                                <span className={`text-[10px] font-semibold ${wa.daysLeft <= 15 ? 'text-red-600 dark:text-red-400' : wa.daysLeft <= 30 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
-                                                    {wa.daysLeft}d left
-                                                </span>
-                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                                                    wa.action === 'Extend' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
-                                                    wa.action === 'Review' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
-                                                    'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400'
-                                                }`}>{wa.action}</span>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
+                            </div>
+
+                            {/* Expert note */}
+                            <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <AIAgentAvatar />
+                                    <span className="text-[10px] font-bold text-foreground">Expert Note to Dealer</span>
+                                </div>
+                                <textarea
+                                    className="w-full text-[11px] p-2.5 rounded-lg bg-card border border-border text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-brand-400"
+                                    rows={2}
+                                    placeholder="Add notes for the dealer review — e.g., 'CLM-052 urgent: client waiting on replacements. Recommend expediting RMA pickup.'"
+                                    defaultValue="CLM-052: Acuity chairs RMA pickup scheduled for Mar 28. CLM-048: cosmetic damage — recommend accepting credit + keeping unit on floor. Warranty on Beyond Desk expires in 15d — extend before Phase 2 install."
+                                />
                             </div>
 
                             {/* Footer */}
                             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border text-[10px]">
                                 <span className="text-muted-foreground">Total credits: <span className="font-bold text-foreground">$2,770</span></span>
-                                <span className="text-muted-foreground">Warranty alerts: <span className="font-bold text-foreground">4</span></span>
+                                <span className="text-muted-foreground">Claims: <span className="font-bold text-foreground">{Object.keys(claimActions).length}/{VENDOR_CLAIMS.length}</span></span>
+                                <span className="text-muted-foreground">Warranty: <span className="font-bold text-foreground">{Object.keys(warrantyActions).length}/{WARRANTY_ALERTS.length}</span></span>
                             </div>
 
                             {/* CTA */}
-                            <button onClick={() => nextStep()} className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
-                                <span className="flex items-center justify-center gap-2"><CheckCircleIcon className="h-4 w-4" /> Process Claims — $2,770 Credits Approved</span>
+                            <button
+                                onClick={() => nextStep()}
+                                disabled={!allClaimsResolved}
+                                className={`w-full py-3 rounded-xl text-xs font-bold shadow-lg transition-all ${
+                                    allClaimsResolved
+                                        ? 'bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-brand-500/20'
+                                        : 'bg-muted text-muted-foreground cursor-not-allowed shadow-none'
+                                }`}
+                            >
+                                <span className="flex items-center justify-center gap-2">
+                                    <CheckCircleIcon className="h-4 w-4" />
+                                    {allClaimsResolved
+                                        ? 'Submit Claims Report — $2,770 Credits + Expert Notes'
+                                        : `Action all items (${Object.keys(claimActions).length + Object.keys(warrantyActions).length}/${VENDOR_CLAIMS.length + WARRANTY_ALERTS.length})`
+                                    }
+                                </span>
                             </button>
                         </div>
                     )}
