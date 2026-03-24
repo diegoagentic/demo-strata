@@ -23,7 +23,7 @@ export const DUPLER_STEPS: DemoStep[] = [
         groupId: 1,
         groupTitle: 'Flow 1: Vendor Data Extraction',
         title: 'AI Mapping & Confidence Review',
-        description: 'AI Mapping Agent structures extracted data into SPEC/PMX format. 6 of 8 items auto-mapped at 97%+ confidence. 2 items flagged for designer review — quantity ambiguity and truncated option string.',
+        description: 'AI Mapping Agent structures extracted data into SPEC/PMX format. 4 of 8 items auto-mapped at 97%+ confidence. 4 items flagged for designer review — quantity ambiguity, truncated option string, finish/color verification, and material grade.',
         app: 'dupler-pdf',
         role: 'Designer',
     },
@@ -173,7 +173,7 @@ export const DUPLER_STEPS: DemoStep[] = [
 export const DUPLER_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     // Flow 1: Vendor Data Extraction
     'd1.1': { mode: 'interactive', userAction: 'Click "Upload Vendor Data" in Quick Actions. Designer uploads a vendor PDF quote. AI extracts 8 items using OCR and semantic parsing.' },
-    'd1.2': { mode: 'interactive', userAction: 'Review AI mapping results. 6 items auto-mapped (97%+). Resolve 2 flagged exceptions (quantity ambiguity, truncated option). Click "Approve Mapping".' },
+    'd1.2': { mode: 'interactive', userAction: 'Review AI mapping results. 4 items auto-mapped (97%+). Resolve 4 flagged exceptions (quantity, options, finish/color, material grade). Click "Approve Mapping".' },
     'd1.3': { mode: 'interactive', userAction: 'Acknowledge 2 upcharges ($1,380). Review Compass verification (HNI) and source PDF verification (non-CET). Click "Approve Validation".' },
     'd1.4': { mode: 'interactive', userAction: 'Review drawing audit (1 discrepancy). Verify source traceability. Generate PMX and send to Sales Coordinator.' },
     'd1.5': { mode: 'interactive', userAction: 'SC reviews validated PMX with source badges. Applies discounts (AI-assisted). Generates SIF and exports to CORE.' },
@@ -208,7 +208,7 @@ export const DUPLER_STEP_MESSAGES: Record<string, string[]> = {
     'd1.2': [
         'ExtractionMapper: structuring 8 items into SPEC/PMX format...',
         'FormatAdapter: mapping field types to SPEC schema',
-        'ConfidenceScorer: 6 items at 97%+ confidence — 2 flagged for review',
+        'ConfidenceScorer: 4 items at 97%+ confidence — 4 flagged for review',
     ],
     'd1.3': [
         'OptionValidator: checking finish/option configurations against catalog rules',

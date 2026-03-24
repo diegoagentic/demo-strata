@@ -622,7 +622,7 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                         <CheckCircleIcon className="h-3 w-3" />54 Items Extracted
                                     </span>
                                     <span className="flex items-center gap-1 text-[9px] text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/10 px-2 py-0.5 rounded-full">
-                                        <ExclamationTriangleIcon className="h-3 w-3" />2 Low-Confidence Fields
+                                        <ExclamationTriangleIcon className="h-3 w-3" />4 Low-Confidence Fields
                                     </span>
                                 </div>
                             </div>
@@ -902,12 +902,46 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                     {valPhase === 'notification' && renderNotification(
                         <ExclamationTriangleIcon className="h-4 w-4" />,
                         'Validation Complete — Upcharges & Price Discrepancies',
-                        `UpchargeDetector: ${UPCHARGE_ITEMS.length} finish/option selections trigger upcharges ($${UPCHARGE_TOTAL.toLocaleString()}). PriceVerifier: Compass verified ${HNI_ITEMS} HNI items (2 updates). Source PDF verified ${NON_CET_ITEMS} non-CET items.`,
+                        <div className="space-y-2.5">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 flex items-center gap-1 ring-2 ring-blue-300 dark:ring-blue-500/30 shadow-sm shadow-blue-200 dark:shadow-blue-500/10">
+                                    <LinkIcon className="h-3 w-3" /> SPEC/PMX
+                                </span>
+                                <span className="text-muted-foreground text-[10px]">↔</span>
+                                <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
+                                    <DocumentTextIcon className="h-3 w-3" /> CATALOG/SOURCE PDF
+                                </span>
+                                <span className="text-muted-foreground text-[10px]">↔</span>
+                                <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20 flex items-center gap-1">
+                                    <ShieldCheckIcon className="h-3 w-3" /> COMPASS
+                                </span>
+                                <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-semibold">VALIDATED</span>
+                            </div>
+                            <p>UpchargeDetector: {UPCHARGE_ITEMS.length} finish/option selections trigger upcharges (${UPCHARGE_TOTAL.toLocaleString()}). PriceVerifier: Compass verified {HNI_ITEMS} HNI items (2 updates). Source PDF verified {NON_CET_ITEMS} non-CET items.</p>
+                        </div>,
                         handleValStart
                     )}
                     {valPhase === 'processing' && renderAgentPipeline(valAgents, 100, 'Validation Engine — Options, upcharges & pricing...')}
                     {valPhase === 'revealed' && (
                         <div className="animate-in fade-in duration-500 space-y-4">
+                            {/* Visual Connection Bar */}
+                            <div className="flex flex-col gap-3 p-3 rounded-xl bg-card border border-border">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 flex items-center gap-1 ring-2 ring-blue-300 dark:ring-blue-500/30 shadow-sm shadow-blue-200 dark:shadow-blue-500/10">
+                                        <LinkIcon className="h-3 w-3" /> SPEC/PMX
+                                    </span>
+                                    <span className="text-muted-foreground text-[10px]">↔</span>
+                                    <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
+                                        <DocumentTextIcon className="h-3 w-3" /> CATALOG/SOURCE PDF
+                                    </span>
+                                    <span className="text-muted-foreground text-[10px]">↔</span>
+                                    <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20 flex items-center gap-1">
+                                        <ShieldCheckIcon className="h-3 w-3" /> COMPASS
+                                    </span>
+                                    <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-semibold">VALIDATED</span>
+                                </div>
+                            </div>
+
                             {/* Section A: Upcharge Review */}
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
@@ -1473,6 +1507,21 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Just now</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">Designer Alex Rivera sent PMX-MH-0412 ({TOTAL_ITEMS} items, ${PROJECT_TOTAL.toLocaleString()}). Drawing-verified, source-archived. Ready for discount application.</p>
+                                
+                                <div className="flex items-center gap-2 flex-wrap mt-3 mb-2">
+                                    <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 flex items-center gap-1 ring-2 ring-blue-300 dark:ring-blue-500/30 shadow-sm shadow-blue-200 dark:shadow-blue-500/10">
+                                        <LinkIcon className="h-3 w-3" /> VALIDATED PMX
+                                    </span>
+                                    <span className="text-muted-foreground text-[10px]">↔</span>
+                                    <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
+                                        <ShieldCheckIcon className="h-3 w-3" /> STRATA PRICING
+                                    </span>
+                                    <span className="text-muted-foreground text-[10px]">→</span>
+                                    <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 flex items-center gap-1">
+                                        <ArrowUpTrayIcon className="h-3 w-3" /> CORE (ERP)
+                                    </span>
+                                </div>
+
                                 <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review <ArrowRightIcon className="h-3 w-3" /></p>
                             </div>
                         </div>
@@ -1489,6 +1538,24 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                     </div>
 
                     <div className="p-5 space-y-4">
+                        {/* Visual Connection Bar */}
+                        <div className="flex flex-col gap-3 p-3 rounded-xl bg-card border border-border">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 flex items-center gap-1 ring-2 ring-blue-300 dark:ring-blue-500/30 shadow-sm shadow-blue-200 dark:shadow-blue-500/10">
+                                    <LinkIcon className="h-3 w-3" /> VALIDATED PMX
+                                </span>
+                                <span className="text-muted-foreground text-[10px]">↔</span>
+                                <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
+                                    <ShieldCheckIcon className="h-3 w-3" /> STRATA PRICING
+                                </span>
+                                <span className="text-muted-foreground text-[10px]">→</span>
+                                <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 flex items-center gap-1">
+                                    <ArrowUpTrayIcon className="h-3 w-3" /> CORE (ERP)
+                                </span>
+                                <span className="text-[8px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold">SC PRICING</span>
+                            </div>
+                        </div>
+
                         {/* PMX metadata */}
                         <div className="grid grid-cols-3 gap-x-6 gap-y-1 text-[10px]">
                             <div className="flex justify-between"><span className="text-muted-foreground">PMX ID:</span><span className="font-mono font-bold text-foreground">PMX-MH-0412</span></div>
@@ -1654,6 +1721,24 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                         </div>
                     </div>
 
+                    {/* Visual Connection Bar */}
+                    <div className="flex flex-col gap-3 p-3 rounded-xl bg-card border border-border">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 flex items-center gap-1 ring-2 ring-blue-300 dark:ring-blue-500/30 shadow-sm shadow-blue-200 dark:shadow-blue-500/10">
+                                <LinkIcon className="h-3 w-3" /> VALIDATED PMX
+                            </span>
+                            <span className="text-muted-foreground text-[10px]">↔</span>
+                            <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
+                                <ShieldCheckIcon className="h-3 w-3" /> STRATA PRICING
+                            </span>
+                            <span className="text-muted-foreground text-[10px]">→</span>
+                            <span className="text-[8px] font-bold px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 flex items-center gap-1">
+                                <ArrowUpTrayIcon className="h-3 w-3" /> CORE (ERP)
+                            </span>
+                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-semibold">EXPORTED</span>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-3 gap-3">
                         <div className="text-center p-3 rounded-lg bg-muted/30 border border-border">
                             <div className="text-lg font-bold text-foreground">{TOTAL_ITEMS}</div>
@@ -1686,34 +1771,86 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
 
             {/* View Source Modal */}
             {viewSourceLine !== null && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-200" onClick={() => setViewSourceLine(null)}>
-                    <div className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] pt-20 pb-6 px-4 sm:px-6 animate-in fade-in duration-200" onClick={() => setViewSourceLine(null)}>
+                    <div className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-full animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        
+                        <div className="bg-zinc-100 dark:bg-zinc-800 p-3 border-b border-zinc-200 dark:border-zinc-700 font-mono text-xs flex justify-between items-center text-muted-foreground shrink-0">
                             <div className="flex items-center gap-2">
-                                <DocumentTextIcon className="h-4 w-4 text-amber-500" />
-                                <span className="text-xs font-bold text-foreground">Source Document — NF-2026-0412.pdf</span>
-                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">VENDOR PDF</span>
+                                <DocumentTextIcon className="w-4 h-4 text-amber-500" />
+                                <span>preview: NF-2026-0412-VendorQuote.pdf</span>
+                                <span className="text-[10px] ml-2 font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">SOURCE PDF</span>
                             </div>
-                            <button onClick={() => setViewSourceLine(null)} className="p-1 rounded-lg hover:bg-muted transition-colors">
-                                <XMarkIcon className="h-4 w-4 text-muted-foreground" />
+                            <button onClick={() => setViewSourceLine(null)} className="p-1 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                                <XMarkIcon className="h-4 w-4" />
                             </button>
                         </div>
-                        <div className="p-5 space-y-3">
-                            <div className="font-mono text-[10px] text-muted-foreground leading-relaxed whitespace-pre-wrap bg-zinc-100 dark:bg-zinc-800/50 p-4 rounded-lg border border-border">
-                                {SOURCE_EXCERPTS[viewSourceLine] || 'Source excerpt not available'}
-                            </div>
-                            <div className="flex items-center justify-between text-[9px] text-muted-foreground">
-                                <span>AI extracted on Mar 24, 2026</span>
-                                <span className="flex items-center gap-1">
-                                    Confidence: <span className="font-bold text-green-600 dark:text-green-400">97%+</span>
-                                </span>
-                            </div>
-                            {SC_PMX_ITEMS.find(i => i.line === viewSourceLine)?.flagged && (
-                                <div className="flex items-center gap-2 text-[9px] p-2 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
-                                    <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                    <span className="text-green-700 dark:text-green-300">This item was flagged during extraction and reviewed by designer</span>
+
+                        {/* Interactive Visual Document Layout */}
+                        <div className="flex-1 p-8 overflow-y-auto bg-zinc-100/50 dark:bg-zinc-950/80 flex flex-col items-center custom-scrollbar">
+                            <div className="w-full max-w-xl bg-white border border-zinc-200/80 shadow-md transform transition-all hover:shadow-lg p-10 rounded shadow-zinc-300 dark:shadow-none min-h-[700px] relative">
+                                
+                                <div className="text-zinc-900 text-[10px] space-y-6 font-sans">
+                                    <div className="flex justify-between items-start border-b-2 border-zinc-200 pb-6 mb-6">
+                                        <div>
+                                            <h1 className="text-2xl font-black uppercase tracking-widest text-zinc-800">VENDOR QUOTE</h1>
+                                            <p className="text-zinc-500 mt-1">National Office Solutions</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold text-lg text-zinc-800">QUOTE-1A990</div>
+                                            <p className="mt-1 text-zinc-500">Date: Feb 12, 2026</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <div className="font-bold text-zinc-500 mb-1">PREPARED FOR</div>
+                                            <div className="font-medium text-sm text-zinc-800">Enterprise Logistics</div>
+                                            <div className="text-zinc-600">Attn: Jane Doe</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-6">
+                                        <div className="grid grid-cols-12 font-bold mb-2 border-b border-zinc-300 pb-2 text-zinc-600 uppercase tracking-wider text-[9px]">
+                                            <div className="col-span-1">Ln</div>
+                                            <div className="col-span-7">Description / Details</div>
+                                            <div className="col-span-2 text-center">Qty</div>
+                                            <div className="col-span-2 text-right">Ext Price</div>
+                                        </div>
+                                        
+                                        {/* Highlighted Extract Region */}
+                                        <div className="grid grid-cols-12 border border-blue-400 bg-blue-50/50 py-3 px-2 rounded -mx-2 items-start relative mt-4 shadow-sm ring-4 ring-blue-500/10">
+                                            <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-r"></div>
+                                            <div className="col-span-1 font-mono text-zinc-500 pt-1">0{viewSourceLine}</div>
+                                            <div className="col-span-7 pr-4">
+                                                <div className="font-mono text-[11px] text-zinc-800 whitespace-pre-wrap leading-relaxed">{SOURCE_EXCERPTS[viewSourceLine] || 'Source excerpt not available'}</div>
+                                            </div>
+                                            <div className="col-span-2 text-center pt-1 font-medium text-zinc-800">{SC_PMX_ITEMS.find(i => i.line === viewSourceLine)?.qty || 1}</div>
+                                            <div className="col-span-2 text-right pt-1 font-medium text-zinc-800">${(SC_PMX_ITEMS.find(i => i.line === viewSourceLine)?.listPrice || 0).toLocaleString()}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="absolute bottom-10 inset-x-10 text-center font-mono text-[9px] text-zinc-400 border-t border-zinc-200 pt-4 mt-12">
+                                        CONFIDENTIAL • Page 1 of 4 • National Office Solutions
+                                    </div>
                                 </div>
-                            )}
+                            </div>
+                        </div>
+
+                        {/* Footer Status Bar */}
+                        <div className="border-t border-zinc-200 dark:border-zinc-800 p-3 bg-white dark:bg-zinc-900 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-3">
+                                <span className="flex items-center gap-1.5 text-[10px] text-zinc-600 dark:text-zinc-400 font-medium font-mono">
+                                    <CheckCircleIcon className="w-3.5 h-3.5 text-green-500" /> AI Region Mapped
+                                </span>
+                                {SC_PMX_ITEMS.find(i => i.line === viewSourceLine)?.flagged && (
+                                    <span className="flex items-center gap-1.5 text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-medium">
+                                        <ExclamationTriangleIcon className="w-3 h-3" /> Flagged for SC Review
+                                    </span>
+                                )}
+                            </div>
+                            <div className="text-[10px] text-zinc-500 font-mono">
+                                Extract Confidence: <strong className="text-green-600 dark:text-green-400">97%+</strong>
+                            </div>
                         </div>
                     </div>
                 </div>

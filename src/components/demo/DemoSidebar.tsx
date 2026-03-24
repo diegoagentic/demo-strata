@@ -50,8 +50,8 @@ function getStepDataThread(stepId: string): string | null {
         '4.3': '$11,550 reconciled',
         '4.4': '92% satisfaction, AV flagged',
         // Dupler
-        'd1.1': '8 National items extracted from vendor PDF — 2 low-confidence fields',
-        'd1.2': '6 auto-mapped (97%+), 2 flagged — designer confirmed',
+        'd1.1': '8 National items extracted from vendor PDF — 4 low-confidence fields',
+        'd1.2': '4 auto-mapped (97%+), 4 flagged (qty, options, finish, material) — designer confirmed',
         'd1.3': '$1,380 upcharges captured — Compass: 24 HNI, Source PDF: 8 non-CET verified',
         'd1.4': 'Drawing audit: 31/32 match — PMX generated, sent to SC',
         'd1.5': 'SC applied discounts — SIF exported to CORE',
