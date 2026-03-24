@@ -591,14 +591,14 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                     <AIAgentAvatar />
                                     <div className="flex-1">
                                         <p className="text-xs text-green-800 dark:text-green-200">
-                                            <span className="font-bold">PdfOcrAgent:</span> 8 items extracted from vendor quote NF-2026-0412. Part numbers, quantities, finishes, options, and list prices identified.
+                                            <span className="font-bold">PdfOcrAgent:</span> 54 items extracted from vendor quote NF-2026-0412. Part numbers, quantities, finishes, options, and list prices identified.
                                         </p>
                                     </div>
                                     <SourceBadge label="VENDOR PDF" color="amber" />
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <span className="flex items-center gap-1 text-[9px] text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-500/10 px-2 py-0.5 rounded-full">
-                                        <CheckCircleIcon className="h-3 w-3" />8 Items Extracted
+                                        <CheckCircleIcon className="h-3 w-3" />54 Items Extracted
                                     </span>
                                     <span className="flex items-center gap-1 text-[9px] text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/10 px-2 py-0.5 rounded-full">
                                         <ExclamationTriangleIcon className="h-3 w-3" />2 Low-Confidence Fields
@@ -613,7 +613,7 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                         <DocumentTextIcon className="h-4 w-4 text-amber-500" />
                                         <span className="text-xs font-bold text-foreground">Extracted Items — National Furniture Quote #NF-2026-0412</span>
                                     </div>
-                                    <span className="text-[9px] text-muted-foreground">{NON_CET_ITEMS} items</span>
+                                    <span className="text-[9px] text-muted-foreground">54 items</span>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-[10px]">
@@ -634,7 +634,14 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                                     <td className="py-1.5 px-3 text-muted-foreground">{item.line}</td>
                                                     <td className="py-1.5 px-2 font-mono text-foreground">{item.sku}</td>
                                                     <td className="py-1.5 px-2 text-foreground">{item.product}</td>
-                                                    <td className="py-1.5 px-2 text-foreground">{item.finish}</td>
+                                                    <td className="py-1.5 px-2">
+                                                        <span className={`inline-block text-[9px] font-semibold px-2 py-0.5 rounded-full ${
+                                                            item.finish.includes('Orange') ? 'bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400' :
+                                                            item.finish.includes('Walnut') ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400' :
+                                                            item.finish.includes('Gray') ? 'bg-zinc-200 dark:bg-zinc-500/10 text-zinc-700 dark:text-zinc-400' :
+                                                            'bg-zinc-100 dark:bg-zinc-500/10 text-zinc-600 dark:text-zinc-400'
+                                                        }`}>{item.finish}</span>
+                                                    </td>
                                                     <td className="py-1.5 px-2 text-right text-foreground">{item.qty}</td>
                                                     <td className="py-1.5 px-2 text-right font-medium text-foreground">${item.listPrice.toLocaleString()}</td>
                                                     <td className="py-1.5 px-2 text-center"><ConfidenceScoreBadge score={item.overallConfidence} /></td>
@@ -642,6 +649,20 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+                                {/* Pagination — simulating 50+ items */}
+                                <div className="px-4 py-2.5 border-t border-border bg-muted/30 flex items-center justify-between">
+                                    <span className="text-[10px] text-muted-foreground">Showing <span className="font-semibold text-foreground">1–8</span> of <span className="font-semibold text-foreground">54</span> extracted items</span>
+                                    <div className="flex items-center gap-1">
+                                        <button disabled className="w-7 h-7 rounded-lg bg-brand-400 text-zinc-900 text-[10px] font-bold">1</button>
+                                        <button className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground text-[10px] font-semibold border border-border">2</button>
+                                        <button className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground text-[10px] font-semibold border border-border">3</button>
+                                        <span className="text-[10px] text-muted-foreground px-1">...</span>
+                                        <button className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground text-[10px] font-semibold border border-border">7</button>
+                                        <button className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground text-[10px] font-semibold border border-border flex items-center justify-center">
+                                            <ChevronRightIcon className="h-3 w-3" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
