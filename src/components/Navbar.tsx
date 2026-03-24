@@ -48,6 +48,16 @@ const DEMO_PROFILES: Record<string, { name: string; role: string; photo: string 
         role: 'Sales Rep',
         photo: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=80&h=80&fit=crop&crop=face',
     },
+    Designer: {
+        name: 'Alex Rivera',
+        role: 'Designer',
+        photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&h=80&fit=crop&crop=face',
+    },
+    SC: {
+        name: 'Randy Martinez',
+        role: 'Sales Coordinator',
+        photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
+    },
 };
 
 // Apps that belong to Expert Hub — everything else is Dealer Experience
@@ -57,6 +67,8 @@ function resolveProfileKey(role: string | undefined, app: string | undefined): s
     if (role === 'Expert') return 'Expert';
     if (role === 'End User') return 'End User';
     if (role === 'Sales Rep') return 'Sales Rep';
+    if (role === 'Designer') return 'Designer';
+    if (role === 'SC') return 'SC';
     if (role === 'System') {
         // System steps inherit the human profile of their parent app
         if (app === 'crm') return 'Sales Rep';
