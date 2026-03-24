@@ -177,6 +177,7 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
     const [extractProgress, setExtractProgress] = useState(0);
     const [itemsRevealed, setItemsRevealed] = useState(0);
     const [scanProgress, setScanProgress] = useState(0);
+    const [uploadTab, setUploadTab] = useState<'pdf' | 'url'>('pdf');
 
     // ── d1.2 State: Mapping & Confidence Review ──
     const [mapPhase, setMapPhase] = useState<MappingPhase>('idle');
@@ -465,34 +466,77 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
             {/* ── d1.1: Vendor Data Upload & AI Extraction ── */}
             {stepId === 'd1.1' && (
                 <>
-                    {/* Upload zone — drag/drop PDF + URL paste */}
+                    {/* Upload zone — tabs: PDF upload / URL paste */}
                     {uploadPhase === 'upload-zone' && (
                         <div className="animate-in fade-in slide-in-from-top-4 duration-500 space-y-4">
-                            <div className="p-6 rounded-xl bg-card border-2 border-dashed border-amber-300 dark:border-amber-500/40">
-                                <div className="flex flex-col items-center justify-center py-4 gap-3">
-                                    <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-500/10">
-                                        <ArrowUpTrayIcon className="h-10 w-10 text-amber-600 dark:text-amber-400" />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-sm font-bold text-foreground">Upload Vendor Data</p>
-                                        <p className="text-xs text-muted-foreground mt-1">Drag & drop a vendor PDF or paste a manufacturer URL</p>
-                                    </div>
-                                    <div className="flex gap-2 mt-1">
+                            <div className="rounded-xl bg-card border-2 border-dashed border-amber-300 dark:border-amber-500/40 overflow-hidden">
+                                {/* Tab bar */}
+                                <div className="flex border-b border-border">
+                                    <button onClick={() => setUploadTab('pdf')}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[11px] font-bold transition-colors ${
+                                            uploadTab === 'pdf'
+                                                ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-b-2 border-amber-500'
+                                                : 'text-muted-foreground hover:bg-muted/30'
+                                        }`}>
+                                        <DocumentTextIcon className="h-3.5 w-3.5" />
+                                        Upload PDF
                                         <SourceBadge label="VENDOR PDF" color="amber" />
+                                    </button>
+                                    <button onClick={() => setUploadTab('url')}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[11px] font-bold transition-colors ${
+                                            uploadTab === 'url'
+                                                ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-b-2 border-purple-500'
+                                                : 'text-muted-foreground hover:bg-muted/30'
+                                        }`}>
+                                        <LinkIcon className="h-3.5 w-3.5" />
+                                        Paste URL
                                         <SourceBadge label="MFR WEBSITE" color="purple" />
-                                    </div>
+                                    </button>
                                 </div>
 
-                                {/* Mock file card */}
-                                <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-200 dark:border-amber-500/20 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-500/10">
-                                        <DocumentTextIcon className="h-6 w-6 text-amber-500" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-foreground">NF-2026-0412.pdf</p>
-                                        <p className="text-[10px] text-muted-foreground">National Furniture — Vendor Quote</p>
-                                    </div>
-                                    <SourceBadge label="VENDOR PDF" color="amber" />
+                                <div className="p-6">
+                                    {uploadTab === 'pdf' ? (
+                                        <>
+                                            <div className="flex flex-col items-center justify-center py-4 gap-3">
+                                                <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-500/10">
+                                                    <ArrowUpTrayIcon className="h-10 w-10 text-amber-600 dark:text-amber-400" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm font-bold text-foreground">Upload Vendor PDF</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Drag & drop a vendor quote, price list, or catalog PDF</p>
+                                                </div>
+                                            </div>
+                                            {/* Mock file card */}
+                                            <div className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-500/5 rounded-lg border border-amber-200 dark:border-amber-500/20 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-500/10">
+                                                    <DocumentTextIcon className="h-6 w-6 text-amber-500" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-bold text-foreground">NF-2026-0412.pdf</p>
+                                                    <p className="text-[10px] text-muted-foreground">National Furniture — Vendor Quote</p>
+                                                </div>
+                                                <SourceBadge label="VENDOR PDF" color="amber" />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex flex-col items-center justify-center py-4 gap-3">
+                                                <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/10">
+                                                    <LinkIcon className="h-10 w-10 text-purple-600 dark:text-purple-400" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm font-bold text-foreground">Paste Manufacturer URL</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Amazon, vendor portals, or manufacturer catalog pages</p>
+                                                </div>
+                                            </div>
+                                            {/* Mock URL input */}
+                                            <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-500/5 rounded-lg border border-purple-200 dark:border-purple-500/20 mt-2">
+                                                <LinkIcon className="h-4 w-4 text-purple-400 shrink-0" />
+                                                <span className="text-xs text-muted-foreground font-mono flex-1">https://nationalfurniture.com/catalog/waveworks...</span>
+                                                <SourceBadge label="MFR WEBSITE" color="purple" />
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -860,6 +904,22 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                 </p>
                             </div>
 
+                            {/* Routed to SC note */}
+                            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 flex items-start gap-3">
+                                <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-500/10 shrink-0 mt-0.5">
+                                    <ArrowRightIcon className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-[10px] font-bold text-blue-800 dark:text-blue-200">Next: Routed to Sales Coordinator</span>
+                                        <SourceBadge label="DESIGNER → SC" color="blue" />
+                                    </div>
+                                    <p className="text-[10px] text-blue-700 dark:text-blue-300">
+                                        Validated items will be packaged into PMX and sent to the Sales Coordinator for discount application and SIF generation.
+                                    </p>
+                                </div>
+                            </div>
+
                             {/* CTA */}
                             <button onClick={() => nextStep()} disabled={!allValResolved}
                                 className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
@@ -1139,15 +1199,22 @@ const DISCOUNT_TIERS = [
 ];
 
 const SC_PMX_ITEMS = [
-    { line: 1, mfg: 'Allsteel', product: 'Involve Workstation 66"', qty: 12, listPrice: 2525, source: 'CET' as const },
-    { line: 2, mfg: 'Allsteel', product: 'Acuity Task Chair', qty: 24, listPrice: 895, source: 'CET' as const },
-    { line: 3, mfg: 'Allsteel', product: 'Stride Bench 60"', qty: 6, listPrice: 1890, source: 'CET' as const },
-    { line: 4, mfg: 'Gunlock', product: 'Executive Credenza 72"', qty: 4, listPrice: 3200, source: 'CET' as const },
-    { line: 5, mfg: 'Gunlock', product: 'Conference Table 96"', qty: 2, listPrice: 4500, source: 'CET' as const },
-    { line: 10, mfg: 'National', product: 'Waveworks Desk 60"', qty: 10, listPrice: 2180, source: 'Vendor PDF' as const },
-    { line: 11, mfg: 'National', product: 'Exhibit Collab Table 48"', qty: 4, listPrice: 1240, source: 'Vendor PDF' as const },
-    { line: 12, mfg: 'National', product: 'Realize Desk 60"', qty: 4, listPrice: 1580, source: 'Vendor PDF' as const },
-];
+    { line: 1, mfg: 'Allsteel', product: 'Involve Workstation 66"', qty: 12, listPrice: 2525, source: 'CET' as const, flagged: false },
+    { line: 2, mfg: 'Allsteel', product: 'Acuity Task Chair', qty: 24, listPrice: 895, source: 'CET' as const, flagged: false },
+    { line: 3, mfg: 'Allsteel', product: 'Stride Bench 60"', qty: 6, listPrice: 1890, source: 'CET' as const, flagged: false },
+    { line: 4, mfg: 'Gunlock', product: 'Executive Credenza 72"', qty: 4, listPrice: 3200, source: 'CET' as const, flagged: false },
+    { line: 5, mfg: 'Gunlock', product: 'Conference Table 96"', qty: 2, listPrice: 4500, source: 'CET' as const, flagged: false },
+    { line: 10, mfg: 'National', product: 'Waveworks Desk 60"', qty: 10, listPrice: 2180, source: 'Vendor PDF' as const, flagged: true, flagNote: 'Qty ambiguity resolved — designer confirmed 10' },
+    { line: 11, mfg: 'National', product: 'Exhibit Collab Table 48"', qty: 4, listPrice: 1240, source: 'Vendor PDF' as const, flagged: false },
+    { line: 12, mfg: 'National', product: 'Realize Desk 60"', qty: 4, listPrice: 1580, source: 'Vendor PDF' as const, flagged: true, flagNote: 'Truncated option corrected — designer confirmed' },
+] as const;
+
+// PDF context excerpts for "View Source" modal in d1.5
+const SOURCE_EXCERPTS: Record<number, string> = {
+    10: 'NAT-WW-3060  Waveworks Desk 60"\nFinish: White + Orange Accent\nQty: 8-10 units*     $2,180.00/ea\n*Confirm final qty w/ designer\n\nNote: Standing base, storage pedestal included',
+    11: 'NAT-EC-4200  Exhibit Collab Table 48"\nFinish: White\nQty: 4     $1,240.00/ea\nOpts: Power hub integrated',
+    12: 'NAT-DK-4200  Realize Desk 60"\nFinish: White + Gray\nOpts: Standing base, storage ped*\nQty: 4     $1,580.00/ea\n* see margin note pg 3',
+};
 
 export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => void }) {
     const { currentStep, nextStep, isPaused } = useDemo();
@@ -1164,6 +1231,7 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
     const [discountsApplied, setDiscountsApplied] = useState<Record<string, boolean>>({});
     const [genProgress, setGenProgress] = useState(0);
     const [exported, setExported] = useState(false);
+    const [viewSourceLine, setViewSourceLine] = useState<number | null>(null);
 
     const allDiscountsApplied = Object.values(discountsApplied).filter(Boolean).length >= DISCOUNT_TIERS.length;
 
@@ -1254,17 +1322,39 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                                 </thead>
                                 <tbody>
                                     {SC_PMX_ITEMS.map(item => (
-                                        <tr key={item.line} className="border-b border-border/50">
+                                        <tr key={item.line} className={`border-b border-border/50 ${item.flagged ? 'bg-amber-50/30 dark:bg-amber-500/[0.03]' : ''}`}>
                                             <td className="py-1.5 px-3 text-muted-foreground">{item.line}</td>
                                             <td className="py-1.5 px-2 font-medium text-foreground">{item.mfg}</td>
-                                            <td className="py-1.5 px-2 text-foreground">{item.product}</td>
+                                            <td className="py-1.5 px-2 text-foreground">
+                                                <span className="flex items-center gap-1.5">
+                                                    {item.product}
+                                                    {item.flagged && (
+                                                        <span className="group relative">
+                                                            <ExclamationTriangleIcon className="h-3 w-3 text-amber-500 shrink-0" />
+                                                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block whitespace-nowrap px-2 py-1 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[8px] font-medium z-20 shadow-lg">
+                                                                {'flagNote' in item ? item.flagNote : 'Flagged during extraction'}
+                                                            </span>
+                                                        </span>
+                                                    )}
+                                                    {item.flagged && (
+                                                        <span className="text-[7px] font-bold px-1 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20 shrink-0">CONFIRMED</span>
+                                                    )}
+                                                </span>
+                                            </td>
                                             <td className="py-1.5 px-2 text-right text-foreground">{item.qty}</td>
                                             <td className="py-1.5 px-2 text-right font-medium text-foreground">${item.listPrice.toLocaleString()}</td>
                                             <td className="py-1.5 px-2 text-center">
-                                                {item.source === 'CET'
-                                                    ? <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20">CET</span>
-                                                    : <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">VENDOR PDF</span>
-                                                }
+                                                <span className="flex items-center justify-center gap-1">
+                                                    {item.source === 'CET'
+                                                        ? <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20">CET</span>
+                                                        : <>
+                                                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">VENDOR PDF</span>
+                                                            <button onClick={() => setViewSourceLine(item.line)} className="text-[8px] font-bold px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-muted-foreground hover:text-foreground border border-border transition-colors" title="View source document">
+                                                                <MagnifyingGlassIcon className="h-2.5 w-2.5 inline" />
+                                                            </button>
+                                                        </>
+                                                    }
+                                                </span>
                                             </td>
                                         </tr>
                                     ))}
@@ -1391,6 +1481,41 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                             Flow 1 Complete — SIF exported to CORE
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* View Source Modal */}
+            {viewSourceLine !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-200" onClick={() => setViewSourceLine(null)}>
+                    <div className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md mx-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <DocumentTextIcon className="h-4 w-4 text-amber-500" />
+                                <span className="text-xs font-bold text-foreground">Source Document — NF-2026-0412.pdf</span>
+                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">VENDOR PDF</span>
+                            </div>
+                            <button onClick={() => setViewSourceLine(null)} className="p-1 rounded-lg hover:bg-muted transition-colors">
+                                <XMarkIcon className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                        </div>
+                        <div className="p-5 space-y-3">
+                            <div className="font-mono text-[10px] text-muted-foreground leading-relaxed whitespace-pre-wrap bg-zinc-100 dark:bg-zinc-800/50 p-4 rounded-lg border border-border">
+                                {SOURCE_EXCERPTS[viewSourceLine] || 'Source excerpt not available'}
+                            </div>
+                            <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                                <span>AI extracted on Mar 24, 2026</span>
+                                <span className="flex items-center gap-1">
+                                    Confidence: <span className="font-bold text-green-600 dark:text-green-400">97%+</span>
+                                </span>
+                            </div>
+                            {SC_PMX_ITEMS.find(i => i.line === viewSourceLine)?.flagged && (
+                                <div className="flex items-center gap-2 text-[9px] p-2 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                    <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                    <span className="text-green-700 dark:text-green-300">This item was flagged during extraction and reviewed by designer</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
