@@ -982,8 +982,15 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                                         <span className="font-bold">{upchargesAcked[uc.id] === 'acknowledged' ? 'Upcharge Captured' : 'Flagged for SC Review'}</span>
                                                     </div>
                                                     {upchargesAcked[uc.id] === 'flagged' && (
-                                                        <div className="p-2 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-[9px] text-amber-800 dark:text-amber-300 italic">
-                                                            "Note to SC: The {uc.finishOrOption.toLowerCase()} on Line {uc.itemLine} likely generates an upcharge; please confirm list price before final pricing."
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <PencilSquareIcon className="h-3 w-3 text-amber-500" />
+                                                                <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400">Designer Note — Alex Rivera</span>
+                                                            </div>
+                                                            <textarea readOnly rows={2}
+                                                                className="w-full px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/5 text-[10px] text-amber-900 dark:text-amber-200 resize-none focus:outline-none cursor-default"
+                                                                value={`Hey Randy — the ${uc.finishOrOption.toLowerCase()} on the ${uc.product} (Line ${uc.itemLine}) will trigger an upcharge of $${uc.perUnit}/unit. Please verify against the latest price list before applying the discount. Thanks!`}
+                                                            />
                                                         </div>
                                                     )}
                                                 </div>
