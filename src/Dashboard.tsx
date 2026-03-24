@@ -534,10 +534,10 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
         if (currentStep.id !== '1.6') { setClientApproved(false); }
     }, [currentStep.id])
 
-    // Step d2.6: Dealer Review & Dispatch Approval (Dupler — Dealer mobile)
+    // Step d2.7: Dealer Review & Dispatch Approval (Dupler — Dealer mobile)
     const [dealerDispatchApproved, setDealerDispatchApproved] = useState(false)
     useEffect(() => {
-        if (currentStep.id !== 'd2.6') { setDealerDispatchApproved(false); }
+        if (currentStep.id !== 'd2.7') { setDealerDispatchApproved(false); }
     }, [currentStep.id])
 
     // Step 2.1: Service Request (Continua — End User mobile)
@@ -934,7 +934,7 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                 </div>
             )}
 
-            {/* d2.6 now renders inside Follow Up tab below */}
+            {/* d2.7 now renders inside Follow Up tab below */}
 
             {/* ===== Step 2.1: Service Request — Mobile device (Continua End User) ===== */}
             {currentStep.id === '2.1' && !isOps && (
@@ -3234,8 +3234,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                                 <DuplerReportingNotification onSwitchToMetrics={() => setMainTab('metrics')} />
                             )}
 
-                            {/* Dupler d2.6: Dealer Review & Dispatch Approval */}
-                            {currentStep.id === 'd2.6' && (
+                            {/* Dupler d2.7: Dealer Review & Dispatch Approval */}
+                            {currentStep.id === 'd2.7' && (
                                 <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
                                     {/* Header */}
                                     <div className="px-6 py-4 border-b border-border">

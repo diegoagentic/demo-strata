@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // Dupler — Flow 2: Warehouse & Inventory Intelligence
-// Steps: d2.1 (Health), d2.2 (Receiving), d2.3 (Price), d2.4 (Sync), d2.5 (Claims)
-// d2.6 (Dealer Review) renders in Dashboard.tsx via MobileDeviceFrame
+// Steps: d2.1 (Health), d2.2 (Receiving), d2.3 (Price), d2.4 (Sync),
+//        d2.5 (In-Transit), d2.6 (Claims), d2.7 (Dealer Review in Dashboard.tsx)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -32,6 +32,7 @@ type HealthPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revea
 type ReceivingPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results';
 type PricePhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results';
 type SyncPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results';
+type TransitPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results';
 type ClaimsPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results';
 
 interface AgentVis { name: string; detail: string; visible: boolean; done: boolean; }
@@ -114,6 +115,32 @@ const WARRANTY_ALERTS = [
     { item: 'National Credenza (×2)', mfr: 'National', daysLeft: 60, value: '$3,360', action: 'Monitor' },
 ];
 
+// d2.1 — Consignment Aging ("Wall of Shame")
+const CONSIGNMENT_AGING = [
+    { item: 'Executive Desk', client: 'Mercy Health Phase 1', daysOnSite: 180, value: 4200, status: 'overdue' as const, action: 'Return to warehouse or bill client' },
+    { item: 'Conference Table Set', client: 'Downtown Office Group', daysOnSite: 120, value: 6800, status: 'overdue' as const, action: 'Schedule pickup — lease expired' },
+    { item: 'Lounge Chairs (×4)', client: 'Regional Medical Center', daysOnSite: 90, value: 3400, status: 'at-risk' as const, action: 'Contact client — billing starts day 91' },
+];
+
+// d2.1 — Allocation Conflicts
+const ALLOCATION_CONFLICTS = [
+    { item: 'Acuity Task Chairs', projects: ['Mercy Health Phase 2', 'Downtown Office'], needed: 14, available: 12, gap: 2 },
+    { item: 'Stride Bench 60"', projects: ['Mercy Health Phase 2', 'Regional Medical'], needed: 8, available: 6, gap: 2 },
+];
+
+// d2.5 — In-Transit Intelligence
+const FREIGHT_AUDIT = [
+    { carrier: 'SAIA', shipmentId: 'SH-004', quotedCost: 1200, billedCost: 1540, overcharge: 340, reason: 'Accessorial charge not in BOL' },
+];
+
+const SPLIT_SHIPMENT = [
+    { poId: 'PO-2026-0389', totalItems: 30, received: 28, backordered: 2, backorderItems: [{ name: 'Park Collaborative Table', qty: 2, eta: 'Apr 7' }] },
+];
+
+const PREDICTIVE_ALERTS = [
+    { shipmentId: 'SH-004', carrier: 'SAIA', manufacturer: 'Indiana Furniture', prediction: 'weather-delay' as const, delayDays: 2, confidence: 87, impact: '9 items for Mercy Health Phase 2' },
+];
+
 // ─── Agents ──────────────────────────────────────────────────────────────────
 
 const HEALTH_AGENTS: AgentVis[] = [
@@ -135,14 +162,12 @@ const RECEIVING_AGENTS: AgentVis[] = [
 const PRICE_AGENTS: AgentVis[] = [
     { name: 'PriceListScanner', detail: 'Scanning Allsteel, Kimball, National Q1 2026...', visible: false, done: false },
     { name: 'CostBasisChecker', detail: '3 items with cost changes detected...', visible: false, done: false },
-    { name: 'RegionalTaxEngine', detail: 'Verifying OH 7.8%, IL 6.7% compliance...', visible: false, done: false },
     { name: 'MarginCalculator', detail: '2 items below 25% margin — flagged...', visible: false, done: false },
     { name: 'ComplianceReporter', detail: 'Generating price verification report...', visible: false, done: false },
 ];
 
 const SYNC_AGENTS: AgentVis[] = [
     { name: 'WarehouseSync', detail: 'Synchronizing Columbus + Cincinnati + Dayton...', visible: false, done: false },
-    { name: 'TransitTracker', detail: '5 shipments from 3 manufacturers...', visible: false, done: false },
     { name: 'DockScheduler', detail: 'Dock 1 conflict resolved — SH-002 → Dock 3...', visible: false, done: false },
     { name: 'RouteOptimizer', detail: '2 Allsteel deliveries consolidated — $1,200 savings...', visible: false, done: false },
     { name: 'MapUpdater', detail: 'Updating real-time tracking for all assets...', visible: false, done: false },
@@ -154,6 +179,13 @@ const CLAIMS_AGENTS: AgentVis[] = [
     { name: 'ReplacementFinder', detail: 'Graphite replacement ETA 3 days...', visible: false, done: false },
     { name: 'CreditProcessor', detail: '$2,770 total credits processing...', visible: false, done: false },
     { name: 'WarrantyChecker', detail: '4 items approaching warranty expiry...', visible: false, done: false },
+];
+
+const TRANSIT_AGENTS: AgentVis[] = [
+    { name: 'TransitTracker', detail: '5 active shipments across 3 carriers...', visible: false, done: false },
+    { name: 'PredictiveAlertEngine', detail: 'Weather delay predicted — SH-004 +2 days...', visible: false, done: false },
+    { name: 'FreightAuditor', detail: 'SH-004 overcharge detected — $340...', visible: false, done: false },
+    { name: 'SplitReconciler', detail: 'PO-2026-0389: 28/30 received, 2 backordered...', visible: false, done: false },
 ];
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -207,7 +239,16 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     const [syncProgress, setSyncProgress] = useState(0);
     const [syncCardsAnimated, setSyncCardsAnimated] = useState(false);
 
-    // ── d2.5 State: Vendor Claims ──
+    // ── d2.5 State: In-Transit Intelligence ──
+    const [transitPhase, setTransitPhase] = useState<TransitPhase>('idle');
+    const transitRef = useRef(transitPhase);
+    useEffect(() => { transitRef.current = transitPhase; }, [transitPhase]);
+    const [transitAgents, setTransitAgents] = useState(TRANSIT_AGENTS.map(a => ({ ...a })));
+    const [transitProgress, setTransitProgress] = useState(0);
+    const [freightClaimed, setFreightClaimed] = useState(false);
+    const [alertAcknowledged, setAlertAcknowledged] = useState(false);
+
+    // ── d2.6 State: Vendor Claims ──
     const [claimsPhase, setClaimsPhase] = useState<ClaimsPhase>('idle');
     const claimsRef = useRef(claimsPhase);
     useEffect(() => { claimsRef.current = claimsPhase; }, [claimsPhase]);
@@ -344,7 +385,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     }, [pricePhase]);
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // d2.4: Multi-Warehouse Sync & Transit (System, auto 10s)
+    // d2.4: Multi-Warehouse Sync (System, auto 10s)
     // ═══════════════════════════════════════════════════════════════════════════
 
     useEffect(() => {
@@ -387,15 +428,51 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     }, [syncPhase]);
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // d2.5: Vendor Claims & Returns (Expert, interactive)
+    // d2.5: In-Transit Intelligence & Freight Audit (Expert, interactive)
     // ═══════════════════════════════════════════════════════════════════════════
 
     useEffect(() => {
-        if (stepId !== 'd2.5') { setClaimsPhase('idle'); return; }
+        if (stepId !== 'd2.5') { setTransitPhase('idle'); setFreightClaimed(false); setAlertAcknowledged(false); return; }
+        setTransitPhase('idle');
+        setTransitAgents(TRANSIT_AGENTS.map(a => ({ ...a })));
+        setTransitProgress(0);
+        setFreightClaimed(false);
+        setAlertAcknowledged(false);
+        const t = tp('d2.5');
+        const timer = setTimeout(pauseAware(() => setTransitPhase('notification')), t.notifDelay);
+        return () => clearTimeout(timer);
+    }, [stepId]);
+
+    const handleTransitStart = () => setTransitPhase('processing');
+
+    useEffect(() => {
+        if (transitPhase !== 'processing') return;
+        const timers = runAgentPipeline(TRANSIT_AGENTS, setTransitAgents, setTransitProgress, tp('d2.5'), () => setTransitPhase('breathing'));
+        return () => timers.forEach(clearTimeout);
+    }, [transitPhase]);
+
+    useEffect(() => {
+        if (transitPhase !== 'breathing') return;
+        const t = setTimeout(pauseAware(() => setTransitPhase('revealed')), tp('d2.5').breathing);
+        return () => clearTimeout(t);
+    }, [transitPhase]);
+
+    useEffect(() => {
+        if (transitPhase !== 'revealed') return;
+        const t = setTimeout(pauseAware(() => setTransitPhase('results')), 800);
+        return () => clearTimeout(t);
+    }, [transitPhase]);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // d2.6: Vendor Claims & Returns (Expert, interactive)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    useEffect(() => {
+        if (stepId !== 'd2.6') { setClaimsPhase('idle'); return; }
         setClaimsPhase('idle');
         setClaimsAgents(CLAIMS_AGENTS.map(a => ({ ...a })));
         setClaimsProgress(0);
-        const t = tp('d2.5');
+        const t = tp('d2.6');
         const timer = setTimeout(pauseAware(() => setClaimsPhase('notification')), t.notifDelay);
         return () => clearTimeout(timer);
     }, [stepId]);
@@ -404,13 +481,13 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
 
     useEffect(() => {
         if (claimsPhase !== 'processing') return;
-        const timers = runAgentPipeline(CLAIMS_AGENTS, setClaimsAgents, setClaimsProgress, tp('d2.5'), () => setClaimsPhase('breathing'));
+        const timers = runAgentPipeline(CLAIMS_AGENTS, setClaimsAgents, setClaimsProgress, tp('d2.6'), () => setClaimsPhase('breathing'));
         return () => timers.forEach(clearTimeout);
     }, [claimsPhase]);
 
     useEffect(() => {
         if (claimsPhase !== 'breathing') return;
-        const t = setTimeout(pauseAware(() => setClaimsPhase('revealed')), tp('d2.5').breathing);
+        const t = setTimeout(pauseAware(() => setClaimsPhase('revealed')), tp('d2.6').breathing);
         return () => clearTimeout(t);
     }, [claimsPhase]);
 
@@ -493,7 +570,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
     // RENDER
     // ═══════════════════════════════════════════════════════════════════════════
 
-    if (!stepId.startsWith('d2.') || stepId === 'd2.6') return null;
+    if (!stepId.startsWith('d2.') || stepId === 'd2.7') return null;
 
     return (
         <div className="p-6 space-y-4 max-w-5xl mx-auto">
@@ -546,6 +623,58 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                                 )}
                                             </div>
                                             {wh.alert && <p className="text-[10px] text-red-600 dark:text-red-400 mt-1 flex items-center gap-1"><ExclamationTriangleIcon className="h-3 w-3" />{wh.alertText}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Wall of Shame — Consignment Aging */}
+                            <div className="rounded-xl border-2 border-red-200 dark:border-red-500/20 overflow-hidden">
+                                <div className="bg-red-50 dark:bg-red-500/5 px-4 py-2 border-b border-red-200 dark:border-red-500/20 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <ExclamationTriangleIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                        <span className="text-xs font-bold text-red-800 dark:text-red-200">Consignment Aging — "Wall of Shame"</span>
+                                    </div>
+                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-700 dark:text-red-400 font-bold">{CONSIGNMENT_AGING.length} ITEMS</span>
+                                </div>
+                                <div className="divide-y divide-red-100 dark:divide-red-500/10">
+                                    {CONSIGNMENT_AGING.map((ca, i) => (
+                                        <div key={i} className="px-4 py-3 flex items-start justify-between gap-3">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${ca.status === 'overdue' ? 'bg-red-500/20 text-red-700 dark:text-red-400' : 'bg-amber-500/20 text-amber-700 dark:text-amber-400'}`}>{ca.status === 'overdue' ? 'Overdue' : 'At Risk'}</span>
+                                                    <span className="text-[11px] font-bold text-foreground">{ca.item}</span>
+                                                </div>
+                                                <div className="text-[10px] text-muted-foreground">{ca.client} — {ca.daysOnSite} days on site</div>
+                                                <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"><AIAgentAvatar /><span className="italic">{ca.action}</span></div>
+                                            </div>
+                                            <span className="text-sm font-bold text-foreground">${ca.value.toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Allocation Dashboard */}
+                            <div className="rounded-xl border-2 border-amber-200 dark:border-amber-500/20 overflow-hidden">
+                                <div className="bg-amber-50 dark:bg-amber-500/5 px-4 py-2 border-b border-amber-200 dark:border-amber-500/20 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <ExclamationCircleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                        <span className="text-xs font-bold text-amber-800 dark:text-amber-200">Allocation Conflicts</span>
+                                    </div>
+                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold">{ALLOCATION_CONFLICTS.length} CONFLICTS</span>
+                                </div>
+                                <div className="divide-y divide-amber-100 dark:divide-amber-500/10">
+                                    {ALLOCATION_CONFLICTS.map((ac, i) => (
+                                        <div key={i} className="px-4 py-3">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[11px] font-bold text-foreground">{ac.item}</span>
+                                                <span className="text-[10px] font-bold text-red-600 dark:text-red-400">{ac.needed} needed, {ac.available} available (gap: {ac.gap})</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {ac.projects.map((p, j) => (
+                                                    <span key={j} className="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold">{p}</span>
+                                                ))}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -707,8 +836,8 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                         <div className="animate-in fade-in duration-500 space-y-4">
                             {renderRevealed(
                                 <CurrencyDollarIcon className="h-4 w-4" />,
-                                <><span className="font-bold">PriceListScanner:</span> 5 items verified — <span className="font-semibold">2 with margin below 25%</span> flagged. Regional tax compliance: OH 7.8% verified, IL 6.7% requires review.</>,
-                                ['Price Lists', 'Contract DB', 'Tax Engine', 'Margin Calculator']
+                                <><span className="font-bold">PriceListScanner:</span> 5 items verified — <span className="font-semibold">2 with margin below 25%</span> flagged. Tax compliance auto-verified.</>,
+                                ['Price Lists', 'Contract DB', 'Margin Calculator', 'Compliance Reporter']
                             )}
 
                             {/* Price checks table */}
@@ -748,31 +877,10 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 </div>
                             </div>
 
-                            {/* Tax compliance */}
-                            <div className="p-4 rounded-xl bg-purple-50 dark:bg-purple-500/5 border border-purple-200 dark:border-purple-500/20">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <ShieldCheckIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                    <span className="text-xs font-bold text-purple-800 dark:text-purple-200">Regional Tax Compliance</span>
-                                </div>
-                                <div className="space-y-2">
-                                    {TAX_COMPLIANCE.map((tc, i) => (
-                                        <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/50 dark:bg-purple-500/5 border border-purple-200/50 dark:border-purple-500/10 text-[10px]">
-                                            <div className="flex items-center gap-2">
-                                                <MapPinIcon className="h-3 w-3 text-purple-500 shrink-0" />
-                                                <span className="font-semibold text-foreground">{tc.region}</span>
-                                                <span className="text-muted-foreground">— {tc.applies}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-bold text-purple-700 dark:text-purple-400">{tc.rate}</span>
-                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${
-                                                    tc.status === 'verified'
-                                                        ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                                                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                                                }`}>{tc.status === 'verified' ? 'Verified' : 'Review'}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                            {/* Tax compliance — minimized informative note */}
+                            <div className="p-3 rounded-xl bg-muted/30 border border-border flex items-center gap-3">
+                                <ShieldCheckIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="text-[10px] text-muted-foreground">Tax compliance: OH 7.8% verified, IL 6.7% auto-applied — handled by SC during pricing.</span>
                             </div>
 
                             {/* CTA */}
@@ -784,7 +892,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                 </>
             )}
 
-            {/* ── d2.4: Multi-Warehouse Sync & Transit (Auto) ── */}
+            {/* ── d2.4: Multi-Warehouse Sync (Auto) ── */}
             {stepId === 'd2.4' && (
                 <>
                     {syncPhase === 'notification' && (
@@ -811,7 +919,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                             {renderRevealed(
                                 <MapPinIcon className="h-4 w-4" />,
                                 <><span className="font-bold">WarehouseSync:</span> 3 warehouses + 2 job sites synchronized. Dock conflict auto-resolved (SH-002 → Dock 3). Route optimization: <span className="font-semibold">$1,200 savings</span>.</>,
-                                ['Warehouse Sync', 'Transit Tracker', 'Dock Scheduler', 'Route Optimizer']
+                                ['Warehouse Sync', 'Dock Scheduler', 'Route Optimizer', 'Map Updater']
                             )}
 
                             {/* Location cards */}
@@ -871,7 +979,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
 
                             {syncPhase === 'results' && (
                                 <div className="text-center text-[10px] text-muted-foreground animate-pulse">
-                                    Auto-advancing to vendor claims...
+                                    Auto-advancing to in-transit intelligence...
                                 </div>
                             )}
                         </div>
@@ -879,8 +987,142 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                 </>
             )}
 
-            {/* ── d2.5: Vendor Claims & Returns ── */}
+            {/* ── d2.5: In-Transit Intelligence & Freight Audit ── */}
             {stepId === 'd2.5' && (
+                <>
+                    {transitPhase === 'notification' && renderNotification(
+                        <TruckIcon className="h-4 w-4" />,
+                        'In-Transit Intelligence',
+                        'TransitTracker: 5 active shipments — 1 delay predicted (weather), 1 freight billing discrepancy. Split-shipment reconciliation pending.',
+                        handleTransitStart,
+                        '5 SHIPMENTS'
+                    )}
+                    {transitPhase === 'processing' && renderAgentPipeline(transitAgents, transitProgress, 'Transit Intelligence Pipeline — Analyzing shipments...', 'bg-blue-500')}
+                    {transitPhase === 'breathing' && renderBreathing('Analysis complete — compiling transit report...')}
+                    {(transitPhase === 'revealed' || transitPhase === 'results') && (
+                        <div className="animate-in fade-in duration-500 space-y-4">
+                            {renderRevealed(
+                                <TruckIcon className="h-4 w-4" />,
+                                <><span className="font-bold">TransitTracker:</span> 5 shipments tracked — <span className="font-semibold">1 weather delay predicted (+2 days)</span>. Freight audit: $340 overcharge on SH-004. Split-shipment: 28/30 received, 2 backordered.</>,
+                                ['Transit Tracker', 'Predictive Engine', 'Freight Auditor', 'Split Reconciler']
+                            )}
+
+                            {/* Section A: Shipment Tracker */}
+                            <div className="rounded-xl border border-border overflow-hidden">
+                                <div className="bg-muted/50 px-4 py-2 border-b border-border flex items-center justify-between">
+                                    <span className="text-xs font-bold text-foreground">Active Shipments</span>
+                                    <span className="text-[10px] text-muted-foreground font-semibold">5 shipments from 3 carriers</span>
+                                </div>
+                                <div className="divide-y divide-border">
+                                    {SHIPMENTS.map(sh => (
+                                        <div key={sh.id} className={`px-4 py-2.5 flex items-center justify-between text-[11px] ${sh.status === 'delayed' ? 'bg-red-50/50 dark:bg-red-500/5' : ''}`}>
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-mono text-muted-foreground w-14">{sh.id}</span>
+                                                <div>
+                                                    <span className="font-semibold text-foreground">{sh.manufacturer}</span>
+                                                    <span className="text-muted-foreground ml-2">via {sh.carrier}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-muted-foreground">{sh.itemCount} items</span>
+                                                <span className="text-[10px] text-muted-foreground">{sh.eta}</span>
+                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                                    sh.status === 'arriving-today' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
+                                                    sh.status === 'on-time' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                                                    'bg-red-500/10 text-red-600 dark:text-red-400'
+                                                }`}>
+                                                    {sh.status === 'arriving-today' ? 'Today' : sh.status === 'on-time' ? 'On Time' : 'Delayed'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Section B: Predictive Alert */}
+                            {PREDICTIVE_ALERTS.map(alert => (
+                                <div key={alert.shipmentId} className={`p-4 rounded-xl border-2 transition-all duration-300 ${alertAcknowledged ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-400">Predictive Alert</span>
+                                        <span className="text-[10px] font-mono text-muted-foreground">{alert.shipmentId}</span>
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold ml-auto">{alert.confidence}% confidence</span>
+                                    </div>
+                                    <p className="text-[11px] text-foreground">
+                                        <span className="font-bold">{alert.manufacturer}</span> — {alert.prediction === 'weather-delay' ? 'Weather delay' : 'Delay'} predicted <span className="font-semibold text-amber-700 dark:text-amber-400">+{alert.delayDays} days</span>.
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground mt-1">Impact: {alert.impact}. Suggested: notify client + prepare alternative staging.</p>
+                                    {alertAcknowledged ? (
+                                        <div className="flex items-center gap-1.5 mt-2">
+                                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
+                                            <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">Alert Acknowledged — Client Notified</span>
+                                        </div>
+                                    ) : (
+                                        <button onClick={() => setAlertAcknowledged(true)} className="mt-2 px-3 py-1.5 bg-brand-400 hover:bg-brand-500 text-zinc-900 text-[10px] font-bold rounded-lg transition-colors">
+                                            Acknowledge Alert
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+
+                            {/* Section C: Freight Audit */}
+                            {FREIGHT_AUDIT.map(fa => (
+                                <div key={fa.shipmentId} className={`p-4 rounded-xl border-2 transition-all duration-300 ${freightClaimed ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-red-300 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/5'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-red-500/20 text-red-700 dark:text-red-400">Freight Discrepancy</span>
+                                        <span className="text-[10px] font-mono text-muted-foreground">{fa.shipmentId}</span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3 text-[11px] mb-2">
+                                        <div><span className="text-muted-foreground">Quoted:</span> <span className="font-semibold text-foreground">${fa.quotedCost.toLocaleString()}</span></div>
+                                        <div><span className="text-muted-foreground">Billed:</span> <span className="font-semibold text-red-600 dark:text-red-400">${fa.billedCost.toLocaleString()}</span></div>
+                                        <div><span className="text-muted-foreground">Overcharge:</span> <span className="font-bold text-red-700 dark:text-red-400">${fa.overcharge}</span></div>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground">{fa.carrier} — {fa.reason}</p>
+                                    {freightClaimed ? (
+                                        <div className="flex items-center gap-1.5 mt-2">
+                                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
+                                            <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">Freight Claim Filed — ${fa.overcharge} Recovery Initiated</span>
+                                        </div>
+                                    ) : (
+                                        <button onClick={() => setFreightClaimed(true)} className="mt-2 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-lg transition-colors">
+                                            File Freight Claim — ${fa.overcharge}
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+
+                            {/* Section D: Split-Shipment Reconciliation */}
+                            {SPLIT_SHIPMENT.map(ss => (
+                                <div key={ss.poId} className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-700 dark:text-blue-400">Split Shipment</span>
+                                        <span className="text-[10px] font-mono text-muted-foreground">{ss.poId}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="flex-1 h-2 rounded-full bg-blue-100 dark:bg-blue-500/10 overflow-hidden">
+                                            <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${(ss.received / ss.totalItems) * 100}%` }} />
+                                        </div>
+                                        <span className="text-[10px] font-bold text-foreground">{ss.received}/{ss.totalItems}</span>
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground">
+                                        {ss.backordered} items backordered:
+                                        {ss.backorderItems.map((bi, j) => (
+                                            <span key={j} className="ml-1 font-semibold text-foreground">{bi.name} (×{bi.qty}) — ETA {bi.eta}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* CTA */}
+                            <button onClick={() => nextStep()} className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
+                                <span className="flex items-center justify-center gap-2"><CheckCircleIcon className="h-4 w-4" /> Continue to Claims & Returns</span>
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* ── d2.6: Vendor Claims & Returns ── */}
+            {stepId === 'd2.6' && (
                 <>
                     {claimsPhase === 'notification' && renderNotification(
                         <ExclamationCircleIcon className="h-4 w-4" />,

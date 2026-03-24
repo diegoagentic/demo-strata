@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// Dupler — Flow 3: Inventory Intelligence & Reporting
-// Steps: d3.1 (Inventory Sync), d3.2 (Reconciliation), d3.3 (Report Assembly), d3.4 (Distribution)
+// Dupler — Flow 3: Observability & Client Reporting
+// Steps: d3.1 (Data Bridge), d3.2 (Reconciliation), d3.3 (Report & Alerts),
+//        d3.4 (Distribution), d3.5 (Client Portal)
 // Renders INSIDE Dashboard.tsx — notification in Follow Up, processing in Metrics tab
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -35,6 +36,7 @@ type SyncPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'reveale
 type ReconPhase = 'idle' | 'notification' | 'processing' | 'revealed';
 type AssemblyPhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed' | 'results';
 type ReportPhase = 'idle' | 'notification' | 'revealed';
+type PortalPhase = 'idle' | 'notification' | 'revealed';
 
 interface AgentVis { name: string; detail: string; visible: boolean; done: boolean; }
 
@@ -149,7 +151,7 @@ const AI_INSIGHTS: AIInsight[] = [
 // ─── Agents ─────────────────────────────────────────────────────────────────
 
 const SYNC_AGENTS: AgentVis[] = [
-    { name: 'WarehouseSync', detail: '1,840 items synced', visible: false, done: false },
+    { name: 'DataBridge', detail: 'CET ↔ SPEC ↔ Compass ↔ Warehouse ↔ Carrier synced', visible: false, done: false },
     { name: 'POTracker', detail: '9 active POs tracked', visible: false, done: false },
     { name: 'StockAnalyzer', detail: 'availability computed', visible: false, done: false },
     { name: 'HealthScorer', detail: 'score: 78/100', visible: false, done: false },
@@ -164,7 +166,14 @@ const RECON_AGENTS: AgentVis[] = [
 const REPORT_AGENTS: AgentVis[] = [
     { name: 'HealthReporter', detail: '4 sections built', visible: false, done: false },
     { name: 'TrendAnalyzer', detail: '6-month trends', visible: false, done: false },
+    { name: 'AlertEngine', detail: '3 push notifications queued', visible: false, done: false },
     { name: 'InsightEngine', detail: '3 recommendations', visible: false, done: false },
+];
+
+const PORTAL_AGENTS: AgentVis[] = [
+    { name: 'ClientPortal', detail: 'Building Mercy Health client view', visible: false, done: false },
+    { name: 'Timeline', detail: 'Project timeline — 68% complete', visible: false, done: false },
+    { name: 'DeliveryTracker', detail: 'Mapping delivery milestones', visible: false, done: false },
 ];
 
 // ─── Notification Component (rendered in Follow Up tab) ─────────────────────
@@ -283,6 +292,9 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
     const [reportPhase, setReportPhase] = useState<ReportPhase>('idle');
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
     const [exported, setExported] = useState(false);
+
+    // ── d3.5 State: Client Portal ──
+    const [portalPhase, setPortalPhase] = useState<PortalPhase>('idle');
 
     // ── Helpers ──
     const resolvedAlertCount = Object.values(alertsResolved).filter(v => v !== null).length;
@@ -432,6 +444,18 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
     const handleReportStart = () => setReportPhase('revealed');
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // d3.5 — Client Portal Preview (interactive)
+    // ═══════════════════════════════════════════════════════════════════════════
+    useEffect(() => {
+        if (stepId !== 'd3.5' || portalPhase !== 'idle') return;
+        const timing = getTiming('d3.5');
+        const t = setTimeout(pauseAware(() => setPortalPhase('notification')), timing.notifDelay);
+        return () => clearTimeout(t);
+    }, [stepId, portalPhase, pauseAware]);
+
+    const handlePortalStart = () => setPortalPhase('revealed');
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // RENDER HELPERS
     // ═══════════════════════════════════════════════════════════════════════════
 
@@ -514,10 +538,33 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                 <div className="flex items-start gap-2">
                                     <AIAgentAvatar />
                                     <p className="text-xs text-green-800 dark:text-green-200">
-                                        <span className="font-bold">WarehouseSync + StockAnalyzer:</span> <span className="font-semibold">1,840 items</span> across 3 warehouses synced.
+                                        <span className="font-bold">DataBridge + StockAnalyzer:</span> <span className="font-semibold">5 systems</span> connected — <span className="font-semibold">1,840 items</span> synced.
                                         Health score: <span className="font-semibold">78/100</span>. Fill rate: <span className="font-semibold">89%</span>.
-                                        <span className="font-semibold"> 42 backordered items</span>, 5 categories below reorder point.
                                     </p>
+                                </div>
+                            </div>
+
+                            {/* Data Bridge Diagram */}
+                            <div className="rounded-xl border border-border overflow-hidden">
+                                <div className="bg-muted/50 px-4 py-2 border-b border-border flex items-center justify-between">
+                                    <span className="text-xs font-bold text-foreground">Cross-System Data Bridge</span>
+                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 font-bold">ALL CONNECTED</span>
+                                </div>
+                                <div className="p-4">
+                                    <div className="flex items-center justify-center gap-2 flex-wrap">
+                                        {[
+                                            { name: 'CET', color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-500/20' },
+                                            { name: 'SPEC', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' },
+                                            { name: 'Compass', color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' },
+                                            { name: 'Warehouse', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' },
+                                            { name: 'Carrier', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/20' },
+                                        ].map((sys, i, arr) => (
+                                            <div key={sys.name} className="flex items-center gap-2">
+                                                <div className={`px-3 py-2 rounded-lg border text-[11px] font-bold ${sys.color}`}>{sys.name}</div>
+                                                {i < arr.length - 1 && <ArrowsRightLeftIcon className="h-4 w-4 text-muted-foreground shrink-0" />}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
@@ -728,6 +775,27 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                 ))}
                             </div>
 
+                            {/* Push Notification Mocks */}
+                            <div className="space-y-2">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Proactive Alerts Queued</span>
+                                {[
+                                    { channel: 'Teams', icon: '💬', recipient: '@Randy', message: 'Acuity Chairs below safety stock — reorder recommended', color: 'bg-indigo-50 dark:bg-indigo-500/5 border-indigo-200 dark:border-indigo-500/20' },
+                                    { channel: 'Email', icon: '📧', recipient: 'mercy-health-team@dupler.com', message: 'Mercy Health Phase 2 — 68% inventory staged, on track', color: 'bg-blue-50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/20' },
+                                    { channel: 'SMS', icon: '📱', recipient: 'Randy Martinez', message: 'URGENT: Park Table backorder — ETA Apr 7', color: 'bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20' },
+                                ].map(notif => (
+                                    <div key={notif.channel} className={`p-3 rounded-xl border ${notif.color} flex items-start gap-3`}>
+                                        <span className="text-lg">{notif.icon}</span>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-foreground">{notif.channel}</span>
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold">{notif.recipient}</span>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground mt-0.5">{notif.message}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
                             {assemblyPhase === 'results' && (
                                 <div className="flex items-center justify-center gap-2 animate-in fade-in duration-300">
                                     <span className="text-[10px] font-bold text-green-600 dark:text-green-400 px-3 py-1 rounded-full bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30">
@@ -876,6 +944,92 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                         <PaperAirplaneIcon className="h-4 w-4" /> Export PDF & Send to Team
                                     </span>
                                 )}
+                            </button>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* ── d3.5: Client Portal Preview ── */}
+            {stepId === 'd3.5' && (
+                <>
+                    {portalPhase === 'notification' && renderNotification(
+                        <MapPinIcon className="h-4 w-4" />,
+                        'Client Portal Updated',
+                        'Client portal updated — Mercy Health has access to real-time project status, delivery timeline, and milestone tracking.',
+                        handlePortalStart
+                    )}
+                    {portalPhase === 'revealed' && (
+                        <div className="animate-in fade-in duration-500 space-y-4">
+                            {/* Client Portal Mock */}
+                            <div className="rounded-xl border-2 border-brand-300 dark:border-brand-500/30 overflow-hidden">
+                                <div className="bg-brand-50 dark:bg-brand-500/10 px-4 py-3 border-b border-brand-200 dark:border-brand-500/20 flex items-center justify-between">
+                                    <div>
+                                        <span className="text-xs font-bold text-foreground">Mercy Health Phase 2</span>
+                                        <span className="text-[10px] text-muted-foreground ml-2">Client Portal View</span>
+                                    </div>
+                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">LIVE</span>
+                                </div>
+                                <div className="p-4 space-y-4">
+                                    {/* Progress */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className="text-[11px] font-bold text-foreground">Overall Progress</span>
+                                            <span className="text-sm font-bold text-brand-700 dark:text-brand-400">68%</span>
+                                        </div>
+                                        <div className="h-3 rounded-full bg-muted overflow-hidden">
+                                            <div className="h-full rounded-full bg-brand-400 transition-all duration-700" style={{ width: '68%' }} />
+                                        </div>
+                                    </div>
+
+                                    {/* Milestones */}
+                                    <div className="space-y-2">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Delivery Timeline</span>
+                                        {[
+                                            { milestone: 'Procurement Complete', date: 'Mar 15', status: 'done' as const },
+                                            { milestone: 'Warehouse Staging', date: 'Mar 20', status: 'done' as const },
+                                            { milestone: 'Quality Inspection', date: 'Mar 24', status: 'active' as const },
+                                            { milestone: 'Delivery & Install', date: 'Apr 2', status: 'pending' as const },
+                                            { milestone: 'Final Walkthrough', date: 'Apr 5', status: 'pending' as const },
+                                        ].map(ms => (
+                                            <div key={ms.milestone} className="flex items-center gap-3 text-[11px]">
+                                                <div className={`w-3 h-3 rounded-full shrink-0 ${
+                                                    ms.status === 'done' ? 'bg-green-500' :
+                                                    ms.status === 'active' ? 'bg-brand-400 animate-pulse' :
+                                                    'bg-muted border border-border'
+                                                }`} />
+                                                <span className={`flex-1 ${ms.status === 'done' ? 'text-muted-foreground line-through' : 'text-foreground font-semibold'}`}>{ms.milestone}</span>
+                                                <span className="text-[10px] text-muted-foreground">{ms.date}</span>
+                                                {ms.status === 'done' && <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Stats */}
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            { label: 'Items Staged', value: '22/32' },
+                                            { label: 'On Schedule', value: 'Yes' },
+                                            { label: 'Est. Completion', value: 'Apr 5' },
+                                        ].map(stat => (
+                                            <div key={stat.label} className="p-2 rounded-lg bg-muted/50 border border-border text-center">
+                                                <div className="text-[10px] text-muted-foreground">{stat.label}</div>
+                                                <div className="text-[11px] font-bold text-foreground">{stat.value}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Read-only note */}
+                            <div className="p-3 rounded-xl bg-muted/30 border border-border flex items-center gap-3">
+                                <CubeIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="text-[10px] text-muted-foreground">This is the client's read-only portal view. They can track progress without needing to contact Dupler directly.</span>
+                            </div>
+
+                            {/* CTA */}
+                            <button onClick={() => nextStep()} className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
+                                <span className="flex items-center justify-center gap-2"><CheckCircleIcon className="h-4 w-4" /> Complete Demo</span>
                             </button>
                         </div>
                     )}

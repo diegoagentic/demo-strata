@@ -60,8 +60,8 @@ export const DUPLER_STEPS: DemoStep[] = [
         id: 'd2.1',
         groupId: 2,
         groupTitle: 'Flow 2: Warehouse & Inventory Intelligence',
-        title: 'Warehouse Health & Capacity Forecast',
-        description: '3 Dupler warehouses scanned — Columbus at 72% with Mercy Health Phase 2 arriving. AI recommends relocating 85 items to Cincinnati for $3,600/mo savings.',
+        title: 'Warehouse Health & Consignment Intelligence',
+        description: '3 Dupler warehouses scanned — Columbus at 72% with Mercy Health Phase 2 arriving. Wall of Shame: 3 consignment items overdue. 2 allocation conflicts detected. AI recommends relocating 85 items to Cincinnati for $3,600/mo savings.',
         app: 'dupler-warehouse',
         role: 'Expert',
     },
@@ -78,8 +78,8 @@ export const DUPLER_STEPS: DemoStep[] = [
         id: 'd2.3',
         groupId: 2,
         groupTitle: 'Flow 2: Warehouse & Inventory Intelligence',
-        title: 'PO Price Verification & Tax Compliance',
-        description: 'Scanning Allsteel, Kimball, National price lists. 2 items with margin below 25% flagged. Regional tax compliance verified for OH and IL deliveries.',
+        title: 'PO Price & Margin Verification',
+        description: 'Scanning Allsteel, Kimball, National price lists. 2 items with margin below 25% flagged. Regional tax compliance noted for OH and IL deliveries.',
         app: 'dupler-warehouse',
         role: 'Expert',
     },
@@ -87,13 +87,22 @@ export const DUPLER_STEPS: DemoStep[] = [
         id: 'd2.4',
         groupId: 2,
         groupTitle: 'Flow 2: Warehouse & Inventory Intelligence',
-        title: 'Multi-Warehouse Sync & Transit',
-        description: 'Synchronizing 3 warehouses + 2 job sites. 5 shipments tracked, dock conflict auto-resolved. Route optimization saves $1,200.',
+        title: 'Multi-Warehouse Sync',
+        description: 'Synchronizing 3 warehouses + 2 job sites. Dock conflict auto-resolved (SH-002 → Dock 3). Route optimization saves $1,200.',
         app: 'dupler-warehouse',
         role: 'System',
     },
     {
         id: 'd2.5',
+        groupId: 2,
+        groupTitle: 'Flow 2: Warehouse & Inventory Intelligence',
+        title: 'In-Transit Intelligence & Freight Audit',
+        description: '5 active shipments tracked. Predictive alert: SH-004 weather delay +2 days. Freight audit: $340 carrier overcharge detected. Split-shipment: PO-2026-0389 28/30 received, 2 backordered.',
+        app: 'dupler-warehouse',
+        role: 'Expert',
+    },
+    {
+        id: 'd2.6',
         groupId: 2,
         groupTitle: 'Flow 2: Warehouse & Inventory Intelligence',
         title: 'Vendor Claims & Returns',
@@ -102,7 +111,7 @@ export const DUPLER_STEPS: DemoStep[] = [
         role: 'Expert',
     },
     {
-        id: 'd2.6',
+        id: 'd2.7',
         groupId: 2,
         groupTitle: 'Flow 2: Warehouse & Inventory Intelligence',
         title: 'Dealer Review & Dispatch Approval',
@@ -115,16 +124,16 @@ export const DUPLER_STEPS: DemoStep[] = [
     {
         id: 'd3.1',
         groupId: 3,
-        groupTitle: 'Flow 3: Inventory Intelligence & Reporting',
-        title: 'Inventory Data Sync',
-        description: 'Syncing 1,840 items across 3 warehouses. Stock availability computed by category. 9 active POs tracked ($890K). Inventory health score: 78/100.',
+        groupTitle: 'Flow 3: Observability & Client Reporting',
+        title: 'Cross-System Data Bridge',
+        description: 'Syncing 1,840 items across 5 connected systems: CET ↔ SPEC ↔ Compass ↔ Warehouse ↔ Carrier. Stock availability computed by category. Inventory health score: 78/100.',
         app: 'dupler-reporting',
         role: 'System',
     },
     {
         id: 'd3.2',
         groupId: 3,
-        groupTitle: 'Flow 3: Inventory Intelligence & Reporting',
+        groupTitle: 'Flow 3: Observability & Client Reporting',
         title: 'Inventory Reconciliation',
         description: 'Physical vs system count: 97.2% match. 3 discrepancies found: count mismatch (Acuity Chairs), location error (Stride Bench), missing item (Park Table relocated). 5 categories below reorder point.',
         app: 'dupler-reporting',
@@ -133,18 +142,27 @@ export const DUPLER_STEPS: DemoStep[] = [
     {
         id: 'd3.3',
         groupId: 3,
-        groupTitle: 'Flow 3: Inventory Intelligence & Reporting',
-        title: 'Inventory Health Report',
-        description: 'Building inventory intelligence report: stock availability by category, warehouse capacity forecast (Columbus 72%→89%), backorder analysis, 3 AI optimization recommendations.',
+        groupTitle: 'Flow 3: Observability & Client Reporting',
+        title: 'Report Assembly & Proactive Alerts',
+        description: 'Building inventory intelligence report with proactive push notifications. 3 alerts sent via Teams/Email/SMS. Stock availability, capacity forecast, backorder analysis, 3 AI recommendations.',
         app: 'dupler-reporting',
         role: 'System',
     },
     {
         id: 'd3.4',
         groupId: 3,
-        groupTitle: 'Flow 3: Inventory Intelligence & Reporting',
+        groupTitle: 'Flow 3: Observability & Client Reporting',
         title: 'Report Review & Distribution',
         description: 'Dealer reviews inventory intelligence report with drill-down. 3 AI recommendations: reorder Acuity Chairs, relocate 85 items ($3,600/mo savings), 5 EOL SKUs for clearance ($8,450). Export PDF to Randy and Tara.',
+        app: 'dupler-reporting',
+        role: 'Dealer',
+    },
+    {
+        id: 'd3.5',
+        groupId: 3,
+        groupTitle: 'Flow 3: Observability & Client Reporting',
+        title: 'Client Portal Preview',
+        description: 'Client-facing portal preview: Mercy Health Phase 2 — 68% complete. Timeline, delivery status, next milestones. Read-only view from client perspective.',
         app: 'dupler-reporting',
         role: 'Dealer',
     },
@@ -161,18 +179,20 @@ export const DUPLER_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     'd1.5': { mode: 'interactive', userAction: 'SC reviews validated PMX with source badges. Applies discounts (AI-assisted). Generates SIF and exports to CORE.' },
 
     // Flow 2: Warehouse & Inventory Intelligence
-    'd2.1': { mode: 'interactive', userAction: 'Review warehouse health: Columbus 72% (89% forecast). Click "Apply Recommendations" to optimize.' },
+    'd2.1': { mode: 'interactive', userAction: 'Review warehouse health, Wall of Shame, and allocation conflicts. Click "Apply Recommendations" to optimize.' },
     'd2.2': { mode: 'interactive', userAction: 'Review receiving: 28/30 matched, 26 pristine, 3 inspect, 1 damaged. Click "Confirm Receiving".' },
-    'd2.3': { mode: 'interactive', userAction: 'Review price verification: 2 margin alerts, tax compliance for OH/IL. Click "Approve Pricing".' },
+    'd2.3': { mode: 'interactive', userAction: 'Review price verification: 2 margin alerts. Click "Approve Pricing".' },
     'd2.4': { mode: 'auto', duration: 10, aiSummary: 'Synchronizing 3 warehouses + 2 job sites. Resolving dock conflict, optimizing routes...' },
-    'd2.5': { mode: 'interactive', userAction: 'Review 3 vendor claims ($2,770 credits) and 4 warranty alerts. Click "Process Claims".' },
-    'd2.6': { mode: 'interactive', userAction: 'Sarah Chen (Dealer) reviews consolidated report. Verify staging checklist, then click "Approve All & Dispatch".' },
+    'd2.5': { mode: 'interactive', userAction: 'Review 5 shipments, predictive delay alert, freight audit ($340 overcharge), and split-shipment status. Click "Continue".' },
+    'd2.6': { mode: 'interactive', userAction: 'Review 3 vendor claims ($2,770 credits) and 4 warranty alerts. Click "Process Claims".' },
+    'd2.7': { mode: 'interactive', userAction: 'Sarah Chen (Dealer) reviews consolidated report. Verify staging checklist, then click "Approve All & Dispatch".' },
 
-    // Flow 3: Inventory Intelligence & Reporting
-    'd3.1': { mode: 'interactive', userAction: 'Review inventory sync results: 1,840 items, health score 78/100. Click "Continue to Reconciliation" to proceed.' },
+    // Flow 3: Observability & Client Reporting
+    'd3.1': { mode: 'interactive', userAction: 'Review cross-system data bridge: 5 systems connected, 1,840 items, health score 78/100. Click "Continue to Reconciliation".' },
     'd3.2': { mode: 'interactive', userAction: 'Review inventory reconciliation: 97.2% match, 3 discrepancies. Resolve each, then click "Acknowledge & Continue".' },
-    'd3.3': { mode: 'auto', duration: 8, aiSummary: 'Assembling inventory health report — stock availability, capacity forecast, backorder analysis, AI recommendations...' },
+    'd3.3': { mode: 'auto', duration: 8, aiSummary: 'Assembling inventory health report with proactive alerts — Teams, Email, SMS notifications...' },
     'd3.4': { mode: 'interactive', userAction: 'Review inventory intelligence report sections. Click "Export PDF & Send to Team" to distribute.' },
+    'd3.5': { mode: 'interactive', userAction: 'Preview client portal: Mercy Health Phase 2 — 68% complete. Click "Complete Demo" to finish.' },
 };
 
 // ─── Step Messages (AI Agent Progress) ───────────────────────────────────────
@@ -212,8 +232,9 @@ export const DUPLER_STEP_MESSAGES: Record<string, string[]> = {
     'd2.1': [
         'WarehouseScanner: scanning 1,840 items across 3 warehouses...',
         'CapacityForecaster: Columbus → 89% in 2 weeks (Mercy Health Phase 2)',
-        'OverflowOptimizer: 85 items flagged for relocation to Cincinnati',
-        'CostAnalyzer: $3,600/month savings projected',
+        'ConsignmentTracker: 3 items overdue on client floor — Wall of Shame flagged',
+        'AllocationChecker: 2 allocation conflicts detected',
+        'OverflowOptimizer: 85 items flagged for relocation — $3,600/mo savings',
     ],
     'd2.2': [
         'QRScanner: scanning 30 items from PO-2026-0389...',
@@ -224,32 +245,36 @@ export const DUPLER_STEP_MESSAGES: Record<string, string[]> = {
     'd2.3': [
         'PriceListScanner: scanning Allsteel, Kimball, National Q1 2026...',
         'CostBasisChecker: 3 items with cost changes detected',
-        'RegionalTaxEngine: verifying OH 7.8%, IL 6.7% compliance',
         'MarginCalculator: 2 items below 25% margin — flagged',
     ],
     'd2.4': [
         'WarehouseSync: synchronizing Columbus + Cincinnati + Dayton...',
-        'TransitTracker: 5 shipments from 3 manufacturers',
         'DockScheduler: Dock 1 conflict resolved — SH-002 moved to Dock 3',
         'RouteOptimizer: 2 Allsteel deliveries consolidated — $1,200 savings',
     ],
     'd2.5': [
+        'TransitTracker: 5 active shipments from 4 carriers...',
+        'PredictiveAlertEngine: SH-004 weather delay predicted — +2 days',
+        'FreightAuditor: carrier billed $1,540 vs quoted $1,200 — $340 overcharge',
+        'SplitReconciler: PO-2026-0389 — 28/30 received, 2 backordered',
+    ],
+    'd2.6': [
         'ClaimTracker: 3 active claims across Allsteel, National...',
         'ReturnAnalyzer: CLM-2026-052 RMA approved — replacement shipping',
         'CreditProcessor: $2,770 total credits processing',
         'WarrantyChecker: 4 items approaching warranty expiry',
     ],
-    'd2.6': [
+    'd2.7': [
         'StagingAgent: preparing Mercy Health Phase 2 checklist...',
         '24/26 items staged — 2 pending (Park Table backorder)',
         'Sarah Chen reviewing consolidated warehouse report',
         'Dispatch confirmed: Interior Installations, Thursday 8AM',
     ],
 
-    // Flow 3: Inventory Intelligence
+    // Flow 3: Observability & Client Reporting
     'd3.1': [
-        'WarehouseSync: scanning 1,840 items across 3 warehouses...',
-        'POTracker: 9 active POs — $890K receivables',
+        'DataBridge: connecting CET ↔ SPEC ↔ Compass ↔ Warehouse ↔ Carrier...',
+        'WarehouseSync: scanning 1,840 items across 3 warehouses',
         'StockAnalyzer: computing availability by category',
         'HealthScorer: inventory health score 78/100',
     ],
@@ -262,8 +287,8 @@ export const DUPLER_STEP_MESSAGES: Record<string, string[]> = {
     'd3.3': [
         'HealthReporter: building stock availability section...',
         'TrendAnalyzer: computing 6-month category trends',
+        'AlertEngine: sending Teams, Email, and SMS notifications...',
         'InsightEngine: 3 inventory optimization recommendations',
-        'Report assembled — 4 sections, PDF-ready',
     ],
     'd3.4': [
         'Report ready — 4 interactive sections',
@@ -271,14 +296,19 @@ export const DUPLER_STEP_MESSAGES: Record<string, string[]> = {
         'AI Rec 2: Relocate 85 items Columbus → Cincinnati — $3,600/mo',
         'AI Rec 3: 5 EOL SKUs — mark for clearance ($8,450)',
     ],
+    'd3.5': [
+        'ClientPortal: building Mercy Health Phase 2 dashboard...',
+        'Timeline: 68% complete — 8 milestones tracked',
+        'DeliveryTracker: next delivery scheduled Mar 28',
+    ],
 };
 
 // ─── Self-Indicated Steps (handle own AI indicator) ──────────────────────────
 
 export const DUPLER_SELF_INDICATED: string[] = [
-    'd1.1', 'd1.2', 'd1.3', 'd1.4', 'd1.5', // Flow 1: all steps
-    'd2.1', 'd2.2', 'd2.3', 'd2.4', 'd2.5', // Flow 2: all processing steps
-    'd3.1', 'd3.2', 'd3.3',            // Flow 3: sync, recon, report assembly
+    'd1.1', 'd1.2', 'd1.3', 'd1.4', 'd1.5',       // Flow 1: all steps
+    'd2.1', 'd2.2', 'd2.3', 'd2.4', 'd2.5', 'd2.6', // Flow 2: all processing steps
+    'd3.1', 'd3.2', 'd3.3',                          // Flow 3: sync, recon, report assembly
 ];
 
 // ─── Step Timing ─────────────────────────────────────────────────────────────
@@ -301,16 +331,18 @@ export const DUPLER_STEP_TIMING: Record<string, DuplerStepTiming> = {
     'd1.5': { notifDelay: 2000, notifDuration: 4000, agentStagger: 0,   agentDone: 0,   breathing: 0,    resultsDur: 0 },
 
     // Flow 2: Warehouse & Inventory Intelligence
-    'd2.1': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800, agentDone: 500, breathing: 1500, resultsDur: 0 },
+    'd2.1': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800,  agentDone: 500, breathing: 1500, resultsDur: 0 },
     'd2.2': { notifDelay: 2500, notifDuration: 7000, agentStagger: 1000, agentDone: 700, breathing: 1800, resultsDur: 0 },
     'd2.3': { notifDelay: 3000, notifDuration: 7000, agentStagger: 1200, agentDone: 800, breathing: 2000, resultsDur: 0 },
-    'd2.4': { notifDelay: 2500, notifDuration: 6000, agentStagger: 900, agentDone: 600, breathing: 1500, resultsDur: 10000 },
-    'd2.5': { notifDelay: 2500, notifDuration: 7000, agentStagger: 900, agentDone: 600, breathing: 1500, resultsDur: 0 },
-    'd2.6': { notifDelay: 2000, notifDuration: 5000, agentStagger: 0,   agentDone: 0,   breathing: 0,    resultsDur: 0 },
+    'd2.4': { notifDelay: 2500, notifDuration: 6000, agentStagger: 900,  agentDone: 600, breathing: 1500, resultsDur: 10000 },
+    'd2.5': { notifDelay: 2500, notifDuration: 6000, agentStagger: 900,  agentDone: 600, breathing: 1500, resultsDur: 0 },
+    'd2.6': { notifDelay: 2500, notifDuration: 7000, agentStagger: 900,  agentDone: 600, breathing: 1500, resultsDur: 0 },
+    'd2.7': { notifDelay: 2000, notifDuration: 5000, agentStagger: 0,    agentDone: 0,   breathing: 0,    resultsDur: 0 },
 
-    // Flow 3: Unified Reporting
-    'd3.1': { notifDelay: 2000, notifDuration: 6000, agentStagger: 900, agentDone: 600, breathing: 1500, resultsDur: 0 },
-    'd3.2': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800, agentDone: 500, breathing: 1200, resultsDur: 0 },
-    'd3.3': { notifDelay: 1500, notifDuration: 5000, agentStagger: 700, agentDone: 500, breathing: 1000, resultsDur: 8000 },
-    'd3.4': { notifDelay: 2000, notifDuration: 5000, agentStagger: 0,   agentDone: 0,   breathing: 0,    resultsDur: 0 },
+    // Flow 3: Observability & Client Reporting
+    'd3.1': { notifDelay: 2000, notifDuration: 6000, agentStagger: 900,  agentDone: 600, breathing: 1500, resultsDur: 0 },
+    'd3.2': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800,  agentDone: 500, breathing: 1200, resultsDur: 0 },
+    'd3.3': { notifDelay: 1500, notifDuration: 5000, agentStagger: 700,  agentDone: 500, breathing: 1000, resultsDur: 8000 },
+    'd3.4': { notifDelay: 2000, notifDuration: 5000, agentStagger: 0,    agentDone: 0,   breathing: 0,    resultsDur: 0 },
+    'd3.5': { notifDelay: 2000, notifDuration: 5000, agentStagger: 0,    agentDone: 0,   breathing: 0,    resultsDur: 0 },
 };
