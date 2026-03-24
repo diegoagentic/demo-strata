@@ -26,6 +26,7 @@ import {
     ArchiveBoxIcon,
     MapPinIcon,
     TruckIcon,
+    LinkIcon,
 } from '@heroicons/react/24/outline';
 import { DUPLER_STEP_TIMING, type DuplerStepTiming } from '../../config/profiles/dupler';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -481,7 +482,28 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
         </div>
     );
 
-    const renderNotification = (icon: React.ReactNode, title: string, subtitle: string, onClick: () => void) => (
+    const SystemChips = ({ systems, status = 'CONNECTED' }: { systems: { label: string; color: 'blue' | 'teal' | 'amber' | 'purple' | 'green' | 'red' }[]; status?: string }) => (
+        <div className="flex items-center gap-1.5 flex-wrap">
+            {systems.map((sys, i) => (
+                <span key={sys.label} className="contents">
+                    <span className={`text-[8px] font-bold px-2 py-1 rounded-md border flex items-center gap-1 ${
+                        sys.color === 'blue' ? 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20 ring-2 ring-blue-300 dark:ring-blue-500/30 shadow-sm shadow-blue-200 dark:shadow-blue-500/10' :
+                        sys.color === 'teal' ? 'bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20' :
+                        sys.color === 'amber' ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' :
+                        sys.color === 'purple' ? 'bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20' :
+                        sys.color === 'red' ? 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20' :
+                        'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20'
+                    }`}>
+                        <LinkIcon className="h-3 w-3" />{sys.label}
+                    </span>
+                    {i < systems.length - 1 && <span className="text-muted-foreground text-[10px]">↔</span>}
+                </span>
+            ))}
+            <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-semibold">{status}</span>
+        </div>
+    );
+
+    const renderNotification = (icon: React.ReactNode, title: string, subtitle: React.ReactNode, onClick: () => void) => (
         <div className="animate-in fade-in slide-in-from-top-4 duration-500">
             <div
                 onClick={onClick}
@@ -491,7 +513,7 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                     <div className="p-2 rounded-lg bg-brand-500 text-zinc-900">{icon}</div>
                     <div className="flex-1">
                         <span className="text-xs font-bold text-foreground">{title}</span>
-                        <p className="text-[11px] text-muted-foreground mt-1">{subtitle}</p>
+                        <div className="text-[11px] text-muted-foreground mt-1">{subtitle}</div>
                         <span className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 mt-1 inline-block">Click to start →</span>
                     </div>
                 </div>
@@ -542,6 +564,9 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                         Health score: <span className="font-semibold">78/100</span>. Fill rate: <span className="font-semibold">89%</span>.
                                     </p>
                                 </div>
+                            </div>
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'CET', color: 'teal' }, { label: 'SPEC', color: 'blue' }, { label: 'COMPASS', color: 'purple' }, { label: 'WMS', color: 'amber' }, { label: 'CARRIER', color: 'green' }]} status="ALL SYNCED" />
                             </div>
 
                             {/* Data Bridge Diagram */}
@@ -611,12 +636,18 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                     {reconPhase === 'notification' && renderNotification(
                         <ArrowsRightLeftIcon className="h-4 w-4" />,
                         'Inventory Reconciliation Ready',
-                        'CountVerifier: Physical vs system count completed — 97.2% match. 3 discrepancies require expert review.',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'PHYSICAL COUNT', color: 'teal' }, { label: 'SYSTEM DB', color: 'blue' }, { label: 'RECONCILER', color: 'purple' }]} />
+                            <p>CountVerifier: Physical vs system count completed — 97.2% match. 3 discrepancies require expert review.</p>
+                        </div>,
                         handleReconStart
                     )}
                     {reconPhase === 'processing' && renderAgentPipeline(reconAgents, 100, 'Reconciliation — Physical ↔ System...')}
                     {reconPhase === 'revealed' && (
                         <div className="animate-in fade-in duration-500 space-y-4">
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'PHYSICAL COUNT', color: 'teal' }, { label: 'SYSTEM DB', color: 'blue' }, { label: 'RECONCILER', color: 'purple' }]} />
+                            </div>
                             {/* Progress bar */}
                             <div className="p-3 rounded-lg bg-muted/50 border border-border flex items-center gap-3">
                                 <div className="flex-1">
@@ -733,6 +764,9 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                             <span className="text-xs font-bold text-foreground">Inventory Health Report — Assembling</span>
                                             <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Auto</span>
                                         </div>
+                                        <div className="mt-1.5">
+                                            <SystemChips systems={[{ label: 'REPORT ENGINE', color: 'blue' }, { label: 'TEAMS / EMAIL / SMS', color: 'purple' }, { label: 'INSIGHT AI', color: 'teal' }]} />
+                                        </div>
                                         <p className="text-[11px] text-muted-foreground mt-1">HealthReporter: Building report from reconciled inventory data — stock availability, capacity forecast, backorder analysis + AI recommendations.</p>
                                     </div>
                                 </div>
@@ -757,6 +791,9 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                         <span className="font-semibold"> 4 sections</span> covering stock availability, warehouse capacity, backorder status, and <span className="font-semibold">3 AI recommendations</span>.
                                     </p>
                                 </div>
+                            </div>
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'REPORT ENGINE', color: 'blue' }, { label: 'TEAMS / EMAIL / SMS', color: 'purple' }, { label: 'INSIGHT AI', color: 'teal' }]} />
                             </div>
 
                             {/* Report sections preview */}
@@ -815,11 +852,17 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                     {reportPhase === 'notification' && renderNotification(
                         <DocumentArrowDownIcon className="h-4 w-4" />,
                         'Inventory Intelligence Report — Ready for Review',
-                        'Complete report with stock availability, capacity forecast, backorder analysis, and 3 AI recommendations. Ready for export.',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'REPORT ENGINE', color: 'blue' }, { label: 'DISTRIBUTION', color: 'teal' }, { label: 'PDF EXPORT', color: 'purple' }]} />
+                            <p>Complete report with stock availability, capacity forecast, backorder analysis, and 3 AI recommendations. Ready for export.</p>
+                        </div>,
                         handleReportStart
                     )}
                     {reportPhase === 'revealed' && (
                         <div className="animate-in fade-in duration-500 space-y-4">
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'REPORT ENGINE', color: 'blue' }, { label: 'DISTRIBUTION', color: 'teal' }, { label: 'PDF EXPORT', color: 'purple' }]} />
+                            </div>
                             {/* Collapsible report sections */}
                             <div className="space-y-2">
                                 {REPORT_SECTIONS.map(section => (
@@ -956,11 +999,17 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                     {portalPhase === 'notification' && renderNotification(
                         <MapPinIcon className="h-4 w-4" />,
                         'Client Portal Updated',
-                        'Client portal updated — Mercy Health has access to real-time project status, delivery timeline, and milestone tracking.',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'PORTAL SERVICE', color: 'blue' }, { label: 'MILESTONE TRACKER', color: 'teal' }, { label: 'CLIENT VIEW', color: 'green' }]} />
+                            <p>Client portal updated — Mercy Health has access to real-time project status, delivery timeline, and milestone tracking.</p>
+                        </div>,
                         handlePortalStart
                     )}
                     {portalPhase === 'revealed' && (
                         <div className="animate-in fade-in duration-500 space-y-4">
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'PORTAL SERVICE', color: 'blue' }, { label: 'MILESTONE TRACKER', color: 'teal' }, { label: 'CLIENT VIEW', color: 'green' }]} />
+                            </div>
                             {/* Client Portal Mock */}
                             <div className="rounded-xl border-2 border-brand-300 dark:border-brand-500/30 overflow-hidden">
                                 <div className="bg-brand-50 dark:bg-brand-500/10 px-4 py-3 border-b border-brand-200 dark:border-brand-500/20 flex items-center justify-between">

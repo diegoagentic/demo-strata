@@ -23,6 +23,7 @@ import {
     CubeIcon,
     ShieldCheckIcon,
     MapIcon,
+    LinkIcon,
 } from '@heroicons/react/24/outline';
 import { DUPLER_STEP_TIMING, type DuplerStepTiming } from '../../config/profiles/dupler';
 
@@ -525,7 +526,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
         </div>
     );
 
-    const renderNotification = (icon: React.ReactNode, title: string, detail: string, onClick: () => void, badge?: string) => (
+    const renderNotification = (icon: React.ReactNode, title: string, detail: React.ReactNode, onClick: () => void, badge?: string) => (
         <button onClick={onClick} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
             <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10">
                 <div className="flex items-start gap-3">
@@ -535,7 +536,7 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                             <span className="text-xs font-bold text-foreground">{title}</span>
                             {badge && <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">{badge}</span>}
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-1">{detail}</p>
+                        <div className="text-[11px] text-muted-foreground mt-1">{detail}</div>
                         <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to start <ArrowRightIcon className="h-3 w-3" /></p>
                     </div>
                 </div>
@@ -566,6 +567,27 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
         </div>
     );
 
+    const SystemChips = ({ systems, status = 'CONNECTED' }: { systems: { label: string; color: 'blue' | 'teal' | 'amber' | 'purple' | 'green' | 'red' }[]; status?: string }) => (
+        <div className="flex items-center gap-1.5 flex-wrap">
+            {systems.map((sys, i) => (
+                <span key={sys.label} className="contents">
+                    <span className={`text-[8px] font-bold px-2 py-1 rounded-md border flex items-center gap-1 ${
+                        sys.color === 'blue' ? 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20 ring-2 ring-blue-300 dark:ring-blue-500/30 shadow-sm shadow-blue-200 dark:shadow-blue-500/10' :
+                        sys.color === 'teal' ? 'bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20' :
+                        sys.color === 'amber' ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' :
+                        sys.color === 'purple' ? 'bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20' :
+                        sys.color === 'red' ? 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20' :
+                        'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20'
+                    }`}>
+                        <LinkIcon className="h-3 w-3" />{sys.label}
+                    </span>
+                    {i < systems.length - 1 && <span className="text-muted-foreground text-[10px]">↔</span>}
+                </span>
+            ))}
+            <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 font-semibold">{status}</span>
+        </div>
+    );
+
     // ═══════════════════════════════════════════════════════════════════════════
     // RENDER
     // ═══════════════════════════════════════════════════════════════════════════
@@ -580,7 +602,10 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                     {hlthPhase === 'notification' && renderNotification(
                         <ChartBarIcon className="h-4 w-4" />,
                         'Warehouse Health Analysis',
-                        'WarehouseScanner: Scanning 1,840 items across 3 warehouses. Columbus capacity forecast indicates overflow risk ahead of Mercy Health Phase 2.',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'WMS', color: 'blue' }, { label: 'CAPACITY PLANNER', color: 'teal' }, { label: 'COST ENGINE', color: 'purple' }]} />
+                            <p>WarehouseScanner: Scanning 1,840 items across 3 warehouses. Columbus capacity forecast indicates overflow risk ahead of Mercy Health Phase 2.</p>
+                        </div>,
                         handleHlthStart,
                         '3 WAREHOUSES'
                     )}
@@ -593,6 +618,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 <><span className="font-bold">WarehouseScanner:</span> 3 warehouses analyzed — Columbus at <span className="font-semibold">72% (forecast 89%)</span> with Mercy Health Phase 2. Recommending <span className="font-semibold">85 items</span> for relocation. Projected savings: <span className="font-semibold">$3,600/month</span>.</>,
                                 ['Capacity Planner', 'Cost Engine', 'Logistics API', 'Forecast Model']
                             )}
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'WMS', color: 'blue' }, { label: 'CAPACITY PLANNER', color: 'teal' }, { label: 'COST ENGINE', color: 'purple' }]} />
+                            </div>
 
                             {/* Warehouse gauges */}
                             <div className="rounded-xl border border-border overflow-hidden">
@@ -717,7 +745,10 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                     {recPhase === 'notification' && renderNotification(
                         <QrCodeIcon className="h-4 w-4" />,
                         'Receiving & Condition Assessment — PO-2026-0389',
-                        'QRScanner: Allsteel shipment detected at Columbus warehouse. 30 items expected. Ready for QR scan, PO matching, and condition assessment.',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'QR SCANNER', color: 'teal' }, { label: 'PO SYSTEM', color: 'blue' }, { label: 'CONDITION DB', color: 'amber' }]} />
+                            <p>QRScanner: Allsteel shipment detected at Columbus warehouse. 30 items expected. Ready for QR scan, PO matching, and condition assessment.</p>
+                        </div>,
                         handleRecStart,
                         '30 ITEMS'
                     )}
@@ -730,6 +761,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 <><span className="font-bold">QRScanner:</span> Scan complete — <span className="font-semibold">28/30 items matched</span>. Condition: 26 pristine, 3 inspect, 1 damaged. 1 missing (backorder), 1 wrong finish (claim CLM-2026-052 drafted).</>,
                                 ['QR Scanner', 'PO Match', 'Condition DB', 'Exception Handler']
                             )}
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'QR SCANNER', color: 'teal' }, { label: 'PO SYSTEM', color: 'blue' }, { label: 'CONDITION DB', color: 'amber' }]} />
+                            </div>
 
                             {/* Status badges */}
                             <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border flex-wrap">
@@ -826,7 +860,10 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                     {pricePhase === 'notification' && renderNotification(
                         <CurrencyDollarIcon className="h-4 w-4" />,
                         'PO Price Verification',
-                        'PriceListScanner: Scanning Allsteel, Kimball, National price lists against PO-2026-0389. Verifying regional tax compliance for OH and IL delivery addresses.',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'PRICE LISTS', color: 'blue' }, { label: 'CONTRACT DB', color: 'teal' }, { label: 'MARGIN CALC', color: 'purple' }]} />
+                            <p>PriceListScanner: Scanning Allsteel, Kimball, National price lists against PO-2026-0389. Verifying regional tax compliance for OH and IL delivery addresses.</p>
+                        </div>,
                         handlePriceStart,
                         '5 ITEMS CHECKED'
                     )}
@@ -839,6 +876,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 <><span className="font-bold">PriceListScanner:</span> 5 items verified — <span className="font-semibold">2 with margin below 25%</span> flagged. Tax compliance auto-verified.</>,
                                 ['Price Lists', 'Contract DB', 'Margin Calculator', 'Compliance Reporter']
                             )}
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'PRICE LISTS', color: 'blue' }, { label: 'CONTRACT DB', color: 'teal' }, { label: 'MARGIN CALC', color: 'purple' }]} />
+                            </div>
 
                             {/* Price checks table */}
                             <div className="rounded-xl border border-border overflow-hidden">
@@ -906,6 +946,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                             <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Auto</span>
                                             <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">5 LOCATIONS</span>
                                         </div>
+                                        <div className="mt-1.5">
+                                            <SystemChips systems={[{ label: 'WMS SYNC', color: 'blue' }, { label: 'DOCK SCHEDULER', color: 'teal' }, { label: 'ROUTE ENGINE', color: 'purple' }]} />
+                                        </div>
                                         <p className="text-[11px] text-muted-foreground mt-1">WarehouseSync: Synchronizing 3 warehouses + 2 job sites. Resolving dock conflicts and optimizing delivery routes.</p>
                                     </div>
                                 </div>
@@ -921,6 +964,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 <><span className="font-bold">WarehouseSync:</span> 3 warehouses + 2 job sites synchronized. Dock conflict auto-resolved (SH-002 → Dock 3). Route optimization: <span className="font-semibold">$1,200 savings</span>.</>,
                                 ['Warehouse Sync', 'Dock Scheduler', 'Route Optimizer', 'Map Updater']
                             )}
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'WMS SYNC', color: 'blue' }, { label: 'DOCK SCHEDULER', color: 'teal' }, { label: 'ROUTE ENGINE', color: 'purple' }]} />
+                            </div>
 
                             {/* Location cards */}
                             <div className="rounded-xl border border-border overflow-hidden">
@@ -993,7 +1039,10 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                     {transitPhase === 'notification' && renderNotification(
                         <TruckIcon className="h-4 w-4" />,
                         'In-Transit Intelligence',
-                        'TransitTracker: 5 active shipments — 1 delay predicted (weather), 1 freight billing discrepancy. Split-shipment reconciliation pending.',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'CARRIER API', color: 'blue' }, { label: 'PREDICTIVE ENGINE', color: 'purple' }, { label: 'FREIGHT AUDITOR', color: 'red' }]} />
+                            <p>TransitTracker: 5 active shipments — 1 delay predicted (weather), 1 freight billing discrepancy. Split-shipment reconciliation pending.</p>
+                        </div>,
                         handleTransitStart,
                         '5 SHIPMENTS'
                     )}
@@ -1006,6 +1055,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 <><span className="font-bold">TransitTracker:</span> 5 shipments tracked — <span className="font-semibold">1 weather delay predicted (+2 days)</span>. Freight audit: $340 overcharge on SH-004. Split-shipment: 28/30 received, 2 backordered.</>,
                                 ['Transit Tracker', 'Predictive Engine', 'Freight Auditor', 'Split Reconciler']
                             )}
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'CARRIER API', color: 'blue' }, { label: 'PREDICTIVE ENGINE', color: 'purple' }, { label: 'FREIGHT AUDITOR', color: 'red' }]} />
+                            </div>
 
                             {/* Section A: Shipment Tracker */}
                             <div className="rounded-xl border border-border overflow-hidden">
@@ -1127,7 +1179,10 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                     {claimsPhase === 'notification' && renderNotification(
                         <ExclamationCircleIcon className="h-4 w-4" />,
                         'Vendor Claims & Returns',
-                        'ClaimTracker: 3 active claims across Allsteel and National. CLM-2026-052 (wrong finish) RMA approved. 4 items approaching warranty expiry.',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'CLAIM TRACKER', color: 'amber' }, { label: 'RMA SYSTEM', color: 'red' }, { label: 'CREDIT PROC', color: 'green' }]} />
+                            <p>ClaimTracker: 3 active claims across Allsteel and National. CLM-2026-052 (wrong finish) RMA approved. 4 items approaching warranty expiry.</p>
+                        </div>,
                         handleClaimsStart,
                         '3 ACTIVE CLAIMS'
                     )}
@@ -1140,6 +1195,9 @@ export default function DuplerWarehouse({ onNavigate }: DuplerWarehouseProps) {
                                 <><span className="font-bold">ClaimTracker:</span> 3 claims processed — <span className="font-semibold">$2,770 total credits</span>. CLM-2026-052 RMA approved, replacement shipping. 4 warranty alerts require attention.</>,
                                 ['Claim Tracker', 'RMA System', 'Credit Processor', 'Warranty DB']
                             )}
+                            <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                                <SystemChips systems={[{ label: 'CLAIM TRACKER', color: 'amber' }, { label: 'RMA SYSTEM', color: 'red' }, { label: 'CREDIT PROC', color: 'green' }]} />
+                            </div>
 
                             {/* Claim cards */}
                             <div className="space-y-3">
