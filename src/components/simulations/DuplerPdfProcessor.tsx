@@ -49,19 +49,19 @@ const UPCHARGE_TOTAL = 1380;
 
 interface PdfExtractedItem {
     line: number; sku: string; product: string; finish: string;
-    options: string | null; qty: number; listPrice: number;
+    material: string | null; options: string | null; qty: number; listPrice: number;
     overallConfidence: number;
 }
 
 const PDF_EXTRACTED_ITEMS: PdfExtractedItem[] = [
-    { line: 1, sku: 'NAT-WW-3060', product: 'Waveworks Desk 60"', finish: 'White + Orange', options: 'Standing base, storage pedestal', qty: 8, listPrice: 2180, overallConfidence: 72 },
-    { line: 2, sku: 'NAT-EC-4200', product: 'Exhibit Collab Table 48"', finish: 'White', options: 'Power hub', qty: 4, listPrice: 1240, overallConfidence: 98 },
-    { line: 3, sku: 'NAT-SW-3100', product: 'Solve Wall Shelf 36"', finish: 'White', options: null, qty: 6, listPrice: 385, overallConfidence: 99 },
-    { line: 4, sku: 'NAT-LT-6600', product: 'Lobby Lounge Table', finish: 'Walnut', options: null, qty: 3, listPrice: 890, overallConfidence: 97 },
-    { line: 5, sku: 'NAT-TC-2025', product: 'Triumph II Conf Table', finish: 'White', options: 'Data ports', qty: 2, listPrice: 2100, overallConfidence: 98 },
-    { line: 6, sku: 'NAT-DK-4200', product: 'Realize Desk 60"', finish: 'White + Gray', options: 'Standing base, stor...', qty: 4, listPrice: 1580, overallConfidence: 81 },
-    { line: 7, sku: 'NAT-FL-2200', product: 'Filing Cabinet 4-Drawer', finish: 'White', options: null, qty: 6, listPrice: 425, overallConfidence: 97 },
-    { line: 8, sku: 'NAT-BK-1200', product: 'Bookcase III 3-Shelf', finish: 'White', options: null, qty: 3, listPrice: 340, overallConfidence: 98 },
+    { line: 1, sku: 'NAT-WW-3060', product: 'Waveworks Desk 60"', finish: 'White + Orange', material: 'HPL', options: 'Standing base, storage pedestal', qty: 8, listPrice: 2180, overallConfidence: 72 },
+    { line: 2, sku: 'NAT-EC-4200', product: 'Exhibit Collab Table 48"', finish: 'White', material: 'Laminate', options: 'Power hub', qty: 4, listPrice: 1240, overallConfidence: 98 },
+    { line: 3, sku: 'NAT-SW-3100', product: 'Solve Wall Shelf 36"', finish: 'White', material: 'Steel', options: null, qty: 6, listPrice: 385, overallConfidence: 99 },
+    { line: 4, sku: 'NAT-LT-6600', product: 'Lobby Lounge Table', finish: 'Walnut', material: 'Veneer', options: null, qty: 3, listPrice: 890, overallConfidence: 97 },
+    { line: 5, sku: 'NAT-TC-2025', product: 'Triumph II Conf Table', finish: 'White', material: 'Quartz', options: 'Data ports', qty: 2, listPrice: 2100, overallConfidence: 98 },
+    { line: 6, sku: 'NAT-DK-4200', product: 'Realize Desk 60"', finish: 'White + Gray', material: 'HPL', options: 'Standing base, stor...', qty: 4, listPrice: 1580, overallConfidence: 81 },
+    { line: 7, sku: 'NAT-FL-2200', product: 'Filing Cabinet 4-Drawer', finish: 'White', material: 'Steel', options: null, qty: 6, listPrice: 425, overallConfidence: 97 },
+    { line: 8, sku: 'NAT-BK-1200', product: 'Bookcase III 3-Shelf', finish: 'White', material: 'Laminate', options: null, qty: 3, listPrice: 340, overallConfidence: 98 },
 ];
 
 interface ExtractionFlag {
@@ -623,6 +623,7 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                                 <th className="text-left py-1.5 px-2 font-medium">SKU</th>
                                                 <th className="text-left py-1.5 px-2 font-medium">Product</th>
                                                 <th className="text-left py-1.5 px-2 font-medium">Finish</th>
+                                                <th className="text-left py-1.5 px-2 font-medium">Material</th>
                                                 <th className="text-right py-1.5 px-2 font-medium">Qty</th>
                                                 <th className="text-right py-1.5 px-2 font-medium">List $</th>
                                                 <th className="text-center py-1.5 px-2 font-medium">Confidence</th>
@@ -641,6 +642,16 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                                             item.finish.includes('Gray') ? 'bg-zinc-200 dark:bg-zinc-500/10 text-zinc-700 dark:text-zinc-400' :
                                                             'bg-zinc-100 dark:bg-zinc-500/10 text-zinc-600 dark:text-zinc-400'
                                                         }`}>{item.finish}</span>
+                                                    </td>
+                                                    <td className="py-1.5 px-2">
+                                                        {item.material && (
+                                                            <span className={`inline-block text-[9px] font-semibold px-2 py-0.5 rounded-full ${
+                                                                item.material === 'Veneer' || item.material === 'Quartz' ? 'bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400' :
+                                                                item.material === 'HPL' ? 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400' :
+                                                                item.material === 'Steel' ? 'bg-slate-200 dark:bg-slate-500/10 text-slate-700 dark:text-slate-400' :
+                                                                'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                                            }`}>{item.material}</span>
+                                                        )}
                                                     </td>
                                                     <td className="py-1.5 px-2 text-right text-foreground">{item.qty}</td>
                                                     <td className="py-1.5 px-2 text-right font-medium text-foreground">${item.listPrice.toLocaleString()}</td>
