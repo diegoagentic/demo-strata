@@ -177,7 +177,7 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
     const [extractProgress, setExtractProgress] = useState(0);
     const [itemsRevealed, setItemsRevealed] = useState(0);
     const [scanProgress, setScanProgress] = useState(0);
-    const [uploadTab, setUploadTab] = useState<'pdf' | 'url'>('pdf');
+    const [uploadTab, setUploadTab] = useState<'pdf' | 'url'>('url');
 
     // ── d1.2 State: Mapping & Confidence Review ──
     const [mapPhase, setMapPhase] = useState<MappingPhase>('idle');
@@ -211,6 +211,7 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
     useEffect(() => {
         if (stepId !== 'd1.1') { setUploadPhase('idle'); return; }
         setUploadPhase('idle');
+        setUploadTab('url');
         setExtractAgents(EXTRACTION_AGENTS.map(a => ({ ...a })));
         setExtractProgress(0);
         setItemsRevealed(0);
@@ -220,11 +221,15 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
         return () => window.removeEventListener('dupler-vendor-upload', handler);
     }, [stepId]);
 
-    // Upload zone → extracting
+    // Upload zone: show URL tab first → switch to PDF → then advance to extracting
     useEffect(() => {
         if (uploadPhase !== 'upload-zone') return;
-        const t = setTimeout(pauseAware(() => setUploadPhase('extracting')), 1500);
-        return () => clearTimeout(t);
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        // Start on URL tab (already default), show it for 2s
+        timers.push(setTimeout(pauseAware(() => setUploadTab('pdf')), 2000));
+        // After switching to PDF, wait 2s more then advance
+        timers.push(setTimeout(pauseAware(() => setUploadPhase('extracting')), 4000));
+        return () => timers.forEach(clearTimeout);
     }, [uploadPhase]);
 
     // Extracting: scan progress ~2s → processing
