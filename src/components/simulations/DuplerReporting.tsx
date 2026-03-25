@@ -29,6 +29,7 @@ import {
     LinkIcon,
     UserCircleIcon,
     XMarkIcon,
+    EyeIcon,
 } from '@heroicons/react/24/outline';
 import { DUPLER_STEP_TIMING, type DuplerStepTiming } from '../../config/profiles/dupler';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -299,6 +300,7 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
     const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
     const [sendToast, setSendToast] = useState<string | null>(null);
     const [downloaded, setDownloaded] = useState(false);
+    const [showPdfPreview, setShowPdfPreview] = useState(false);
 
     // ── d3.5 State: Client Portal ──
     const [portalPhase, setPortalPhase] = useState<PortalPhase>('idle');
@@ -982,6 +984,14 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                             {/* ── Action Buttons ── */}
                             <div className="relative space-y-2">
                                 <div className="flex items-center gap-2">
+                                    {/* Preview PDF */}
+                                    <button
+                                        onClick={() => setShowPdfPreview(true)}
+                                        className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-zinc-400 dark:hover:border-zinc-500"
+                                    >
+                                        <EyeIcon className="h-4 w-4" /> Preview
+                                    </button>
+
                                     {/* Download PDF */}
                                     <button
                                         onClick={() => {
@@ -997,7 +1007,7 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                         }`}
                                     >
                                         {downloaded ? <CheckCircleIcon className="h-4 w-4" /> : <DocumentArrowDownIcon className="h-4 w-4" />}
-                                        {downloaded ? 'PDF Downloaded' : 'Download PDF'}
+                                        {downloaded ? 'Downloaded' : 'Download'}
                                     </button>
 
                                     {/* Send to Team */}
@@ -1011,7 +1021,7 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                         }`}
                                     >
                                         {exported ? <CheckCircleIcon className="h-4 w-4" /> : <PaperAirplaneIcon className="h-4 w-4" />}
-                                        {exported ? `Sent to ${selectedRecipients.length} Member${selectedRecipients.length !== 1 ? 's' : ''}` : 'Send to Team'}
+                                        {exported ? `Sent (${selectedRecipients.length})` : 'Send'}
                                     </button>
                                 </div>
 
@@ -1191,13 +1201,196 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                 <span className="text-[10px] text-muted-foreground">This is the client's read-only portal view. They can track progress without needing to contact Dupler directly.</span>
                             </div>
 
-                            {/* CTA */}
-                            <button onClick={() => nextStep()} className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
-                                <span className="flex items-center justify-center gap-2"><CheckCircleIcon className="h-4 w-4" /> Complete Demo</span>
-                            </button>
+                            {/* Actions */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setShowPdfPreview(true)}
+                                    className="flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all bg-muted hover:bg-muted/80 text-foreground border border-border hover:border-zinc-400 dark:hover:border-zinc-500"
+                                >
+                                    <EyeIcon className="h-4 w-4" /> Preview Report
+                                </button>
+                                <button onClick={() => nextStep()} className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all">
+                                    <span className="flex items-center justify-center gap-2"><CheckCircleIcon className="h-4 w-4" /> Complete Demo</span>
+                                </button>
+                            </div>
                         </div>
                     )}
                 </>
+            )}
+
+            {/* ── PDF Preview Modal ── */}
+            {showPdfPreview && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowPdfPreview(false)}>
+                    <div className="w-full max-w-lg max-h-[85vh] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col" onClick={e => e.stopPropagation()}>
+                        {/* PDF Header */}
+                        <div className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-lg bg-red-500/10">
+                                    <DocumentChartBarIcon className="h-4 w-4 text-red-500" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Inventory_Report_MercyHealth_Mar2026.pdf</p>
+                                    <p className="text-[9px] text-zinc-500">Generated Mar 25, 2026 — 4 pages — 2.3 MB</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowPdfPreview(false)} className="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                                <XMarkIcon className="h-4 w-4 text-zinc-500" />
+                            </button>
+                        </div>
+
+                        {/* PDF Content */}
+                        <div className="overflow-y-auto flex-1 p-6 bg-white dark:bg-zinc-900 space-y-5">
+                            {/* Page 1 — Cover */}
+                            <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 space-y-4 bg-white dark:bg-zinc-800/30">
+                                <div className="text-center space-y-1 pb-4 border-b border-zinc-100 dark:border-zinc-700">
+                                    <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">Strata Experience</p>
+                                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Inventory Intelligence Report</p>
+                                    <p className="text-[11px] text-zinc-500">Mercy Health Phase 2 — Q1 2026</p>
+                                    <p className="text-[10px] text-zinc-400">Prepared by Dupler Office Furniture — March 25, 2026</p>
+                                </div>
+
+                                {/* Summary KPIs */}
+                                <div>
+                                    <p className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-2">Executive Summary</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            { label: 'Total Stock Value', value: '$1.2M' },
+                                            { label: 'Fill Rate', value: '89%' },
+                                            { label: 'Backorder Items', value: '42' },
+                                            { label: 'Warehouse Util.', value: '68%' },
+                                            { label: 'Stock Accuracy', value: '97.2%' },
+                                            { label: 'Health Score', value: '78/100' },
+                                        ].map(kpi => (
+                                            <div key={kpi.label} className="p-2 rounded bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700">
+                                                <p className="text-[9px] text-zinc-400">{kpi.label}</p>
+                                                <p className="text-[12px] font-bold text-zinc-900 dark:text-zinc-100">{kpi.value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <p className="text-[8px] text-zinc-300 dark:text-zinc-600 text-right">Page 1 of 4</p>
+                            </div>
+
+                            {/* Page 2 — Warehouse Breakdown */}
+                            <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 space-y-4 bg-white dark:bg-zinc-800/30">
+                                <p className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Warehouse Capacity & Forecast</p>
+                                <div className="space-y-2">
+                                    {[
+                                        { name: 'Columbus Main', current: 72, forecast: 89 },
+                                        { name: 'Cincinnati Overflow', current: 45, forecast: 48 },
+                                        { name: 'Dayton Storage', current: 38, forecast: 38 },
+                                    ].map(wh => (
+                                        <div key={wh.name} className="flex items-center gap-3">
+                                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400 w-28 shrink-0">{wh.name}</span>
+                                            <div className="flex-1 h-2 rounded-full bg-zinc-100 dark:bg-zinc-700 overflow-hidden">
+                                                <div className={`h-full rounded-full ${wh.current > 60 ? 'bg-amber-500' : 'bg-green-500'}`} style={{ width: `${wh.current}%` }} />
+                                            </div>
+                                            <span className="text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 w-8 text-right">{wh.current}%</span>
+                                            <span className="text-[9px] text-zinc-400">→ {wh.forecast}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <p className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider pt-2">Stock by Category</p>
+                                <div className="space-y-1.5">
+                                    {[
+                                        { cat: 'Seating', available: 400, reserved: 240, backordered: 100 },
+                                        { cat: 'Desks', available: 300, reserved: 139, backordered: 50 },
+                                        { cat: 'Storage', available: 200, reserved: 980, backordered: 200 },
+                                        { cat: 'Tables', available: 278, reserved: 390, backordered: 80 },
+                                        { cat: 'Accessories', available: 189, reserved: 480, backordered: 20 },
+                                    ].map(c => (
+                                        <div key={c.cat} className="flex items-center justify-between text-[10px] py-1 border-b border-zinc-50 dark:border-zinc-800">
+                                            <span className="text-zinc-600 dark:text-zinc-400 w-20">{c.cat}</span>
+                                            <span className="text-green-600 dark:text-green-400">{c.available} avail</span>
+                                            <span className="text-amber-600 dark:text-amber-400">{c.reserved} resv</span>
+                                            <span className="text-red-600 dark:text-red-400">{c.backordered} bo</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <p className="text-[8px] text-zinc-300 dark:text-zinc-600 text-right">Page 2 of 4</p>
+                            </div>
+
+                            {/* Page 3 — AI Recommendations */}
+                            <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 space-y-4 bg-white dark:bg-zinc-800/30">
+                                <p className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">AI Recommendations</p>
+                                {AI_INSIGHTS.map((insight, i) => (
+                                    <div key={insight.id} className="p-3 rounded bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200">{i + 1}. {insight.title}</span>
+                                            <span className="text-[9px] font-bold text-zinc-500">{insight.confidence}%</span>
+                                        </div>
+                                        <p className="text-[9px] text-zinc-500">{insight.detail}</p>
+                                        <p className="text-[9px] font-semibold text-green-600 dark:text-green-400 mt-1">{insight.impact}</p>
+                                    </div>
+                                ))}
+                                <p className="text-[8px] text-zinc-300 dark:text-zinc-600 text-right">Page 3 of 4</p>
+                            </div>
+
+                            {/* Page 4 — Project Status */}
+                            <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-6 space-y-4 bg-white dark:bg-zinc-800/30">
+                                <p className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Project Status — Mercy Health Phase 2</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="p-2 rounded bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 text-center">
+                                        <p className="text-[9px] text-zinc-400">Items Staged</p>
+                                        <p className="text-[12px] font-bold text-zinc-900 dark:text-zinc-100">22/32</p>
+                                    </div>
+                                    <div className="p-2 rounded bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 text-center">
+                                        <p className="text-[9px] text-zinc-400">On Schedule</p>
+                                        <p className="text-[12px] font-bold text-green-600 dark:text-green-400">Yes</p>
+                                    </div>
+                                    <div className="p-2 rounded bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 text-center">
+                                        <p className="text-[9px] text-zinc-400">Est. Completion</p>
+                                        <p className="text-[12px] font-bold text-zinc-900 dark:text-zinc-100">Apr 5</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    {[
+                                        { milestone: 'Procurement Complete', date: 'Mar 15', done: true },
+                                        { milestone: 'Warehouse Staging', date: 'Mar 20', done: true },
+                                        { milestone: 'Quality Inspection', date: 'Mar 24', done: false },
+                                        { milestone: 'Delivery & Install', date: 'Apr 2', done: false },
+                                        { milestone: 'Final Walkthrough', date: 'Apr 5', done: false },
+                                    ].map(ms => (
+                                        <div key={ms.milestone} className="flex items-center gap-2 text-[10px]">
+                                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${ms.done ? 'bg-green-500' : 'bg-zinc-200 dark:bg-zinc-600'}`} />
+                                            <span className={`flex-1 ${ms.done ? 'text-zinc-400 line-through' : 'text-zinc-700 dark:text-zinc-300'}`}>{ms.milestone}</span>
+                                            <span className="text-zinc-400">{ms.date}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="pt-3 border-t border-zinc-100 dark:border-zinc-700 text-center">
+                                    <p className="text-[8px] text-zinc-400">Confidential — Dupler Office Furniture © 2026</p>
+                                    <p className="text-[8px] text-zinc-400">Generated by Strata Experience Platform</p>
+                                </div>
+                                <p className="text-[8px] text-zinc-300 dark:text-zinc-600 text-right">Page 4 of 4</p>
+                            </div>
+                        </div>
+
+                        {/* PDF Footer */}
+                        <div className="px-5 py-3 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between shrink-0">
+                            <span className="text-[10px] text-zinc-400">4 pages</span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        setShowPdfPreview(false);
+                                        if (!downloaded) {
+                                            setDownloaded(true);
+                                            setSendToast('PDF downloaded — Inventory_Report_MercyHealth_Mar2026.pdf');
+                                            setTimeout(() => setSendToast(null), 4000);
+                                        }
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors flex items-center gap-1.5"
+                                >
+                                    <DocumentArrowDownIcon className="h-3.5 w-3.5" /> Download PDF
+                                </button>
+                                <button onClick={() => setShowPdfPreview(false)} className="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 transition-colors">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
