@@ -334,8 +334,7 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
     useEffect(() => {
         if (stepId !== 'd3.1' || syncRef.current !== 'idle') return;
         const timing = getTiming('d3.1');
-        // Skip notification phase (it's in Follow Up tab) — go straight to processing
-        const t = setTimeout(pauseAware(() => setSyncPhase('processing')), 1500);
+        const t = setTimeout(pauseAware(() => setSyncPhase('notification')), timing.notifDelay);
         return () => clearTimeout(t);
     }, [stepId, pauseAware]);
 
@@ -552,6 +551,15 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
             {/* ── d3.1: Inventory Data Sync ── */}
             {stepId === 'd3.1' && (
                 <>
+                    {syncPhase === 'notification' && renderNotification(
+                        <LinkIcon className="h-4 w-4" />,
+                        'Cross-System Data Bridge',
+                        <div className="space-y-2">
+                            <SystemChips systems={[{ label: 'CET', color: 'teal' }, { label: 'SPEC', color: 'blue' }, { label: 'COMPASS', color: 'purple' }, { label: 'WMS', color: 'amber' }, { label: 'CARRIER', color: 'green' }]} />
+                            <p>DataBridge: Connecting 5 systems — syncing 1,840 items across 3 warehouses. Stock availability, health scoring, and category breakdown.</p>
+                        </div>,
+                        () => setSyncPhase('processing')
+                    )}
                     {syncPhase === 'processing' && renderAgentPipeline(syncAgents, syncProgress, 'Inventory Sync — 3 warehouses + 9 POs...')}
                     {syncPhase === 'breathing' && (
                         <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
