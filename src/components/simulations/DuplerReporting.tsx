@@ -282,7 +282,9 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
     // ── d3.2 State: Reconciliation ──
     const [reconPhase, setReconPhase] = useState<ReconPhase>('idle');
     const [reconAgents, setReconAgents] = useState(RECON_AGENTS.map(a => ({ ...a })));
-    const [alertsResolved, setAlertsResolved] = useState<Record<string, 'accepted' | 'manual' | null>>({});
+    const [alertsResolved, setAlertsResolved] = useState<Record<string, string | null>>({});
+    const [manualReviewId, setManualReviewId] = useState<string | null>(null);
+    const [manualReviewSelections, setManualReviewSelections] = useState<Record<string, string>>({});
 
     // ── d3.3 State: Report Assembly ──
     const [assemblyPhase, setAssemblyPhase] = useState<AssemblyPhase>('idle');
@@ -693,8 +695,11 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                         <span className="text-xs font-bold text-foreground">Discrepancies</span>
                                         <span className="text-[10px] font-bold text-foreground">{resolvedAlertCount}/{INVENTORY_DISCREPANCIES.length} Resolved</span>
                                     </div>
-                                    {INVENTORY_DISCREPANCIES.map(disc => (
-                                        <div key={disc.id} className={`p-4 rounded-xl border-2 transition-all duration-300 ${alertsResolved[disc.id]
+                                    {INVENTORY_DISCREPANCIES.map(disc => {
+                                        const isReviewing = manualReviewId === disc.id;
+                                        const resolved = alertsResolved[disc.id];
+                                        return (
+                                        <div key={disc.id} className={`rounded-xl border-2 transition-all duration-300 overflow-hidden ${resolved
                                             ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5'
                                             : disc.type === 'count-mismatch'
                                                 ? 'border-amber-300 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5'
@@ -702,45 +707,197 @@ export default function DuplerReporting({ onNavigate }: DuplerReportingProps) {
                                                     ? 'border-blue-300 dark:border-blue-500/30 bg-blue-50/50 dark:bg-blue-500/5'
                                                     : 'border-red-300 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/5'
                                             }`}>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${disc.type === 'count-mismatch' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' :
-                                                    disc.type === 'location-error' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-400' :
-                                                        'bg-red-500/20 text-red-700 dark:text-red-400'
-                                                    }`}>
-                                                    {disc.type === 'count-mismatch' ? 'Count Mismatch' : disc.type === 'location-error' ? 'Location Error' : 'Missing Item'}
-                                                </span>
-                                                <span className="text-[10px] font-semibold text-foreground">{disc.item}</span>
-                                            </div>
-                                            <p className="text-[11px] text-foreground mt-1">{disc.detail}</p>
-                                            <div className="flex items-start gap-1 mt-1.5">
-                                                <AIAgentAvatar />
-                                                <span className="text-[10px] text-muted-foreground italic">{disc.aiSuggestion}</span>
-                                            </div>
-                                            {alertsResolved[disc.id] ? (
-                                                <div className="flex items-center gap-1.5 mt-2">
-                                                    <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
-                                                    <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">
-                                                        {alertsResolved[disc.id] === 'accepted' ? 'AI fix applied' : 'Manually reviewed'}
+                                            <div className="p-4">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${disc.type === 'count-mismatch' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' :
+                                                        disc.type === 'location-error' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-400' :
+                                                            'bg-red-500/20 text-red-700 dark:text-red-400'
+                                                        }`}>
+                                                        {disc.type === 'count-mismatch' ? 'Count Mismatch' : disc.type === 'location-error' ? 'Location Error' : 'Missing Item'}
                                                     </span>
+                                                    <span className="text-[10px] font-semibold text-foreground">{disc.item}</span>
                                                 </div>
-                                            ) : (
-                                                <div className="flex gap-2 mt-2">
+                                                <p className="text-[11px] text-foreground mt-1">{disc.detail}</p>
+                                                <div className="flex items-start gap-1 mt-1.5">
+                                                    <AIAgentAvatar />
+                                                    <span className="text-[10px] text-muted-foreground italic">{disc.aiSuggestion}</span>
+                                                </div>
+                                                {resolved ? (
+                                                    <div className="flex items-center gap-1.5 mt-2">
+                                                        <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
+                                                        <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">{resolved}</span>
+                                                    </div>
+                                                ) : !isReviewing ? (
+                                                    <div className="flex gap-2 mt-2">
+                                                        <button
+                                                            onClick={() => setAlertsResolved(prev => ({ ...prev, [disc.id]: 'AI fix applied' }))}
+                                                            className="px-3 py-1.5 bg-brand-400 hover:bg-brand-500 text-zinc-900 text-[10px] font-bold rounded-lg transition-colors"
+                                                        >
+                                                            Accept AI Fix
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setManualReviewId(disc.id)}
+                                                            className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground text-[10px] font-semibold rounded-lg border border-border transition-colors"
+                                                        >
+                                                            Manual Review
+                                                        </button>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+
+                                            {/* ── Manual Review Expanded Form ── */}
+                                            {isReviewing && (
+                                                <div className="border-t border-border bg-card p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-foreground uppercase tracking-wider">Expert Review</span>
+                                                        <button onClick={() => setManualReviewId(null)} className="text-[9px] text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
+                                                    </div>
+
+                                                    {disc.type === 'count-mismatch' && (
+                                                        <>
+                                                            {/* Side-by-side comparison */}
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div className="p-2 rounded-lg bg-red-50 dark:bg-red-500/5 border border-red-200 dark:border-red-500/20 text-center">
+                                                                    <p className="text-[9px] text-red-600 dark:text-red-400 font-semibold">System Count</p>
+                                                                    <p className="text-lg font-bold text-red-700 dark:text-red-300">48</p>
+                                                                </div>
+                                                                <div className="p-2 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
+                                                                    <p className="text-[9px] text-green-600 dark:text-green-400 font-semibold">Physical Count</p>
+                                                                    <p className="text-lg font-bold text-green-700 dark:text-green-300">45</p>
+                                                                </div>
+                                                            </div>
+                                                            {/* Corrected value */}
+                                                            <div>
+                                                                <label className="text-[9px] font-semibold text-muted-foreground block mb-1">Corrected Count</label>
+                                                                <input type="number" defaultValue={45} className="w-full px-3 py-1.5 rounded-lg border border-border bg-background text-xs font-semibold text-foreground" readOnly />
+                                                            </div>
+                                                            {/* Reason */}
+                                                            <div>
+                                                                <label className="text-[9px] font-semibold text-muted-foreground block mb-1">Variance Reason</label>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {['Shipment not deducted', 'Staging transfer', 'Counting error', 'Damage/write-off'].map(reason => (
+                                                                        <button key={reason}
+                                                                            onClick={() => setManualReviewSelections(prev => ({ ...prev, [disc.id]: reason }))}
+                                                                            className={`px-2.5 py-1 rounded-lg text-[9px] font-semibold transition-colors ${
+                                                                                manualReviewSelections[disc.id] === reason
+                                                                                    ? 'bg-brand-400 text-zinc-900'
+                                                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border border-border'
+                                                                            }`}
+                                                                        >{reason}</button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    {disc.type === 'location-error' && (
+                                                        <>
+                                                            {/* Location comparison */}
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div className="p-2 rounded-lg bg-red-50 dark:bg-red-500/5 border border-red-200 dark:border-red-500/20 text-center">
+                                                                    <p className="text-[9px] text-red-600 dark:text-red-400 font-semibold">System Location</p>
+                                                                    <p className="text-xs font-bold text-red-700 dark:text-red-300">Bay A, Rack 3</p>
+                                                                </div>
+                                                                <div className="p-2 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
+                                                                    <p className="text-[9px] text-green-600 dark:text-green-400 font-semibold">Physical Location</p>
+                                                                    <p className="text-xs font-bold text-green-700 dark:text-green-300">Bay C, Rack 7</p>
+                                                                </div>
+                                                            </div>
+                                                            {/* Correct location */}
+                                                            <div>
+                                                                <label className="text-[9px] font-semibold text-muted-foreground block mb-1">Update Location To</label>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {['Bay C, Rack 7 (physical)', 'Bay A, Rack 3 (system)', 'Other location'].map(loc => (
+                                                                        <button key={loc}
+                                                                            onClick={() => setManualReviewSelections(prev => ({ ...prev, [disc.id]: loc }))}
+                                                                            className={`px-2.5 py-1 rounded-lg text-[9px] font-semibold transition-colors ${
+                                                                                manualReviewSelections[disc.id] === loc
+                                                                                    ? 'bg-brand-400 text-zinc-900'
+                                                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border border-border'
+                                                                            }`}
+                                                                        >{loc}</button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            {/* Reason */}
+                                                            <div>
+                                                                <label className="text-[9px] font-semibold text-muted-foreground block mb-1">Move Reason</label>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {['Project staging', 'Warehouse reorganization', 'Incorrect scan', 'Inter-warehouse transfer'].map(reason => (
+                                                                        <button key={reason}
+                                                                            onClick={() => setManualReviewSelections(prev => ({ ...prev, [`${disc.id}-reason`]: reason }))}
+                                                                            className={`px-2.5 py-1 rounded-lg text-[9px] font-semibold transition-colors ${
+                                                                                manualReviewSelections[`${disc.id}-reason`] === reason
+                                                                                    ? 'bg-brand-400 text-zinc-900'
+                                                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border border-border'
+                                                                            }`}
+                                                                        >{reason}</button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    {disc.type === 'missing-item' && (
+                                                        <>
+                                                            {/* Item details */}
+                                                            <div className="grid grid-cols-3 gap-2">
+                                                                <div className="p-2 rounded-lg bg-muted/50 border border-border text-center">
+                                                                    <p className="text-[9px] text-muted-foreground">Last Scanned</p>
+                                                                    <p className="text-[11px] font-bold text-foreground">12 days ago</p>
+                                                                </div>
+                                                                <div className="p-2 rounded-lg bg-muted/50 border border-border text-center">
+                                                                    <p className="text-[9px] text-muted-foreground">Quantity</p>
+                                                                    <p className="text-[11px] font-bold text-foreground">1 unit</p>
+                                                                </div>
+                                                                <div className="p-2 rounded-lg bg-muted/50 border border-border text-center">
+                                                                    <p className="text-[9px] text-muted-foreground">Value</p>
+                                                                    <p className="text-[11px] font-bold text-red-600 dark:text-red-400">$2,100</p>
+                                                                </div>
+                                                            </div>
+                                                            {/* Resolution */}
+                                                            <div>
+                                                                <label className="text-[9px] font-semibold text-muted-foreground block mb-1">Resolution</label>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {['Confirm transfer TRF-2026-018', 'Search other warehouses', 'Mark as lost — file claim', 'Found at job site'].map(res => (
+                                                                        <button key={res}
+                                                                            onClick={() => setManualReviewSelections(prev => ({ ...prev, [disc.id]: res }))}
+                                                                            className={`px-2.5 py-1 rounded-lg text-[9px] font-semibold transition-colors ${
+                                                                                manualReviewSelections[disc.id] === res
+                                                                                    ? 'bg-brand-400 text-zinc-900'
+                                                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80 border border-border'
+                                                                            }`}
+                                                                        >{res}</button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    {/* Confirm button */}
                                                     <button
-                                                        onClick={() => setAlertsResolved(prev => ({ ...prev, [disc.id]: 'accepted' }))}
-                                                        className="px-3 py-1.5 bg-brand-400 hover:bg-brand-500 text-zinc-900 text-[10px] font-bold rounded-lg transition-colors"
+                                                        onClick={() => {
+                                                            const selection = manualReviewSelections[disc.id];
+                                                            const label = selection
+                                                                ? `Manually resolved — ${selection}`
+                                                                : 'Manually reviewed';
+                                                            setAlertsResolved(prev => ({ ...prev, [disc.id]: label }));
+                                                            setManualReviewId(null);
+                                                        }}
+                                                        disabled={!manualReviewSelections[disc.id]}
+                                                        className={`w-full py-2 rounded-lg text-[10px] font-bold transition-all ${
+                                                            manualReviewSelections[disc.id]
+                                                                ? 'bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-md'
+                                                                : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                                        }`}
                                                     >
-                                                        Accept AI Fix
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setAlertsResolved(prev => ({ ...prev, [disc.id]: 'manual' }))}
-                                                        className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground text-[10px] font-semibold rounded-lg border border-border transition-colors"
-                                                    >
-                                                        Manual Review
+                                                        {manualReviewSelections[disc.id] ? 'Confirm Resolution' : 'Select an option above'}
                                                     </button>
                                                 </div>
                                             )}
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
