@@ -685,20 +685,6 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                     {scrapePhase === 'upload-zone' && (
                         <div className="animate-in fade-in slide-in-from-top-4 duration-500 space-y-4">
                             <div className="rounded-xl bg-card border-2 border-dashed border-purple-300 dark:border-purple-500/40 overflow-hidden">
-                                {/* Tab bar — URL selected */}
-                                <div className="flex border-b border-border">
-                                    <button className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[11px] font-bold text-muted-foreground">
-                                        <DocumentTextIcon className="h-3.5 w-3.5" />
-                                        Upload PDF
-                                        <SourceBadge label="VENDOR PDF" color="amber" />
-                                    </button>
-                                    <button className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[11px] font-bold bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-b-2 border-purple-500">
-                                        <LinkIcon className="h-3.5 w-3.5" />
-                                        Paste URL
-                                        <SourceBadge label="MFR WEBSITE" color="purple" />
-                                    </button>
-                                </div>
-
                                 <div className="p-6">
                                     <div className="flex flex-col items-center justify-center py-4 gap-3">
                                         <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/10">
@@ -710,11 +696,11 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                         </div>
                                     </div>
                                     {/* Pre-filled URL card */}
-                                    <div className="flex items-center gap-2 p-3 bg-purple-50 dark:bg-purple-500/5 rounded-lg border border-purple-200 dark:border-purple-500/20 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div className="p-1.5 rounded bg-purple-100 dark:bg-purple-500/10">
-                                            <LinkIcon className="h-4 w-4 text-purple-500" />
+                                    <div className="flex items-center gap-2 p-3 bg-purple-100 dark:bg-purple-500/10 rounded-lg border border-purple-300 dark:border-purple-500/30 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="p-1.5 rounded bg-purple-200 dark:bg-purple-500/20">
+                                            <LinkIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                         </div>
-                                        <span className="text-xs text-muted-foreground font-mono flex-1 truncate">{CATALOG_URL}</span>
+                                        <span className="text-xs text-purple-800 dark:text-purple-300 font-mono font-semibold flex-1 truncate">{CATALOG_URL}</span>
                                         <SourceBadge label="MFR WEBSITE" color="purple" />
                                     </div>
                                 </div>
