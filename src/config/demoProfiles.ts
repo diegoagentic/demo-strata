@@ -8,6 +8,7 @@ import { COI_DEMO_STEPS, COI_DEMO_STEP_BEHAVIOR, COI_DEMO_STEP_MESSAGES, COI_DEM
 import { DUPLER_STEPS, DUPLER_STEP_BEHAVIOR, DUPLER_STEP_MESSAGES, DUPLER_SELF_INDICATED } from './profiles/dupler';
 import { OPS_DEMO_STEPS, OPS_DEMO_STEP_BEHAVIOR, OPS_DEMO_STEP_MESSAGES, OPS_DEMO_SELF_INDICATED } from './profiles/ops-demo';
 import { CONTINUA_DEMO_STEPS, CONTINUA_DEMO_STEP_BEHAVIOR, CONTINUA_DEMO_STEP_MESSAGES, CONTINUA_DEMO_SELF_INDICATED } from './profiles/continua-demo';
+import { WRG_DEMO_STEPS, WRG_DEMO_STEP_BEHAVIOR, WRG_DEMO_STEP_MESSAGES, WRG_DEMO_SELF_INDICATED } from './profiles/wrg-demo';
 
 export type SimulationApp =
     | 'dashboard' | 'expert-hub' | 'email-marketplace'
@@ -28,7 +29,7 @@ export interface DemoStep {
     highlightId?: string;
 }
 
-export type DemoProfileId = 'acme' | 'coi' | 'dupler' | 'ops' | 'continua';
+export type DemoProfileId = 'acme' | 'coi' | 'dupler' | 'ops' | 'continua' | 'wrg';
 
 export interface DemoProfile {
     id: DemoProfileId;
@@ -97,5 +98,16 @@ export const DEMO_PROFILES: DemoProfile[] = [
         stepBehavior: CONTINUA_DEMO_STEP_BEHAVIOR,
         stepMessages: CONTINUA_DEMO_STEP_MESSAGES,
         selfIndicatedSteps: CONTINUA_DEMO_SELF_INDICATED,
+    },
+    {
+        id: 'wrg',
+        name: 'WRG',
+        companyName: 'WRG',
+        description: 'Quote ingestion, acknowledgement processing & CRM',
+        icon: '🏢',
+        steps: WRG_DEMO_STEPS,
+        stepBehavior: WRG_DEMO_STEP_BEHAVIOR,
+        stepMessages: WRG_DEMO_STEP_MESSAGES,
+        selfIndicatedSteps: WRG_DEMO_SELF_INDICATED,
     },
 ];
