@@ -1,35 +1,35 @@
 # Dupler — Resumen del Demo
 
 > **Cliente:** Dupler Office & Installation
-> **Proyecto:** Mercy Health Phase 2 — 32 muebles (24 de Allsteel/Gunlock + 8 de National Furniture)
+> **Proyecto:** Mercy Health Phase 2 — 7 items de Meridian Workspace (non-CET) + items de almacén existente
 > **Sistemas que usa Dupler hoy:** Software de diseño (CET), especificaciones (SPEC), portal de precios de fabricantes (Compass), sistema de pedidos (RPC Core) y CRM (HubSpot)
-> **Fabricantes:** Allsteel, Gunlock, National Furniture
+> **Fabricantes:** Meridian Workspace (Flow 1), Allsteel/Gunlock/National (Flows 2-3)
 
 ---
 
 ## La historia que cuenta el demo
 
-> *"Los diseñadores de Dupler pierden horas copiando datos de cotizaciones de fabricantes línea por línea hacia su sistema de especificaciones — un proceso lento, sin registro de dónde salió cada dato, y donde cualquier error pasa desapercibido. Su almacén opera como una caja negra entre 5 sistemas que no se hablan entre sí. Strata unifica todo: lee las cotizaciones con inteligencia artificial, valida precios automáticamente, compara contra los planos del proyecto, y genera reportes que llegan al equipo antes de que los pidan — incluyendo un portal donde el cliente puede ver el avance en tiempo real."*
+> *"Los diseñadores de Dupler encuentran fabricantes que no están en CET y pierden horas transcribiendo datos manualmente desde catálogos web hacia su sistema de especificaciones — sin registro de dónde salió cada dato, y donde cualquier error pasa desapercibido. Strata elimina esa transcripción: el diseñador pega la URL del catálogo, la IA extrae todos los productos automáticamente, sugiere las opciones que puede resolver y escala las complejas al Expert Hub — un especialista de producto que responde en minutos. El resultado: en minutos lo que antes tomaba horas, con trazabilidad completa de cada dato."*
 
 ---
 
-## Flow 1: De la cotización del fabricante al pedido final
+## Flow 1: Del catálogo web a la especificación con precio
 *5 pasos — Diseñador + Coordinador de Ventas*
 
-**d1.1 — Carga de la cotización y lectura con IA**
-El diseñador sube la cotización de National Furniture (puede ser un PDF o un enlace web) a Strata. La inteligencia artificial lee el documento completo, identifica los 8 muebles cotizados, y extrae los datos clave de cada uno: nombre del producto, cantidad, acabado, opciones y precio. Cada dato recibe un puntaje de confianza que indica qué tan segura está la IA de haberlo leído correctamente — 6 items salen con confianza alta (97%+) y 2 quedan marcados para revisión (72% y 81%).
+**d1.1 — Lectura del catálogo web con IA**
+El diseñador pega la URL del catálogo de Meridian Workspace (un fabricante que no está en CET) en Strata. La IA navega la página, extrae los 7 productos del catálogo Healthcare Office con todos sus datos: número de parte, descripción, opciones, cantidad y precio unitario. 3 items se mapean automáticamente con confianza alta (96%+), 2 quedan marcados como "AI Suggested" (la IA puede inferir la opción correcta), y 2 se escalan al Expert Hub (necesitan un especialista). Un resumen muestra la distribución: "4 items fully mapped, 1 AI-suggested, 2 need Expert Hub".
 
-**d1.2 — Organización y revisión de datos**
-Strata organiza los 8 items en el formato de especificación del proyecto. 5 se acomodan automáticamente con confianza alta. Los 3 restantes necesitan la revisión del diseñador — cada uno muestra una vista dividida: a la izquierda el documento original, a la derecha lo que la IA interpretó. El diseñador puede aceptar el valor de la IA o corregirlo manualmente. Un contador muestra el progreso ("X de 3 revisados") y el botón para continuar se activa al completar todas las revisiones.
+**d1.2 — Sugerencias de IA y resolución del Expert Hub**
+Strata presenta los resultados en 3 secciones. Sección A (colapsada, verde): 3 items auto-mapeados sin intervención. Sección B (interactiva): 2 items donde la IA sugiere la opción más probable con su razonamiento — por ejemplo, "C-Clamp mount porque el proyecto usa superficies laminadas" (85% confianza). El diseñador puede aceptar, editar o escalar. Sección C (interactiva): 2 items resueltos por Marcus Chen (Product Specialist, Meridian) — por ejemplo, "Tamper-resistant outlets requeridos por código en instalaciones médicas". El diseñador acepta o modifica cada recomendación. Un contador muestra "X/4 Resolved".
 
-**d1.3 — Validación de opciones, cargos adicionales y precios**
-Strata valida las opciones de producto y detecta $1,380 en cargos adicionales: $1,020 por un acabado especial (Graphite) y $360 por una tela de mayor grado. Para los muebles de Allsteel y Gunlock, los precios se verifican directamente contra el portal del fabricante — se encuentran 2 actualizaciones de precio (+3% y +2.3%). Para los 8 muebles de National, los precios se comprueban contra la cotización original (todos coinciden). Una nota al final indica que los items validados pasarán al Coordinador de Ventas para aplicar descuentos.
+**d1.3 — Validación de opciones y detección de cargos adicionales**
+Strata valida los 7 items contra las reglas del catálogo del fabricante y detecta $1,470 en cargos adicionales: $1,110 por tapicería Grade 3 en las sillas Apex y $360 por cerradura Digilock en los SecureBin. Cada upcharge muestra un detalle y el diseñador lo reconoce o lo marca para revisión del SC. Una card verde confirma que los 7 items coinciden con los precios del catálogo web. Una nota azul indica que los items validados pasarán al Coordinador de Ventas para aplicar descuentos.
 
-**d1.4 — Comparación contra planos y generación del paquete**
-Strata cruza las cantidades de la especificación contra los planos arquitectónicos del proyecto: 31 de 32 coinciden, pero hay una diferencia — el escritorio Waveworks aparece 8 veces en la especificación pero 10 veces en el plano. El diseñador resuelve la diferencia, verifica que los documentos originales quedaron archivados (la cotización PDF y el archivo del software de diseño), y genera el paquete de especificación completo. Al final, lo envía al Coordinador de Ventas seleccionándolo de una lista de contactos.
+**d1.4 — Paquete de especificación y envío al SC**
+Strata ensambla el paquete de especificación con trazabilidad completa. Cada item muestra su cadena de origen: los 3 auto-mapeados llevan badge "MFR CATALOG" (purple), los 2 de IA llevan "MFR CATALOG" + "AI SUGGESTED" (green), y los 2 del Expert Hub llevan "MFR CATALOG" + "EXPERT HUB" (blue). Las fuentes quedan archivadas: la URL del catálogo de Meridian y las resoluciones del Expert Hub. El diseñador genera el documento SPEC-MH-0412 y lo envía al Coordinador de Ventas seleccionándolo de una lista de contactos.
 
-**d1.5 — Revisión del Coordinador y aplicación de descuentos**
-Randy Martinez (Coordinador de Ventas) recibe el paquete con indicadores visuales que muestran de dónde vino cada mueble — los que salieron del software de diseño en un color, los extraídos de la cotización del fabricante en otro. Puede hacer clic en "Ver fuente" para consultar el extracto original del documento. Aplica 3 niveles de descuento asistidos por la IA (Allsteel 42%, Gunlock 38%, National 35%) y los totales se actualizan en tiempo real. Al terminar, genera el documento final de precios y lo exporta al sistema de pedidos.
+**d1.5 — Revisión del Coordinador y aplicación de descuento**
+Randy Martinez (Coordinador de Ventas) recibe la especificación con indicadores visuales que muestran el origen de cada item — MFR CATALOG, AI SUGGESTED o EXPERT HUB. Los items resueltos por el Expert Hub (líneas 3 y 6) llevan un badge adicional "EXPERT CONFIRMED". Puede hacer clic en "View Source" para consultar el extracto del catálogo web. Aplica el descuento Dealer Standard de Meridian (38%) y el total se actualiza en tiempo real. Al terminar, genera el documento final de precios con trail de auditoría completo (Web Scrape → AI + Expert → Validation → Spec Package → SC Pricing).
 
 ---
 
@@ -83,7 +83,7 @@ Así ve el cliente final su proyecto: Mercy Health Phase 2 al 68% de avance. Una
 
 | Flow | Nombre | Pasos | Roles |
 |------|--------|-------|-------|
-| **1** | De la cotización al pedido | 5 (d1.1–d1.5) | Diseñador, Coordinador de Ventas |
+| **1** | Del catálogo web a la especificación | 5 (d1.1–d1.5) | Diseñador, Coordinador de Ventas |
 | **2** | Inteligencia de almacén | 7 (d2.1–d2.7) | Experto en producto, Dealer |
 | **3** | Visibilidad y reportes | 5 (d3.1–d3.5) | Sistema, Experto, Dealer |
 | | **Total** | **17 pasos** | **4 roles** |
@@ -93,10 +93,11 @@ Así ve el cliente final su proyecto: Mercy Health Phase 2 al 68% de avance. Una
 | Dato | Valor |
 |------|-------|
 | Proyecto | Mercy Health Phase 2 |
-| Total de muebles | 32 (24 Allsteel/Gunlock + 8 National) |
-| Valor total del proyecto | $95,580 |
-| Cargos adicionales detectados | $1,380 |
-| Descuentos aplicados | Allsteel 42%, Gunlock 38%, National 35% |
+| Flow 1 — Fabricante | Meridian Workspace (non-CET, 7 items) |
+| Flow 1 — Valor | $28,854 |
+| Flow 1 — Cargos adicionales | $1,470 (Grade 3 upholstery + Digilock) |
+| Flow 1 — Descuento | Meridian 38% Dealer Standard |
+| Flow 1 — Resolución | 3 auto + 2 AI suggested + 2 Expert Hub |
 | Almacenes | Columbus 72%, Cincinnati 45%, Dayton 38% |
 | Puntaje de salud | 78/100 |
 | Precisión de inventario | 97.2% |

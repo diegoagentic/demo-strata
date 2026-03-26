@@ -8,49 +8,49 @@ import type { StepBehavior } from '../../components/demo/DemoStepBanner';
 // ─── Step Definitions ────────────────────────────────────────────────────────
 
 export const DUPLER_STEPS: DemoStep[] = [
-    // ── Flow 1: Vendor Data Extraction & Specification Building ──────────────
+    // ── Flow 1: Web Catalog Import & Specification Building ──────────────────
     {
         id: 'd1.1',
         groupId: 1,
-        groupTitle: 'Flow 1: Vendor Data Extraction',
-        title: 'Vendor Data Upload & AI Extraction',
-        description: 'The designer uploads a vendor quote (PDF or website URL) into Strata. The AI reads the document, identifies 8 furniture items, and extracts key details — product names, quantities, finishes, options, and prices. Each item gets a confidence score showing how certain the AI is about the data.',
+        groupTitle: 'Flow 1: Web Catalog Import',
+        title: 'Web Catalog Scrape & AI Extraction',
+        description: 'The designer pastes a manufacturer catalog URL and Strata reads the entire product page automatically — pulling 54 items with their part numbers, quantities, options, and pricing. 50 items are fully mapped. 4 items have missing or incomplete options that need further review.',
         app: 'dupler-pdf',
         role: 'Designer',
     },
     {
         id: 'd1.2',
         groupId: 1,
-        groupTitle: 'Flow 1: Vendor Data Extraction',
-        title: 'AI Mapping & Confidence Review',
-        description: 'Strata organizes the 8 extracted items into the project specification format. 5 items map automatically with high confidence. 3 need the designer\'s review — a side-by-side view shows the original document next to the AI result so the designer can confirm or correct each value.',
+        groupTitle: 'Flow 1: Web Catalog Import',
+        title: 'AI Suggestions & Expert Hub Resolution',
+        description: 'The 4 items that need attention are shown for review. Strata\'s AI resolves 2 items by suggesting the most likely option based on the catalog context. The other 2 — more complex — are handled by an Expert Hub specialist who recommends the correct configuration. The designer reviews and approves each resolution before moving on.',
         app: 'dupler-pdf',
         role: 'Designer',
     },
     {
         id: 'd1.3',
         groupId: 1,
-        groupTitle: 'Flow 1: Vendor Data Extraction',
-        title: 'Validation: Options, Upcharges & Pricing',
-        description: 'Strata validates product options and detects $1,380 in additional costs (special finishes and upgraded fabrics). For Allsteel and Gunlock items, prices are verified through the manufacturer\'s portal. For National items, prices are checked against the original quote. A handoff note prepares the transition to the Sales Coordinator.',
+        groupTitle: 'Flow 1: Web Catalog Import',
+        title: 'Price Validation & Upcharges',
+        description: 'Strata checks all 7 items for price accuracy. 5 items are verified immediately. 2 items have cost adjustments — premium upholstery and an electronic lock add $1,470 in upcharges. The designer reviews and acknowledges each adjustment before packaging the specification.',
         app: 'dupler-pdf',
         role: 'Designer',
     },
     {
         id: 'd1.4',
         groupId: 1,
-        groupTitle: 'Flow 1: Vendor Data Extraction',
-        title: 'Audit vs Drawings & PMX Generation',
-        description: 'Strata compares the specification quantities against the floor plan drawings — 31 of 32 match, with 1 discrepancy to resolve. The original documents are archived for traceability. The designer generates the project specification package and sends it to the Sales Coordinator for pricing.',
+        groupTitle: 'Flow 1: Web Catalog Import',
+        title: 'Specification Package & SC Handoff',
+        description: 'Strata packages the 7 validated items into a specification document (SPEC-MH-0412) with full source traceability. Every item links back to the manufacturer catalog, AI suggestion, or Expert Hub resolution. The designer reviews the package and sends it to the Sales Coordinator for pricing.',
         app: 'dupler-pdf',
         role: 'Designer',
     },
     {
         id: 'd1.5',
         groupId: 1,
-        groupTitle: 'Flow 1: Vendor Data Extraction',
+        groupTitle: 'Flow 1: Web Catalog Import',
         title: 'SC Review & Pricing Application',
-        description: 'The Sales Coordinator receives the validated specification with clear indicators showing where each item came from (manufacturer portal vs. vendor quote). They can view the original source documents, apply manufacturer discounts with AI assistance, and export the final pricing to the ordering system.',
+        description: 'The Sales Coordinator receives the validated specification with clear source indicators per item (catalog auto-mapped, AI-suggested, or Expert Hub resolved). They can view the original catalog source, apply the manufacturer discount with AI assistance, and generate the priced specification.',
         app: 'dashboard',
         role: 'SC',
     },
@@ -171,12 +171,12 @@ export const DUPLER_STEPS: DemoStep[] = [
 // ─── Step Behavior ───────────────────────────────────────────────────────────
 
 export const DUPLER_STEP_BEHAVIOR: Record<string, StepBehavior> = {
-    // Flow 1: Vendor Data Extraction
-    'd1.1': { mode: 'interactive', userAction: 'Click "Upload Vendor Data" in Quick Actions. Designer uploads a vendor PDF quote. AI extracts 8 items using OCR and semantic parsing.' },
-    'd1.2': { mode: 'interactive', userAction: 'Review AI mapping results. 4 items auto-mapped (97%+). Resolve 4 flagged exceptions (quantity, options, finish/color, material grade). Click "Approve Mapping".' },
-    'd1.3': { mode: 'interactive', userAction: 'Acknowledge 2 upcharges ($1,380). Review Compass verification (HNI) and source PDF verification (non-CET). Click "Approve Validation".' },
-    'd1.4': { mode: 'interactive', userAction: 'Review drawing audit (1 discrepancy). Verify source traceability. Generate PMX and send to Sales Coordinator.' },
-    'd1.5': { mode: 'interactive', userAction: 'SC reviews validated PMX with source badges. Applies discounts (AI-assisted). Generates SIF and exports to CORE.' },
+    // Flow 1: Web Catalog Import
+    'd1.1': { mode: 'interactive', userAction: 'Designer pastes manufacturer catalog URL. AI scrapes the page and extracts 7 items with part numbers, options, and pricing. Click "Continue to Review".' },
+    'd1.2': { mode: 'interactive', userAction: 'Review 2 AI-suggested options and 2 Expert Hub resolutions. Accept or edit each. Click "Approve All".' },
+    'd1.3': { mode: 'interactive', userAction: 'Acknowledge 2 upcharges ($1,470). Review catalog price verification. Click "Continue to Specification Package".' },
+    'd1.4': { mode: 'interactive', userAction: 'Review source traceability. Generate specification package and send to Sales Coordinator.' },
+    'd1.5': { mode: 'interactive', userAction: 'SC reviews specification with source badges. Applies discount (AI-assisted). Generates priced specification.' },
 
     // Flow 2: Warehouse & Inventory Intelligence
     'd2.1': { mode: 'interactive', userAction: 'Review warehouse health, Wall of Shame, and allocation conflicts. Click "Apply Recommendations" to optimize.' },
@@ -198,34 +198,32 @@ export const DUPLER_STEP_BEHAVIOR: Record<string, StepBehavior> = {
 // ─── Step Messages (AI Agent Progress) ───────────────────────────────────────
 
 export const DUPLER_STEP_MESSAGES: Record<string, string[]> = {
-    // Flow 1: Vendor Data Extraction
+    // Flow 1: Web Catalog Import
     'd1.1': [
-        'PdfOcrAgent: reading vendor quote PDF — National Furniture #NF-2026-0412...',
-        'SemanticParser: identifying structured fields — tables, footnotes, margin notes',
-        'LineItemDetector: 8 line items found across 2 product categories',
-        'FieldClassifier: extracting SKUs, quantities, finishes, options, list prices',
+        'WebScraperAgent: navigating Meridian Workspace catalog — Healthcare Office collection...',
+        'TableExtractor: parsing product grid — 7 line items with pricing data',
+        'OptionParser: classifying part numbers, options, finishes, quantities',
+        'UndecidedDetector: 3 items have incomplete options — flagging for review',
     ],
     'd1.2': [
-        'ExtractionMapper: structuring 8 items into SPEC/PMX format...',
-        'FormatAdapter: mapping field types to SPEC schema',
-        'ConfidenceScorer: 4 items at 97%+ confidence — 4 flagged for review',
+        'CatalogMapper: mapping 7 Meridian items to SPEC format...',
+        'OptionInferenceEngine: analyzing project context — 2 options auto-suggested',
+        'ExpertHubRouter: 2 items escalated to Expert Hub — specialist response received',
     ],
     'd1.3': [
-        'OptionValidator: checking finish/option configurations against catalog rules',
-        'UpchargeDetector: 2 finish selections trigger upcharges — $1,380 total',
-        'PriceVerifier: HNI items → Compass (22/24 ✓), non-CET → source PDF match',
+        'OptionRuleChecker: validating 7 items against Meridian configuration rules',
+        'UpchargeDetector: 2 option selections trigger upcharges — $1,470 total',
+        'CatalogPriceVerifier: all 7 items verified against scraped catalog prices',
     ],
     'd1.4': [
-        'DrawingAuditor: cross-referencing spec quantities against floor plan drawings...',
-        'QuantityReconciler: 31/32 items match — 1 discrepancy (Waveworks Desk)',
-        'SourceArchiver: vendor PDF archived to project record — tagged to line items',
-        'PmxGenerator: generating validated PMX-MH-0412...',
+        'SpecAssembler: building specification package — 7 Meridian items',
+        'SourceLinker: linking items to catalog URL + Expert Hub resolutions',
+        'TraceabilityArchiver: archiving source URL and expert notes for audit trail',
     ],
     'd1.5': [
-        'PMX-MH-0412 sent to Randy Martinez (SC) — specification package ready',
-        'DiscountAdvisor: suggesting applicable discount tiers per manufacturer...',
-        'MarginCalculator: computing margins after discounts and upcharges',
-        'SifGenerator: generating SIF for CORE export — 32 items, $95,580',
+        'SPEC-MH-0412 received from Designer Alex Rivera — specification ready',
+        'DiscountAdvisor: suggesting Meridian Workspace dealer discount...',
+        'MarginCalculator: computing margins after discount and upcharges',
     ],
 
     // Flow 2
