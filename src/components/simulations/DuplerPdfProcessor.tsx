@@ -323,6 +323,18 @@ interface DuplerPdfProcessorProps {
     onNavigate: (page: string) => void;
 }
 
+const SOURCE_BADGE_COLORS = {
+    teal:   'bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20',
+    amber:  'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
+    green:  'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20',
+    purple: 'bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20',
+    blue:   'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20',
+};
+
+function SourceBadge({ label, color = 'teal' }: { label: string; color?: 'teal' | 'amber' | 'green' | 'purple' | 'blue' }) {
+    return <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border ${SOURCE_BADGE_COLORS[color]}`}>{label}</span>;
+}
+
 export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorProps) {
     const { currentStep, nextStep, prevStep, isPaused } = useDemo();
     const stepId = currentStep.id;
@@ -656,17 +668,6 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
             </div>
         </button>
     );
-
-    const SourceBadge = ({ label, color = 'teal' }: { label: string; color?: 'teal' | 'amber' | 'green' | 'purple' | 'blue' }) => {
-        const colors = {
-            teal:   'bg-teal-100 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-500/20',
-            amber:  'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20',
-            green:  'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20',
-            purple: 'bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20',
-            blue:   'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20',
-        };
-        return <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border ${colors[color]}`}>{label}</span>;
-    };
 
     // ═══════════════════════════════════════════════════════════════════════════
     // RENDER
@@ -1987,6 +1988,8 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
     const [scPage, setScPage] = useState(0);
     const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [pdfDownloaded, setPdfDownloaded] = useState(false);
+    const [downloadToast, setDownloadToast] = useState(false);
+    const [showSifPreview, setShowSifPreview] = useState(false);
     const [showArchiveModal, setShowArchiveModal] = useState(false);
     const [archived, setArchived] = useState(false);
     const [scSifPhase, setScSifPhase] = useState<'idle' | 'converting' | 'ready'>('idle');
@@ -2016,6 +2019,8 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
         setScPage(0);
         setDownloadingPdf(false);
         setPdfDownloaded(false);
+        setDownloadToast(false);
+        setShowSifPreview(false);
         setShowArchiveModal(false);
         setArchived(false);
         setScSifPhase('idle');
@@ -2437,7 +2442,7 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                                                                     <textarea
                                                                         value={approvalNote}
                                                                         onChange={e => setApprovalNote(e.target.value)}
-                                                                        placeholder="Why does this discount require manager approval?"
+                                                                        placeholder="Justification for manager approval..."
                                                                         rows={2}
                                                                         className="w-full px-2.5 py-1.5 text-[11px] rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none"
                                                                     />
@@ -2748,13 +2753,18 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                         <div className="bg-muted/50 px-4 py-2 border-b border-border">
                             <span className="text-[10px] font-bold text-foreground uppercase tracking-wider">Quick Actions</span>
                         </div>
-                        <div className="p-3 grid grid-cols-2 gap-2">
+                        <div className="p-3 grid grid-cols-3 gap-2">
                             {/* Download PDF */}
                             <button
                                 onClick={() => {
                                     if (pdfDownloaded || downloadingPdf) return;
                                     setDownloadingPdf(true);
-                                    setTimeout(pauseAware(() => { setDownloadingPdf(false); setPdfDownloaded(true); }), 1500);
+                                    setTimeout(pauseAware(() => {
+                                        setDownloadingPdf(false);
+                                        setPdfDownloaded(true);
+                                        setDownloadToast(true);
+                                        setTimeout(pauseAware(() => setDownloadToast(false)), 3000);
+                                    }), 1500);
                                 }}
                                 disabled={downloadingPdf}
                                 className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors text-left group ${
@@ -2774,6 +2784,23 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                                 <div>
                                     <p className="text-[10px] font-bold text-foreground">{downloadingPdf ? 'Downloading...' : pdfDownloaded ? 'Downloaded' : 'Download PDF'}</p>
                                     <p className="text-[8px] text-muted-foreground">{pdfDownloaded ? `${SPEC_ID}.pdf` : 'Export for records'}</p>
+                                </div>
+                            </button>
+
+                            {/* Preview SIF */}
+                            <button
+                                onClick={() => setShowSifPreview(!showSifPreview)}
+                                className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors text-left group ${
+                                    showSifPreview ? 'border-purple-300 dark:border-purple-500/30 bg-purple-50/50 dark:bg-purple-500/5' : 'border-border hover:bg-muted/50'
+                                }`}>
+                                <div className={`p-1.5 rounded-lg transition-colors ${
+                                    showSifPreview ? 'bg-purple-100 dark:bg-purple-500/10' : 'bg-blue-100 dark:bg-blue-500/10 group-hover:bg-blue-200 dark:group-hover:bg-blue-500/20'
+                                }`}>
+                                    <DocumentTextIcon className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-bold text-foreground">{showSifPreview ? 'Hide Preview' : 'Preview SIF'}</p>
+                                    <p className="text-[8px] text-muted-foreground">{SPEC_ID}.sif</p>
                                 </div>
                             </button>
 
@@ -2799,6 +2826,75 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                             </button>
                         </div>
                     </div>
+
+                    {/* Download Toast */}
+                    {downloadToast && (
+                        <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <CheckCircleIcon className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-bold text-green-800 dark:text-green-200">{SPEC_ID}_priced.pdf downloaded successfully</p>
+                                <p className="text-[9px] text-green-600 dark:text-green-400">Saved to /Downloads/ — {CATALOG_ITEMS_TOTAL} items, priced specification</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SIF Preview (toggle) */}
+                    {showSifPreview && (
+                        <div className="rounded-xl border border-border overflow-hidden bg-card animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="px-4 py-2.5 border-b border-border bg-muted/50 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <DocumentTextIcon className="h-4 w-4 text-purple-500" />
+                                    <span className="text-xs font-bold text-foreground">SIF Preview — {SPEC_ID}_priced.sif</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <SourceBadge label="VALIDATED" color="green" />
+                                    <SourceBadge label="SC PRICED" color="purple" />
+                                </div>
+                            </div>
+                            <div className="p-4 max-h-[280px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgb(var(--color-border))_transparent]">
+                                <pre className="text-[9px] font-mono text-muted-foreground leading-relaxed whitespace-pre-wrap p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-border">{`; STRATA INTERCHANGE FORMAT (SIF) v2.4 — PRICED
+; Generated: ${new Date().toISOString().split('T')[0]}  |  Engine: Strata SC Pricing v3.1
+
+[HEADER]
+SpecID          = ${SPEC_ID}
+Version         = 2.0.0 (Priced)
+Status          = SC_PRICED
+Manufacturer    = ${MANUFACTURER}
+Project         = Mercy Health Phase 2
+Designer        = Alex Rivera
+PricedBy        = Randy Martinez (SC)
+Items           = ${CATALOG_ITEMS_TOTAL}
+TotalListPrice  = $${PROJECT_TOTAL.toLocaleString()}
+
+[PRICING]
+  Dealer Standard  | 38.0% | MWS Dealer Agreement #2026-MWS-D041
+  Healthcare Pgm   | 12.0% | MWS Healthcare Incentive #HCI-2026
+  Project Volume   |  5.0% | MWS Volume Rebate ($25K+ orders)
+ListTotal       = $${PROJECT_TOTAL.toLocaleString()}
+NetDealer       = $14,256
+NetCustomer     = $18,650
+DealerMargin    = $4,394
+
+[ITEMS]
+; Line | Part#     | Description              | Qty | List$  | Net$   | Source
+  001  | BDL-48S   | Wand LED Lamp Freestd    |  6  | $383   | $195   | AUTO
+  002  | AXM-HBW   | Relate Std Mesh Hi-Bk    |  6  | $1,668 | $851   | AUTO
+  003  | PDK-3R    | PowerDock 3-Recep Mount  |  6  | $411   | $210   | EXPERT_HUB
+  004  | FXA-SM    | Dynamic Sngl Monitor Arm |  6  | $360   | $184   | AI_SUGGESTED
+  005  | CTK-24W   | Cable Mgmt Kit 24W       |  6  | $95    | $48    | AI_SUGGESTED
+  006  | SBN-15E   | Hinge-Dr Bin 20H×10W     |  6  | $919   | $469   | EXPERT_HUB
+  007  | PRL-72C   | Optimize 72W 4-Circuit   |  3  | $313   | $160   | AUTO
+  ...  | ...       | ...                      | ... | ...    | ...    | ...
+  054  | MRR-48W   | MeridianRail 48W Pwr+Dat |  6  | $289   | $148   | AUTO
+
+[SOURCE_TRACE]
+AI_SUGGESTED    = 2  |  EXPERT_HUB = 2  |  AUTO_MAPPED = ${MAPPED_ITEMS_COUNT}
+Checksum        = sha256:b7d3e1...f92a
+
+; END OF FILE — ${SPEC_ID}_priced.sif`}</pre>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Archive Modal */}
                     {showArchiveModal && (
