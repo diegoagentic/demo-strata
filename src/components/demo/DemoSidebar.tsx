@@ -50,11 +50,11 @@ function getStepDataThread(stepId: string): string | null {
         '4.3': '$11,550 reconciled',
         '4.4': '92% satisfaction, AV flagged',
         // Dupler
-        'd1.1': 'Gap detected — catalog imported, products extracted and mapped',
+        'd1.1': 'Gap detected — vendor PDF imported, products extracted and mapped',
         'd1.2': 'Flagged items resolved — AI suggestions and specialist review',
-        'd1.3': 'Prices verified — upcharges reviewed and acknowledged',
-        'd1.4': 'SIF sent to SC — catalog synchronized, gap resolved',
-        'd1.5': 'Discount applied — priced SIF approved and sent',
+        'd1.3': 'PMX specification assembled — sent to SC, catalog synchronized',
+        'd1.4': 'Upcharges validated — discounts applied by SC',
+        'd1.5': 'Priced SIF generated — synchronized and sent for approval',
         'd2.1': 'Warehouse scanned — aging items flagged, moves recommended',
         'd2.2': 'Items received — exceptions flagged and assessed',
         'd2.3': 'Prices verified — margin alerts reviewed',
@@ -117,6 +117,7 @@ export default function DemoSidebar() {
         fmBadge: 'border-teal-800/50 bg-teal-900/30 text-teal-400',
         fuBadge: 'border-amber-800/50 bg-amber-900/30 text-amber-400',
         expertBadge: 'border-purple-800/50 bg-purple-900/30 text-purple-400',
+        scBadge: 'border-indigo-800/50 bg-indigo-900/30 text-indigo-400',
         endUserBadge: 'border-rose-800/50 bg-rose-900/30 text-rose-400',
         collapsedBg: 'bg-zinc-950',
         collapsedText: 'text-zinc-400',
@@ -156,6 +157,7 @@ export default function DemoSidebar() {
         fmBadge: 'border-teal-200 bg-teal-50 text-teal-700',
         fuBadge: 'border-amber-200 bg-amber-50 text-amber-700',
         expertBadge: 'border-purple-200 bg-purple-50 text-purple-700',
+        scBadge: 'border-indigo-200 bg-indigo-50 text-indigo-700',
         endUserBadge: 'border-rose-200 bg-rose-50 text-rose-700',
         collapsedBg: 'bg-white',
         collapsedText: 'text-zinc-500',
@@ -261,7 +263,7 @@ export default function DemoSidebar() {
                                         {(() => {
                                             const label = resolveRoleLabel(step.role, step.app, activeProfile.id);
                                             return (
-                                                <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-sm border ${label === 'Facility Manager' ? c.fmBadge : label === 'Facility User' ? c.fuBadge : label === 'Dealer' ? c.dealerBadge : label === 'End User' ? c.endUserBadge : c.expertBadge}`}>
+                                                <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-sm border ${label === 'Facility Manager' ? c.fmBadge : label === 'Facility User' ? c.fuBadge : label === 'Dealer' ? c.dealerBadge : label === 'End User' ? c.endUserBadge : label === 'Sales Coordinator' ? c.scBadge : c.expertBadge}`}>
                                                     {label === 'Facility Manager' ? 'FACILITY MANAGER' : label === 'Facility User' ? 'FACILITY USER' : label}
                                                 </span>
                                             );

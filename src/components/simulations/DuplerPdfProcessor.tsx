@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// Dupler — Flow 1: Web Catalog Import & Specification Building
-// Steps: d1.1 (Web Scrape & Extract), d1.2 (AI Suggestions & Expert Hub),
-//        d1.3 (Validation & Upcharges), d1.4 (Spec Package & SC Handoff),
-//        d1.5 (SC Review & Pricing — DuplerScReview export)
+// Dupler — Flow 1: Vendor Data Import & Priced SIF Generation
+// Steps: d1.1 (Vendor Data Import), d1.2 (AI & Expert Hub),
+//        d1.3 (Spec Assembly & SC Handoff),
+//        d1.4 (SC Price Validation — DuplerScReview),
+//        d1.5 (Priced SIF Generation — DuplerScReview)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -303,14 +304,14 @@ const DISCOUNT_TIERS = [
 // ─── Agent Arrays ────────────────────────────────────────────────────────────
 
 const EXTRACTION_AGENTS: AgentVis[] = [
-    { name: 'WebScraperAgent', detail: `Navigating ${MANUFACTURER} catalog — Healthcare Office`, visible: false, done: false },
-    { name: 'TableExtractor', detail: `Parsing product grid — ${CATALOG_ITEMS_TOTAL} line items with pricing`, visible: false, done: false },
+    { name: 'DocumentParser', detail: `Reading vendor quote PDF — ${MANUFACTURER} Healthcare Office`, visible: false, done: false },
+    { name: 'LineItemExtractor', detail: `Extracting line items with pricing — ${CATALOG_ITEMS_TOTAL} products identified`, visible: false, done: false },
     { name: 'OptionParser', detail: `Classifying part numbers, options, finishes — ${CATALOG_ITEMS_TOTAL} items`, visible: false, done: false },
     { name: 'UndecidedDetector', detail: `${NEEDS_REVIEW_ITEMS.length} items have incomplete options — flagging for review`, visible: false, done: false },
 ];
 
 const MAPPING_AGENTS: AgentVis[] = [
-    { name: 'CatalogMapper', detail: `Mapping ${CATALOG_ITEMS_TOTAL} ${MANUFACTURER} items to SPEC format`, visible: false, done: false },
+    { name: 'SpecMapper', detail: `Mapping ${CATALOG_ITEMS_TOTAL} ${MANUFACTURER} items to SPEC format`, visible: false, done: false },
     { name: 'OptionInferenceEngine', detail: 'Analyzing project context — 2 options auto-suggested', visible: false, done: false },
     { name: 'ExpertHubRouter', detail: '2 items escalated to Expert Hub — specialist responded', visible: false, done: false },
 ];
@@ -351,8 +352,10 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
         };
     }, []);
 
-    // ── d1.1 State: Web Catalog Scrape ──
+    // ── d1.1 State: Vendor Data Import ──
     const [scrapePhase, setScrapePhase] = useState<ScrapePhase>('idle');
+    const [uploadTab, setUploadTab] = useState<'pdf' | 'url' | 'sif'>('pdf');
+    const [pdfFile, setPdfFile] = useState(false);
     const [urlPasted, setUrlPasted] = useState(false);
     const [extractAgents, setExtractAgents] = useState(EXTRACTION_AGENTS.map(a => ({ ...a })));
     const [extractProgress, setExtractProgress] = useState(0);
@@ -409,7 +412,7 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
     const pkgPagedItems = ALL_CATALOG_ITEMS.slice(pkgPage * ITEMS_PER_PAGE, (pkgPage + 1) * ITEMS_PER_PAGE);
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // d1.1: Web Catalog Scrape & AI Extraction
+    // d1.1: Vendor Data Import & AI Extraction
     // ═══════════════════════════════════════════════════════════════════════════
 
     useEffect(() => {
@@ -423,19 +426,27 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
         setCatalogFilter('all');
         setFilterAutoSwitched(false);
         setExpandedCatalogItem(null);
+        setUploadTab('pdf');
+        setPdfFile(false);
         setUrlPasted(false);
         const handler = () => setScrapePhase('notification');
         window.addEventListener('dupler-vendor-upload', handler);
         return () => window.removeEventListener('dupler-vendor-upload', handler);
     }, [stepId]);
 
-    // Upload zone: empty input → paste URL → wait for Extract click
+    // Upload zone: simulate file/URL appearing
     useEffect(() => {
         if (scrapePhase !== 'upload-zone') return;
+        setPdfFile(false);
         setUrlPasted(false);
-        const t1 = setTimeout(pauseAware(() => setUrlPasted(true)), 1000);
-        return () => { clearTimeout(t1); };
-    }, [scrapePhase]);
+        if (uploadTab === 'pdf') {
+            const t1 = setTimeout(pauseAware(() => setPdfFile(true)), 1200);
+            return () => clearTimeout(t1);
+        } else if (uploadTab === 'url') {
+            const t1 = setTimeout(pauseAware(() => setUrlPasted(true)), 1000);
+            return () => clearTimeout(t1);
+        }
+    }, [scrapePhase, uploadTab]);
 
     // Scraping: scan progress ~2s → processing
     useEffect(() => {
@@ -530,63 +541,14 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
     const allReviewsResolved = reviewResolvedCount >= NEEDS_REVIEW_ITEMS.length;
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // d1.3: Price Validation & Upcharges
+    // d1.3: Specification Assembly & SC Handoff
     // ═══════════════════════════════════════════════════════════════════════════
 
     useEffect(() => {
-        if (stepId !== 'd1.3') { setValPhase('idle'); return; }
-        setValPhase('idle');
-        setUpchargesAcked({});
-        setValFilter('cost-adjustments');
-        setValProgress(0);
-        setExpandedCatalogItem(null);
-        const timers: ReturnType<typeof setTimeout>[] = [];
-        timers.push(setTimeout(pauseAware(() => setValPhase('processing')), 300));
-        return () => timers.forEach(clearTimeout);
-    }, [stepId]);
-
-    useEffect(() => {
-        if (valPhase !== 'processing') return;
-        setValProgress(0);
-        const duration = 1500;
-        const steps = 15;
-        const timers: ReturnType<typeof setTimeout>[] = [];
-        for (let i = 1; i <= steps; i++) {
-            timers.push(setTimeout(
-                pauseAware(() => setValProgress(Math.min(100, Math.round((i / steps) * 100)))),
-                (duration / steps) * i
-            ));
-        }
-        timers.push(setTimeout(pauseAware(() => {
-            setValPhase('revealed');
-            setExpandedCatalogItem(UPCHARGE_ITEMS[0].itemLine);
-        }), duration + 400));
-        return () => timers.forEach(clearTimeout);
-    }, [valPhase]);
-
-    // Auto-expand next unresolved upcharge
-    useEffect(() => {
-        if (valPhase !== 'revealed') return;
-        const nextUnacked = UPCHARGE_ITEMS.find(uc => !upchargesAcked[uc.id]);
-        if (nextUnacked) {
-            setExpandedCatalogItem(nextUnacked.itemLine);
-        }
-    }, [valPhase, upchargesAcked]);
-
-    const upchargesAckedCount = Object.values(upchargesAcked).filter(Boolean).length;
-    const allValResolved = upchargesAckedCount >= UPCHARGE_ITEMS.length;
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // d1.4: Specification Package & SC Handoff
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    useEffect(() => {
-        if (stepId !== 'd1.4') { setPkgPhase('idle'); return; }
+        if (stepId !== 'd1.3') { setPkgPhase('idle'); return; }
         setPkgPhase('idle');
         setPkgProgress(0);
         setPkgPage(0);
-        setSifPhase('idle');
-        setSifProgress(0);
         setSpecSent(false);
         setShowSendPopover(false);
         setSendToast(false);
@@ -699,12 +661,12 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
     // RENDER
     // ═══════════════════════════════════════════════════════════════════════════
 
-    if (!stepId.startsWith('d1.') || stepId === 'd1.5') return null;
+    if (!stepId.startsWith('d1.') || stepId === 'd1.4' || stepId === 'd1.5') return null;
 
     return (
         <div className="p-6 space-y-4 max-w-5xl mx-auto">
 
-            {/* ── d1.1: Web Catalog Scrape & AI Extraction ── */}
+            {/* ── d1.1: Vendor Data Import & AI Extraction ── */}
             {stepId === 'd1.1' && (
                 <>
                     {/* Gap notification — non-CET manufacturer detected */}
@@ -731,96 +693,198 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                     onClick={() => setScrapePhase('upload-zone')}
                                     className="w-full py-2.5 rounded-xl text-xs font-bold bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2 animate-pulse"
                                 >
-                                    <LinkIcon className="h-4 w-4" /> Import from Manufacturer Catalog
+                                    <ArrowUpTrayIcon className="h-4 w-4" /> Import Vendor Data
                                 </button>
                             </div>
                         </div>
                     )}
 
-                    {/* Upload zone — URL input with paste animation */}
+                    {/* Upload zone — 3-tab bar: PDF (primary), URL, SIF */}
                     {scrapePhase === 'upload-zone' && (
                         <div className="animate-in fade-in slide-in-from-top-4 duration-500 space-y-4">
-                            <div className="rounded-xl bg-card border-2 border-dashed border-purple-300 dark:border-purple-500/40 overflow-hidden">
-                                <div className="p-6">
-                                    <div className="flex flex-col items-center justify-center py-4 gap-3">
-                                        <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/10">
-                                            <LinkIcon className="h-10 w-10 text-purple-600 dark:text-purple-400" />
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-sm font-bold text-foreground">Paste Manufacturer URL</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Manufacturer catalog pages, product listings, or price sheets</p>
-                                        </div>
-                                    </div>
-                                    {/* URL input with paste animation */}
-                                    <div className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all duration-300 mt-2 ${
-                                        urlPasted
-                                            ? 'bg-purple-50 dark:bg-purple-500/5 border-purple-400 dark:border-purple-500/40 ring-2 ring-purple-200 dark:ring-purple-500/20'
-                                            : 'bg-muted/30 border-border'
+                            {/* Tab bar */}
+                            <div className="flex rounded-lg bg-muted/50 p-1 gap-1">
+                                <button onClick={() => { setUploadTab('pdf'); setPdfFile(false); setUrlPasted(false); }}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-bold transition-all ${
+                                        uploadTab === 'pdf' ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'
                                     }`}>
-                                        <div className={`p-1 rounded transition-colors duration-300 ${urlPasted ? 'bg-purple-200 dark:bg-purple-500/20' : 'bg-muted'}`}>
-                                            <LinkIcon className={`h-3.5 w-3.5 transition-colors duration-300 ${urlPasted ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground'}`} />
-                                        </div>
-                                        {urlPasted ? (
-                                            <span className="text-xs text-purple-800 dark:text-purple-300 font-mono font-semibold flex-1 truncate animate-in fade-in slide-in-from-left-4 duration-300">
-                                                {CATALOG_URL}
-                                            </span>
+                                    <DocumentTextIcon className="h-3.5 w-3.5" /> Upload PDF
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${uploadTab === 'pdf' ? 'bg-amber-200 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300' : 'bg-muted text-muted-foreground'}`}>VENDOR PDF</span>
+                                </button>
+                                <button onClick={() => { setUploadTab('url'); setPdfFile(false); setUrlPasted(false); }}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-bold transition-all ${
+                                        uploadTab === 'url' ? 'bg-purple-100 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                    }`}>
+                                    <LinkIcon className="h-3.5 w-3.5" /> Paste URL
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${uploadTab === 'url' ? 'bg-purple-200 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300' : 'bg-muted text-muted-foreground'}`}>MFR WEBSITE</span>
+                                </button>
+                                <button onClick={() => { setUploadTab('sif'); setPdfFile(false); setUrlPasted(false); }}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-[11px] font-bold transition-all ${
+                                        uploadTab === 'sif' ? 'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                                    }`}>
+                                    <ArrowUpTrayIcon className="h-3.5 w-3.5" /> Import SIF
+                                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${uploadTab === 'sif' ? 'bg-blue-200 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300' : 'bg-muted text-muted-foreground'}`}>SIF FILE</span>
+                                </button>
+                            </div>
+
+                            {/* PDF tab — drag-drop zone with simulated file */}
+                            {uploadTab === 'pdf' && (
+                                <div className={`rounded-xl bg-card border-2 border-dashed transition-all duration-300 overflow-hidden ${
+                                    pdfFile ? 'border-amber-400 dark:border-amber-500/40' : 'border-amber-300 dark:border-amber-500/30'
+                                }`}>
+                                    <div className="p-6">
+                                        {!pdfFile ? (
+                                            <div className="flex flex-col items-center justify-center py-4 gap-3">
+                                                <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-500/10">
+                                                    <DocumentTextIcon className="h-10 w-10 text-amber-600 dark:text-amber-400" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm font-bold text-foreground">Upload Vendor Quote</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">Drag & drop a manufacturer PDF quote or price sheet</p>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-[9px] text-muted-foreground">Supported: PDF, XLSX</span>
+                                                    <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                                                    <span className="text-[9px] text-muted-foreground">Max 25 MB</span>
+                                                </div>
+                                            </div>
                                         ) : (
-                                            <span className="text-xs text-muted-foreground/50 font-mono flex-1 flex items-center">
-                                                https://
-                                                <span className="inline-block w-[1px] h-3.5 bg-muted-foreground/40 ml-0.5 animate-pulse" />
-                                            </span>
-                                        )}
-                                        {urlPasted && (
-                                            <SourceBadge label="MFR WEBSITE" color="purple" />
+                                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20">
+                                                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-500/10 shrink-0">
+                                                        <DocumentTextIcon className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold text-foreground truncate">Meridian_Healthcare_Q1_2026.pdf</p>
+                                                        <p className="text-[10px] text-muted-foreground">2.4 MB — Vendor quote</p>
+                                                    </div>
+                                                    <SourceBadge label="VENDOR PDF" color="amber" />
+                                                    <CheckCircleIcon className="h-5 w-5 text-green-500 shrink-0" />
+                                                </div>
+                                                <button
+                                                    onClick={() => setScrapePhase('scraping')}
+                                                    className="w-full mt-3 py-2.5 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-900 font-bold text-sm shadow-lg shadow-brand-400/20 animate-pulse flex items-center justify-center gap-2 transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300"
+                                                >
+                                                    <MagnifyingGlassIcon className="h-4 w-4" />
+                                                    Extract Data
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
-                                    {/* Extract button — appears after URL is pasted */}
-                                    {urlPasted && (
-                                        <button
-                                            onClick={() => setScrapePhase('scraping')}
-                                            className="w-full mt-3 py-2.5 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-900 font-bold text-sm shadow-lg shadow-brand-400/20 animate-pulse flex items-center justify-center gap-2 transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300"
-                                        >
-                                            <MagnifyingGlassIcon className="h-4 w-4" />
-                                            Extract Data
-                                        </button>
-                                    )}
                                 </div>
-                            </div>
+                            )}
+
+                            {/* URL tab — paste URL input */}
+                            {uploadTab === 'url' && (
+                                <div className="rounded-xl bg-card border-2 border-dashed border-purple-300 dark:border-purple-500/40 overflow-hidden">
+                                    <div className="p-6">
+                                        <div className="flex flex-col items-center justify-center py-4 gap-3">
+                                            <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-500/10">
+                                                <LinkIcon className="h-10 w-10 text-purple-600 dark:text-purple-400" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-sm font-bold text-foreground">Paste Manufacturer URL</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Manufacturer catalog pages, product listings, or price sheets</p>
+                                            </div>
+                                        </div>
+                                        <div className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all duration-300 mt-2 ${
+                                            urlPasted
+                                                ? 'bg-purple-50 dark:bg-purple-500/5 border-purple-400 dark:border-purple-500/40 ring-2 ring-purple-200 dark:ring-purple-500/20'
+                                                : 'bg-muted/30 border-border'
+                                        }`}>
+                                            <div className={`p-1 rounded transition-colors duration-300 ${urlPasted ? 'bg-purple-200 dark:bg-purple-500/20' : 'bg-muted'}`}>
+                                                <LinkIcon className={`h-3.5 w-3.5 transition-colors duration-300 ${urlPasted ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground'}`} />
+                                            </div>
+                                            {urlPasted ? (
+                                                <span className="text-xs text-purple-800 dark:text-purple-300 font-mono font-semibold flex-1 truncate animate-in fade-in slide-in-from-left-4 duration-300">
+                                                    {CATALOG_URL}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground/50 font-mono flex-1 flex items-center">
+                                                    https://
+                                                    <span className="inline-block w-[1px] h-3.5 bg-muted-foreground/40 ml-0.5 animate-pulse" />
+                                                </span>
+                                            )}
+                                            {urlPasted && (
+                                                <SourceBadge label="MFR WEBSITE" color="purple" />
+                                            )}
+                                        </div>
+                                        {urlPasted && (
+                                            <button
+                                                onClick={() => setScrapePhase('scraping')}
+                                                className="w-full mt-3 py-2.5 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-900 font-bold text-sm shadow-lg shadow-brand-400/20 animate-pulse flex items-center justify-center gap-2 transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300"
+                                            >
+                                                <MagnifyingGlassIcon className="h-4 w-4" />
+                                                Extract Data
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* SIF tab — file drop zone */}
+                            {uploadTab === 'sif' && (
+                                <div className="rounded-xl bg-card border-2 border-dashed border-blue-300 dark:border-blue-500/40 overflow-hidden">
+                                    <div className="p-6">
+                                        <div className="flex flex-col items-center justify-center py-4 gap-3">
+                                            <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-500/10">
+                                                <ArrowUpTrayIcon className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-sm font-bold text-foreground">Import SIF File</p>
+                                                <p className="text-xs text-muted-foreground mt-1">Drag & drop a SIF specification file from another system</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[9px] text-muted-foreground">Supported: .sif</span>
+                                                <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                                                <span className="text-[9px] text-muted-foreground">SPEC interchange format</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* Scraping — AI navigating catalog page */}
+                    {/* Scraping/Parsing — reading source data */}
                     {scrapePhase === 'scraping' && (
                         <div className="animate-in fade-in duration-300 space-y-4">
                             <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
                                 <div className="flex items-center gap-3 mb-3">
-                                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-500/10">
-                                        <LinkIcon className="h-5 w-5 text-purple-500" />
+                                    <div className={`p-2 rounded-lg ${uploadTab === 'url' ? 'bg-purple-100 dark:bg-purple-500/10' : 'bg-amber-100 dark:bg-amber-500/10'}`}>
+                                        {uploadTab === 'url'
+                                            ? <LinkIcon className="h-5 w-5 text-purple-500" />
+                                            : <DocumentTextIcon className="h-5 w-5 text-amber-500" />
+                                        }
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-bold text-foreground">{MANUFACTURER} — Healthcare Office</p>
-                                        <p className="text-[10px] text-muted-foreground">AI navigating manufacturer catalog page...</p>
+                                        <p className="text-[10px] text-muted-foreground">
+                                            {uploadTab === 'url' ? 'AI navigating manufacturer catalog page...' : 'Reading vendor quote — extracting line items and pricing...'}
+                                        </p>
                                     </div>
-                                    <SourceBadge label="SCRAPING" color="purple" />
+                                    <SourceBadge label={uploadTab === 'url' ? 'SCRAPING' : 'PARSING PDF'} color={uploadTab === 'url' ? 'purple' : 'amber'} />
                                 </div>
                                 <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                    <div className="h-full rounded-full bg-purple-400 transition-all duration-200 ease-linear" style={{ width: `${scanProgress}%` }} />
+                                    <div className={`h-full rounded-full transition-all duration-200 ease-linear ${uploadTab === 'url' ? 'bg-purple-400' : 'bg-amber-400'}`} style={{ width: `${scanProgress}%` }} />
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mt-2">
-                                    {scanProgress < 100 ? 'Reading catalog page — extracting product data...' : 'Extraction complete — starting field analysis...'}
+                                    {scanProgress < 100
+                                        ? (uploadTab === 'url' ? 'Reading catalog page — extracting product data...' : 'Parsing PDF document — identifying tables and line items...')
+                                        : 'Extraction complete — starting field analysis...'}
                                 </p>
                             </div>
                         </div>
                     )}
 
                     {/* Processing — agent pipeline */}
-                    {scrapePhase === 'processing' && renderAgentPipeline(extractAgents, extractProgress, `Web Catalog Extraction — ${MANUFACTURER} Healthcare Office...`)}
+                    {scrapePhase === 'processing' && renderAgentPipeline(extractAgents, extractProgress, `Vendor Data Extraction — ${MANUFACTURER} Healthcare Office...`)}
 
                     {/* Breathing */}
                     {scrapePhase === 'breathing' && (
                         <div className="p-4 rounded-xl bg-muted/30 border border-border/50 animate-in fade-in duration-300 flex items-center justify-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                            <span className="text-xs font-semibold text-muted-foreground">Structuring catalog data...</span>
+                            <span className="text-xs font-semibold text-muted-foreground">Structuring vendor data...</span>
                         </div>
                     )}
 
@@ -833,10 +897,10 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                     <AIAgentAvatar />
                                     <div className="flex-1">
                                         <p className="text-xs text-green-800 dark:text-green-200">
-                                            <span className="font-bold">WebScraperAgent:</span> {CATALOG_ITEMS_TOTAL} items extracted from {MANUFACTURER} catalog. Part numbers, quantities, options, and pricing fields identified.
+                                            <span className="font-bold">DocumentParser:</span> {CATALOG_ITEMS_TOTAL} items extracted from {MANUFACTURER} vendor quote. Part numbers, quantities, options, and pricing fields identified.
                                         </p>
                                     </div>
-                                    <SourceBadge label="MFR WEBSITE" color="purple" />
+                                    <SourceBadge label="VENDOR PDF" color="amber" />
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <span className="flex items-center gap-1 text-[9px] text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-500/10 px-2 py-0.5 rounded-full">
@@ -857,10 +921,10 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                 <div className="bg-muted/50 px-4 py-2.5 border-b border-border">
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
-                                            <MagnifyingGlassIcon className="h-4 w-4 text-purple-500" />
-                                            <span className="text-xs font-bold text-foreground">Web Catalog — {MANUFACTURER}</span>
-                                            <span className="text-[8px] font-mono text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
-                                                <LinkIcon className="h-2.5 w-2.5" /> Healthcare Office
+                                            <DocumentTextIcon className="h-4 w-4 text-amber-500" />
+                                            <span className="text-xs font-bold text-foreground">Vendor Quote — {MANUFACTURER}</span>
+                                            <span className="text-[8px] font-mono text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-500/20 flex items-center gap-1">
+                                                <DocumentTextIcon className="h-2.5 w-2.5" /> Healthcare Office
                                             </span>
                                         </div>
                                         <span className="text-[9px] text-muted-foreground">{filteredCatalog.length} of {CATALOG_ITEMS_TOTAL} items</span>
@@ -1041,10 +1105,10 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                         <div className="bg-muted/50 px-4 py-2.5 border-b border-border">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <MagnifyingGlassIcon className="h-4 w-4 text-purple-500" />
-                                    <span className="text-xs font-bold text-foreground">Web Catalog — {MANUFACTURER}</span>
-                                    <span className="text-[8px] font-mono text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
-                                        <LinkIcon className="h-2.5 w-2.5" /> Healthcare Office
+                                    <DocumentTextIcon className="h-4 w-4 text-amber-500" />
+                                    <span className="text-xs font-bold text-foreground">Vendor Quote — {MANUFACTURER}</span>
+                                    <span className="text-[8px] font-mono text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-500/20 flex items-center gap-1">
+                                        <DocumentTextIcon className="h-2.5 w-2.5" /> Healthcare Office
                                     </span>
                                 </div>
                                 <span className="text-[9px] text-muted-foreground">{reviewResolvedCount}/{NEEDS_REVIEW_ITEMS.length} Resolved</span>
@@ -1266,44 +1330,60 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                 </div>
             )}
 
-            {/* ── d1.3: Price Validation & Upcharges (seamless table continuation) ── */}
-            {stepId === 'd1.3' && (valPhase === 'processing' || valPhase === 'revealed') && (
+            {/* ── d1.3: Specification Assembly & SC Handoff ── */}
+            {stepId === 'd1.3' && (pkgPhase === 'processing' || pkgPhase === 'revealed') && (
                 <div className="animate-in fade-in duration-300 space-y-4">
-                    {/* Processing — compact loading banner above the table */}
-                    {valPhase === 'processing' && (
+                    {/* Toast notification — fixed floating */}
+                    {sendToast && (
+                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[210] animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="px-4 py-2.5 rounded-xl bg-green-600 text-white text-xs font-bold shadow-lg shadow-green-500/30 flex items-center gap-2">
+                                <CheckCircleIcon className="h-4 w-4 shrink-0" />
+                                {SPEC_ID}.pmx sent to Randy Martinez (SC) — pricing handoff complete
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Processing — compact loading bar above the table */}
+                    {pkgPhase === 'processing' && (
                         <div className="p-3 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
                             <div className="flex items-center gap-2 mb-2">
                                 <AIAgentAvatar />
-                                <span className="text-xs font-bold text-foreground">Analyzing prices against manufacturer catalog...</span>
+                                <span className="text-xs font-bold text-foreground">Assembling PMX specification package...</span>
                             </div>
                             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                <div className="h-full rounded-full bg-brand-400 transition-all duration-200 ease-linear" style={{ width: `${valProgress}%` }} />
+                                <div className="h-full rounded-full bg-brand-400 transition-all duration-200 ease-linear" style={{ width: `${pkgProgress}%` }} />
                             </div>
                             <div className="mt-1.5 space-y-0.5 text-[10px]">
-                                {valProgress > 20 && (
-                                    <p className="text-muted-foreground animate-in fade-in duration-200">Validating {TOTAL_ITEMS} items against {MANUFACTURER} catalog rules...</p>
+                                {pkgProgress > 20 && (
+                                    <p className="text-muted-foreground animate-in fade-in duration-200">Linking {CATALOG_ITEMS_TOTAL} items to vendor quote sources...</p>
                                 )}
-                                {valProgress > 60 && (
-                                    <p className="text-amber-600 dark:text-amber-400 animate-in fade-in duration-200 font-medium">{UPCHARGE_ITEMS.length} upcharges identified — ${UPCHARGE_TOTAL.toLocaleString()}</p>
+                                {pkgProgress > 50 && (
+                                    <p className="text-muted-foreground animate-in fade-in duration-200">Embedding Expert Hub resolutions and AI suggestions...</p>
                                 )}
-                                {valProgress > 85 && (
-                                    <p className="text-green-600 dark:text-green-400 animate-in fade-in duration-200 font-medium">All prices verified — ready for review</p>
+                                {pkgProgress > 80 && (
+                                    <p className="text-purple-600 dark:text-purple-400 animate-in fade-in duration-200 font-medium">{SPEC_ID}.pmx — package ready</p>
                                 )}
                             </div>
                         </div>
                     )}
 
-                    {/* Revealed — alert banner */}
-                    {valPhase === 'revealed' && (
-                        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 flex items-center gap-3 animate-in fade-in duration-500">
-                            <ExclamationTriangleIcon className="h-5 w-5 text-amber-500 shrink-0" />
-                            <div className="flex-1">
-                                <p className="text-xs font-bold text-amber-800 dark:text-amber-200">
-                                    Price update needed — {UPCHARGE_ITEMS.length} items have cost adjustments
-                                </p>
-                                <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5">
-                                    Total upcharge impact: <span className="font-bold">${UPCHARGE_TOTAL.toLocaleString()}</span> — review and acknowledge below.
-                                </p>
+                    {/* Revealed — spec summary banner */}
+                    {pkgPhase === 'revealed' && (
+                        <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-500/5 border border-purple-200 dark:border-purple-500/20 animate-in fade-in duration-500">
+                            <div className="flex items-center gap-3">
+                                <DocumentTextIcon className="h-5 w-5 text-purple-500 shrink-0" />
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-purple-800 dark:text-purple-200">
+                                        PMX Specification — {SPEC_ID}.pmx
+                                    </p>
+                                    <p className="text-[10px] text-purple-700 dark:text-purple-300 mt-0.5">
+                                        Mercy Health Phase 2 — {CATALOG_ITEMS_TOTAL} items with full source traceability
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <SourceBadge label="SPEC VERIFIED" color="green" />
+                                    <SourceBadge label="SOURCE LINKED" color="purple" />
+                                </div>
                             </div>
                         </div>
                     )}
@@ -1314,16 +1394,14 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                         <div className="bg-muted/50 px-4 py-2.5 border-b border-border">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <MagnifyingGlassIcon className="h-4 w-4 text-purple-500" />
-                                    <span className="text-xs font-bold text-foreground">Web Catalog — {MANUFACTURER}</span>
-                                    <span className="text-[8px] font-mono text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
-                                        <LinkIcon className="h-2.5 w-2.5" /> Healthcare Office
+                                    <DocumentTextIcon className="h-4 w-4 text-amber-500" />
+                                    <span className="text-xs font-bold text-foreground">Vendor Quote — {MANUFACTURER}</span>
+                                    <span className="text-[8px] font-mono text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-500/20 flex items-center gap-1">
+                                        <DocumentTextIcon className="h-2.5 w-2.5" /> Healthcare Office
                                     </span>
                                 </div>
                                 <span className="text-[9px] text-muted-foreground">
-                                    {valPhase === 'revealed'
-                                        ? `${upchargesAckedCount}/${UPCHARGE_ITEMS.length} Acknowledged`
-                                        : `${TOTAL_ITEMS} of ${CATALOG_ITEMS_TOTAL} items`}
+                                    {pkgPhase === 'revealed' ? `${SPEC_ID}.pmx` : `${CATALOG_ITEMS_TOTAL} items`}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -1341,352 +1419,13 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                 ))}
                                 {/* Separator */}
                                 <span className="text-muted-foreground/40 text-[9px]">|</span>
-                                {/* New d1.3 tabs — active when revealed, dimmed during processing */}
-                                {([
-                                    { key: 'cost-adjustments' as const, label: 'Cost Adjustments', count: PRICE_REVIEW_ITEMS.length },
-                                    { key: 'price-ok' as const, label: 'Price OK', count: VERIFIED_ITEMS.length },
-                                ]).map(f => (
-                                    <button key={f.key}
-                                        onClick={() => { if (valPhase === 'revealed') { setValFilter(f.key); setExpandedCatalogItem(null); } }}
-                                        disabled={valPhase === 'processing'}
-                                        className={`px-2.5 py-1 rounded-full text-[9px] font-bold transition-colors ${
-                                            valPhase === 'processing'
-                                                ? 'bg-muted text-muted-foreground border border-border opacity-60 cursor-default'
-                                                : valFilter === f.key
-                                                    ? f.key === 'cost-adjustments'
-                                                        ? 'bg-amber-400 text-zinc-900'
-                                                        : 'bg-green-500 text-white'
-                                                    : 'bg-muted hover:bg-muted/80 text-muted-foreground border border-border'
-                                        }`}
-                                    >
-                                        {f.label} ({f.count})
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-[10px]">
-                                <thead>
-                                    <tr className="text-muted-foreground border-b border-border bg-muted/30">
-                                        <th className="w-6 py-1.5 px-1" />
-                                        <th className="text-left py-1.5 px-2 font-medium">Source Co</th>
-                                        <th className="text-right py-1.5 px-2 font-medium">Qty</th>
-                                        <th className="text-left py-1.5 px-2 font-medium">Part Number</th>
-                                        <th className="text-left py-1.5 px-2 font-medium">Part Description</th>
-                                        <th className="text-left py-1.5 px-2 font-medium">Option Code</th>
-                                        <th className="text-left py-1.5 px-2 font-medium">Option Desc</th>
-                                        <th className="text-left py-1.5 px-1 font-medium">Tag</th>
-                                        <th className="text-right py-1.5 px-2 font-medium">Unit $</th>
-                                        <th className="text-center py-1.5 px-2 font-medium">Status</th>
-                                        <th className="w-8 py-1.5 px-1" />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(valPhase === 'processing' ? WEB_EXTRACTED_ITEMS : valFilteredItems).map(item => {
-                                        const upcharge = UPCHARGE_ITEMS.find(uc => uc.itemLine === item.line);
-                                        const isUpcharge = !!upcharge;
-                                        const isAcked = upcharge ? !!upchargesAcked[upcharge.id] : false;
-                                        const isExpanded = valPhase === 'revealed' && expandedCatalogItem === item.line;
-
-                                        return (
-                                            <React.Fragment key={`val-${item.line}`}>
-                                                <tr
-                                                    onClick={() => {
-                                                        if (valPhase === 'processing') return;
-                                                        if (isUpcharge && isAcked) return;
-                                                        setExpandedCatalogItem(isExpanded ? null : item.line);
-                                                    }}
-                                                    className={`border-b border-border/50 transition-colors ${
-                                                        valPhase === 'processing'
-                                                            ? 'opacity-60 cursor-default'
-                                                            : isUpcharge
-                                                                ? isAcked
-                                                                    ? 'bg-green-50/50 dark:bg-green-500/5 cursor-default'
-                                                                    : 'bg-amber-50/50 dark:bg-amber-500/5 cursor-pointer hover:bg-amber-100/50 dark:hover:bg-amber-500/10'
-                                                                : 'cursor-pointer hover:bg-muted/30'
-                                                    }`}
-                                                >
-                                                    <td className="py-1.5 px-1 text-center">
-                                                        {valPhase === 'processing'
-                                                            ? <ChevronDownIcon className="h-3 w-3 text-muted-foreground" />
-                                                            : isUpcharge && isAcked
-                                                                ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
-                                                                : isExpanded
-                                                                    ? <ChevronUpIcon className="h-3 w-3 text-muted-foreground" />
-                                                                    : <ChevronDownIcon className="h-3 w-3 text-muted-foreground" />}
-                                                    </td>
-                                                    <td className="py-1.5 px-2 font-mono text-foreground">{item.sourceCo}</td>
-                                                    <td className="py-1.5 px-2 text-right text-foreground">{item.qty}</td>
-                                                    <td className="py-1.5 px-2 font-mono font-bold text-foreground">{item.partNumber}</td>
-                                                    <td className="py-1.5 px-2 text-foreground max-w-[140px] truncate">{item.partDescription}</td>
-                                                    <td className="py-1.5 px-2 font-mono text-foreground text-[9px] max-w-[100px] truncate">{item.optionCode ?? <span className="text-muted-foreground">—</span>}</td>
-                                                    <td className="py-1.5 px-2 text-[9px] max-w-[120px] truncate text-foreground">{item.optionDescription}</td>
-                                                    <td className="py-1.5 px-1 text-muted-foreground font-mono text-[9px]">{item.tag}</td>
-                                                    <td className="py-1.5 px-2 text-right font-medium text-foreground">${item.unitPrice.toLocaleString()}</td>
-                                                    <td className="py-1.5 px-2 text-center">
-                                                        {valPhase === 'processing'
-                                                            ? <SourceBadge label={item.status === 'auto' ? 'AUTO' : item.status === 'ai-suggested' ? 'AI SUGGESTED' : 'EXPERT HUB'} color={item.status === 'expert-hub' ? 'blue' : 'green'} />
-                                                            : isUpcharge
-                                                                ? isAcked
-                                                                    ? <SourceBadge label="ACKNOWLEDGED" color="green" />
-                                                                    : <SourceBadge label="UPCHARGE" color="amber" />
-                                                                : <SourceBadge label="PRICE OK" color="green" />}
-                                                    </td>
-                                                    <td className="py-1.5 px-1 text-center">
-                                                        <button onClick={(e) => { e.stopPropagation(); setEditModalItem(item); }}
-                                                            className="p-1 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
-                                                            title="Edit item">
-                                                            <PencilSquareIcon className="h-3.5 w-3.5" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                {/* Expanded panel — only in revealed phase */}
-                                                {isExpanded && (
-                                                    <tr className="border-b border-border/50">
-                                                        <td colSpan={11} className="p-0">
-                                                            <div className="px-4 py-3 bg-muted/20 dark:bg-muted/10 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                                {/* Upcharge detail panel */}
-                                                                {isUpcharge && upcharge && !isAcked && (
-                                                                    <div className="space-y-3">
-                                                                        <div className="grid grid-cols-2 gap-3">
-                                                                            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20">
-                                                                                <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Upcharge Detail</span>
-                                                                                <div className="mt-2 space-y-1.5 text-[10px]">
-                                                                                    <div className="flex justify-between">
-                                                                                        <span className="text-muted-foreground">Option:</span>
-                                                                                        <span className="font-bold text-foreground">{upcharge.finishOrOption}</span>
-                                                                                    </div>
-                                                                                    <div className="flex justify-between">
-                                                                                        <span className="text-muted-foreground">Per Unit:</span>
-                                                                                        <span className="font-bold text-amber-700 dark:text-amber-400">+${upcharge.perUnit}</span>
-                                                                                    </div>
-                                                                                    <div className="flex justify-between">
-                                                                                        <span className="text-muted-foreground">Quantity:</span>
-                                                                                        <span className="text-foreground">{upcharge.qty}</span>
-                                                                                    </div>
-                                                                                    <div className="flex justify-between border-t border-amber-200 dark:border-amber-500/20 pt-1.5">
-                                                                                        <span className="font-bold text-foreground">Total Impact:</span>
-                                                                                        <span className="font-bold text-amber-700 dark:text-amber-400">+${upcharge.total.toLocaleString()}</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 border border-border">
-                                                                                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">Catalog Source — {MANUFACTURER}</span>
-                                                                                {SOURCE_EXCERPTS[item.line] ? (
-                                                                                    <pre className="text-[9px] text-muted-foreground mt-2 leading-relaxed whitespace-pre-wrap font-mono">{SOURCE_EXCERPTS[item.line]}</pre>
-                                                                                ) : (
-                                                                                    <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">{upcharge.note}</p>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <button onClick={() => setUpchargesAcked(p => ({ ...p, [upcharge.id]: 'acknowledged' }))}
-                                                                                className="px-3 py-1.5 rounded-lg bg-brand-400 hover:bg-brand-500 text-zinc-900 text-[10px] font-bold transition-colors flex items-center gap-1">
-                                                                                <CheckIcon className="h-3 w-3" /> Acknowledge
-                                                                            </button>
-                                                                            <button onClick={() => setUpchargesAcked(p => ({ ...p, [upcharge.id]: 'flagged' }))}
-                                                                                className="px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-bold transition-colors flex items-center gap-1">
-                                                                                <ExclamationTriangleIcon className="h-3 w-3" /> Flag for SC
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                                {/* Verified item panel — SPEC pricing grid */}
-                                                                {!isUpcharge && (
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <div className="space-y-2">
-                                                                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">SPEC Pricing Detail</span>
-                                                                            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px] p-2.5 rounded-lg bg-card border border-border">
-                                                                                <div className="text-muted-foreground">Unit Price Ext <span className="font-mono font-bold text-foreground">${item.unitPriceExt.toLocaleString()}</span></div>
-                                                                                <div className="text-muted-foreground">% Customer <span className="font-mono text-foreground">{item.pctCustomer.toFixed(5)}</span></div>
-                                                                                <div className="text-muted-foreground">Unit Customer <span className="font-mono text-foreground">${item.unitCustomer.toLocaleString()}</span></div>
-                                                                                <div className="text-muted-foreground">Extended Cust <span className="font-mono text-foreground">${item.extendedCust.toLocaleString()}</span></div>
-                                                                                <div className="text-muted-foreground">Unit Dealer <span className="font-mono text-foreground">{item.unitDealer.toFixed(2)}</span></div>
-                                                                                <div className="text-muted-foreground">% Dealer <span className="font-mono text-foreground">{item.pctDealer.toFixed(5)}</span></div>
-                                                                                <div className="text-muted-foreground">Extended Dealer <span className="font-mono text-foreground">{item.extendedDealer.toFixed(2)}</span></div>
-                                                                                <div className="text-muted-foreground">Margin $ <span className="font-mono font-bold text-foreground">${item.marginDollar.toLocaleString()}</span></div>
-                                                                                <div className="col-span-2 text-muted-foreground">% Margin <span className="font-mono font-bold text-green-600 dark:text-green-400">{item.pctMargin.toFixed(5)}</span></div>
-                                                                            </div>
-                                                                        </div>
-                                                                        {item.optionBreakdown && item.optionBreakdown.length > 0 && (
-                                                                            <div className="space-y-2">
-                                                                                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">Option Breakdown</span>
-                                                                                <div className="grid grid-cols-2 gap-1.5 text-[10px] p-2.5 rounded-lg bg-card border border-border">
-                                                                                    {item.optionBreakdown.map((ob, oi) => (
-                                                                                        <div key={oi} className="flex items-center gap-1.5">
-                                                                                            <span className="font-mono text-muted-foreground bg-muted px-1 py-0.5 rounded text-[9px]">{ob.code}</span>
-                                                                                            <span className="text-muted-foreground">→</span>
-                                                                                            <span className="text-foreground">{ob.description}</span>
-                                                                                        </div>
-                                                                                    ))}
-                                                                                </div>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                        {/* Footer */}
-                        <div className="px-4 py-2.5 border-t border-border bg-muted/30 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                                    <span className="text-[10px] text-muted-foreground">{VERIFIED_ITEMS.length} Verified</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-amber-400" />
-                                    <span className="text-[10px] text-muted-foreground">{PRICE_REVIEW_ITEMS.length} Upcharges</span>
-                                </div>
-                            </div>
-                            <span className="text-[10px] font-bold text-foreground">
-                                {valPhase === 'processing' ? `${TOTAL_ITEMS} of ${CATALOG_ITEMS_TOTAL} items` : `Total: +$${UPCHARGE_TOTAL.toLocaleString()}`}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* CTA — only in revealed phase */}
-                    {valPhase === 'revealed' && (
-                        <button onClick={() => nextStep()} disabled={!allValResolved}
-                            className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
-                                allValResolved ? 'bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-400/20 animate-pulse' : 'bg-muted text-muted-foreground cursor-not-allowed'
-                            }`}>
-                            <ShieldCheckIcon className="h-4 w-4" />
-                            {allValResolved ? 'Continue to Specification Package' : `Acknowledge upcharges (${upchargesAckedCount}/${UPCHARGE_ITEMS.length})`}
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {/* ── d1.4: Specification Package & SC Handoff (seamless table continuation) ── */}
-            {stepId === 'd1.4' && (pkgPhase === 'processing' || pkgPhase === 'revealed') && (
-                <div className="animate-in fade-in duration-300 space-y-4">
-                    {/* Toast notification — fixed floating */}
-                    {sendToast && (
-                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[210] animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="px-4 py-2.5 rounded-xl bg-green-600 text-white text-xs font-bold shadow-lg shadow-green-500/30 flex items-center gap-2">
-                                <CheckCircleIcon className="h-4 w-4 shrink-0" />
-                                {SPEC_ID}.sif sent to Randy Martinez (SC) — pricing handoff complete
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Processing — compact loading bar above the table */}
-                    {pkgPhase === 'processing' && (
-                        <div className="p-3 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
-                            <div className="flex items-center gap-2 mb-2">
-                                <AIAgentAvatar />
-                                <span className="text-xs font-bold text-foreground">Assembling specification package...</span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                <div className="h-full rounded-full bg-brand-400 transition-all duration-200 ease-linear" style={{ width: `${pkgProgress}%` }} />
-                            </div>
-                            <div className="mt-1.5 space-y-0.5 text-[10px]">
-                                {pkgProgress > 20 && (
-                                    <p className="text-muted-foreground animate-in fade-in duration-200">Linking {CATALOG_ITEMS_TOTAL} catalog items to manufacturer sources...</p>
-                                )}
-                                {pkgProgress > 50 && (
-                                    <p className="text-muted-foreground animate-in fade-in duration-200">Embedding Expert Hub resolutions and AI suggestions...</p>
-                                )}
-                                {pkgProgress > 80 && (
-                                    <p className="text-purple-600 dark:text-purple-400 animate-in fade-in duration-200 font-medium">{SPEC_ID} — package ready</p>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* SIF Conversion loading — shown between table and spec card */}
-                    {pkgPhase === 'revealed' && sifPhase === 'converting' && (
-                        <div className="p-3 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
-                            <div className="flex items-center gap-2 mb-2">
-                                <AIAgentAvatar />
-                                <span className="text-xs font-bold text-foreground">Converting specification to SIF format...</span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                                <div className="h-full rounded-full bg-purple-500 transition-all duration-200 ease-linear" style={{ width: `${sifProgress}%` }} />
-                            </div>
-                            <div className="mt-1.5 space-y-0.5 text-[10px]">
-                                {sifProgress >= 20 && (
-                                    <p className="text-muted-foreground animate-in fade-in duration-200">Mapping {CATALOG_ITEMS_TOTAL} catalog items to SIF structure...</p>
-                                )}
-                                {sifProgress >= 50 && (
-                                    <p className="text-muted-foreground animate-in fade-in duration-200">Embedding source traceability references...</p>
-                                )}
-                                {sifProgress >= 80 && (
-                                    <p className="text-purple-600 dark:text-purple-400 animate-in fade-in duration-200 font-medium">{SPEC_ID}.sif — conversion complete</p>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Revealed — spec summary banner */}
-                    {pkgPhase === 'revealed' && (
-                        <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-500/5 border border-purple-200 dark:border-purple-500/20 animate-in fade-in duration-500">
-                            <div className="flex items-center gap-3">
-                                <DocumentTextIcon className="h-5 w-5 text-purple-500 shrink-0" />
-                                <div className="flex-1">
-                                    <p className="text-xs font-bold text-purple-800 dark:text-purple-200">
-                                        Specification Package — {SPEC_ID}
-                                    </p>
-                                    <p className="text-[10px] text-purple-700 dark:text-purple-300 mt-0.5">
-                                        Mercy Health Phase 2 — {CATALOG_ITEMS_TOTAL} items with full source traceability
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <SourceBadge label="CATALOG VERIFIED" color="green" />
-                                    <SourceBadge label="SOURCE LINKED" color="purple" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Table — always visible during processing and revealed */}
-                    <div className="rounded-xl border border-border overflow-hidden">
-                        {/* Header + Accumulated filter chips */}
-                        <div className="bg-muted/50 px-4 py-2.5 border-b border-border">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <MagnifyingGlassIcon className="h-4 w-4 text-purple-500" />
-                                    <span className="text-xs font-bold text-foreground">Web Catalog — {MANUFACTURER}</span>
-                                    <span className="text-[8px] font-mono text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-500/20 flex items-center gap-1">
-                                        <LinkIcon className="h-2.5 w-2.5" /> Healthcare Office
-                                    </span>
-                                </div>
-                                <span className="text-[9px] text-muted-foreground">
-                                    {pkgPhase === 'revealed' ? SPEC_ID : `${CATALOG_ITEMS_TOTAL} items`}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                {/* Previous tabs from d1.1/d1.2/d1.3 — dimmed badges */}
-                                {([
-                                    { label: 'All', count: ALL_CATALOG_ITEMS.length },
-                                    { label: 'Mapped', count: MAPPED_ITEMS_COUNT },
-                                    { label: 'Reviewed', count: NEEDS_REVIEW_ITEMS.length },
-                                    { label: 'Cost Adjustments', count: PRICE_REVIEW_ITEMS.length },
-                                    { label: 'Price OK', count: VERIFIED_ITEMS.length },
-                                ]).map(f => (
-                                    <span key={f.label}
-                                        className="px-2.5 py-1 rounded-full text-[9px] font-bold bg-muted text-muted-foreground border border-border opacity-40"
-                                    >
-                                        {f.label} ({f.count})
-                                    </span>
-                                ))}
-                                {/* Separator */}
-                                <span className="text-muted-foreground/40 text-[9px]">|</span>
                                 {/* Active tab */}
                                 <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold ${
                                     pkgPhase === 'processing'
                                         ? 'bg-muted text-muted-foreground border border-border opacity-60'
                                         : 'bg-purple-500 text-white'
                                 }`}>
-                                    Spec Package ({CATALOG_ITEMS_TOTAL})
+                                    Source Traceability ({CATALOG_ITEMS_TOTAL})
                                 </span>
                             </div>
                         </div>
@@ -1743,7 +1482,7 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                                     <td className="py-1.5 px-2 text-right font-medium text-foreground">${item.unitPrice.toLocaleString()}</td>
                                                     <td className="py-1.5 px-2 text-center">
                                                         <span className="flex items-center justify-center gap-1 flex-wrap">
-                                                            <span className="text-[7px] font-bold px-1 py-0.5 rounded bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20">MFR CATALOG</span>
+                                                            <span className="text-[7px] font-bold px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">VENDOR PDF</span>
                                                             {isRealItem && item.status === 'ai-suggested' && (
                                                                 <span className="text-[7px] font-bold px-1 py-0.5 rounded bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20">AI</span>
                                                             )}
@@ -1788,11 +1527,11 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                                                                             <pre className="text-[9px] text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono p-2.5 rounded-lg bg-card border border-border">{sourceExcerpt}</pre>
                                                                         ) : (
                                                                             <div className="p-2.5 rounded-lg bg-card border border-border text-[10px] text-muted-foreground">
-                                                                                Auto-mapped from manufacturer catalog
+                                                                                Auto-mapped from vendor quote
                                                                             </div>
                                                                         )}
                                                                         <div className="flex items-center gap-1.5 mt-1">
-                                                                            <span className="text-[7px] font-bold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20">MFR CATALOG</span>
+                                                                            <span className="text-[7px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">VENDOR PDF</span>
                                                                             {isRealItem && item.status === 'ai-suggested' && (
                                                                                 <span className="text-[7px] font-bold px-1.5 py-0.5 rounded bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20">AI SUGGESTED</span>
                                                                             )}
@@ -1855,112 +1594,9 @@ export default function DuplerPdfProcessor({ onNavigate }: DuplerPdfProcessorPro
                         </div>
                     </div>
 
-                    {/* Revealed — SIF Preview flow + Send */}
+                    {/* Revealed — Send PMX + Sync */}
                     {pkgPhase === 'revealed' && (
                         <div className="space-y-4 animate-in fade-in duration-500">
-                            {/* SIF Preview card — shown after conversion */}
-                            {sifPhase === 'ready' && (
-                                <div className="rounded-xl border border-border overflow-hidden bg-card animate-in fade-in duration-500">
-                                    <div className="px-4 py-2.5 border-b border-border bg-muted/50 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <DocumentTextIcon className="h-4 w-4 text-purple-500" />
-                                            <span className="text-xs font-bold text-foreground">SIF Preview — {SPEC_ID}.sif</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <SourceBadge label="VALIDATED" color="green" />
-                                            <SourceBadge label="SOURCE LINKED" color="purple" />
-                                        </div>
-                                    </div>
-                                    <div className="p-4 max-h-[320px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgb(var(--color-border))_transparent]">
-                                        <pre className="text-[9px] font-mono text-muted-foreground leading-relaxed whitespace-pre-wrap p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-border">{`; ═══════════════════════════════════════════════════════════════
-; STRATA INTERCHANGE FORMAT (SIF) v2.4
-; Generated: ${new Date().toISOString().split('T')[0]}  |  Engine: Strata Dupler AI
-; ═══════════════════════════════════════════════════════════════
-
-[HEADER]
-SpecID          = ${SPEC_ID}
-Version         = 1.0.0
-Status          = VALIDATED
-Manufacturer    = ${MANUFACTURER}
-CatalogRegion   = Healthcare Office
-CatalogURL      = meridian-workspace.com/catalog/healthcare-office
-Project         = Mercy Health Phase 2
-ProjectPhase    = Furniture Procurement
-Designer        = Alex Rivera
-DesignerRole    = Interior Designer
-Dealer          = Workspace Solutions Inc.
-DealerContact   = Randy Martinez (SC)
-Items           = ${CATALOG_ITEMS_TOTAL}
-TotalListPrice  = $${PROJECT_TOTAL.toLocaleString()}
-Currency        = USD
-
-[VALIDATION]
-CatalogVerified = TRUE
-SourceLinked    = TRUE
-AIItems         = 2
-ExpertHubItems  = 2
-AutoMapped      = ${MAPPED_ITEMS_COUNT}
-UpchargeTotal   = $${UPCHARGE_TOTAL.toLocaleString()}
-ConfidenceAvg   = 92.4%
-
-[ITEMS]
-; Line | Part#     | Description              | Qty | Unit$  | Source       | Options
-; ─────┼───────────┼──────────────────────────┼─────┼────────┼─────────────┼─────────────────
-  001  | BDL-48S   | Wand LED Lamp Freestd    |  6  | $383   | AUTO         | .SVR (Silver)
-  002  | AXM-HBW   | Relate Std Mesh Hi-Bk    |  6  | $1,668 | AUTO         | .2/.0/.L/.CBK/LKM01/S(3)/.SX/29
-  003  | PDK-3R    | PowerDock 3-Recep Mount  |  6  | $411   | EXPERT_HUB   | — (Pending)
-  004  | FXA-SM    | Dynamic Sngl Monitor Arm |  6  | $360   | AI_SUGGESTED | — (Pending)
-  005  | CTK-24W   | Cable Mgmt Kit 24W       |  6  | $95    | AI_SUGGESTED | — (Pending)
-  006  | SBN-15E   | Hinge-Dr Bin 20H×10W     |  6  | $919   | EXPERT_HUB   | .M/—/—/—/.E/.BNL
-  007  | PRL-72C   | Optimize 72W 4-Circuit   |  3  | $313   | AUTO         | P (Black)
-  008  | WRK-60L   | WorkBench 60" Laminate   |  3  | $1,245 | AUTO         | STD/MLM
-  009  | WRK-60L   | WorkBench 60" Laminate   |  6  | $1,245 | AUTO         | STD/MLM
-  010  | WRK-60L   | WorkBench 60" Laminate   |  4  | $1,245 | AUTO         | STD/MLM
-  011  | WRK-60L   | WorkBench 60" Laminate   |  6  | $1,245 | AUTO         | STD/MLM
-  012  | WRK-60L   | WorkBench 60" Laminate   |  3  | $1,245 | AUTO         | STD/MLM
-  013  | FLP-22H   | FilePro 2-Drawer Lat 22" |  6  | $487   | AUTO         | STD/.BK
-  014  | FLP-22H   | FilePro 2-Drawer Lat 22" |  4  | $487   | AUTO         | STD/.BK
-  015  | FLP-22H   | FilePro 2-Drawer Lat 22" |  6  | $487   | AUTO         | STD/.BK
-  ...  | ...       | ...                      | ... | ...    | ...          | ...
-  054  | MRR-48W   | MeridianRail 48W Pwr+Dat |  6  | $289   | AUTO         | .BK/120/2D
-
-[UPCHARGES]
-; ItemLine | Type         | Original | Adjusted | Delta   | Reason
-; ─────────┼──────────────┼──────────┼──────────┼─────────┼──────────────────────────
-  002      | GRD_UPGRADE  | $1,383   | $1,668   | +$285   | Grade 3 Moxie Flint textile
-  006      | LOCK_UPGRADE | $724     | $919     | +$195   | Digilock E-lock + Brushed Nickel
-
-[OPTION_DETAIL]
-; Line 002 — Relate Std Mesh High-Back / Adj Arms
-  002.opt.1 = .2    → Standard cushion
-  002.opt.2 = .0    → Hard Casters
-  002.opt.3 = .L    → Lumbar support
-  002.opt.4 = .CBK  → Charblack frame
-  002.opt.5 = LKM01 → CLR: Carbon
-  002.opt.6 = S(3)  → Grade 3 Upholstery
-  002.opt.7 = .SX   → Moxie textile
-  002.opt.8 = 29    → Flint colorway
-
-; Line 006 — Hinge-Dr Bin 20H×10W×15D RH w/Elock
-  006.opt.1 = .M    → Beam mount
-  006.opt.2 = .E    → Digilock electronic
-  006.opt.3 = .BNL  → Brushed Nickel finish
-
-[SOURCE_TRACE]
-AI_SUGGESTED    = 2  (Lines: 004, 005)
-EXPERT_HUB      = 2  (Lines: 003, 006)
-AUTO_MAPPED     = ${MAPPED_ITEMS_COUNT} (Lines: 001, 002, 007-054)
-CatalogSource   = meridian-workspace.com/catalog/healthcare-office
-TraceVersion    = SIF-TRACE-v1.2
-Checksum        = sha256:a4f8c2...e71b
-
-; ═══════════════════════════════════════════════════════════════
-; END OF FILE — ${SPEC_ID}.sif
-; ═══════════════════════════════════════════════════════════════`}</pre>
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Compact spec summary */}
                             <div className="rounded-xl border border-border overflow-hidden bg-card">
                                 <div className="p-4 space-y-3">
@@ -1978,7 +1614,7 @@ Checksum        = sha256:a4f8c2...e71b
                                         ))}
                                     </div>
                                     <div className="grid grid-cols-3 gap-x-6 gap-y-1 text-[10px] pt-2 border-t border-border">
-                                        <div className="flex justify-between"><span className="text-muted-foreground">Spec ID:</span><span className="font-mono font-bold text-foreground">{SPEC_ID}</span></div>
+                                        <div className="flex justify-between"><span className="text-muted-foreground">Spec ID:</span><span className="font-mono font-bold text-foreground">{SPEC_ID}.pmx</span></div>
                                         <div className="flex justify-between"><span className="text-muted-foreground">Designer:</span><span className="text-foreground">Alex Rivera</span></div>
                                         <div className="flex justify-between"><span className="text-muted-foreground">Manufacturer:</span><span className="text-foreground">{MANUFACTURER}</span></div>
                                         <div className="flex justify-between"><span className="text-muted-foreground">Project:</span><span className="text-foreground">Mercy Health Phase 2</span></div>
@@ -1988,26 +1624,18 @@ Checksum        = sha256:a4f8c2...e71b
                                 </div>
                             </div>
 
-                            {/* CTA: Preview SIF → Send */}
-                            {sifPhase === 'idle' && (
-                                <button onClick={() => setSifPhase('converting')}
-                                    className="w-full py-3 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-900 font-bold text-sm shadow-lg shadow-brand-400/20 animate-pulse flex items-center justify-center gap-2 transition-colors">
-                                    <DocumentTextIcon className="h-4 w-4" />
-                                    Preview SIF
-                                </button>
-                            )}
-
-                            {sifPhase === 'ready' && !specSent && (
+                            {/* CTA: Send PMX to SC */}
+                            {!specSent && (
                                 <div className="relative">
                                     <button onClick={() => setShowSendPopover(!showSendPopover)}
                                         className="w-full py-3 rounded-xl bg-brand-400 hover:bg-brand-500 text-zinc-900 font-bold text-sm shadow-lg shadow-brand-400/20 animate-pulse flex items-center justify-center gap-2 transition-colors">
                                         <PaperAirplaneIcon className="h-4 w-4" />
-                                        Send
+                                        Send PMX to Sales Coordinator
                                     </button>
                                     {showSendPopover && (
                                         <div className="absolute bottom-full mb-2 right-0 w-72 bg-card border border-border rounded-xl shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200 z-50 overflow-hidden">
                                             <div className="px-4 py-2.5 border-b border-border bg-muted/50">
-                                                <p className="text-xs font-bold text-foreground">Send Specification to...</p>
+                                                <p className="text-xs font-bold text-foreground">Send PMX Specification to...</p>
                                                 <p className="text-[9px] text-muted-foreground">Select team member for pricing handoff</p>
                                             </div>
                                             <div className="p-2 space-y-0.5">
@@ -2071,7 +1699,7 @@ Checksum        = sha256:a4f8c2...e71b
                                             <p className="text-[10px] font-medium text-purple-600 dark:text-purple-400">
                                                 {catalogSyncProgress < 30 && `Importing ${MANUFACTURER} product catalog...`}
                                                 {catalogSyncProgress >= 30 && catalogSyncProgress < 60 && `Mapping ${CATALOG_ITEMS_TOTAL} items to CET format...`}
-                                                {catalogSyncProgress >= 60 && catalogSyncProgress < 85 && 'Binding pricing, options & SIF traceability...'}
+                                                {catalogSyncProgress >= 60 && catalogSyncProgress < 85 && 'Binding pricing, options & source traceability...'}
                                                 {catalogSyncProgress >= 85 && 'Finalizing catalog synchronization...'}
                                             </p>
                                             <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">{catalogSyncProgress}%</span>
@@ -2085,8 +1713,8 @@ Checksum        = sha256:a4f8c2...e71b
                                             <p className="text-xs font-bold text-foreground">{catalogSyncProgress >= 20 ? `${CATALOG_ITEMS_TOTAL} synced` : 'Pending...'}</p>
                                         </div>
                                         <div className={`px-3 py-2 rounded-lg border transition-all duration-300 ${catalogSyncProgress >= 50 ? 'bg-green-50 dark:bg-green-500/5 border-green-300 dark:border-green-500/30' : 'bg-muted/30 border-border'}`}>
-                                            <p className="text-[9px] text-muted-foreground">SIF Records</p>
-                                            <p className="text-xs font-bold text-foreground">{catalogSyncProgress >= 50 ? `${CATALOG_ITEMS_TOTAL} generated` : 'Pending...'}</p>
+                                            <p className="text-[9px] text-muted-foreground">PMX Records</p>
+                                            <p className="text-xs font-bold text-foreground">{catalogSyncProgress >= 50 ? `${CATALOG_ITEMS_TOTAL} assembled` : 'Pending...'}</p>
                                         </div>
                                         <div className={`px-3 py-2 rounded-lg border transition-all duration-300 ${catalogSyncProgress >= 70 ? 'bg-green-50 dark:bg-green-500/5 border-green-300 dark:border-green-500/30' : 'bg-muted/30 border-border'}`}>
                                             <p className="text-[9px] text-muted-foreground">Pricing</p>
@@ -2113,13 +1741,13 @@ Checksum        = sha256:a4f8c2...e71b
                                                 <p className="text-sm font-bold text-green-800 dark:text-green-300">Catalog Synchronized Successfully</p>
                                                 <p className="text-[11px] text-muted-foreground mt-1">
                                                     <span className="font-semibold text-foreground">{MANUFACTURER}</span> product data has been added to the project catalog.
-                                                    All {CATALOG_ITEMS_TOTAL} items are now available in CET with verified pricing, options, and full source traceability.
+                                                    All {CATALOG_ITEMS_TOTAL} items are now available in CET with verified options and full source traceability.
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2 ml-12">
                                             <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-200 dark:bg-green-500/20 text-green-800 dark:text-green-300 font-bold">CATALOG SYNCED</span>
-                                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 font-bold">SIF GENERATED</span>
+                                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 font-bold">PMX SENT</span>
                                             <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 font-bold">GAP RESOLVED</span>
                                         </div>
                                     </div>
@@ -2132,7 +1760,7 @@ Checksum        = sha256:a4f8c2...e71b
                                         <div className="flex-1">
                                             <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">Pending SC Review</p>
                                             <p className="text-[10px] text-amber-700/80 dark:text-amber-400/70">
-                                                Randy Martinez (SC) will review pricing and apply dealer discounts in the SC application.
+                                                Randy Martinez (SC) will validate upcharges, apply discounts, and generate priced SIF.
                                             </p>
                                         </div>
                                         <ArrowRightIcon className="h-4 w-4 text-amber-500 dark:text-amber-400 shrink-0 animate-pulse" />
@@ -2214,7 +1842,7 @@ Checksum        = sha256:a4f8c2...e71b
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DuplerScReview — d1.5: SC Review & Pricing Application (Dashboard)
+// DuplerScReview — d1.4: SC Price Validation, d1.5: Priced SIF Generation (Dashboard)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 
@@ -2255,41 +1883,41 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
     const [specApproved, setSpecApproved] = useState(false);
     const [scSyncPhase, setScSyncPhase] = useState<'idle' | 'syncing' | 'done'>('idle');
     const [scSyncProgress, setScSyncProgress] = useState(0);
+    const [upchargesAcked, setUpchargesAcked] = useState<Record<number, boolean>>({});
 
+    const allUpchargesAcked = Object.keys(upchargesAcked).length >= UPCHARGE_ITEMS.length;
     const allDiscountsApplied = Object.keys(discountsApplied).length >= DISCOUNT_TIERS.length &&
         !Object.values(discountsApplied).includes('escalated');
     const scTotalPages = Math.ceil(ALL_SC_ITEMS.length / ITEMS_PER_PAGE);
     const scPagedItems = ALL_SC_ITEMS.slice(scPage * ITEMS_PER_PAGE, (scPage + 1) * ITEMS_PER_PAGE);
 
     useEffect(() => {
-        if (currentStep.id !== 'd1.5') return;
-        setPhase('idle');
-        setDiscountsApplied({});
-        setGenProgress(0);
-        setExported(false);
-        setAdjustingTier(null);
-        setAdjustedRates({});
-        setDiscountNotes({});
-        setShowApprovalPopover(null);
-        setApprovalNote('');
-        setApprovalPriority('normal');
-        setScPage(0);
-        setDownloadingPdf(false);
-        setPdfDownloaded(false);
-        setDownloadToast(false);
-        setShowSifPreview(false);
-        setShowArchiveModal(false);
-        setArchived(false);
-        setScSifPhase('idle');
-        setScSifProgress(0);
-        setScSendToast(false);
-        setShowApproveSendPopover(false);
-        setApproveSendRecipients(['designer', 'client']);
-        setSpecApproved(false);
-        setScSyncPhase('idle');
-        setScSyncProgress(0);
-        const t = setTimeout(pauseAware(() => setPhase('notification')), 1500);
-        return () => clearTimeout(t);
+        if (currentStep.id === 'd1.4') {
+            setPhase('idle');
+            setDiscountsApplied({});
+            setUpchargesAcked({});
+            setGenProgress(0);
+            setAdjustingTier(null);
+            setAdjustedRates({});
+            setDiscountNotes({});
+            setShowApprovalPopover(null);
+            setApprovalNote('');
+            setApprovalPriority('normal');
+            setScPage(0);
+            setViewSourceLine(null);
+            const t = setTimeout(pauseAware(() => setPhase('notification')), 1500);
+            return () => clearTimeout(t);
+        }
+        if (currentStep.id === 'd1.5') {
+            setScSifPhase('idle');
+            setScSifProgress(0);
+            setScSyncPhase('idle');
+            setScSyncProgress(0);
+            setScSendToast(false);
+            setShowApproveSendPopover(false);
+            setApproveSendRecipients(['designer', 'client']);
+            setSpecApproved(false);
+        }
     }, [currentStep.id]);
 
     // Manager auto-approval effect (simulates async approval after 2.5s)
@@ -2354,7 +1982,10 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
         return () => timers.forEach(clearTimeout);
     }, [scSyncPhase]);
 
-    if (currentStep.id !== 'd1.5') return null;
+    if (currentStep.id !== 'd1.4' && currentStep.id !== 'd1.5') return null;
+
+    const isD14 = currentStep.id === 'd1.4';
+    const isD15 = currentStep.id === 'd1.5';
 
     const getEffectiveRate = (dt: typeof DISCOUNT_TIERS[0]) => adjustedRates[dt.id] ?? dt.rate;
     const discountedTotal = DISCOUNT_TIERS.reduce((sum, dt) => sum + dt.listTotal * (1 - getEffectiveRate(dt) / 100), 0);
@@ -2367,8 +1998,8 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
 
     return (
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500">
-            {/* Notification */}
-            {phase === 'notification' && (
+            {/* d1.4: Notification — PMX received from Designer */}
+            {isD14 && phase === 'notification' && (
                 <button onClick={() => setPhase('sc-review')} className="w-full text-left group">
                     <div className="p-5 bg-brand-50 dark:bg-brand-500/10 border-l-4 border-brand-400 ring-1 ring-brand-200 dark:ring-brand-500/20 rounded-r-xl">
                         <div className="flex items-start gap-3">
@@ -2381,11 +2012,11 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                             </div>
                             <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm font-bold text-foreground">Specification Ready for Pricing</span>
+                                    <span className="text-sm font-bold text-foreground">PMX Specification Ready for Pricing</span>
                                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold animate-pulse">Just now</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    <span className="font-bold text-foreground">Alex Rivera</span> (Designer) sent {SPEC_ID}.sif — {CATALOG_ITEMS_TOTAL} items, ${PROJECT_TOTAL.toLocaleString()}. Catalog-verified, source-linked.
+                                    <span className="font-bold text-foreground">Alex Rivera</span> (Designer) sent {SPEC_ID}.pmx — {CATALOG_ITEMS_TOTAL} items, ${PROJECT_TOTAL.toLocaleString()}. Vendor-verified, source-linked.
                                 </p>
 
                                 <div className="flex items-center gap-2 flex-wrap mt-3 mb-2">
@@ -2409,18 +2040,18 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                 </button>
             )}
 
-            {/* SC Review */}
-            {phase === 'sc-review' && (
+            {/* d1.4: SC Review — upcharges + discounts */}
+            {isD14 && phase === 'sc-review' && (
                 <div className="animate-in fade-in duration-500">
                     <div className="p-4 bg-purple-50 dark:bg-purple-500/5 border-b border-purple-200 dark:border-purple-500/20 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <img src={DESIGNER_PHOTO} alt="Alex Rivera" className="w-7 h-7 rounded-full object-cover ring-2 ring-purple-300 dark:ring-purple-500/40" />
                             <div>
-                                <span className="text-xs font-bold text-purple-800 dark:text-purple-200">{SPEC_ID}.sif — awaiting pricing</span>
+                                <span className="text-xs font-bold text-purple-800 dark:text-purple-200">{SPEC_ID}.pmx — awaiting pricing</span>
                                 <p className="text-[10px] text-purple-600 dark:text-purple-400">From <span className="font-bold">Alex Rivera</span> (Designer) · {CATALOG_ITEMS_TOTAL} items · ${PROJECT_TOTAL.toLocaleString()}</p>
                             </div>
                         </div>
-                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-purple-200 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 font-bold">SIF</span>
+                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-purple-200 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 font-bold">PMX</span>
                     </div>
 
                     <div className="p-5 space-y-4">
@@ -2443,7 +2074,7 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                             <div className="px-4 py-2.5 border-b border-border bg-muted/50 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <DocumentTextIcon className="h-4 w-4 text-purple-500" />
-                                    <span className="text-xs font-bold text-foreground">{SPEC_ID}.sif</span>
+                                    <span className="text-xs font-bold text-foreground">{SPEC_ID}.pmx</span>
                                     <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20">VALIDATED</span>
                                 </div>
                                 <span className="text-[10px] text-muted-foreground">Received from Alex Rivera (Designer)</span>
@@ -2476,7 +2107,7 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                         {/* Items table with source badges + pagination */}
                         <div className="rounded-xl border border-border overflow-hidden">
                             <div className="bg-muted/50 px-4 py-2 border-b border-border flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-foreground">SIF Line Items — {CATALOG_ITEMS_TOTAL} total <span className="font-normal text-muted-foreground">({TOTAL_ITEMS} reviewed, {CATALOG_ITEMS_TOTAL - TOTAL_ITEMS} auto-mapped)</span></span>
+                                <span className="text-[10px] font-bold text-foreground">PMX Line Items — {CATALOG_ITEMS_TOTAL} total <span className="font-normal text-muted-foreground">({TOTAL_ITEMS} reviewed, {CATALOG_ITEMS_TOTAL - TOTAL_ITEMS} auto-mapped)</span></span>
                                 <div className="flex gap-1.5">
                                     <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20">MFR CATALOG</span>
                                     <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20">AI SUGGESTED</span>
@@ -2558,6 +2189,51 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                                     </div>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Upcharge Detection — SC reviews cost adjustments */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <AIAgentAvatar />
+                                <span className="text-xs font-bold text-foreground">UpchargeDetector — Cost Adjustments Found</span>
+                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">${UPCHARGE_TOTAL.toLocaleString()}</span>
+                            </div>
+                            <div className="space-y-2">
+                                {UPCHARGE_ITEMS.map(uc => {
+                                    const acked = upchargesAcked[uc.itemLine];
+                                    return (
+                                        <div key={uc.id} className={`p-3 rounded-xl border-2 transition-all duration-300 ${
+                                            acked ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-amber-200 dark:border-amber-500/20 bg-amber-50/30 dark:bg-amber-500/5'
+                                        }`}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-sm font-bold text-foreground">{uc.product}</span>
+                                                <span className="text-sm font-bold text-amber-600 dark:text-amber-400">+${uc.total.toLocaleString()}</span>
+                                            </div>
+                                            <p className="text-[11px] text-foreground mb-1">{uc.finishOrOption}</p>
+                                            <p className="text-[10px] text-muted-foreground mb-2">{uc.note}</p>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] text-muted-foreground">{uc.qty} × ${uc.perUnit} = ${uc.total.toLocaleString()}</span>
+                                                {acked ? (
+                                                    <span className="text-[10px] font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
+                                                        <CheckCircleIcon className="h-3.5 w-3.5" /> Approved
+                                                    </span>
+                                                ) : (
+                                                    <button onClick={() => setUpchargesAcked(p => ({ ...p, [uc.itemLine]: true }))}
+                                                        className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold transition-colors">
+                                                        Approve Upcharge
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {allUpchargesAcked && (
+                                <div className="mt-2 p-2 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 flex items-center gap-2">
+                                    <CheckCircleIcon className="h-3.5 w-3.5 text-green-600 dark:text-green-400 shrink-0" />
+                                    <span className="text-[10px] font-bold text-green-700 dark:text-green-300">All upcharges reviewed — ${UPCHARGE_TOTAL.toLocaleString()} approved</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* AI Discount Advisor Panel */}
@@ -2841,372 +2517,28 @@ export function DuplerScReview({ onNavigate }: { onNavigate: (page: string) => v
                             </div>
                         )}
 
-                        {/* CTA */}
-                        <button onClick={() => { if (allDiscountsApplied) setPhase('generating'); }} disabled={!allDiscountsApplied}
+                        {/* CTA — Continue to SIF Generation (d1.5) */}
+                        <button onClick={() => { if (allUpchargesAcked && allDiscountsApplied) nextStep(); }} disabled={!allUpchargesAcked || !allDiscountsApplied}
                             className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
-                                allDiscountsApplied ? 'bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-400/20 animate-pulse' : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                allUpchargesAcked && allDiscountsApplied ? 'bg-brand-400 hover:bg-brand-500 text-zinc-900 shadow-lg shadow-brand-400/20 animate-pulse' : 'bg-muted text-muted-foreground cursor-not-allowed'
                             }`}>
-                            <DocumentTextIcon className="h-4 w-4" />
-                            {allDiscountsApplied ? 'Generate Priced Specification' : `Apply all discounts (${Object.values(discountsApplied).filter(Boolean).length}/${DISCOUNT_TIERS.length})`}
+                            <ArrowRightIcon className="h-4 w-4" />
+                            {allUpchargesAcked && allDiscountsApplied
+                                ? 'Continue to SIF Generation'
+                                : !allUpchargesAcked
+                                    ? `Review upcharges (${Object.keys(upchargesAcked).length}/${UPCHARGE_ITEMS.length})`
+                                    : `Apply all discounts (${Object.values(discountsApplied).filter(Boolean).length}/${DISCOUNT_TIERS.length})`
+                            }
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* Generating Priced Spec */}
-            {phase === 'generating' && (
-                <div className="p-5 space-y-3">
-                    <div className="flex items-center gap-2">
-                        <AIAgentAvatar />
-                        <span className="text-xs font-bold text-foreground">Generating Priced Specification...</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full bg-brand-400 transition-all duration-200 ease-linear" style={{ width: `${genProgress}%` }} />
-                    </div>
-                    <div className="space-y-1 text-[10px]">
-                        {genProgress > 10 && <p className="text-muted-foreground animate-in fade-in duration-200">MarginCalculator: computing margins for {MANUFACTURER}...</p>}
-                        {genProgress > 35 && <p className="text-muted-foreground animate-in fade-in duration-200">PricingEngine: applying dealer discount to {CATALOG_ITEMS_TOTAL} items...</p>}
-                        {genProgress > 60 && <p className="text-muted-foreground animate-in fade-in duration-200">PricingEngine: adding freight and surcharges...</p>}
-                        {genProgress > 85 && <p className="text-muted-foreground animate-in fade-in duration-200">SpecGenerator: {SPEC_ID} — priced specification ready</p>}
-                    </div>
-                </div>
-            )}
-
-            {/* Revealed — Priced Specification & Actions */}
-            {phase === 'revealed' && (
+            {/* d1.5: Priced SIF Generation & Distribution */}
+            {isD15 && (
                 <div className="p-5 space-y-4 animate-in fade-in duration-500">
-                    {/* Success header */}
-                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border-2 border-green-300 dark:border-green-500/30">
-                        <div className="flex items-start gap-2">
-                            <AIAgentAvatar />
-                            <div className="flex-1">
-                                <p className="text-xs text-green-800 dark:text-green-200">
-                                    <span className="font-bold">PricingEngine:</span> Priced specification generated. {CATALOG_ITEMS_TOTAL} items from {MANUFACTURER}, dealer discount applied.
-                                </p>
-                            </div>
-                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20">SC PRICED</span>
-                        </div>
-                    </div>
 
-                    {/* ═══ Priced Specification Document ═══ */}
-                    <div className="rounded-xl border border-border overflow-hidden shadow-sm">
-                        <div className="bg-zinc-100 dark:bg-zinc-800 px-4 py-2.5 border-b border-border flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <DocumentTextIcon className="h-4 w-4 text-purple-500" />
-                                <span className="text-[10px] font-bold text-foreground font-mono">Priced Specification — {SPEC_ID}</span>
-                                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/20">FINAL</span>
-                            </div>
-                            <span className="text-[9px] text-muted-foreground">Generated {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                        </div>
-
-                        <div className="p-5 bg-white dark:bg-zinc-900/50 space-y-4">
-                            <div className="flex justify-between items-start pb-3 border-b border-border">
-                                <div>
-                                    <h3 className="text-sm font-black text-foreground uppercase tracking-wide">Priced Specification</h3>
-                                    <p className="text-[10px] text-muted-foreground mt-0.5">Mercy Health — Phase 2 Furniture Package</p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="font-mono text-xs font-bold text-purple-600 dark:text-purple-400">{SPEC_ID}</div>
-                                    <p className="text-[9px] text-muted-foreground">{MANUFACTURER}</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[10px]">
-                                <div className="flex justify-between"><span className="text-muted-foreground">Dealer:</span><span className="font-bold text-foreground">Dupler Office</span></div>
-                                <div className="flex justify-between"><span className="text-muted-foreground">Sales Coordinator:</span><span className="font-bold text-foreground">Randy Martinez</span></div>
-                                <div className="flex justify-between"><span className="text-muted-foreground">Designer:</span><span className="text-foreground">Alex Rivera</span></div>
-                                <div className="flex justify-between"><span className="text-muted-foreground">Client:</span><span className="text-foreground">Mercy Health</span></div>
-                                <div className="flex justify-between"><span className="text-muted-foreground">Total Line Items:</span><span className="font-bold text-foreground">{CATALOG_ITEMS_TOTAL}</span></div>
-                                <div className="flex justify-between"><span className="text-muted-foreground">Manufacturer:</span><span className="font-bold text-foreground">{MANUFACTURER}</span></div>
-                            </div>
-
-                            {/* Pricing summary */}
-                            <div className="border-t border-border pt-3">
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Pricing Summary</p>
-                                <table className="w-full text-[10px]">
-                                    <thead>
-                                        <tr className="text-muted-foreground border-b border-border">
-                                            <th className="text-left py-1.5 font-medium">Manufacturer</th>
-                                            <th className="text-center py-1.5 font-medium">Items</th>
-                                            <th className="text-right py-1.5 font-medium">List</th>
-                                            <th className="text-center py-1.5 font-medium">Discount</th>
-                                            <th className="text-right py-1.5 font-medium">Net</th>
-                                            <th className="text-center py-1.5 font-medium">Source</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {DISCOUNT_TIERS.map(dt => {
-                                            const rate = getEffectiveRate(dt);
-                                            const net = Math.round(dt.listTotal * (1 - rate / 100));
-                                            const mode = discountsApplied[dt.id];
-                                            return (
-                                                <tr key={dt.id} className="border-b border-border/50">
-                                                    <td className="py-1.5 font-bold text-foreground">{dt.manufacturer}</td>
-                                                    <td className="py-1.5 text-center text-foreground">{dt.items}</td>
-                                                    <td className="py-1.5 text-right text-muted-foreground">${dt.listTotal.toLocaleString()}</td>
-                                                    <td className="py-1.5 text-center">
-                                                        <span className={`font-bold ${mode === 'adjusted' ? 'text-indigo-600 dark:text-indigo-400' : 'text-foreground'}`}>{rate}%</span>
-                                                    </td>
-                                                    <td className="py-1.5 text-right font-bold text-foreground">${net.toLocaleString()}</td>
-                                                    <td className="py-1.5 text-center">
-                                                        <span className={`text-[8px] font-bold px-1 py-0.5 rounded border ${
-                                                            mode === 'ai' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' :
-                                                            mode === 'adjusted' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' :
-                                                            'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20'
-                                                        }`}>{mode === 'ai' ? 'AI' : mode === 'adjusted' ? 'SC' : 'PENDING'}</span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr className="border-t-2 border-border">
-                                            <td className="py-2 font-bold text-foreground">Total</td>
-                                            <td className="py-2 text-center font-bold text-foreground">{CATALOG_ITEMS_TOTAL}</td>
-                                            <td className="py-2 text-right text-muted-foreground">${PROJECT_TOTAL.toLocaleString()}</td>
-                                            <td className="py-2 text-center font-bold text-foreground">{Math.round((1 - discountedTotal / PROJECT_TOTAL) * 100)}%</td>
-                                            <td className="py-2 text-right font-bold text-green-600 dark:text-green-400 text-xs">${Math.round(discountedTotal).toLocaleString()}</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            {/* Additional charges */}
-                            <div className="border-t border-border pt-3">
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Additional Charges</p>
-                                <div className="space-y-1 text-[10px]">
-                                    <div className="flex justify-between py-1 border-b border-border/30">
-                                        <span className="text-foreground">Upcharges (finish & option impact)</span>
-                                        <span className="font-bold text-foreground">+${UPCHARGE_TOTAL.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between py-1 border-b border-border/30">
-                                        <span className="text-foreground">Estimated Freight <span className="text-[8px] text-muted-foreground">(FOB destination)</span></span>
-                                        <span className="font-bold text-foreground">+$1,850</span>
-                                    </div>
-                                    <div className="flex justify-between py-1 border-b border-border/30">
-                                        <span className="text-foreground">Installation <span className="text-[8px] text-muted-foreground">(Mercy Health Phase 2 — est. 2 days)</span></span>
-                                        <span className="font-bold text-foreground">+$3,200</span>
-                                    </div>
-                                    <div className="flex justify-between py-1.5 border-t border-border font-bold text-xs">
-                                        <span className="text-foreground">Grand Total (Net + Charges)</span>
-                                        <span className="text-green-600 dark:text-green-400">${(Math.round(discountedTotal) + UPCHARGE_TOTAL + 1850 + 3200).toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Audit trail */}
-                            <div className="border-t border-border pt-3">
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Audit Trail</p>
-                                <div className="grid grid-cols-1 gap-1 text-[9px] text-muted-foreground">
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0" />
-                                        <span>Web Catalog Scrape — AI extracted {TOTAL_ITEMS} items from {MANUFACTURER} ({CATALOG_ITEMS_TOTAL} total catalog)</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-brand-400 shrink-0" />
-                                        <span>AI + Expert Hub — 2 AI suggestions accepted, 2 Expert Hub resolutions applied</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                                        <span>Validation — {TOTAL_ITEMS}/{TOTAL_ITEMS} reviewed, ${UPCHARGE_TOTAL.toLocaleString()} upcharges acknowledged</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                                        <span>Specification Package — {CATALOG_ITEMS_TOTAL} items, source traceability linked, SIF sent to SC</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
-                                        <span>SC Pricing — Randy Martinez applied dealer discount, priced spec generated</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="rounded-xl border border-border">
-                        <div className="bg-muted/50 px-4 py-2 border-b border-border">
-                            <span className="text-[10px] font-bold text-foreground uppercase tracking-wider">Quick Actions</span>
-                        </div>
-                        <div className="p-3 grid grid-cols-3 gap-2">
-                            {/* Download PDF */}
-                            <button
-                                onClick={() => {
-                                    if (pdfDownloaded || downloadingPdf) return;
-                                    setDownloadingPdf(true);
-                                    setTimeout(pauseAware(() => {
-                                        setDownloadingPdf(false);
-                                        setPdfDownloaded(true);
-                                        setDownloadToast(true);
-                                        setTimeout(pauseAware(() => setDownloadToast(false)), 3000);
-                                    }), 1500);
-                                }}
-                                disabled={downloadingPdf}
-                                className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors text-left group ${
-                                    pdfDownloaded ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-border hover:bg-muted/50'
-                                }`}>
-                                <div className={`p-1.5 rounded-lg transition-colors ${
-                                    pdfDownloaded ? 'bg-green-100 dark:bg-green-500/10' : 'bg-purple-100 dark:bg-purple-500/10 group-hover:bg-purple-200 dark:group-hover:bg-purple-500/20'
-                                }`}>
-                                    {downloadingPdf ? (
-                                        <ArrowPathIcon className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 animate-spin" />
-                                    ) : pdfDownloaded ? (
-                                        <CheckCircleIcon className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                                    ) : (
-                                        <ArrowDownTrayIcon className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                                    )}
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-foreground">{downloadingPdf ? 'Downloading...' : pdfDownloaded ? 'Downloaded' : 'Download PDF'}</p>
-                                    <p className="text-[8px] text-muted-foreground">{pdfDownloaded ? `${SPEC_ID}.pdf` : 'Export for records'}</p>
-                                </div>
-                            </button>
-
-                            {/* Preview SIF */}
-                            <button
-                                onClick={() => setShowSifPreview(!showSifPreview)}
-                                className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors text-left group ${
-                                    showSifPreview ? 'border-purple-300 dark:border-purple-500/30 bg-purple-50/50 dark:bg-purple-500/5' : 'border-border hover:bg-muted/50'
-                                }`}>
-                                <div className={`p-1.5 rounded-lg transition-colors ${
-                                    showSifPreview ? 'bg-purple-100 dark:bg-purple-500/10' : 'bg-blue-100 dark:bg-blue-500/10 group-hover:bg-blue-200 dark:group-hover:bg-blue-500/20'
-                                }`}>
-                                    <DocumentTextIcon className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-foreground">{showSifPreview ? 'Hide Preview' : 'Preview SIF'}</p>
-                                    <p className="text-[8px] text-muted-foreground">{SPEC_ID}.sif</p>
-                                </div>
-                            </button>
-
-                            {/* Archive */}
-                            <button
-                                onClick={() => { if (!archived) setShowArchiveModal(true); }}
-                                className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors text-left group ${
-                                    archived ? 'border-green-300 dark:border-green-500/30 bg-green-50/50 dark:bg-green-500/5' : 'border-border hover:bg-muted/50'
-                                }`}>
-                                <div className={`p-1.5 rounded-lg transition-colors ${
-                                    archived ? 'bg-green-100 dark:bg-green-500/10' : 'bg-teal-100 dark:bg-teal-500/10 group-hover:bg-teal-200 dark:group-hover:bg-teal-500/20'
-                                }`}>
-                                    {archived ? (
-                                        <CheckCircleIcon className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                                    ) : (
-                                        <LinkIcon className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-                                    )}
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-bold text-foreground">{archived ? 'Archived' : 'Archive'}</p>
-                                    <p className="text-[8px] text-muted-foreground">{archived ? 'Saved to project' : 'Save to project'}</p>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Download Toast */}
-                    {downloadToast && (
-                        <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <CheckCircleIcon className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-bold text-green-800 dark:text-green-200">{SPEC_ID}_priced.pdf downloaded successfully</p>
-                                <p className="text-[9px] text-green-600 dark:text-green-400">Saved to /Downloads/ — {CATALOG_ITEMS_TOTAL} items, priced specification</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* SIF Preview (toggle) */}
-                    {showSifPreview && (
-                        <div className="rounded-xl border border-border overflow-hidden bg-card animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="px-4 py-2.5 border-b border-border bg-muted/50 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <DocumentTextIcon className="h-4 w-4 text-purple-500" />
-                                    <span className="text-xs font-bold text-foreground">SIF Preview — {SPEC_ID}_priced.sif</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <SourceBadge label="VALIDATED" color="green" />
-                                    <SourceBadge label="SC PRICED" color="purple" />
-                                </div>
-                            </div>
-                            <div className="p-4 max-h-[280px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgb(var(--color-border))_transparent]">
-                                <pre className="text-[9px] font-mono text-muted-foreground leading-relaxed whitespace-pre-wrap p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-border">{`; STRATA INTERCHANGE FORMAT (SIF) v2.4 — PRICED
-; Generated: ${new Date().toISOString().split('T')[0]}  |  Engine: Strata SC Pricing v3.1
-
-[HEADER]
-SpecID          = ${SPEC_ID}
-Version         = 2.0.0 (Priced)
-Status          = SC_PRICED
-Manufacturer    = ${MANUFACTURER}
-Project         = Mercy Health Phase 2
-Designer        = Alex Rivera
-PricedBy        = Randy Martinez (SC)
-Items           = ${CATALOG_ITEMS_TOTAL}
-TotalListPrice  = $${PROJECT_TOTAL.toLocaleString()}
-
-[PRICING]
-  Dealer Standard  | 38.0% | MWS Dealer Agreement #2026-MWS-D041
-  Healthcare Pgm   | 12.0% | MWS Healthcare Incentive #HCI-2026
-  Project Volume   |  5.0% | MWS Volume Rebate ($25K+ orders)
-ListTotal       = $${PROJECT_TOTAL.toLocaleString()}
-NetDealer       = $14,256
-NetCustomer     = $18,650
-DealerMargin    = $4,394
-
-[ITEMS]
-; Line | Part#     | Description              | Qty | List$  | Net$   | Source
-  001  | BDL-48S   | Wand LED Lamp Freestd    |  6  | $383   | $195   | AUTO
-  002  | AXM-HBW   | Relate Std Mesh Hi-Bk    |  6  | $1,668 | $851   | AUTO
-  003  | PDK-3R    | PowerDock 3-Recep Mount  |  6  | $411   | $210   | EXPERT_HUB
-  004  | FXA-SM    | Dynamic Sngl Monitor Arm |  6  | $360   | $184   | AI_SUGGESTED
-  005  | CTK-24W   | Cable Mgmt Kit 24W       |  6  | $95    | $48    | AI_SUGGESTED
-  006  | SBN-15E   | Hinge-Dr Bin 20H×10W     |  6  | $919   | $469   | EXPERT_HUB
-  007  | PRL-72C   | Optimize 72W 4-Circuit   |  3  | $313   | $160   | AUTO
-  ...  | ...       | ...                      | ... | ...    | ...    | ...
-  054  | MRR-48W   | MeridianRail 48W Pwr+Dat |  6  | $289   | $148   | AUTO
-
-[SOURCE_TRACE]
-AI_SUGGESTED    = 2  |  EXPERT_HUB = 2  |  AUTO_MAPPED = ${MAPPED_ITEMS_COUNT}
-Checksum        = sha256:b7d3e1...f92a
-
-; END OF FILE — ${SPEC_ID}_priced.sif`}</pre>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Archive Modal */}
-                    {showArchiveModal && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] animate-in fade-in duration-200" onClick={() => setShowArchiveModal(false)}>
-                            <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-                                <div className="px-5 py-4 border-b border-border bg-muted/50 flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-500/10">
-                                        <LinkIcon className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-foreground">Archive Specification</p>
-                                        <p className="text-[10px] text-muted-foreground">Save priced spec to project folder</p>
-                                    </div>
-                                </div>
-                                <div className="p-5 space-y-3">
-                                    <div className="p-3 rounded-lg bg-muted/30 border border-border space-y-1.5">
-                                        <p className="text-[10px] font-bold text-foreground">Destination:</p>
-                                        <p className="text-[11px] font-mono text-foreground">/Projects/Mercy Health/Phase 2/</p>
-                                        <p className="text-[10px] text-muted-foreground">File: <span className="font-mono font-bold text-foreground">{SPEC_ID}_priced.sif</span></p>
-                                        <p className="text-[10px] text-muted-foreground">PDF: <span className="font-mono font-bold text-foreground">{SPEC_ID}_priced.pdf</span></p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => { setShowArchiveModal(false); setArchived(true); }}
-                                            className="flex-1 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-[11px] font-bold transition-colors">
-                                            Save to Project
-                                        </button>
-                                        <button onClick={() => setShowArchiveModal(false)}
-                                            className="px-4 py-2 rounded-lg border border-border hover:bg-muted/50 text-foreground text-[11px] font-medium transition-colors">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
+                    {/* Priced Specification (removed — pricing shown in d1.4) */}
                     {/* ═══ SIF Conversion Flow ═══ */}
 
                     {/* Convert to Priced SIF CTA */}
@@ -3526,8 +2858,8 @@ Checksum        = sha256:b7d3e1...f92a
                 </div>
             )}
 
-            {/* View Source Modal — Catalog Excerpt */}
-            {viewSourceLine !== null && (
+            {/* View Source Modal — Catalog Excerpt (d1.4 only) */}
+            {isD14 && viewSourceLine !== null && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[2px] pt-20 pb-6 px-4 sm:px-6 animate-in fade-in duration-200" onClick={() => setViewSourceLine(null)}>
                     <div className="flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden max-h-full animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
 

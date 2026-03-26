@@ -8,20 +8,20 @@ import type { StepBehavior } from '../../components/demo/DemoStepBanner';
 // ─── Step Definitions ────────────────────────────────────────────────────────
 
 export const DUPLER_STEPS: DemoStep[] = [
-    // ── Flow 1: Catalog to SIF Conversion ──────────────────────────────────────
+    // ── Flow 1: Vendor Data to Priced SIF ──────────────────────────────────────
     {
         id: 'd1.1',
         groupId: 1,
-        groupTitle: 'Flow 1: Catalog to SIF Conversion',
-        title: 'Catalog Import & Product Extraction',
-        description: 'Strata detects a non-CET manufacturer in the project and alerts the designer that product data is missing from the catalog. The designer imports from the manufacturer URL and Strata reads the entire page — identifying products with part numbers, options, and pricing. Most items map automatically; a few with incomplete options are flagged for review.',
+        groupTitle: 'Flow 1: Vendor Data to Priced SIF',
+        title: 'Vendor Data Import & Extraction',
+        description: 'Strata detects a non-CET manufacturer in the project and alerts the designer that product data is missing. The designer uploads a vendor PDF quote (or pastes a URL for web-only catalogs). Strata reads the document — identifying products with part numbers, options, and pricing. Most items map automatically; a few with incomplete options are flagged for review.',
         app: 'dupler-pdf',
         role: 'Designer',
     },
     {
         id: 'd1.2',
         groupId: 1,
-        groupTitle: 'Flow 1: Catalog to SIF Conversion',
+        groupTitle: 'Flow 1: Vendor Data to Priced SIF',
         title: 'AI & Expert Hub Resolution',
         description: 'Flagged items are shown for review. Strata\'s AI resolves some by suggesting the most likely option based on context. More complex items are handled by a specialist through Expert Hub. The designer reviews and approves each resolution.',
         app: 'dupler-pdf',
@@ -30,29 +30,29 @@ export const DUPLER_STEPS: DemoStep[] = [
     {
         id: 'd1.3',
         groupId: 1,
-        groupTitle: 'Flow 1: Catalog to SIF Conversion',
-        title: 'Price Validation & Adjustments',
-        description: 'Strata checks all items for price accuracy against the manufacturer catalog. Items with premium options or upgrades that affect cost are flagged as upcharges. The designer reviews and acknowledges each adjustment.',
+        groupTitle: 'Flow 1: Vendor Data to Priced SIF',
+        title: 'Specification Assembly & Sales Coordinator Handoff',
+        description: 'Strata packages the resolved items into a PMX specification with full source traceability — every item links back to its origin (vendor PDF, AI, or specialist). The designer reviews the assembled specification and sends it to the Sales Coordinator for pricing. After sending, the missing manufacturer data is synchronized into the project catalog.',
         app: 'dupler-pdf',
         role: 'Designer',
     },
     {
         id: 'd1.4',
         groupId: 1,
-        groupTitle: 'Flow 1: Catalog to SIF Conversion',
-        title: 'Specification Package & SIF Conversion',
-        description: 'Strata packages the validated items into a specification document with full traceability — every item links back to its source (catalog, AI, or specialist). The specification is converted to SIF format and sent to the Sales Coordinator for pricing. After sending, the missing manufacturer data is synchronized into the project catalog, resolving the gap detected in the first step.',
-        app: 'dupler-pdf',
-        role: 'Designer',
+        groupTitle: 'Flow 1: Vendor Data to Priced SIF',
+        title: 'Price Validation & Discount Application',
+        description: 'The Sales Coordinator receives the PMX specification from the designer with source indicators per item. They validate upcharges from premium options, apply manufacturer discount tiers with AI assistance, and calculate dealer margins.',
+        app: 'dashboard',
+        role: 'Sales Coordinator',
     },
     {
         id: 'd1.5',
         groupId: 1,
-        groupTitle: 'Flow 1: Catalog to SIF Conversion',
-        title: 'SC Pricing & Priced SIF Approval',
-        description: 'The Sales Coordinator receives the specification with source indicators per item. They apply the manufacturer discount with AI assistance, generate the priced specification, convert it to a priced SIF, and send it for approval and distribution.',
+        groupTitle: 'Flow 1: Vendor Data to Priced SIF',
+        title: 'Priced SIF Generation & Distribution',
+        description: 'The Sales Coordinator converts the priced specification to SIF format, synchronizes pricing across all connected systems, and sends the priced SIF for approval and distribution.',
         app: 'dashboard',
-        role: 'SC',
+        role: 'Sales Coordinator',
     },
 
     // ── Flow 2: Warehouse & Inventory Intelligence ─────────────────────────────
@@ -162,12 +162,12 @@ export const DUPLER_STEPS: DemoStep[] = [
 // ─── Step Behavior ───────────────────────────────────────────────────────────
 
 export const DUPLER_STEP_BEHAVIOR: Record<string, StepBehavior> = {
-    // Flow 1: Catalog to SIF Conversion
-    'd1.1': { mode: 'interactive', userAction: 'Gap alert shows missing manufacturer. Click "Import from Manufacturer Catalog". URL is pasted, AI extracts products.' },
+    // Flow 1: Vendor Data to Priced SIF
+    'd1.1': { mode: 'interactive', userAction: 'Gap alert shows missing manufacturer. Click "Import Vendor Data". PDF loads, click "Extract Data". AI extracts products.' },
     'd1.2': { mode: 'interactive', userAction: 'Review AI suggestions and specialist resolutions. Accept or edit each. Click "Approve All".' },
-    'd1.3': { mode: 'interactive', userAction: 'Review price verification and acknowledge upcharges. Click "Continue to Specification".' },
-    'd1.4': { mode: 'interactive', userAction: 'Review source traceability. Convert to SIF and send to SC. Catalog syncs automatically — gap resolved.' },
-    'd1.5': { mode: 'interactive', userAction: 'Review specification. Apply discount, convert to priced SIF, and send for approval.' },
+    'd1.3': { mode: 'interactive', userAction: 'Review source traceability. Send PMX to SC. Catalog syncs automatically — gap resolved.' },
+    'd1.4': { mode: 'interactive', userAction: 'Review PMX specification. Validate upcharges. Apply discount tiers. Click "Continue to SIF".' },
+    'd1.5': { mode: 'interactive', userAction: 'Convert to priced SIF. Synchronize systems. Send for approval.' },
 
     // Flow 2: Warehouse & Inventory Intelligence
     'd2.1': { mode: 'interactive', userAction: 'Review warehouse health, aging items, and allocation conflicts. Click "Apply Recommendations".' },
@@ -188,32 +188,33 @@ export const DUPLER_STEP_BEHAVIOR: Record<string, StepBehavior> = {
 // ─── Step Messages (AI Agent Progress) ───────────────────────────────────────
 
 export const DUPLER_STEP_MESSAGES: Record<string, string[]> = {
-    // Flow 1: Web Catalog Import
+    // Flow 1: Vendor Data to Priced SIF
     'd1.1': [
-        'WebScraperAgent: navigating Meridian Workspace catalog — Healthcare Office collection...',
-        'TableExtractor: parsing product grid — 7 line items with pricing data',
+        'DocumentParser: reading Meridian Workspace vendor quote PDF — Healthcare Office...',
+        'LineItemExtractor: extracting line items with pricing — 54 products identified',
         'OptionParser: classifying part numbers, options, finishes, quantities',
-        'UndecidedDetector: 3 items have incomplete options — flagging for review',
+        'UndecidedDetector: 4 items have incomplete options — flagging for review',
     ],
     'd1.2': [
-        'CatalogMapper: mapping 7 Meridian items to SPEC format...',
+        'SpecMapper: mapping 54 Meridian items to SPEC format...',
         'OptionInferenceEngine: analyzing project context — 2 options auto-suggested',
         'ExpertHubRouter: 2 items escalated to Expert Hub — specialist response received',
     ],
     'd1.3': [
-        'OptionRuleChecker: validating 7 items against Meridian configuration rules',
-        'UpchargeDetector: 2 option selections trigger upcharges — $1,470 total',
-        'CatalogPriceVerifier: all 7 items verified against scraped catalog prices',
+        'SpecAssembler: building PMX specification package — 54 Meridian items',
+        'SourceLinker: linking items to vendor PDF + Expert Hub resolutions',
+        'TraceabilityArchiver: archiving source document and expert notes for audit trail',
     ],
     'd1.4': [
-        'SpecAssembler: building specification package — 7 Meridian items',
-        'SourceLinker: linking items to catalog URL + Expert Hub resolutions',
-        'TraceabilityArchiver: archiving source URL and expert notes for audit trail',
+        'SPEC-MH-0412.pmx received from Designer Alex Rivera — specification ready',
+        'UpchargeDetector: 2 option selections trigger upcharges — $1,470 total',
+        'DiscountAdvisor: suggesting Meridian Workspace dealer discount tiers...',
+        'MarginCalculator: computing margins after discounts and upcharges',
     ],
     'd1.5': [
-        'SPEC-MH-0412 received from Designer Alex Rivera — specification ready',
-        'DiscountAdvisor: suggesting Meridian Workspace dealer discount...',
-        'MarginCalculator: computing margins after discount and upcharges',
+        'SifConverter: converting priced specification to SIF format...',
+        'PricingEmbedder: applying dealer discounts to 54 SIF line items',
+        'CrossSystemSync: propagating to SPEC, CET & project catalog',
     ],
 
     // Flow 2
@@ -306,12 +307,12 @@ export interface DuplerStepTiming {
 }
 
 export const DUPLER_STEP_TIMING: Record<string, DuplerStepTiming> = {
-    // Flow 1: Vendor Data Extraction
+    // Flow 1: Vendor Data to Priced SIF
     'd1.1': { notifDelay: 1500, notifDuration: 5000, agentStagger: 700, agentDone: 500, breathing: 1200, resultsDur: 0 },
     'd1.2': { notifDelay: 2500, notifDuration: 6000, agentStagger: 900, agentDone: 600, breathing: 1500, resultsDur: 0 },
     'd1.3': { notifDelay: 2000, notifDuration: 5000, agentStagger: 800, agentDone: 500, breathing: 1200, resultsDur: 0 },
-    'd1.4': { notifDelay: 2000, notifDuration: 5000, agentStagger: 800, agentDone: 500, breathing: 1200, resultsDur: 0 },
-    'd1.5': { notifDelay: 2000, notifDuration: 4000, agentStagger: 0,   agentDone: 0,   breathing: 0,    resultsDur: 0 },
+    'd1.4': { notifDelay: 1500, notifDuration: 5000, agentStagger: 800, agentDone: 500, breathing: 1200, resultsDur: 0 },
+    'd1.5': { notifDelay: 1000, notifDuration: 3000, agentStagger: 0,   agentDone: 0,   breathing: 0,    resultsDur: 0 },
 
     // Flow 2: Warehouse & Inventory Intelligence
     'd2.1': { notifDelay: 2500, notifDuration: 6000, agentStagger: 800,  agentDone: 500, breathing: 1500, resultsDur: 0 },

@@ -3226,8 +3226,8 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                 {
                     mainTab === 'follow_up' && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            {/* Dupler d1.5: SC Review & Pricing Application */}
-                            {currentStep.id === 'd1.5' && (
+                            {/* Dupler d1.4-d1.5: SC Price Validation & Priced SIF */}
+                            {(currentStep.id === 'd1.4' || currentStep.id === 'd1.5') && (
                                 <DuplerScReview onNavigate={onNavigate} />
                             )}
 
