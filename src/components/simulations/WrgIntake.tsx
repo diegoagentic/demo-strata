@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// WRG Texas — Flow 1: Project Intake & Triage
-// Steps: w1.1-w1.4 (WrgIntake — automated pipeline overlay on Transactions)
-//        w1.5     (WrgIntakeReview — HITL in Dashboard)
+// WR — Flow 1: Project Intake
+// Steps: w1.4 (WrgIntake — automated pipeline overlay on Transactions)
+//        w1.5 (WrgIntakeReview — HITL in Dashboard)
 //
+// w1.1 is handled by EmailSimulation.tsx (profile-aware, reused from COI/OPS)
 // Data: JPS Health Center for Women — 14,200 sqft, 6 floors, healthcare vertical
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -13,14 +14,11 @@ import {
     CheckCircleIcon,
     ArrowPathIcon,
     ArrowRightIcon,
-    ExclamationTriangleIcon,
-    EnvelopeIcon,
-    InboxIcon,
-    ChartBarIcon,
     UserGroupIcon,
     DocumentTextIcon,
-    PaperClipIcon,
-    SparklesIcon,
+    EnvelopeIcon,
+    InboxIcon,
+    PaperAirplaneIcon,
 } from '@heroicons/react/24/outline';
 import { WRG_STEP_TIMING, type WrgStepTiming } from '../../config/profiles/wrg-demo';
 
@@ -28,82 +26,27 @@ import { WRG_STEP_TIMING, type WrgStepTiming } from '../../config/profiles/wrg-d
 
 interface AgentVis { name: string; detail: string; visible: boolean; done: boolean }
 
-type PipelinePhase = 'idle' | 'email' | 'notification' | 'processing' | 'breathing' | 'revealed';
+type PipelinePhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed';
 type IntakeReviewPhase = 'idle' | 'notification' | 'reviewing';
 
-// ─── Agent Pipelines ─────────────────────────────────────────────────────────
+// ─── Comparison data (same as WrgHandoff w1.2 — shown as read-only summary) ─
 
-const INTAKE_AGENTS: AgentVis[] = [
-    { name: 'EmailMonitor', detail: 'Scanning shared inbox for project requests', visible: false, done: false },
-    { name: 'AttachmentParser', detail: 'Extracting parameters from 3 attachments', visible: false, done: false },
-    { name: 'ProjectProfiler', detail: 'Healthcare, 14,200 sqft, 6 floors', visible: false, done: false },
-    { name: 'IntakeCreator', detail: 'JPS-HCW-2026 reference assigned', visible: false, done: false },
+const COMPARISON_SUMMARY = [
+    { product: 'Plastic Stacking Chair', type: 'QTY MISMATCH', resolution: 'Qty updated to 20' },
+    { product: 'OFS Coact Serpentine Lounge', type: 'CUSTOM CONFIG', resolution: '12-week lead accepted' },
+    { product: 'Nemschoff NC-2240 Recliner', type: 'DISCONTINUED', resolution: 'Replaced with NC-2250' },
 ];
 
-const SCOPE_AGENTS: AgentVis[] = [
-    { name: 'ScopeAnalyzer', detail: '24 product categories, healthcare constraints', visible: false, done: false },
-    { name: 'HistoricalMatcher', detail: '12 healthcare precedents found', visible: false, done: false },
-    { name: 'ComplexityEngine', detail: 'Score 8.2/10 — 3 risk factors', visible: false, done: false },
-    { name: 'RatePredictor', detail: '$9,800–$12,200 predicted range', visible: false, done: false },
-];
+// ─── Color Styles (DS pattern) ──────────────────────────────────────────────
 
-const ROUTING_AGENTS: AgentVis[] = [
-    { name: 'WorkloadAnalyzer', detail: 'Mark: 3 active, Jaime: 5 active', visible: false, done: false },
-    { name: 'LocationRouter', detail: 'Dallas 32 mi vs Houston 264 mi', visible: false, done: false },
-    { name: 'SkillMatcher', detail: 'Mark 96.3% healthcare accuracy', visible: false, done: false },
-    { name: 'AssignmentWriter', detail: 'Assigned to Mark Williams', visible: false, done: false },
-];
-
-const BRIEF_AGENTS: AgentVis[] = [
-    { name: 'BriefAssembler', detail: 'Compiling scope and constraints', visible: false, done: false },
-    { name: 'SmartsheetWriter', detail: 'Row #2026-JPS-HCW created', visible: false, done: false },
-    { name: 'CoreRecordCreator', detail: 'CORE #QR-116719 created', visible: false, done: false },
-    { name: 'DesignNotifier', detail: 'Sarah Chen notified, HIGH priority', visible: false, done: false },
-];
-
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-
-const PIPELINE_PROJECTS = [
-    { name: 'JPS Health Center', status: 'Intake', statusDetail: 'Just captured', value: '$202K', color: 'green' },
-    { name: 'Parkland Phase 2', status: 'Design', statusDetail: 'With design team', value: '$340K', color: 'blue' },
-    { name: 'UTSW Lab Renovation', status: 'Estimating', statusDetail: 'Mark Williams', value: '$95K', color: 'purple' },
-    { name: 'Dallas ISD Arts', status: 'Assembly', statusDetail: 'Quote in progress', value: '$180K', color: 'indigo' },
-    { name: 'Tarrant County', status: 'Complete', statusDetail: 'Delivered', value: '$127K', color: 'zinc' },
-];
-
-const HISTORICAL_PRECEDENTS = [
-    { name: 'JPS Psychiatric Wing', cost: '$8,900', similarity: 92 },
-    { name: 'Baylor Heart Center', cost: '$11,200', similarity: 87 },
-    { name: 'Methodist Midlothian', cost: '$9,400', similarity: 84 },
-];
-
-const RISK_FACTORS = [
-    { label: 'Hospital Protocol', detail: 'Sterile corridor, after-hours dock' },
-    { label: 'Scope Limits', detail: '119 task chairs exceed 50-chair limit' },
-    { label: 'Custom Assembly', detail: 'OFS Coact Serpentine — 12-seat ganged' },
-];
-
-// ─── Email mock data ─────────────────────────────────────────────────────────
-
-const INBOX_EMAILS = [
-    { sender: 'Herman Miller Support', subject: 'Catalog Update Q2 — Ergonomic Series pricing', time: '8:15 AM' },
-    { sender: 'Mark Williams', subject: 'RE: Parkland Phase 2 — Final estimate submitted', time: 'Yesterday' },
-    { sender: 'Smartsheet Notification', subject: 'Row Updated: UTSW Lab Renovation #2026-UTX', time: 'Yesterday' },
-];
-
-const JPS_EMAIL = {
-    sender: 'Jennifer Martinez',
-    senderTitle: 'Facilities Director, JPS Health Network',
-    senderEmail: 'jmartinez@jpshealthnet.org',
-    subject: 'Furniture Procurement Request — Women\'s Health Center Wing',
-    attachments: [
-        { name: 'JPS_Floor_Plans.pdf', pages: '24 pages' },
-        { name: 'JPS_Spec_Narrative.pdf', pages: '12 pages' },
-        { name: 'JPS_Site_Requirements.pdf', pages: '8 pages' },
-    ],
+const colorStyles: Record<string, string> = {
+    green: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/30',
+    blue: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 ring-1 ring-inset ring-blue-600/20 dark:ring-blue-400/30',
+    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20 dark:ring-amber-400/30',
+    purple: 'bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300 ring-1 ring-inset ring-purple-600/20 dark:ring-purple-400/30',
 };
 
-// ─── Render helper ───────────────────────────────────────────────────────────
+// ─── Render helpers ─────────────────────────────────────────────────────────
 
 function renderAgentPipeline(agents: AgentVis[], progress: number, label: string) {
     return (
@@ -150,18 +93,8 @@ function renderNotification(icon: React.ReactNode, title: string, detail: string
     );
 }
 
-// ─── Color helper for pipeline cards ─────────────────────────────────────────
-
-const statusColors: Record<string, string> = {
-    green: 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20',
-    blue: 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20',
-    purple: 'bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20',
-    indigo: 'bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20',
-    zinc: 'bg-zinc-100 dark:bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-500/20',
-};
-
 // ═════════════════════════════════════════════════════════════════════════════
-// DEFAULT EXPORT: WrgIntake (steps w1.1-w1.4)
+// DEFAULT EXPORT: WrgIntake (step w1.4 only)
 // Rendered as overlay on Transactions
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -181,579 +114,206 @@ export default function WrgIntake({ onNavigate }: { onNavigate?: (page: string) 
         };
     }, []);
 
-    // Timing helper
-    const tp = (id: string): WrgStepTiming => WRG_STEP_TIMING[id] || WRG_STEP_TIMING['w1.1'];
+    // ── State ─────────────────────────────────────────────────────────────────
+    const [selectedUser, setSelectedUser] = useState<string | null>(null);
+    const [sendingToast, setSendingToast] = useState(false);
+    const [toastDone, setToastDone] = useState(false);
 
-    // ── Phase state ──────────────────────────────────────────────────────────
-    const [phase, setPhase] = useState<PipelinePhase>('idle');
-    const [agents, setAgents] = useState<AgentVis[]>([]);
-    const [progress, setProgress] = useState(0);
-
-    // w1.1: email sub-phases (0=empty, 1=inbox, 2=new arrives, 3=open, 4=AI detected)
-    const [emailSubPhase, setEmailSubPhase] = useState(0);
-    // w1.4 specific: email animation
-    const [emailSent, setEmailSent] = useState(false);
-
-    // ── Step init effect ─────────────────────────────────────────────────────
+    // ── Step init ─────────────────────────────────────────────────────────────
     useEffect(() => {
-        if (!stepId.startsWith('w1.') || stepId === 'w1.5') return;
+        if (stepId !== 'w1.4') return;
+        setSelectedUser(null);
+        setSendingToast(false);
+        setToastDone(false);
+    }, [stepId]);
 
-        // Reset all state
-        setPhase('idle');
-        setProgress(0);
-        setEmailSent(false);
-        setEmailSubPhase(0);
-
-        // Set agents for this step
-        const agentMap: Record<string, AgentVis[]> = {
-            'w1.1': INTAKE_AGENTS,
-            'w1.2': SCOPE_AGENTS,
-            'w1.3': ROUTING_AGENTS,
-            'w1.4': BRIEF_AGENTS,
-        };
-        if (agentMap[stepId]) {
-            setAgents(agentMap[stepId].map(a => ({ ...a, visible: false, done: false })));
-        }
-
-        const timers: ReturnType<typeof setTimeout>[] = [];
-
-        // w1.1: start with email phase instead of notification
-        if (stepId === 'w1.1') {
-            timers.push(setTimeout(pauseAware(() => setPhase('email')), 800));
-        } else {
-            // Other steps: start notification phase
-            const t = tp(stepId);
-            timers.push(setTimeout(pauseAware(() => setPhase('notification')), t.notifDelay));
-        }
-
-        return () => timers.forEach(clearTimeout);
-    }, [stepId, pauseAware]);
-
-    // ── Email phase: sub-phase progression (w1.1 only) ─────────────────────────
-    useEffect(() => {
-        if (phase !== 'email' || stepId !== 'w1.1') return;
-        const timers: ReturnType<typeof setTimeout>[] = [];
-
-        // 0→1: show existing inbox emails
-        timers.push(setTimeout(pauseAware(() => setEmailSubPhase(1)), 600));
-        // 1→2: new JPS email slides in at top
-        timers.push(setTimeout(pauseAware(() => setEmailSubPhase(2)), 2200));
-        // 2→3: email auto-opens to show body
-        timers.push(setTimeout(pauseAware(() => setEmailSubPhase(3)), 4200));
-        // 3→4: AI detection badge appears
-        timers.push(setTimeout(pauseAware(() => setEmailSubPhase(4)), 7200));
-        // 4→notification: transition to agent pipeline
-        timers.push(setTimeout(pauseAware(() => setPhase('notification')), 9000));
-
-        return () => timers.forEach(clearTimeout);
-    }, [phase, stepId, pauseAware]);
-
-    // ── Notification -> processing ────────────────────────────────────────────
-    useEffect(() => {
-        if (phase !== 'notification') return;
-        const t = tp(stepId);
-        const timer = setTimeout(pauseAware(() => setPhase('processing')), t.notifDuration);
-        return () => clearTimeout(timer);
-    }, [phase, stepId, pauseAware]);
-
-    // ── Processing: stagger agents + progress bar ────────────────────────────
-    useEffect(() => {
-        if (phase !== 'processing') return;
-        const t = tp(stepId);
-        const timers: ReturnType<typeof setTimeout>[] = [];
-
-        // Agent pipeline stagger
-        setAgents(prev => prev.map(a => ({ ...a, visible: false, done: false })));
-        setProgress(0);
-
-        const totalAgents = agents.length || 4;
-        for (let i = 0; i < totalAgents; i++) {
-            timers.push(setTimeout(pauseAware(() => {
-                setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a));
-            }), t.agentStagger * i));
-            timers.push(setTimeout(pauseAware(() => {
-                setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a));
-            }), t.agentStagger * i + t.agentDone));
-        }
-
-        // Progress bar
-        const totalTime = t.agentStagger * totalAgents + t.agentDone;
-        for (let i = 1; i <= 20; i++) {
-            timers.push(setTimeout(pauseAware(() => setProgress(i * 5)), (totalTime / 20) * i));
-        }
-
-        timers.push(setTimeout(pauseAware(() => setPhase('breathing')), totalTime + 200));
-
-        return () => timers.forEach(clearTimeout);
-    }, [phase, stepId, pauseAware]);
-
-    // ── Breathing -> revealed ─────────────────────────────────────────────────
-    useEffect(() => {
-        if (phase !== 'breathing') return;
-        const t = tp(stepId);
-        const timer = setTimeout(pauseAware(() => setPhase('revealed')), t.breathing);
-        return () => clearTimeout(timer);
-    }, [phase, stepId, pauseAware]);
-
-    // ── Revealed: auto-advance ────────────────────────────────────────────────
-    useEffect(() => {
-        if (phase !== 'revealed') return;
-        const t = tp(stepId);
-        const timers: ReturnType<typeof setTimeout>[] = [];
-
-        // w1.4: email animation
-        if (stepId === 'w1.4') {
-            timers.push(setTimeout(pauseAware(() => setEmailSent(true)), 800));
-        }
-
-        // Auto-advance
-        if (t.resultsDur > 0) {
-            timers.push(setTimeout(pauseAware(() => nextStep()), t.resultsDur));
-        }
-
-        return () => timers.forEach(clearTimeout);
-    }, [phase, stepId, pauseAware, nextStep]);
+    const handleSendToUser = (userName: string) => {
+        setSelectedUser(userName);
+        setSendingToast(true);
+        const t1 = setTimeout(pauseAware(() => setToastDone(true)), 1500);
+        const t2 = setTimeout(pauseAware(() => nextStep()), 3000);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
+    };
 
     // ═════════════════════════════════════════════════════════════════════════
-    // RENDER
+    // RENDER — No processing animation. Content appears immediately.
     // ═════════════════════════════════════════════════════════════════════════
 
-    if (!stepId.startsWith('w1.') || stepId === 'w1.5') return null;
+    if (stepId !== 'w1.4') return null;
 
     return (
-        <div className="p-6 space-y-4 max-w-5xl mx-auto">
+        <div className="p-6 space-y-4 max-w-5xl mx-auto animate-in fade-in duration-500">
 
-            {/* ── w1.1: Client Request Capture ── */}
-            {stepId === 'w1.1' && (
-                <>
-                    {/* EMAIL PHASE: Inbox → email arrives → opens → AI detects */}
-                    {phase === 'email' && (
-                        <div className="animate-in fade-in duration-500 space-y-3">
-                            {/* Shared Inbox card */}
-                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <EnvelopeIcon className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">WRG Shared Inbox</span>
-                                    {emailSubPhase >= 2 && (
-                                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 font-bold animate-in fade-in duration-300">1 new</span>
-                                    )}
-                                </div>
-
-                                {/* New JPS email — slides in when emailSubPhase >= 2 */}
-                                {emailSubPhase >= 2 && (
-                                    <div className="mb-1.5">
-                                        {emailSubPhase < 3 ? (
-                                            /* Compact unread row */
-                                            <div className="flex items-start gap-3 px-3 py-2.5 rounded-lg bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 animate-in slide-in-from-top-4 fade-in duration-500">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-[11px] font-bold text-foreground">Jennifer Martinez</span>
-                                                        <span className="text-[9px] text-blue-600 dark:text-blue-400 font-bold">Just now</span>
-                                                    </div>
-                                                    <div className="text-[10px] font-semibold text-foreground truncate">{JPS_EMAIL.subject}</div>
-                                                    <div className="text-[10px] text-muted-foreground truncate">Dear WRG Team, we are requesting furniture procurement services for our new...</div>
-                                                </div>
-                                                <div className="flex items-center gap-1 mt-1.5 shrink-0">
-                                                    <PaperClipIcon className="h-3 w-3 text-muted-foreground" />
-                                                    <span className="text-[9px] text-muted-foreground">3</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            /* Expanded email body */
-                                            <div className="rounded-lg border border-blue-200 dark:border-blue-500/20 overflow-hidden animate-in fade-in duration-400">
-                                                {/* Email header */}
-                                                <div className="px-4 py-3 bg-blue-50 dark:bg-blue-500/5 border-b border-blue-100 dark:border-blue-500/10">
-                                                    <div className="flex items-center justify-between mb-0.5">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-8 h-8 rounded-full bg-blue-200 dark:bg-blue-500/20 flex items-center justify-center text-[10px] font-black text-blue-700 dark:text-blue-400">JM</div>
-                                                            <div>
-                                                                <span className="text-[11px] font-bold text-foreground">{JPS_EMAIL.sender}</span>
-                                                                <div className="text-[9px] text-muted-foreground">{JPS_EMAIL.senderTitle}</div>
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-[9px] text-muted-foreground">Just now</span>
-                                                    </div>
-                                                    <div className="text-[9px] text-muted-foreground ml-10">To: intake@wrgtexas.com</div>
-                                                </div>
-
-                                                {/* Email body */}
-                                                <div className="px-4 py-3 bg-card">
-                                                    <div className="text-[11px] font-semibold text-foreground mb-2">{JPS_EMAIL.subject}</div>
-                                                    <div className="text-[10px] text-muted-foreground leading-relaxed space-y-2">
-                                                        <p>Dear WRG Team,</p>
-                                                        <p>We are requesting furniture procurement services for our new Women's Health Center wing at JPS Health Network.</p>
-                                                        <div>
-                                                            <p className="font-semibold text-foreground mb-1">Project Scope:</p>
-                                                            <ul className="space-y-0.5 ml-3">
-                                                                <li className="flex items-center gap-1.5">
-                                                                    <span className="w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
-                                                                    Total area: <strong className="text-foreground">14,200 sqft</strong> across <strong className="text-foreground">6 floors</strong>
-                                                                </li>
-                                                                <li className="flex items-center gap-1.5">
-                                                                    <span className="w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
-                                                                    Primary manufacturer: <strong className="text-foreground">MillerKnoll</strong>
-                                                                </li>
-                                                                <li className="flex items-center gap-1.5">
-                                                                    <span className="w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
-                                                                    Vertical: <strong className="text-foreground">Healthcare</strong> (hospital delivery site)
-                                                                </li>
-                                                                <li className="flex items-center gap-1.5">
-                                                                    <span className="w-1 h-1 rounded-full bg-muted-foreground shrink-0" />
-                                                                    Special: sterile corridor access, after-hours dock scheduling
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                        <p>Please find the attached documents for your review. We look forward to your proposal.</p>
-                                                        <p className="pt-1 text-[10px]">
-                                                            Best regards,<br />
-                                                            <strong className="text-foreground">Jennifer Martinez</strong><br />
-                                                            Facilities Director, JPS Health Network
-                                                        </p>
-                                                    </div>
-
-                                                    {/* Attachments */}
-                                                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
-                                                        {JPS_EMAIL.attachments.map((att, i) => (
-                                                            <div
-                                                                key={att.name}
-                                                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/30 border border-border animate-in fade-in duration-300"
-                                                                style={{ animationDelay: `${i * 150}ms` }}
-                                                            >
-                                                                <DocumentTextIcon className="h-4 w-4 text-red-500 shrink-0" />
-                                                                <div>
-                                                                    <div className="text-[9px] font-medium text-foreground">{att.name}</div>
-                                                                    <div className="text-[8px] text-muted-foreground">{att.pages}</div>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Existing read emails — visible when emailSubPhase >= 1 */}
-                                {emailSubPhase >= 1 && (
-                                    <div className={`space-y-1 ${emailSubPhase < 2 ? 'animate-in fade-in duration-300' : ''}`}>
-                                        {INBOX_EMAILS.map((email, i) => (
-                                            <div key={i} className="flex items-start gap-3 px-3 py-2 rounded-lg bg-muted/20 border border-border/50 opacity-60">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-[10px] text-muted-foreground">{email.sender}</span>
-                                                        <span className="text-[9px] text-muted-foreground">{email.time}</span>
-                                                    </div>
-                                                    <div className="text-[10px] text-muted-foreground truncate">{email.subject}</div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* AI Detection badge — appears at emailSubPhase 4 */}
-                            {emailSubPhase >= 4 && (
-                                <div className="flex justify-center animate-in fade-in zoom-in-95 duration-500">
-                                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/20">
-                                        <AIAgentAvatar />
-                                        <span className="text-[11px] font-bold text-foreground">EmailMonitor — New project request detected</span>
-                                        <SparklesIcon className="h-4 w-4 text-brand-500 animate-pulse" />
-                                    </div>
-                                </div>
-                            )}
+            {/* ── Resolved Discrepancies (from w1.2) ── */}
+            <div className="rounded-xl border border-border overflow-hidden">
+                <div className="p-3 bg-card border-b border-border flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Mismatch Review — Resolved</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded ${colorStyles.green} font-bold`}>3/3 RESOLVED</span>
+                </div>
+                <div className="divide-y divide-border/50">
+                    {COMPARISON_SUMMARY.map((item, i) => (
+                        <div key={i} className="flex items-center gap-3 p-2.5 bg-card">
+                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                            <span className="text-[10px] font-bold text-foreground">{item.product}</span>
+                            <span className={`text-[8px] px-1 py-0.5 rounded ${colorStyles.green} font-bold`}>{item.type}</span>
+                            <span className="text-[9px] text-muted-foreground ml-auto">{item.resolution}</span>
                         </div>
-                    )}
+                    ))}
+                </div>
+            </div>
 
-                    {phase === 'notification' && renderNotification(
-                        <InboxIcon className="h-5 w-5" />,
-                        'Extracting Project Parameters',
-                        'JPS Health Network — Women\'s Health Center wing. Parsing 3 attachments for scope, manufacturer specs, and site constraints.'
-                    )}
-
-                    {phase === 'processing' && renderAgentPipeline(agents, progress, 'Client Request Capture')}
-
-                    {(phase === 'breathing' || phase === 'revealed') && (
-                        <div className="animate-in fade-in duration-500 space-y-3">
-                            {/* Parameter grid */}
-                            <div className="p-4 rounded-xl bg-card border border-border">
-                                <div className="flex items-center justify-between mb-1">
-                                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Extracted Parameters</div>
-                                    <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/30 font-bold">FROM EMAIL + 3 PDFs</span>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground mb-3">AI parsed the email body and 3 attachments to build a structured project profile automatically</p>
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="p-2.5 rounded-lg bg-muted/30 border border-border">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Project</div>
-                                        <div className="text-[11px] font-bold text-foreground mt-0.5">JPS Health Center for Women</div>
-                                    </div>
-                                    <div className="p-2.5 rounded-lg bg-muted/30 border border-border">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Vertical</div>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            <span className="text-[11px] font-bold text-foreground">Healthcare</span>
-                                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/30 font-bold">HC</span>
-                                        </div>
-                                    </div>
-                                    <div className="p-2.5 rounded-lg bg-muted/30 border border-border">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Area</div>
-                                        <div className="text-[11px] font-bold text-foreground mt-0.5">14,200 sqft</div>
-                                    </div>
-                                    <div className="p-2.5 rounded-lg bg-muted/30 border border-border">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Floors</div>
-                                        <div className="text-[11px] font-bold text-foreground mt-0.5">6</div>
-                                    </div>
-                                    <div className="p-2.5 rounded-lg bg-muted/30 border border-border">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Primary Mfr</div>
-                                        <div className="text-[11px] font-bold text-foreground mt-0.5">MillerKnoll</div>
-                                    </div>
-                                    <div className="p-2.5 rounded-lg bg-muted/30 border border-border">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Site</div>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            <span className="text-[11px] font-bold text-foreground">Hospital delivery</span>
-                                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 font-bold">HOSP</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Pipeline — project registered */}
-                            <div className="p-4 rounded-xl bg-card border border-border">
-                                <div className="flex items-center justify-between mb-1">
-                                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Project Registered in Pipeline</div>
-                                    <span className="text-[8px] px-1.5 py-0.5 rounded bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-500/30 font-bold">5 ACTIVE</span>
-                                </div>
-                                <p className="text-[10px] text-muted-foreground mb-3">JPS is now tracked in WRG's project pipeline alongside 4 projects already in progress</p>
-                                <div className="space-y-1.5">
-                                    {PIPELINE_PROJECTS.map((p, i) => (
-                                        <div
-                                            key={p.name}
-                                            className={`flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all duration-300 ${
-                                                i === 0
-                                                    ? 'bg-brand-50 dark:bg-brand-500/10 border-brand-400 dark:border-brand-500/40 ring-1 ring-brand-400/30'
-                                                    : 'bg-muted/20 border-border'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                {i === 0 && <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />}
-                                                <div>
-                                                    <span className={`text-[11px] font-medium ${i === 0 ? 'text-foreground font-bold' : 'text-muted-foreground'}`}>{p.name}</span>
-                                                    <div className={`text-[9px] ${i === 0 ? 'text-brand-600 dark:text-brand-400' : 'text-muted-foreground/70'}`}>{p.statusDetail}</div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-bold ${statusColors[p.color]}`}>{p.status}</span>
-                                                <span className="text-[10px] font-mono text-muted-foreground">{p.value}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+            {/* ── Client Request (from email) ── */}
+            <div className="p-4 rounded-xl bg-card border border-border">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Client Request</div>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded ${colorStyles.blue} font-bold`}>FROM CLIENT EMAIL</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                    {[
+                        { label: 'Project', value: 'JPS Health Center for Women' },
+                        { label: 'Vertical', value: 'Healthcare', badge: { text: 'HC', color: 'green' } },
+                        { label: 'Area', value: '14,200 sqft' },
+                        { label: 'Floors', value: '6' },
+                        { label: 'Primary Mfr', value: 'MillerKnoll' },
+                        { label: 'Site', value: 'Hospital delivery', badge: { text: 'HOSP', color: 'amber' } },
+                    ].map(p => (
+                        <div key={p.label} className="p-2.5 rounded-lg bg-muted/30 border border-border">
+                            <div className="text-[9px] text-muted-foreground uppercase">{p.label}</div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[11px] font-bold text-foreground">{p.value}</span>
+                                {p.badge && <span className={`text-[8px] px-1.5 py-0.5 rounded ${colorStyles[p.badge.color]} font-bold`}>{p.badge.text}</span>}
                             </div>
                         </div>
-                    )}
-                </>
+                    ))}
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-[9px] text-muted-foreground">
+                    <DocumentTextIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>Documents: Spec Narrative, Selection Document, Site Requirements</span>
+                </div>
+            </div>
+
+            {/* ── Strata Registration ── */}
+            <div className="p-4 rounded-xl bg-card border border-border">
+                <div className="text-[10px] font-bold text-muted-foreground mb-3 uppercase tracking-wider">Strata Registration</div>
+                <div className="space-y-2">
+                    {[
+                        { label: 'Smartsheet Row', value: '#2026-JPS-HCW', color: 'blue' },
+                        { label: 'Estimation Template', value: 'Complex Sheet (>50 items)', color: 'purple' },
+                        { label: 'Quote Type', value: 'Product + Installation Labor + Delivery', color: 'green' },
+                    ].map(r => (
+                        <div key={r.label} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/20 border border-border">
+                            <span className="text-[10px] text-foreground">{r.label}</span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded ${colorStyles[r.color]} font-bold`}>{r.value}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* ── Strata Expert — Assigned ── */}
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Strata Expert — Assigned</div>
+            <div className="grid grid-cols-2 gap-3">
+                {/* David Park — ASSIGNED */}
+                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-green-200 dark:bg-green-500/20 flex items-center justify-center text-sm font-black text-green-700 dark:text-green-400 ring-2 ring-green-400">DP</div>
+                        <div>
+                            <div className="text-[11px] font-bold text-foreground">David Park</div>
+                            <div className="text-[10px] text-muted-foreground">Strata Expert — Dallas, 32 mi</div>
+                        </div>
+                        <CheckCircleIcon className="h-5 w-5 text-green-500 ml-auto" />
+                    </div>
+                    <div className="space-y-2">
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[9px] text-muted-foreground">Workload: 3 active</span>
+                                <span className="text-[9px] font-bold text-green-700 dark:text-green-400">60%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-green-100 dark:bg-green-500/10 overflow-hidden">
+                                <div className="h-full rounded-full bg-green-500 transition-all duration-500" style={{ width: '60%' }} />
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-muted-foreground">Healthcare Accuracy</span>
+                            <span className="text-[10px] font-bold text-green-700 dark:text-green-400">96.3%</span>
+                        </div>
+                    </div>
+                    <div className="mt-2 text-center">
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full ${colorStyles.green} font-bold`}>ASSIGNED</span>
+                    </div>
+                </div>
+
+                {/* Jaime Gonzalez — not selected */}
+                <div className="p-4 rounded-xl bg-card border border-border opacity-50">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-black text-zinc-600 dark:text-zinc-400">JG</div>
+                        <div>
+                            <div className="text-[11px] font-bold text-foreground">Jaime Gonzalez</div>
+                            <div className="text-[10px] text-muted-foreground">Strata Expert — Houston, 264 mi</div>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[9px] text-muted-foreground">Workload: 5 active</span>
+                                <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400">100%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-amber-100 dark:bg-amber-500/10 overflow-hidden">
+                                <div className="h-full rounded-full bg-amber-500 transition-all duration-500" style={{ width: '100%' }} />
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-[9px] text-muted-foreground">Healthcare Accuracy</span>
+                            <span className="text-[10px] font-bold text-muted-foreground">91.1%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Designer — Send for Review ── */}
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Send to Designer for Review</div>
+
+            {!sendingToast && (
+                <div>
+                    {/* Designer card */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-card border border-brand-300 dark:border-brand-500/30 mb-3">
+                        <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&h=80&fit=crop&crop=face" alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-brand-400 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <div className="text-[11px] font-bold text-foreground">Alex Rivera</div>
+                            <div className="text-[10px] text-muted-foreground">Designer — External</div>
+                        </div>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full ${colorStyles.green} font-bold`}>ASSIGNED</span>
+                    </div>
+
+                    <button
+                        onClick={() => handleSendToUser('Alex Rivera')}
+                        className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
+                    >
+                        <EnvelopeIcon className="h-4 w-4" />
+                        Send to Designer
+                    </button>
+                </div>
             )}
 
-            {/* ── w1.2: Scope Analysis & Complexity Scoring ── */}
-            {stepId === 'w1.2' && (
-                <>
-                    {phase === 'notification' && renderNotification(
-                        <ChartBarIcon className="h-5 w-5" />,
-                        'Analyzing Scope & Complexity',
-                        'Cross-referencing JPS against 340 historical projects. Evaluating risk factors and predicting labor range.'
-                    )}
-
-                    {phase === 'processing' && renderAgentPipeline(agents, progress, 'Scope Analysis & Complexity Scoring')}
-
-                    {(phase === 'breathing' || phase === 'revealed') && (
-                        <div className="animate-in fade-in duration-500 space-y-3">
-                            {/* Complexity score card */}
-                            <div className="p-4 rounded-xl bg-card border border-border">
-                                <div className="text-[10px] font-bold text-muted-foreground mb-3 uppercase tracking-wider">Complexity Score</div>
-                                <div className="flex items-center gap-4">
-                                    {/* Circular score */}
-                                    <div className="relative w-20 h-20 shrink-0">
-                                        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-                                            <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted/30" />
-                                            <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="6"
-                                                className="text-amber-500"
-                                                strokeDasharray={`${2 * Math.PI * 34 * 0.82} ${2 * Math.PI * 34 * 0.18}`}
-                                                strokeLinecap="round"
-                                            />
-                                        </svg>
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="text-lg font-black text-foreground">8.2</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 space-y-2">
-                                        {RISK_FACTORS.map(rf => (
-                                            <div key={rf.label} className="flex items-center gap-2">
-                                                <ExclamationTriangleIcon className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                                                <span className="text-[10px] font-bold text-foreground">{rf.label}</span>
-                                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 font-bold">WARNING</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Historical precedents */}
-                            <div className="p-4 rounded-xl bg-card border border-border">
-                                <div className="text-[10px] font-bold text-muted-foreground mb-3 uppercase tracking-wider">Historical Precedents</div>
-                                <div className="space-y-1.5">
-                                    {HISTORICAL_PRECEDENTS.map(hp => (
-                                        <div key={hp.name} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/20 border border-border">
-                                            <span className="text-[11px] text-foreground">{hp.name}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-mono font-bold text-foreground">{hp.cost}</span>
-                                                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold border ${
-                                                    hp.similarity >= 90
-                                                        ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30'
-                                                        : 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30'
-                                                }`}>{hp.similarity}%</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Predicted range */}
-                            <div className="p-4 rounded-xl bg-card border border-border">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Predicted Labor Range</span>
-                                    <span className="text-[8px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 font-bold">RATE INTELLIGENCE</span>
-                                </div>
-                                <div className="relative h-6 rounded-full bg-muted/30 overflow-hidden">
-                                    <div className="absolute inset-y-0 left-[30%] right-[20%] rounded-full bg-gradient-to-r from-green-400/30 via-brand-400/40 to-amber-400/30 border border-brand-400/30" />
-                                    <div className="absolute inset-y-0 left-[30%] flex items-center">
-                                        <span className="text-[10px] font-bold text-foreground ml-2">$9,800</span>
-                                    </div>
-                                    <div className="absolute inset-y-0 right-[20%] flex items-center">
-                                        <span className="text-[10px] font-bold text-foreground mr-2">$12,200</span>
-                                    </div>
-                                </div>
-                                <div className="text-[10px] text-muted-foreground mt-1.5">Based on 12 healthcare precedents (avg similarity 88%)</div>
-                            </div>
+            {/* Sending toast */}
+            {sendingToast && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className={`flex items-center gap-3 p-4 rounded-xl border ${toastDone ? 'bg-green-50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20' : 'bg-card border-border'} transition-colors duration-500`}>
+                        {toastDone ? (
+                            <CheckCircleIcon className="h-5 w-5 text-green-500 shrink-0" />
+                        ) : (
+                            <ArrowPathIcon className="h-5 w-5 text-indigo-500 animate-spin shrink-0" />
+                        )}
+                        <div className="flex-1">
+                            <span className="text-[11px] font-bold text-foreground">
+                                {toastDone ? `Sent to ${selectedUser}` : `Sending to ${selectedUser}...`}
+                            </span>
+                            <p className="text-[10px] text-muted-foreground">
+                                {toastDone ? 'Intake summary and Smartsheet shared — ready for designer review' : 'Sharing intake summary and Smartsheet registration...'}
+                            </p>
                         </div>
-                    )}
-                </>
-            )}
-
-            {/* ── w1.3: Estimator Assignment & Routing ── */}
-            {stepId === 'w1.3' && (
-                <>
-                    {phase === 'notification' && renderNotification(
-                        <UserGroupIcon className="h-5 w-5" />,
-                        'Routing to Optimal Estimator',
-                        'Evaluating estimator workload, location proximity, and healthcare specialization.'
-                    )}
-
-                    {phase === 'processing' && renderAgentPipeline(agents, progress, 'Estimator Assignment & Routing')}
-
-                    {(phase === 'breathing' || phase === 'revealed') && (
-                        <div className="animate-in fade-in duration-500">
-                            <div className="grid grid-cols-2 gap-3">
-                                {/* Mark Williams — ASSIGNED */}
-                                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 rounded-full bg-green-200 dark:bg-green-500/20 flex items-center justify-center text-sm font-black text-green-700 dark:text-green-400 ring-2 ring-green-400">MW</div>
-                                        <div>
-                                            <div className="text-[11px] font-bold text-foreground">Mark Williams</div>
-                                            <div className="text-[10px] text-muted-foreground">Dallas — 32 mi</div>
-                                        </div>
-                                        <CheckCircleIcon className="h-5 w-5 text-green-500 ml-auto" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-[9px] text-muted-foreground">Workload: 3 active</span>
-                                                <span className="text-[9px] font-bold text-green-700 dark:text-green-400">60%</span>
-                                            </div>
-                                            <div className="h-1.5 rounded-full bg-green-100 dark:bg-green-500/10 overflow-hidden">
-                                                <div className="h-full rounded-full bg-green-500 transition-all duration-500" style={{ width: '60%' }} />
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[9px] text-muted-foreground">Healthcare Accuracy</span>
-                                            <span className="text-[10px] font-bold text-green-700 dark:text-green-400">96.3%</span>
-                                        </div>
-                                    </div>
-                                    <div className="mt-2 text-center">
-                                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-200 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-bold">ASSIGNED</span>
-                                    </div>
-                                </div>
-
-                                {/* Jaime Gonzalez — not selected */}
-                                <div className="p-4 rounded-xl bg-card border border-border opacity-50">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-sm font-black text-zinc-600 dark:text-zinc-400">JG</div>
-                                        <div>
-                                            <div className="text-[11px] font-bold text-foreground">Jaime Gonzalez</div>
-                                            <div className="text-[10px] text-muted-foreground">Houston — 264 mi</div>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-[9px] text-muted-foreground">Workload: 5 active</span>
-                                                <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400">100%</span>
-                                            </div>
-                                            <div className="h-1.5 rounded-full bg-amber-100 dark:bg-amber-500/10 overflow-hidden">
-                                                <div className="h-full rounded-full bg-amber-500 transition-all duration-500" style={{ width: '100%' }} />
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[9px] text-muted-foreground">Healthcare Accuracy</span>
-                                            <span className="text-[10px] font-bold text-muted-foreground">91.1%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
-
-            {/* ── w1.4: Design Brief & CORE Record ── */}
-            {stepId === 'w1.4' && (
-                <>
-                    {phase === 'notification' && renderNotification(
-                        <DocumentTextIcon className="h-5 w-5" />,
-                        'Assembling Design Brief',
-                        'Compiling scope, constraints, and manufacturer specs. Creating Smartsheet row and CORE quote request.'
-                    )}
-
-                    {phase === 'processing' && renderAgentPipeline(agents, progress, 'Design Brief & CORE Record')}
-
-                    {(phase === 'breathing' || phase === 'revealed') && (
-                        <div className="animate-in fade-in duration-500 space-y-3">
-                            {/* Routing flow badges */}
-                            <div className="p-4 rounded-xl bg-card border border-border">
-                                <div className="text-[10px] font-bold text-muted-foreground mb-3 uppercase tracking-wider">Record Routing</div>
-                                <div className="flex items-center justify-center gap-2">
-                                    <span className="text-[9px] px-2.5 py-1.5 rounded-lg bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/30 font-bold">INTAKE CAPTURED</span>
-                                    <ArrowRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span className="text-[9px] px-2.5 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 font-bold">SMARTSHEET #2026-JPS-HCW</span>
-                                    <ArrowRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span className="text-[9px] px-2.5 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 font-bold">CORE #QR-116719</span>
-                                </div>
-                            </div>
-
-                            {/* Assignment notification */}
-                            <div className={`flex items-center gap-3 p-3 rounded-lg border border-border bg-card transition-all duration-500 ${emailSent ? 'opacity-100' : 'opacity-50'}`}>
-                                <EnvelopeIcon className={`h-5 w-5 transition-all duration-700 ${emailSent ? 'text-green-500 translate-x-0' : 'text-muted-foreground -translate-x-2'}`} />
-                                <div className="flex-1">
-                                    <span className="text-[11px] font-bold text-foreground">
-                                        {emailSent ? 'Design Team notified — Sarah Chen' : 'Sending design notification...'}
-                                    </span>
-                                    <p className="text-[10px] text-muted-foreground">
-                                        Priority: <span className="font-bold text-red-600 dark:text-red-400">HIGH</span>
-                                    </p>
-                                </div>
-                                {emailSent && <CheckCircleIcon className="h-4 w-4 text-green-500 animate-in fade-in duration-300" />}
-                            </div>
-                        </div>
-                    )}
-                </>
+                        {toastDone && <span className={`text-[9px] px-2 py-0.5 rounded-full ${colorStyles.green} font-bold`}>SENT</span>}
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -762,7 +322,7 @@ export default function WrgIntake({ onNavigate }: { onNavigate?: (page: string) 
 
 // ═════════════════════════════════════════════════════════════════════════════
 // NAMED EXPORT: WrgIntakeReview (step w1.5)
-// Rendered inside Dashboard.tsx
+// Rendered inside Dashboard.tsx — simplified: summary + assignment + CTA
 // ═════════════════════════════════════════════════════════════════════════════
 
 export function WrgIntakeReview({ onNavigate }: { onNavigate?: (page: string) => void }) {
@@ -784,13 +344,131 @@ export function WrgIntakeReview({ onNavigate }: { onNavigate?: (page: string) =>
 
     // ── Phase state ──────────────────────────────────────────────────────────
     const [reviewPhase, setReviewPhase] = useState<IntakeReviewPhase>('idle');
+    const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['facility', 'products', 'assignment', 'sheets']));
+    const [showReturnRequest, setShowReturnRequest] = useState(false);
+    const [returnSent, setReturnSent] = useState(false);
+    const [reviewingRecord, setReviewingRecord] = useState<string | null>(null);
+    const [confirmSending, setConfirmSending] = useState(false);
+    const [confirmDone, setConfirmDone] = useState(false);
+
+    const toggleSection = (key: string) => {
+        setExpandedSections(prev => {
+            const next = new Set(prev);
+            next.has(key) ? next.delete(key) : next.add(key);
+            return next;
+        });
+    };
 
     // ── Init effect ──────────────────────────────────────────────────────────
     useEffect(() => {
         setReviewPhase('idle');
+        setExpandedSections(new Set(['facility', 'products', 'assignment', 'sheets']));
+        setShowReturnRequest(false);
+        setReturnSent(false);
+        setReviewingRecord(null);
+        setConfirmSending(false);
+        setConfirmDone(false);
         const timer = setTimeout(pauseAware(() => setReviewPhase('notification')), 2000);
         return () => clearTimeout(timer);
     }, [pauseAware]);
+
+    const handleReturnForReview = () => {
+        setShowReturnRequest(true);
+    };
+
+    const handleSendReturn = () => {
+        setReturnSent(true);
+        setTimeout(pauseAware(() => setShowReturnRequest(false)), 2500);
+    };
+
+    // ─── Expandable scope sections data ──────────────────────────────────────
+    const scopeSections = [
+        {
+            key: 'facility', label: 'Facility Details', badge: 'HC', badgeColor: 'green',
+            summary: 'JPS Health Center for Women — 14,200 sqft, 6 floors',
+            details: [
+                { k: 'Building Type', v: 'Healthcare — Women\'s Health Center' },
+                { k: 'Total Area', v: '14,200 sqft across 6 floors' },
+                { k: 'Location', v: 'Fort Worth, TX (JPS campus)' },
+                { k: 'Delivery Site', v: 'Hospital — restricted hours, freight elevator required' },
+                { k: 'Timeline', v: 'Furniture installation Q3 2026' },
+            ],
+        },
+        {
+            key: 'products', label: 'Product Scope', badge: '24 items', badgeColor: 'blue',
+            summary: 'MillerKnoll healthcare furniture — exam, waiting, office',
+            details: [
+                { k: 'Primary Manufacturer', v: 'MillerKnoll (Herman Miller Healthcare)' },
+                { k: 'Categories', v: 'Exam room, waiting area, nursing station, office' },
+                { k: 'Key Products', v: 'Exam chairs, modular seating, height-adj desks' },
+                { k: 'Special Items', v: '2 custom configurations flagged' },
+                { k: 'Spec Documents', v: '3 PDFs parsed (Spec Narrative, Selection Doc, Site Reqs)' },
+            ],
+        },
+        {
+            key: 'assignment', label: 'Expert Assignment', badge: 'ASSIGNED', badgeColor: 'green',
+            summary: 'David Park — Dallas, 96.3% accuracy, 60% workload',
+            details: [
+                { k: 'Assigned To', v: 'David Park — Strata Expert' },
+                { k: 'Location', v: 'Dallas, TX — 32 miles from site' },
+                { k: 'Healthcare Accuracy', v: '96.3% on similar projects' },
+                { k: 'Current Workload', v: '3 active projects (60% capacity)' },
+                { k: 'Selection Reason', v: 'Closest available expert with highest HC accuracy' },
+            ],
+        },
+        {
+            key: 'sheets', label: 'Estimation Sheet', badge: 'COMPLEX', badgeColor: 'purple',
+            summary: '>50 items — Complex estimation template selected',
+            details: [
+                { k: 'Template', v: 'Complex Estimation Sheet (>50 line items)' },
+                { k: 'Alternative', v: 'Standard Sheet (≤50 items) — not applicable' },
+                { k: 'Documents', v: 'Spec Narrative, Selection Document, Site Requirements' },
+                { k: 'Line Items', v: '24 products across 4 categories' },
+                { k: 'Smartsheet Row', v: '#2026-JPS-HCW — populated with extracted data' },
+            ],
+        },
+    ];
+
+    // ─── Records data with review content ────────────────────────────────────
+    const records = [
+        {
+            key: 'smartsheet', label: 'Smartsheet Row', value: '#2026-JPS-HCW', color: 'blue',
+            reviewTitle: 'Smartsheet Row — #2026-JPS-HCW',
+            reviewFields: [
+                { k: 'Row ID', v: '#2026-JPS-HCW' },
+                { k: 'Project', v: 'JPS Health Center for Women' },
+                { k: 'Client', v: 'JPS Health Network' },
+                { k: 'Vertical', v: 'Healthcare' },
+                { k: 'Total Area', v: '14,200 sqft' },
+                { k: 'Status', v: 'Intake Complete — Pending Dealer Approval' },
+                { k: 'Created', v: 'Mar 27, 2026 at 10:14 AM' },
+            ],
+        },
+        {
+            key: 'template', label: 'Estimation Template', value: 'COMPLEX (>50 items)', color: 'purple',
+            reviewTitle: 'Estimation Template — Complex Sheet',
+            reviewFields: [
+                { k: 'Template Type', v: 'Complex Estimation Sheet' },
+                { k: 'Threshold', v: '>50 line items' },
+                { k: 'Line Items', v: '24 products across 4 categories' },
+                { k: 'Categories', v: 'Seating, Casework, Workstations, Accessories' },
+                { k: 'Linked Sheet', v: '#2026-JPS-HCW' },
+                { k: 'Labor Sections', v: 'Installation, Delivery, Site Prep' },
+            ],
+        },
+        {
+            key: 'expert', label: 'Expert Assignment', value: 'David Park — HIGH priority', color: 'green',
+            reviewTitle: 'Expert Assignment — David Park',
+            reviewFields: [
+                { k: 'Expert', v: 'David Park — Strata Expert' },
+                { k: 'Priority', v: 'HIGH' },
+                { k: 'Location', v: 'Dallas, TX — 32 mi from site' },
+                { k: 'HC Accuracy', v: '96.3%' },
+                { k: 'Workload', v: '3 active (60% capacity)' },
+                { k: 'ETA', v: 'Review within 24 hrs' },
+            ],
+        },
+    ];
 
     return (
         <div className="space-y-4">
@@ -808,7 +486,7 @@ export function WrgIntakeReview({ onNavigate }: { onNavigate?: (page: string) =>
                                     <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500 text-white font-bold">ACTION REQUIRED</span>
                                 </div>
                                 <p className="text-[11px] text-muted-foreground mt-1">
-                                    AI-generated intake — complexity 8.2/10, assigned to Mark Williams, 5 active pipeline projects
+                                    AI-generated intake — assigned to David Park (Dallas), Smartsheet #2026-JPS-HCW populated
                                 </p>
                                 <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review <ArrowRightIcon className="h-3 w-3" /></p>
                             </div>
@@ -820,66 +498,207 @@ export function WrgIntakeReview({ onNavigate }: { onNavigate?: (page: string) =>
             {/* Full review */}
             {reviewPhase === 'reviewing' && (
                 <div className="animate-in fade-in duration-500 space-y-4">
-                    {/* Summary grid */}
-                    <div className="grid grid-cols-3 gap-3">
-                        <div className="p-3 rounded-lg bg-card border border-border text-center">
-                            <div className="text-[9px] text-muted-foreground uppercase">Project Value</div>
-                            <div className="text-sm font-bold text-foreground">$202K</div>
-                            <div className="text-[10px] text-muted-foreground">14,200 sqft, 6 floors</div>
-                        </div>
-                        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 text-center">
-                            <div className="text-[9px] text-muted-foreground uppercase">Complexity</div>
-                            <div className="text-sm font-bold text-amber-700 dark:text-amber-400">8.2 / 10</div>
-                            <div className="text-[10px] text-muted-foreground">3 risk factors</div>
-                        </div>
-                        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
-                            <div className="text-[9px] text-muted-foreground uppercase">Estimator</div>
-                            <div className="text-sm font-bold text-green-700 dark:text-green-400">Mark Williams</div>
-                            <div className="text-[10px] text-muted-foreground">Dallas, 96.3% accuracy</div>
-                        </div>
+                    {/* Summary grid — 2x2 */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            { label: 'Project', value: 'JPS Health Center', detail: '14,200 sqft · 6 floors', icon: '🏥' },
+                            { label: 'Vertical', value: 'Healthcare', detail: 'Hospital delivery site', color: 'amber' as const, icon: '⚕️' },
+                            { label: 'Expert', value: 'David Park', detail: 'Dallas · 96.3% accuracy', color: 'green' as const, icon: '👤' },
+                            { label: 'Estimation', value: 'Complex Sheet', detail: '24 items · >50 threshold', color: 'purple' as const, icon: '📋' },
+                        ].map(c => (
+                            <div key={c.label} className={`p-3 rounded-lg border ${
+                                c.color === 'green' ? 'bg-green-50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20'
+                                    : c.color === 'amber' ? 'bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20'
+                                    : c.color === 'purple' ? 'bg-purple-50 dark:bg-purple-500/5 border-purple-200 dark:border-purple-500/20'
+                                    : 'bg-card border-border'
+                            }`}>
+                                <div className="flex items-center gap-2">
+                                    <div className="text-[9px] text-muted-foreground uppercase">{c.label}</div>
+                                </div>
+                                <div className={`text-sm font-bold mt-0.5 ${
+                                    c.color === 'green' ? 'text-green-700 dark:text-green-400'
+                                        : c.color === 'amber' ? 'text-amber-700 dark:text-amber-400'
+                                        : c.color === 'purple' ? 'text-purple-700 dark:text-purple-400'
+                                        : 'text-foreground'
+                                }`}>{c.value}</div>
+                                <div className="text-[10px] text-muted-foreground">{c.detail}</div>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Pipeline mini-kanban */}
+                    {/* Expandable scope report */}
                     <div className="p-4 rounded-xl bg-card border border-border">
-                        <div className="text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-wider">Pipeline Position</div>
-                        <div className="flex gap-2">
-                            {PIPELINE_PROJECTS.map((p, i) => (
-                                <div
-                                    key={p.name}
-                                    className={`flex-1 p-2 rounded-lg border text-center text-[9px] ${
-                                        i === 0
-                                            ? 'bg-brand-50 dark:bg-brand-500/10 border-brand-400 dark:border-brand-500/40 font-bold text-foreground'
-                                            : 'bg-muted/20 border-border text-muted-foreground'
-                                    }`}
-                                >
-                                    <div className="truncate">{p.name}</div>
-                                    <div className={`text-[8px] mt-0.5 px-1 py-0.5 rounded ${statusColors[p.color]} border font-bold inline-block`}>{p.status}</div>
+                        <div className="text-[10px] font-bold text-muted-foreground mb-3 uppercase tracking-wider">Intake Report — Click to expand</div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {scopeSections.map(section => (
+                                <div key={section.key} className="rounded-lg border border-border overflow-hidden">
+                                    <button
+                                        onClick={() => toggleSection(section.key)}
+                                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                                    >
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <span className="text-[10px] font-bold text-foreground">{section.label}</span>
+                                            <span className={`text-[8px] px-1.5 py-0.5 rounded ${colorStyles[section.badgeColor]} font-bold shrink-0`}>{section.badge}</span>
+                                        </div>
+                                        <svg className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 shrink-0 ${expandedSections.has(section.key) ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                    </button>
+                                    {expandedSections.has(section.key) && (
+                                        <div className="px-3 pb-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            <div className="space-y-1.5 pt-1 border-t border-border">
+                                                {section.details.map(d => (
+                                                    <div key={d.k} className="flex items-start justify-between gap-3 py-1">
+                                                        <span className="text-[9px] text-muted-foreground uppercase shrink-0">{d.k}</span>
+                                                        <span className="text-[10px] text-foreground font-medium text-right">{d.v}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Risk factors */}
-                    <div className="p-4 rounded-xl bg-card border border-border">
-                        <div className="text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-wider">Risk Factors</div>
+                    {/* Registration records with review buttons */}
+                    <div className="relative p-4 rounded-xl bg-card border border-border">
+                        <div className="text-[10px] font-bold text-muted-foreground mb-3 uppercase tracking-wider">Records Created</div>
                         <div className="space-y-1.5">
-                            {RISK_FACTORS.map(rf => (
-                                <div key={rf.label} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200/50 dark:border-amber-500/20">
-                                    <ExclamationTriangleIcon className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                                    <span className="text-[10px] font-bold text-foreground">{rf.label}</span>
-                                    <span className="text-[10px] text-muted-foreground">— {rf.detail}</span>
+                            {records.map(r => (
+                                <div key={r.key} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/20 border border-border">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                        <span className="text-[10px] text-foreground">{r.label}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[9px] px-1.5 py-0.5 rounded ${colorStyles[r.color]} font-bold`}>{r.value}</span>
+                                        <button
+                                            onClick={() => setReviewingRecord(reviewingRecord === r.key ? null : r.key)}
+                                            className="text-[9px] px-2 py-1 rounded-md border border-border bg-card hover:bg-muted text-foreground font-bold transition-colors"
+                                        >
+                                            Review
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
+
+                        {/* Floating review window */}
+                        {reviewingRecord && (() => {
+                            const record = records.find(r => r.key === reviewingRecord);
+                            if (!record) return null;
+                            return (
+                                <div className="absolute bottom-full mb-2 left-0 right-0 p-4 rounded-xl bg-card border border-border shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300 z-10">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className="text-[10px] font-bold text-foreground uppercase tracking-wider">{record.reviewTitle}</span>
+                                        <button onClick={() => setReviewingRecord(null)} className="p-1 rounded-md hover:bg-muted transition-colors">
+                                            <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        {record.reviewFields.map(f => (
+                                            <div key={f.k} className="flex items-center justify-between px-2 py-1.5 rounded-md bg-muted/30">
+                                                <span className="text-[9px] text-muted-foreground uppercase">{f.k}</span>
+                                                <span className="text-[10px] text-foreground font-medium">{f.v}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-3 flex items-center gap-2 text-[9px] text-green-600 dark:text-green-400">
+                                        <CheckCircleIcon className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="font-bold">Record verified — auto-generated by Strata AI</span>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
 
-                    {/* CTA */}
-                    <button
-                        onClick={() => nextStep()}
-                        className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all"
-                    >
-                        Confirm & Proceed to Design
-                    </button>
+                    {/* Return for Review — floating request message */}
+                    {showReturnRequest && (
+                        <div className="p-4 rounded-xl bg-card border border-border shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className="flex items-center gap-2 mb-3">
+                                <EnvelopeIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                <span className="text-[10px] font-bold text-foreground uppercase tracking-wider">Request Review — Send to Expert</span>
+                            </div>
+                            {!returnSent ? (
+                                <>
+                                    <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 mb-3">
+                                        <div className="text-[10px] font-bold text-amber-700 dark:text-amber-400 mb-1">To: David Park — Strata Expert</div>
+                                        <div className="text-[10px] text-foreground leading-relaxed">
+                                            Hi David, I've reviewed the intake summary for JPS Health Center and have some questions before approving.
+                                            Could you verify the delivery logistics for the hospital site? Restricted hours and freight elevator access
+                                            need confirmation from the JPS facilities team. Also, please double-check the 2 custom configurations flagged
+                                            in the product scope. Thanks — Sara
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => { setShowReturnRequest(false); setReturnSent(false); }}
+                                            className="flex-1 py-2 rounded-lg text-[10px] font-bold border border-border bg-card text-foreground hover:bg-muted transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleSendReturn}
+                                            className="flex-1 py-2 rounded-lg text-[10px] font-bold bg-amber-500 text-white hover:bg-amber-600 transition-colors flex items-center justify-center gap-1.5"
+                                        >
+                                            <EnvelopeIcon className="h-3.5 w-3.5" />
+                                            Send to Expert
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                    <CheckCircleIcon className="h-4 w-4 text-green-500 shrink-0" />
+                                    <span className="text-[11px] font-bold text-green-700 dark:text-green-400">Review request sent to David Park — returned to Expert Hub</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Confirm toast */}
+                    {confirmSending && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className={`flex items-center gap-3 p-4 rounded-xl border ${confirmDone ? 'bg-green-50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20' : 'bg-card border-border'} transition-colors duration-500`}>
+                                {confirmDone ? (
+                                    <CheckCircleIcon className="h-5 w-5 text-green-500 shrink-0" />
+                                ) : (
+                                    <ArrowPathIcon className="h-5 w-5 text-indigo-500 animate-spin shrink-0" />
+                                )}
+                                <div className="flex-1">
+                                    <span className="text-[11px] font-bold text-foreground">
+                                        {confirmDone ? 'Revisado con éxito — listo para estimaciones' : 'Enviando confirmación...'}
+                                    </span>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {confirmDone ? 'Intake approved — estimation phase authorized for David Park' : 'Validating intake summary and notifying expert...'}
+                                    </p>
+                                </div>
+                                {confirmDone && <span className={`text-[9px] px-2 py-0.5 rounded-full ${colorStyles.green} font-bold`}>SENT</span>}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Two actions: Feedback + Send */}
+                    {!showReturnRequest && !confirmSending && (
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleReturnForReview}
+                                className="flex-1 py-3 rounded-xl text-xs font-bold border border-border bg-card text-foreground hover:bg-muted transition-all flex items-center justify-center gap-2"
+                            >
+                                <ArrowRightIcon className="h-3.5 w-3.5 rotate-180" />
+                                Return for Review
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setConfirmSending(true);
+                                    setTimeout(pauseAware(() => setConfirmDone(true)), 1500);
+                                    setTimeout(pauseAware(() => nextStep()), 3000);
+                                }}
+                                className="flex-1 py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                <PaperAirplaneIcon className="h-3.5 w-3.5" />
+                                Approve & Send to Expert
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

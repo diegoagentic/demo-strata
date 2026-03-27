@@ -39,7 +39,7 @@ import DuplerWarehouse from "./components/simulations/DuplerWarehouse"
 import WrgLaborEstimation from "./components/simulations/WrgLaborEstimation"
 import WrgIntake from "./components/simulations/WrgIntake"
 import WrgHandoff from "./components/simulations/WrgHandoff"
-import WrgAssembly from "./components/simulations/WrgAssembly"
+import WrgDesigner from "./components/simulations/WrgDesigner"
 // DuplerReporting now renders inside Dashboard.tsx (Follow Up notification + Metrics processing)
 
 import {
@@ -129,24 +129,22 @@ function App() {
 
     const isDuplerExpert = isDupler && (currentStep.role === 'Expert' || currentStep.role === 'System');
     const isDuplerDealer = isDupler && currentStep.role === 'Dealer';
-    const isWrgSystem = isWRG && currentStep.role === 'System';
-    const isWrgEstimator = isWRG && currentStep.role === 'Estimator';
     const isWrgDealer = isWRG && currentStep.role === 'Dealer';
     const isWrgExpert = isWRG && currentStep.role === 'Expert';
+    const isWrgDesigner = isWRG && currentStep.role === 'Designer';
     const resolvedAppName = isContinua ? continuaAppName
-      : currentStep.app === 'email-marketplace' ? 'Wells Fargo Mail'
+      : currentStep.app === 'email-marketplace' ? (isWRG ? 'WRG Mail' : 'Wells Fargo Mail')
       : currentStep.app === 'catalog' ? 'Marketplace'
       : currentStep.app === 'service-now' ? 'ServiceNow'
       : currentStep.app === 'crm' ? 'Strata CRM'
+      : isWrgDesigner ? 'Designer Experience'
       : isWrgDealer ? 'Dealer Experience'
-      : isWrgEstimator ? 'Dealer Experience'
       : isWrgExpert ? 'Expert Hub'
-      : isWrgSystem ? 'Expert Hub'
       : isDuplerDealer ? 'Dealer Experience'
       : isDuplerExpert ? 'Expert Hub'
       : isExpert ? 'Expert Hub'
       : 'Dealer Experience';
-    const resolvedCompany = isContinua ? continuaCompany : isExpert || isDuplerExpert || isWrgSystem || isWrgExpert ? 'Strata Services' : demoProfile.companyName;
+    const resolvedCompany = isContinua ? continuaCompany : isExpert || isDuplerExpert || isWrgExpert || isWrgDesigner ? 'Strata Services' : demoProfile.companyName;
 
     // Continua profile: 4-tab nav including Inventory with "Connected" badge
     const continuaNav = [
@@ -171,11 +169,8 @@ function App() {
       { name: 'Inventory', page: 'inventory', icon: ArchiveBoxIcon },
       { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
     ];
-    // WRG profile: 2-tab nav (Dashboard, Transactions)
-    const wrgNav = [
-      { name: 'Dashboard', page: 'dashboard', icon: HomeIcon },
-      { name: 'Transactions', page: 'transactions', icon: BanknotesIcon },
-    ];
+    // WRG profile: no center nav (demo auto-drives all steps)
+    const wrgNav: { name: string; page: string; icon: any; badge?: string }[] = [];
 
     const nav = currentStep.app === 'crm' ? crmNav : isWRG ? wrgNav : isDupler ? duplerNav : isContinua ? continuaNav : expertNav;
     return { appName: resolvedAppName, companyName: resolvedCompany, customNavigation: nav };
@@ -209,9 +204,7 @@ function App() {
       'wrg-intake': 'transactions',
       'wrg-intake-review': 'dashboard',
       'wrg-handoff': 'transactions',
-      'wrg-handoff-review': 'dashboard',
-      'wrg-assembly': 'transactions',
-      'wrg-assembly-review': 'dashboard',
+      'wrg-designer': 'transactions',
     };
     return appToTab[currentStep.app] || currentPage;
   };
@@ -313,20 +306,12 @@ function App() {
             <Transactions onLogout={handleLogout} onNavigateToDetail={(type) => setCurrentPage(type as any)} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
           </>
         );
-      case 'wrg-handoff-review':
-        return (
-          <Dashboard onLogout={handleLogout} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
-        );
-      case 'wrg-assembly':
+      case 'wrg-designer':
         return (
           <>
-            <WrgAssembly onNavigate={handleNavigate} />
+            <WrgDesigner onNavigate={handleNavigate} />
             <Transactions onLogout={handleLogout} onNavigateToDetail={(type) => setCurrentPage(type as any)} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
           </>
-        );
-      case 'wrg-assembly-review':
-        return (
-          <Dashboard onLogout={handleLogout} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         );
       default:
         return (

@@ -19,8 +19,8 @@ export type SimulationApp =
     | 'dupler-pdf' | 'dupler-warehouse' | 'dupler-reporting'
     | 'wrg-labor' | 'wrg-review'
     | 'wrg-intake' | 'wrg-intake-review'
-    | 'wrg-handoff' | 'wrg-handoff-review'
-    | 'wrg-assembly' | 'wrg-assembly-review';
+    | 'wrg-handoff'
+    | 'wrg-designer';
 
 export interface DemoStep {
     id: string;
@@ -106,7 +106,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
     {
         id: 'wrg',
         name: 'WRG',
-        companyName: 'WRG Texas',
+        companyName: 'WRG',
         description: 'Quoting lifecycle — intake to client proposal',
         icon: '🔧',
         steps: WRG_DEMO_STEPS,

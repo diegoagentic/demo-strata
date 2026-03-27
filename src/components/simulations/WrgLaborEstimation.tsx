@@ -1,7 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// WRG Texas — Flow 2: Labor Estimation (PDF to Approved Quote)
-// Steps: w2.1-w2.5 (WrgLaborEstimation — automated pipeline)
-//        w2.6-w2.7 (WrgEstimatorReview — HITL in Dashboard)
+// WR — Flow 2: Labor Estimation
+// Steps: w2.1 (Cost calc + expert review → "Ask Designer" → nextStep)
+//        w2.2 (Designer verification page for OFS Serpentine)
+//        w2.3 (Expert confirmation — all adjustments resolved, send to dealer)
+//        w2.4 (WrgEstimatorReview — Dealer review + Approval Chain, HITL in Dashboard)
 //
 // Data: JPS Health Center for Women — 24 line items, 185.04 man-hours, $10,547.28
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -13,31 +15,45 @@ import {
     CheckCircleIcon,
     ArrowPathIcon,
     ArrowRightIcon,
+    ArrowDownIcon,
     ExclamationTriangleIcon,
-    DocumentTextIcon,
-    ServerIcon,
-    CpuChipIcon,
     CalculatorIcon,
-    DocumentArrowDownIcon,
-    EnvelopeIcon,
     ChevronDownIcon,
-    ChevronUpIcon,
-    PencilSquareIcon,
     CheckIcon,
+    DocumentTextIcon,
+    CubeIcon,
+    ShieldCheckIcon,
+    ClipboardDocumentListIcon,
+    AdjustmentsHorizontalIcon,
+    SparklesIcon,
+    TruckIcon,
+    WrenchScrewdriverIcon,
+    UserGroupIcon,
+    PaperAirplaneIcon,
+    MagnifyingGlassIcon,
     XMarkIcon,
+    ChatBubbleLeftEllipsisIcon,
+    CpuChipIcon,
+    ClockIcon,
+    EyeIcon,
+    PencilSquareIcon,
 } from '@heroicons/react/24/outline';
 import { WRG_STEP_TIMING, type WrgStepTiming } from '../../config/profiles/wrg-demo';
+import ApprovalChainModal, { type Approver } from '../modals/ApprovalChainModal';
 
-// ─── Estimator avatar ────────────────────────────────────────────────────────
-const ESTIMATOR_PHOTO = 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=80&h=80&fit=crop&crop=face';
+// ─── Expert avatar ───────────────────────────────────────────────────────────
+const EXPERT_PHOTO = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface AgentVis { name: string; detail: string; visible: boolean; done: boolean }
 
 type PipelinePhase = 'idle' | 'notification' | 'processing' | 'breathing' | 'revealed';
-type ReviewPhase = 'idle' | 'notification' | 'reviewing';
-type WriteBackPhase = 'idle' | 'summary' | 'submitting' | 'done';
+type ConfirmSubPhase = 'confirm' | 'staging' | 'staging-pipeline' | 'staging-revealed' | 'markup' | 'markup-pipeline' | 'markup-revealed';
+type ReviewPhase = 'reviewing' | 'releasing' | 'done';
+
+// Designer avatar for escalation micro-interaction
+const DESIGNER_PHOTO = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face';
 
 // ─── JPS Line Item Data (real project) ───────────────────────────────────────
 
@@ -92,59 +108,143 @@ const DELIVERY_BASE_MIN = JPS_LINE_ITEMS.reduce((s, i) => s + i.qty * i.delivery
 const SECTION_G_CHARGES = 171 + 114; // trip + hospital
 const DELIVERY_TOTAL_COST = Math.round((DELIVERY_BASE_MIN * DELIVERY_RATE_PER_MIN + SECTION_G_CHARGES) * 100) / 100;
 const COMBINED_TOTAL = Math.round((INSTALL_TOTAL_COST + DELIVERY_TOTAL_COST) * 100) / 100;
+const REVIEWED_INSTALL_COST = Math.round(INSTALL_TOTAL_COST * 0.97 * 100) / 100;
+const REVIEWED_COMBINED = Math.round((REVIEWED_INSTALL_COST + DELIVERY_TOTAL_COST) * 100) / 100;
 const FLAGGED_COUNT = JPS_LINE_ITEMS.filter(i => i.flagged).length;
 
-// ─── Site constraints ────────────────────────────────────────────────────────
-const SITE_CONSTRAINTS = [
-    { label: 'Hospital Delivery', active: true },
-    { label: 'Elevator Access', active: true },
-    { label: 'Dock Available', active: true },
-    { label: 'Stairs', active: false },
-    { label: 'Above 2nd Floor', active: false },
-    { label: 'Overtime', active: false },
+// ─── Cost Calculation Agents (w2.1) ──────────────────────────────────────────
+
+const COST_AGENTS: AgentVis[] = [
+    { name: 'DocumentLoader', detail: 'Loading Spec Narrative, Selection Doc, Site Reqs', visible: false, done: false },
+    { name: 'RateCardEngine', detail: 'Applying Strata rate cards — delivery + installation', visible: false, done: false },
+    { name: 'ScopeLimitChecker', detail: 'Validating scope limits and thresholds', visible: false, done: false },
+    { name: 'SiteConditionAnalyzer', detail: 'Hospital site: restricted hours, freight elevator', visible: false, done: false },
+    { name: 'DualCostEngine', detail: 'Running delivery + installation calculations in parallel', visible: false, done: false },
+];
+
+// ─── Business Rules (w2.1 revealed) ─────────────────────────────────────────
+
+const BUSINESS_RULES = [
+    {
+        icon: 'rate', label: 'Rate Cards Applied', badge: 'STANDARD', badgeColor: 'green',
+        items: [
+            'Installation rate: $57/hr (Strata Healthcare Standard)',
+            'Delivery base rate: $0.95/min (TX metro)',
+            'KD assembly surcharge: +15% on KD items',
+        ],
+    },
+    {
+        icon: 'scope', label: 'Scope Limits Checked', badge: '1 ALERT', badgeColor: 'amber',
+        items: [
+            '119 KD Task Chairs exceed 50-chair Delivery Pricer limit',
+            'Custom booth — no standard category match → manual rate',
+            'Serpentine lounge — custom 12-seat → manual rate',
+        ],
+    },
+    {
+        icon: 'site', label: 'Site Conditions', badge: 'HOSPITAL', badgeColor: 'amber',
+        items: [
+            'Hospital delivery: restricted hours (6PM–6AM only)',
+            'Freight elevator required — max load 3,000 lbs',
+            'Section G trip charge: $171 + hospital surcharge: $114',
+        ],
+    },
+    {
+        icon: 'confidence', label: 'Confidence Analysis', badge: `${FLAGGED_COUNT} FLAGGED`, badgeColor: 'amber',
+        items: [
+            `${JPS_LINE_ITEMS.filter(i => i.confidence === 'HIGH').length} items HIGH confidence (>85% score)`,
+            `${FLAGGED_COUNT} items LOW confidence — require expert review`,
+            'Categories: bariatric, pediatric, custom assembly',
+        ],
+    },
+];
+
+// ─── Expert Adjustments (w2.1 revealed) ──────────────────────────────────────
+
+const EXPERT_ADJUSTMENTS = [
+    { id: 1, item: 'Healthcare Bariatric Chairs', issue: 'No standard rate match', aiSuggestion: 'Apply Lounge Chair rate ($0.33/hr) + 20% bariatric handling surcharge', impact: '+$4.95', requiresDesigner: false },
+    { id: 2, item: 'Custom 8-Seat Carolina Booth', issue: 'Custom product — no category', aiSuggestion: 'Use Custom Assembly rate: 3.0 hrs base + 1.5 hrs site fit', impact: '+$256.50', requiresDesigner: false },
+    { id: 3, item: 'OFS Coact Serpentine 12-Seat', issue: 'No standard ganged lounge rate — requires designer verification of connection hardware and modular configuration', aiSuggestion: 'Apply modular assembly: 12.0 hrs + 2.0 hrs alignment/leveling', impact: '+$114.00', requiresDesigner: true },
 ];
 
 // ─── Agent Pipelines ─────────────────────────────────────────────────────────
 
-const TRIGGER_AGENTS: AgentVis[] = [
-    { name: 'CoreMonitor', detail: 'New estimation request detected — JPS Health Center', visible: false, done: false },
-    { name: 'RequestParser', detail: 'Parsing site constraints: hospital, elevator, dock', visible: false, done: false },
-    { name: 'EstimatorRouter', detail: 'Assigning to Mark Williams — Dallas office', visible: false, done: false },
-    { name: 'JobCreator', detail: 'Estimation job #JPS-116719 created in CORE', visible: false, done: false },
+// ─── Approval Chain (for w2.4 — Dealer review) ─────────────────────────────
+const ESTIMATION_APPROVERS: Approver[] = [
+    { name: 'David Park', role: 'Strata Expert', status: 'approved' },
+    { name: 'Alex Rivera', role: 'Designer', status: 'approved' },
+    { name: 'Sara Chen', role: 'Dealer — WR', status: 'current' },
+    { name: 'Jordan Park', role: 'Product Owner', status: 'pending' },
 ];
 
-const EXTRACTION_AGENTS: AgentVis[] = [
-    { name: 'AttachmentPuller', detail: 'Downloading 2 PDFs from CORE attachment store', visible: false, done: false },
-    { name: 'PdfExtractor', detail: 'Claude Sonnet 4 reading JPS_116719.pdf — 24 items', visible: false, done: false },
-    { name: 'StructuredParser', detail: 'Extracting Qty, Product, Code, KD per row', visible: false, done: false },
-    { name: 'DataValidator', detail: '1 quantity mismatch flagged — Selection vs Spec', visible: false, done: false },
+// ─── Designer Verification Agents (w2.2) ────────────────────────────────────
+const DESIGNER_VERIFY_AGENTS: AgentVis[] = [
+    { name: 'HardwareScanner', detail: 'Checking connection hardware specs for 12-seat serpentine', visible: false, done: false },
+    { name: 'ModularValidator', detail: 'Verifying modular configuration — bracket compatibility', visible: false, done: false },
+    { name: 'AssemblyEstimator', detail: 'Calculating assembly time: 12 × 1.0 hr + alignment', visible: false, done: false },
 ];
 
-const MAPPING_AGENTS: AgentVis[] = [
-    { name: 'CategoryMapper', detail: 'Cross-referencing 24 products against rate tables', visible: false, done: false },
-    { name: 'LookupEngine', detail: '20 items auto-mapped at HIGH confidence (>=90%)', visible: false, done: false },
-    { name: 'LlmFallback', detail: '4 unrecognized items processed via AI inference', visible: false, done: false },
-    { name: 'ConfidenceScorer', detail: '20 HIGH + 4 LOW — flagging for estimator', visible: false, done: false },
+// ─── w2.2 Module definitions (interactive verification) ─────────────────────
+const VERIFICATION_MODULES = [
+    { id: 'estimation', label: 'Expert Estimation Summary', detail: `Delivery $${DELIVERY_TOTAL_COST.toLocaleString()} · Installation $${REVIEWED_INSTALL_COST.toLocaleString()} · Combined $${REVIEWED_COMBINED.toLocaleString()}` },
+    { id: 'scope', label: 'Project Scope', detail: 'JPS Health Center — Healthcare · 24 items · Restricted hours, freight elevator' },
+    { id: 'escalated', label: 'Escalated Item — OFS Serpentine', detail: 'Custom 12-seat ganged lounge — no standard rate, confidence 58%' },
+    { id: 'verification', label: 'Assembly Verification', detail: 'Modular assembly confirmed — brackets compatible, 14.0 hrs total' },
+    { id: 'rate', label: 'Applied Rate', detail: '12.0 hrs + 2.0 hrs alignment = 14.0 hrs × $57/hr = $798.00' },
 ];
 
-const DRAFT_AGENTS: AgentVis[] = [
-    { name: 'DraftBuilder', detail: 'Assembling combined estimate — install + delivery', visible: false, done: false },
-    { name: 'ExceptionLogger', detail: `${FLAGGED_COUNT} items flagged — scope limit + LOW confidence`, visible: false, done: false },
-    { name: 'AuditTrailGenerator', detail: 'Creating decision record for 24 items', visible: false, done: false },
-    { name: 'EstimatorNotifier', detail: 'Sending draft review link to Mark Williams', visible: false, done: false },
+// ─── w2.3: Sub-phase agent pipelines (from WrgAssembly) ─────────────────────
+const STAGING_AGENTS: AgentVis[] = [
+    { name: 'CoreMonitor', detail: 'Approved estimate $15,378 detected', visible: false, done: false },
+    { name: 'SalesNotifier', detail: 'Salesperson emailed', visible: false, done: false },
+    { name: 'ProductQuoteRetriever', detail: 'MillerKnoll $287,450 list', visible: false, done: false },
+    { name: 'QuoteStager', detail: 'Both components staged', visible: false, done: false },
+];
+const MARKUP_AGENTS: AgentVis[] = [
+    { name: 'DiscountResolver', detail: 'JPS contract 38% off list', visible: false, done: false },
+    { name: 'LaborMarkupEngine', detail: '15% margin → $17,685', visible: false, done: false },
+    { name: 'FreightCalculator', detail: '$6,234 freight', visible: false, done: false },
+    { name: 'ProposalAssembler', detail: 'Total $202,138', visible: false, done: false },
+];
+const RELEASE_AGENTS: AgentVis[] = [
+    { name: 'CoreWriter', detail: 'Proposal written to CORE', visible: false, done: false },
+    { name: 'ProposalAttacher', detail: 'PDF + audit trail attached', visible: false, done: false },
+    { name: 'ClientNotifier', detail: 'JPS Health Network notified', visible: false, done: false },
 ];
 
-const WRITEBACK_AGENTS: AgentVis[] = [
-    { name: 'CoreWriter', detail: `Submitting approved estimate — $${COMBINED_TOTAL.toLocaleString()} lump sum`, visible: false, done: false },
-    { name: 'AuditAttacher', detail: 'Uploading audit trail PDF with estimator overrides', visible: false, done: false },
-    { name: 'SalespersonNotifier', detail: 'CORE emailing salesperson — service request complete', visible: false, done: false },
+// ─── Pricing waterfall (from WrgAssembly) ───────────────────────────────────
+const WATERFALL_ROWS: Array<{ label: string; value: string; type: 'base' | 'discount' | 'subtotal' | 'addon' | 'total' }> = [
+    { label: 'Product List', value: '$287,450', type: 'base' },
+    { label: 'JPS Contract -38%', value: '', type: 'discount' },
+    { label: 'Product Net', value: '$178,219', type: 'subtotal' },
+    { label: 'Labor (15% margin)', value: '$17,685', type: 'addon' },
+    { label: 'Freight', value: '$6,234', type: 'addon' },
+    { label: 'Total', value: '$202,138', type: 'total' },
 ];
+const waterfallStyles: Record<string, string> = {
+    base: 'p-3 bg-card border-b border-border',
+    discount: 'px-3 py-1.5 bg-muted/30 border-b border-border',
+    subtotal: 'p-3 bg-green-50 dark:bg-green-500/5 border-b border-border',
+    addon: 'p-3 bg-blue-50 dark:bg-blue-500/5 border-b border-border',
+    total: 'p-4 bg-brand-50 dark:bg-brand-500/5 border-2 border-brand-400 dark:border-brand-500/40',
+};
+const waterfallTextStyles: Record<string, string> = {
+    base: 'text-foreground',
+    discount: 'text-green-700 dark:text-green-400',
+    subtotal: 'text-green-700 dark:text-green-400',
+    addon: 'text-blue-700 dark:text-blue-400',
+    total: 'text-foreground',
+};
 
-// ─── Pagination ──────────────────────────────────────────────────────────────
-const ITEMS_PER_PAGE = 8;
+// ─── Dealer picker options (for w2.3 send) ──────────────────────────────────
+const DEALER_OPTIONS = [
+    { name: 'Sara Chen', role: 'Account Manager', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face' },
+    { name: 'Jordan Park', role: 'Product Owner', photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face' },
+    { name: 'Michael Torres', role: 'Regional Director', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face' },
+];
 
 // ═════════════════════════════════════════════════════════════════════════════
-// DEFAULT EXPORT: WrgLaborEstimation (steps w2.1-w2.5)
+// DEFAULT EXPORT: WrgLaborEstimation (steps w2.1, w2.2, w2.3)
 // ═════════════════════════════════════════════════════════════════════════════
 
 export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: string) => void }) {
@@ -163,105 +263,146 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
         };
     }, []);
 
-    // Timing helper
     const tp = (id: string): WrgStepTiming => WRG_STEP_TIMING[id] || WRG_STEP_TIMING['w2.1'];
 
-    // ── Phase state ──────────────────────────────────────────────────────────
+    // ── Phase state (shared by w2.1 and w2.2) ─────────────────────────────
     const [phase, setPhase] = useState<PipelinePhase>('idle');
     const [agents, setAgents] = useState<AgentVis[]>([]);
     const [progress, setProgress] = useState(0);
-    const [itemsRevealed, setItemsRevealed] = useState(0);
-    const [tablePage, setTablePage] = useState(0);
 
-    // w2.4 specific: dual engine
+    // w2.1: dual engine progress
     const [deliveryProgress, setDeliveryProgress] = useState(0);
     const [installProgress, setInstallProgress] = useState(0);
     const [showScopeAlert, setShowScopeAlert] = useState(false);
+    const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set(['rate', 'scope', 'site', 'confidence']));
+    const [adjustments, setAdjustments] = useState<Record<number, boolean>>({});
 
-    // w2.5 specific: email
-    const [emailSent, setEmailSent] = useState(false);
+    // w2.1: only non-designer items can be adjusted here
+    const expertOnlyAdjusted = EXPERT_ADJUSTMENTS.filter(a => !a.requiresDesigner).every(a => adjustments[a.id]);
+
+    // w2.2: designer module validation
+    const [designerVerified, setDesignerVerified] = useState(false);
+    const [moduleValidated, setModuleValidated] = useState<Record<string, boolean>>({});
+    const [moduleComments, setModuleComments] = useState<Record<string, string>>({});
+    const [commentingModule, setCommentingModule] = useState<string | null>(null);
+    const [commentDraft, setCommentDraft] = useState('');
+    const [searchFilter, setSearchFilter] = useState('');
+    const [showPdfPreview, setShowPdfPreview] = useState(false);
+    const allModulesValidated = VERIFICATION_MODULES.every(m => moduleValidated[m.id]);
+
+    // w2.3: sub-phase state
+    const [subPhase, setSubPhase] = useState<ConfirmSubPhase>('confirm');
+    const [subAgents, setSubAgents] = useState<AgentVis[]>([]);
+    const [subProgress, setSubProgress] = useState(0);
+    const [showDealerPicker, setShowDealerPicker] = useState(false);
+    const [selectedDealer, setSelectedDealer] = useState<string | null>(null);
+    const [sendingToDealer, setSendingToDealer] = useState(false);
 
     // ── Step init effect ─────────────────────────────────────────────────────
     useEffect(() => {
-        if (!stepId.startsWith('w2.') || stepId === 'w2.6' || stepId === 'w2.7') return;
+        if (stepId === 'w2.1') {
+            setPhase('idle');
+            setProgress(0);
+            setDeliveryProgress(0);
+            setInstallProgress(0);
+            setShowScopeAlert(false);
+            setExpandedRules(new Set(['rate', 'scope', 'site', 'confidence']));
+            setAdjustments({});
 
-        // Reset all state
-        setPhase('idle');
-        setProgress(0);
-        setItemsRevealed(0);
-        setTablePage(0);
-        setDeliveryProgress(0);
-        setInstallProgress(0);
-        setShowScopeAlert(false);
-        setEmailSent(false);
+            setAgents(COST_AGENTS.map(a => ({ ...a, visible: false, done: false })));
 
-        // Set agents for this step
-        const agentMap: Record<string, AgentVis[]> = {
-            'w2.1': TRIGGER_AGENTS,
-            'w2.2': EXTRACTION_AGENTS,
-            'w2.3': MAPPING_AGENTS,
-            'w2.5': DRAFT_AGENTS,
-        };
-        if (agentMap[stepId]) {
-            setAgents(agentMap[stepId].map(a => ({ ...a, visible: false, done: false })));
+            const t = tp(stepId);
+            const timer = setTimeout(pauseAware(() => setPhase('notification')), t.notifDelay);
+            return () => clearTimeout(timer);
         }
 
-        // Start notification phase
-        const t = tp(stepId);
-        const timers: ReturnType<typeof setTimeout>[] = [];
-        timers.push(setTimeout(pauseAware(() => setPhase('notification')), t.notifDelay));
+        if (stepId === 'w2.2') {
+            setPhase('idle');
+            setProgress(0);
+            setDesignerVerified(false);
+            setModuleValidated({});
+            setModuleComments({});
+            setCommentingModule(null);
+            setCommentDraft('');
+            setSearchFilter('');
+            setShowPdfPreview(false);
+            setAgents(DESIGNER_VERIFY_AGENTS.map(a => ({ ...a, visible: false, done: false })));
 
-        return () => timers.forEach(clearTimeout);
+            const timer = setTimeout(pauseAware(() => setPhase('notification')), 1000);
+            return () => clearTimeout(timer);
+        }
+
+        if (stepId === 'w2.3') {
+            setSubPhase('confirm');
+            setSubAgents([]);
+            setSubProgress(0);
+            setShowDealerPicker(false);
+            setSelectedDealer(null);
+            setSendingToDealer(false);
+        }
     }, [stepId, pauseAware]);
 
-    // ── Notification → processing ────────────────────────────────────────────
+    // ── Notification → processing ─────────────────────────────────────────
+    // w2.1: waits for button click. w2.2: auto-advance after delay.
     useEffect(() => {
         if (phase !== 'notification') return;
-        const t = tp(stepId);
-        const timer = setTimeout(pauseAware(() => setPhase('processing')), t.notifDuration);
-        return () => clearTimeout(timer);
+        if (stepId === 'w2.1') return; // w2.1 waits for button click
+        if (stepId === 'w2.2') {
+            const timer = setTimeout(pauseAware(() => setPhase('processing')), 3000);
+            return () => clearTimeout(timer);
+        }
     }, [phase, stepId, pauseAware]);
 
-    // ── Processing: stagger agents + progress bar ────────────────────────────
+    // ── Processing: agent pipeline ────────────────────────────────────────
     useEffect(() => {
         if (phase !== 'processing') return;
-        const t = tp(stepId);
         const timers: ReturnType<typeof setTimeout>[] = [];
 
-        if (stepId === 'w2.4') {
-            // Dual engine — parallel progress bars
-            timers.push(setTimeout(pauseAware(() => setShowScopeAlert(true)), 500));
-
-            // Delivery engine progress
-            for (let i = 1; i <= 20; i++) {
-                timers.push(setTimeout(pauseAware(() => setDeliveryProgress(i * 5)), 200 * i + 1500));
-            }
-            // Install engine progress (slightly offset)
-            for (let i = 1; i <= 20; i++) {
-                timers.push(setTimeout(pauseAware(() => setInstallProgress(i * 5)), 200 * i + 1800));
-            }
-            timers.push(setTimeout(pauseAware(() => setPhase('breathing')), 6000));
-        } else {
-            // Agent pipeline stagger
+        if (stepId === 'w2.1') {
             setAgents(prev => prev.map(a => ({ ...a, visible: false, done: false })));
             setProgress(0);
-
-            const totalAgents = agents.length || 4;
+            const totalAgents = COST_AGENTS.length;
+            const stagger = 900;
+            const doneDelay = 600;
             for (let i = 0; i < totalAgents; i++) {
                 timers.push(setTimeout(pauseAware(() => {
                     setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a));
-                }), t.agentStagger * i));
+                }), stagger * i));
                 timers.push(setTimeout(pauseAware(() => {
                     setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a));
-                }), t.agentStagger * i + t.agentDone));
+                }), stagger * i + doneDelay));
             }
-
-            // Progress bar
-            const totalTime = t.agentStagger * totalAgents + t.agentDone;
+            timers.push(setTimeout(pauseAware(() => setShowScopeAlert(true)), stagger * 2));
+            const dualStart = stagger * 4;
+            for (let i = 1; i <= 20; i++) {
+                timers.push(setTimeout(pauseAware(() => setDeliveryProgress(i * 5)), dualStart + 100 * i));
+                timers.push(setTimeout(pauseAware(() => setInstallProgress(i * 5)), dualStart + 100 * i + 200));
+            }
+            const totalTime = stagger * totalAgents + doneDelay + 2200;
             for (let i = 1; i <= 20; i++) {
                 timers.push(setTimeout(pauseAware(() => setProgress(i * 5)), (totalTime / 20) * i));
             }
+            timers.push(setTimeout(pauseAware(() => setPhase('breathing')), totalTime + 200));
+        }
 
+        if (stepId === 'w2.2') {
+            setAgents(prev => prev.map(a => ({ ...a, visible: false, done: false })));
+            setProgress(0);
+            const totalAgents = DESIGNER_VERIFY_AGENTS.length;
+            const stagger = 1000;
+            const doneDelay = 700;
+            for (let i = 0; i < totalAgents; i++) {
+                timers.push(setTimeout(pauseAware(() => {
+                    setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a));
+                }), stagger * i));
+                timers.push(setTimeout(pauseAware(() => {
+                    setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a));
+                }), stagger * i + doneDelay));
+            }
+            const totalTime = stagger * totalAgents + doneDelay;
+            for (let i = 1; i <= 20; i++) {
+                timers.push(setTimeout(pauseAware(() => setProgress(i * 5)), (totalTime / 20) * i));
+            }
             timers.push(setTimeout(pauseAware(() => setPhase('breathing')), totalTime + 200));
         }
 
@@ -271,42 +412,33 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
     // ── Breathing → revealed ─────────────────────────────────────────────────
     useEffect(() => {
         if (phase !== 'breathing') return;
-        const t = tp(stepId);
-        const timer = setTimeout(pauseAware(() => setPhase('revealed')), t.breathing);
+        const breathing = stepId === 'w2.2' ? 800 : tp(stepId).breathing;
+        const timer = setTimeout(pauseAware(() => setPhase('revealed')), breathing);
         return () => clearTimeout(timer);
     }, [phase, stepId, pauseAware]);
 
-    // ── Revealed: stagger table rows + auto-advance ──────────────────────────
+    // ── w2.3 sub-phase pipelines ─────────────────────────────────────────────
     useEffect(() => {
-        if (phase !== 'revealed') return;
-        const t = tp(stepId);
+        if (stepId !== 'w2.3') return;
+        if (subPhase !== 'staging-pipeline' && subPhase !== 'markup-pipeline') return;
+        const agentList = subPhase === 'staging-pipeline' ? STAGING_AGENTS : MARKUP_AGENTS;
+        setSubAgents(agentList.map(a => ({ ...a, visible: false, done: false })));
+        setSubProgress(0);
         const timers: ReturnType<typeof setTimeout>[] = [];
-
-        // Stagger table rows for w2.2 and w2.3
-        if (stepId === 'w2.2' || stepId === 'w2.3') {
-            for (let i = 0; i < Math.min(ITEMS_PER_PAGE, JPS_LINE_ITEMS.length); i++) {
-                timers.push(setTimeout(pauseAware(() => setItemsRevealed(i + 1)), 100 * i));
-            }
+        const stagger = 800;
+        const doneDelay = 500;
+        for (let i = 0; i < agentList.length; i++) {
+            timers.push(setTimeout(pauseAware(() => setSubAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a))), stagger * i));
+            timers.push(setTimeout(pauseAware(() => setSubAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a))), stagger * i + doneDelay));
         }
-
-        // w2.5: email animation
-        if (stepId === 'w2.5') {
-            timers.push(setTimeout(pauseAware(() => setEmailSent(true)), 800));
-        }
-
-        // Auto-advance
-        if (t.resultsDur > 0) {
-            const delay = stepId === 'w2.2' || stepId === 'w2.3'
-                ? Math.min(ITEMS_PER_PAGE, JPS_LINE_ITEMS.length) * 100 + t.resultsDur
-                : t.resultsDur;
-            timers.push(setTimeout(pauseAware(() => nextStep()), delay));
-        }
-
+        const totalTime = stagger * agentList.length + doneDelay;
+        for (let i = 1; i <= 20; i++) timers.push(setTimeout(pauseAware(() => setSubProgress(i * 5)), (totalTime / 20) * i));
+        const nextPhase: ConfirmSubPhase = subPhase === 'staging-pipeline' ? 'staging-revealed' : 'markup-revealed';
+        timers.push(setTimeout(pauseAware(() => setSubPhase(nextPhase)), totalTime + 800));
         return () => timers.forEach(clearTimeout);
-    }, [phase, stepId, pauseAware, nextStep]);
+    }, [stepId, subPhase, pauseAware]);
 
-    // ── Render helpers ───────────────────────────────────────────────────────
-
+    // ── Render helper: agent pipeline ────────────────────────────────────────
     const renderAgentPipeline = (agts: AgentVis[], prog: number, label: string) => (
         <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
             <div className="flex items-center gap-2 mb-3">
@@ -319,10 +451,7 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
             <div className="space-y-1.5">
                 {agts.map(agent => (
                     <div key={agent.name} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${agent.visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
-                        {agent.done ?
-                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> :
-                            <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />
-                        }
+                        {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />}
                         <span className={agent.done ? 'text-foreground' : 'text-indigo-600 dark:text-indigo-400'}>{agent.name}</span>
                         <span className="text-muted-foreground">{agent.detail}</span>
                     </div>
@@ -331,232 +460,53 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
         </div>
     );
 
-    const renderNotification = (icon: React.ReactNode, title: string, detail: string) => (
-        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10">
-                <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-brand-500 text-zinc-900">{icon}</div>
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-foreground">{title}</span>
-                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Just now</span>
-                        </div>
-                        <div className="text-[11px] text-muted-foreground mt-1">{detail}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    const confidenceBadge = (item: JpsLineItem) => (
-        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-            item.confidence === 'HIGH'
-                ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/30'
-                : 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30'
-        }`}>
-            {item.confidence} {item.confidenceScore}%
-        </span>
-    );
-
-    // Pagination
-    const totalPages = Math.ceil(JPS_LINE_ITEMS.length / ITEMS_PER_PAGE);
-    const pagedItems = JPS_LINE_ITEMS.slice(tablePage * ITEMS_PER_PAGE, (tablePage + 1) * ITEMS_PER_PAGE);
-
     // ═════════════════════════════════════════════════════════════════════════
     // RENDER
     // ═════════════════════════════════════════════════════════════════════════
 
-    if (!stepId.startsWith('w2.') || stepId === 'w2.6' || stepId === 'w2.7') return null;
+    if (!['w2.1', 'w2.2', 'w2.3'].includes(stepId)) return null;
 
     return (
         <div className="p-6 space-y-4 max-w-5xl mx-auto">
 
-            {/* ── w2.1: CORE Trigger & Assignment ── */}
+            {/* ── w2.1: Dual-Engine Cost Calculation ── */}
             {stepId === 'w2.1' && (
                 <>
-                    {phase === 'notification' && renderNotification(
-                        <ServerIcon className="h-5 w-5" />,
-                        'New Estimation Request — JPS Health Center for Women',
-                        'CORE detected an estimating-ready request. Parsing project scope, site constraints, and estimator assignment.'
-                    )}
-
+                    {/* Interactive notification — button to start */}
                     {phase === 'notification' && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-300">
-                            <div className="p-4 rounded-xl bg-card border border-border">
-                                <div className="text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-wider">Site Constraints</div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {SITE_CONSTRAINTS.map(c => (
-                                        <div key={c.label} className={`flex items-center gap-2 text-[11px] px-2.5 py-1.5 rounded-lg border ${
-                                            c.active
-                                                ? 'bg-green-50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400'
-                                                : 'bg-muted/30 border-border text-muted-foreground'
-                                        }`}>
-                                            {c.active
-                                                ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                                : <XMarkIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                            }
-                                            {c.label}
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-500 space-y-3">
+                            <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-brand-500 text-zinc-900">
+                                        <CalculatorIcon className="h-5 w-5" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-foreground">Cost Estimation — JPS Health Center</span>
+                                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">Ready</span>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {phase === 'processing' && renderAgentPipeline(agents, progress, 'CORE Trigger & Assignment')}
-
-                    {phase === 'revealed' && (
-                        <div className="animate-in fade-in duration-500">
-                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                                    <span className="text-xs font-bold text-foreground">Job Created — JPS-116719</span>
-                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-200 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-bold">ASSIGNED</span>
-                                </div>
-                                <div className="text-[11px] text-muted-foreground mt-1">
-                                    Assigned to Mark Williams (Dallas) — downloading PDFs from CORE...
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
-
-            {/* ── w2.2: PDF Ingestion & Data Extraction ── */}
-            {stepId === 'w2.2' && (
-                <>
-                    {phase === 'notification' && renderNotification(
-                        <DocumentTextIcon className="h-5 w-5" />,
-                        'Extracting Data from JPS_116719.pdf',
-                        'Claude Sonnet 4 reading Product Selection Sheet — identifying line items, quantities, and KD flags.'
-                    )}
-
-                    {phase === 'processing' && renderAgentPipeline(agents, progress, 'PDF Ingestion & Data Extraction')}
-
-                    {(phase === 'breathing' || phase === 'revealed') && (
-                        <div className="animate-in fade-in duration-500 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                                    <span className="text-xs font-bold text-foreground">24 Line Items Extracted</span>
-                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold">1 MISMATCH</span>
-                                </div>
-                                {totalPages > 1 && (
-                                    <div className="flex items-center gap-1.5">
-                                        <button onClick={() => setTablePage(p => Math.max(0, p - 1))} disabled={tablePage === 0} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronUpIcon className="h-3 w-3" /></button>
-                                        <span className="text-[9px] text-muted-foreground">{tablePage + 1}/{totalPages}</span>
-                                        <button onClick={() => setTablePage(p => Math.min(totalPages - 1, p + 1))} disabled={tablePage >= totalPages - 1} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronDownIcon className="h-3 w-3" /></button>
+                                        <p className="text-[11px] text-muted-foreground mt-1">
+                                            5 estimation agents will analyze documents, apply rate cards, check scope limits, and run dual-engine calculation for delivery + installation costs.
+                                        </p>
+                                        <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground">
+                                            <span className="flex items-center gap-1"><DocumentTextIcon className="h-3 w-3" /> 3 docs</span>
+                                            <span className="flex items-center gap-1"><CubeIcon className="h-3 w-3" /> 24 items</span>
+                                            <span className="flex items-center gap-1"><ShieldCheckIcon className="h-3 w-3" /> 4 rule sets</span>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-                            <div className="rounded-lg border border-border overflow-hidden">
-                                <table className="w-full text-[10px]">
-                                    <thead>
-                                        <tr className="bg-muted/50 border-b border-border">
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground w-8">#</th>
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground w-10">Qty</th>
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground">Product</th>
-                                            <th className="px-2 py-1.5 text-center font-bold text-muted-foreground w-10">KD</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {pagedItems.map((item, idx) => (
-                                            <tr
-                                                key={item.id}
-                                                className={`border-b border-border/50 transition-all duration-200 ${
-                                                    phase === 'revealed' && idx < itemsRevealed ? 'opacity-100' : phase === 'breathing' ? 'opacity-100' : 'opacity-0'
-                                                }`}
-                                            >
-                                                <td className="px-2 py-1.5 text-muted-foreground">{item.id}</td>
-                                                <td className="px-2 py-1.5 font-medium">{item.qty}</td>
-                                                <td className="px-2 py-1.5">{item.product}</td>
-                                                <td className="px-2 py-1.5 text-center">
-                                                    {item.kd && <span className="text-[8px] px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 font-bold">KD</span>}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
-
-            {/* ── w2.3: Product-to-Category Mapping ── */}
-            {stepId === 'w2.3' && (
-                <>
-                    {phase === 'notification' && renderNotification(
-                        <CpuChipIcon className="h-5 w-5" />,
-                        'Mapping Products to Labor Categories',
-                        'Cross-referencing 24 products against delivery and installation rate tables.'
-                    )}
-
-                    {phase === 'processing' && renderAgentPipeline(agents, progress, 'Product-to-Category Mapping')}
-
-                    {(phase === 'breathing' || phase === 'revealed') && (
-                        <div className="animate-in fade-in duration-500 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                                    <span className="text-xs font-bold text-foreground">Category Mapping Complete</span>
-                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-200 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-bold">20 HIGH</span>
-                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold">4 LOW</span>
                                 </div>
-                                {totalPages > 1 && (
-                                    <div className="flex items-center gap-1.5">
-                                        <button onClick={() => setTablePage(p => Math.max(0, p - 1))} disabled={tablePage === 0} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronUpIcon className="h-3 w-3" /></button>
-                                        <span className="text-[9px] text-muted-foreground">{tablePage + 1}/{totalPages}</span>
-                                        <button onClick={() => setTablePage(p => Math.min(totalPages - 1, p + 1))} disabled={tablePage >= totalPages - 1} className="p-0.5 rounded hover:bg-muted disabled:opacity-30"><ChevronDownIcon className="h-3 w-3" /></button>
-                                    </div>
-                                )}
                             </div>
-                            <div className="rounded-lg border border-border overflow-hidden">
-                                <table className="w-full text-[10px]">
-                                    <thead>
-                                        <tr className="bg-muted/50 border-b border-border">
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground w-8">#</th>
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground w-10">Qty</th>
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground">Product</th>
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground">Delivery Cat.</th>
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground">Install Cat.</th>
-                                            <th className="px-2 py-1.5 text-center font-bold text-muted-foreground w-20">Confidence</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {pagedItems.map((item, idx) => (
-                                            <tr
-                                                key={item.id}
-                                                className={`border-b border-border/50 transition-all duration-200 ${
-                                                    item.flagged ? 'bg-amber-50/50 dark:bg-amber-500/5' : ''
-                                                } ${phase === 'revealed' && idx < itemsRevealed ? 'opacity-100' : phase === 'breathing' ? 'opacity-100' : 'opacity-0'}`}
-                                            >
-                                                <td className="px-2 py-1.5 text-muted-foreground">{item.id}</td>
-                                                <td className="px-2 py-1.5 font-medium">{item.qty}</td>
-                                                <td className="px-2 py-1.5">{item.product}</td>
-                                                <td className="px-2 py-1.5 text-muted-foreground">{item.deliveryCategory}</td>
-                                                <td className="px-2 py-1.5 text-muted-foreground">{item.installCategory}</td>
-                                                <td className="px-2 py-1.5 text-center">{confidenceBadge(item)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <button
+                                onClick={() => setPhase('processing')}
+                                className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                <CalculatorIcon className="h-4 w-4" />
+                                Start Estimation Agents
+                            </button>
                         </div>
                     )}
-                </>
-            )}
 
-            {/* ── w2.4: Dual-Engine Calculation ── */}
-            {stepId === 'w2.4' && (
-                <>
-                    {phase === 'notification' && renderNotification(
-                        <CalculatorIcon className="h-5 w-5" />,
-                        'Running Dual-Engine Calculation',
-                        'Delivery pricing and installation costing engines running in parallel.'
-                    )}
-
-                    {/* Scope limit alert */}
+                    {/* Scope alert — shows during processing + revealed */}
                     {(phase === 'processing' || phase === 'breathing' || phase === 'revealed') && showScopeAlert && (
                         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-300 dark:border-amber-500/30 flex items-start gap-2">
@@ -564,131 +514,954 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
                                 <div>
                                     <span className="text-[11px] font-bold text-amber-800 dark:text-amber-400">Scope Limit Alert</span>
                                     <p className="text-[10px] text-amber-700 dark:text-amber-400/80 mt-0.5">
-                                        119 KD Task Chairs exceed the 50-chair Delivery Pricer limit. Estimator override will be required.
+                                        119 KD Task Chairs exceed the 50-chair Delivery Pricer limit. Expert override will be required.
                                     </p>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Dual engine progress */}
+                    {/* Processing — agent pipeline + document panel + dual engines */}
                     {phase === 'processing' && (
-                        <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-300">
-                            {/* Delivery Engine */}
-                            <div className="p-4 rounded-xl bg-card border border-blue-200 dark:border-blue-500/20">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                    <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Delivery Engine</span>
+                        <div className="space-y-3 animate-in fade-in duration-300">
+                            {/* Agent pipeline */}
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AIAgentAvatar />
+                                    <span className="text-xs font-bold text-foreground">Estimation Pipeline</span>
                                 </div>
-                                <div className="h-1.5 rounded-full bg-blue-100 dark:bg-blue-500/10 overflow-hidden mb-2">
-                                    <div className="h-full rounded-full bg-blue-500 transition-all duration-300" style={{ width: `${deliveryProgress}%` }} />
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-brand-400 transition-all duration-[3500ms] ease-linear" style={{ width: `${progress}%` }} />
                                 </div>
-                                <div className="text-[10px] text-muted-foreground space-y-0.5">
-                                    <p>Base: {DELIVERY_BASE_MIN} min × $0.95/min</p>
-                                    <p>Section G: +${SECTION_G_CHARGES} (trip + hospital)</p>
-                                    {deliveryProgress >= 100 && <p className="font-bold text-blue-700 dark:text-blue-400">Total: ${DELIVERY_TOTAL_COST.toLocaleString()}</p>}
-                                </div>
-                            </div>
-                            {/* Installation Engine */}
-                            <div className="p-4 rounded-xl bg-card border border-green-200 dark:border-green-500/20">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                                    <span className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Installation Engine</span>
-                                </div>
-                                <div className="h-1.5 rounded-full bg-green-100 dark:bg-green-500/10 overflow-hidden mb-2">
-                                    <div className="h-full rounded-full bg-green-500 transition-all duration-300" style={{ width: `${installProgress}%` }} />
-                                </div>
-                                <div className="text-[10px] text-muted-foreground space-y-0.5">
-                                    <p>{INSTALL_TOTAL_HRS.toFixed(2)} man-hours × ${INSTALL_RATE}/hr</p>
-                                    {installProgress >= 100 && <p className="font-bold text-green-700 dark:text-green-400">Total: ${INSTALL_TOTAL_COST.toLocaleString()}</p>}
+                                <div className="space-y-1.5">
+                                    {agents.map(agent => (
+                                        <div key={agent.name} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${agent.visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                                            {agent.done ?
+                                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> :
+                                                <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />
+                                            }
+                                            <span className={agent.done ? 'text-foreground' : 'text-indigo-600 dark:text-indigo-400'}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        </div>
-                    )}
 
-                    {(phase === 'breathing' || phase === 'revealed') && (
-                        <div className="animate-in fade-in duration-500">
+                            {/* Documents being analyzed */}
+                            <div className="p-3 rounded-xl bg-card border border-border">
+                                <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Documents Analyzed</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { name: 'Spec Narrative', pages: '12 pg', icon: <DocumentTextIcon className="h-3.5 w-3.5" /> },
+                                        { name: 'Selection Document', pages: '8 pg', icon: <ClipboardDocumentListIcon className="h-3.5 w-3.5" /> },
+                                        { name: 'Site Requirements', pages: '4 pg', icon: <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" /> },
+                                    ].map(doc => (
+                                        <div key={doc.name} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30 border border-border">
+                                            <span className="text-indigo-500">{doc.icon}</span>
+                                            <div className="min-w-0">
+                                                <div className="text-[9px] font-bold text-foreground truncate">{doc.name}</div>
+                                                <div className="text-[8px] text-muted-foreground">{doc.pages}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Dual engine progress */}
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
-                                    <div className="text-[10px] text-muted-foreground mb-1">Delivery Total</div>
-                                    <div className="text-lg font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                <div className="p-3 rounded-xl bg-card border border-blue-200 dark:border-blue-500/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <TruckIcon className="h-3.5 w-3.5 text-blue-500" />
+                                        <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Delivery</span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full bg-blue-100 dark:bg-blue-500/10 overflow-hidden mb-1.5">
+                                        <div className="h-full rounded-full bg-blue-500 transition-all duration-300" style={{ width: `${deliveryProgress}%` }} />
+                                    </div>
+                                    {deliveryProgress >= 100 && <div className="text-[10px] font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>}
                                 </div>
-                                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
-                                    <div className="text-[10px] text-muted-foreground mb-1">Installation Total</div>
-                                    <div className="text-lg font-bold text-green-700 dark:text-green-400">${INSTALL_TOTAL_COST.toLocaleString()}</div>
-                                    <div className="text-[10px] text-muted-foreground">{INSTALL_TOTAL_HRS.toFixed(2)} hrs × $57/hr</div>
+                                <div className="p-3 rounded-xl bg-card border border-green-200 dark:border-green-500/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <WrenchScrewdriverIcon className="h-3.5 w-3.5 text-green-500" />
+                                        <span className="text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Installation</span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full bg-green-100 dark:bg-green-500/10 overflow-hidden mb-1.5">
+                                        <div className="h-full rounded-full bg-green-500 transition-all duration-300" style={{ width: `${installProgress}%` }} />
+                                    </div>
+                                    {installProgress >= 100 && <div className="text-[10px] font-bold text-green-700 dark:text-green-400">${INSTALL_TOTAL_COST.toLocaleString()}</div>}
                                 </div>
                             </div>
                         </div>
                     )}
-                </>
-            )}
 
-            {/* ── w2.5: Draft Generation & Scope Check ── */}
-            {stepId === 'w2.5' && (
-                <>
-                    {phase === 'notification' && renderNotification(
-                        <DocumentArrowDownIcon className="h-5 w-5" />,
-                        'Assembling Draft Estimate',
-                        'Building line-item breakdown with exception log and audit trail.'
-                    )}
-
-                    {phase === 'processing' && renderAgentPipeline(agents, progress, 'Draft Generation & Scope Check')}
-
+                    {/* Revealed — totals + business rules + expert adjustments */}
                     {(phase === 'breathing' || phase === 'revealed') && (
                         <div className="animate-in fade-in duration-500 space-y-3">
-                            {/* Summary cards */}
-                            <div className="grid grid-cols-4 gap-2">
-                                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
-                                    <div className="text-[9px] text-muted-foreground uppercase">Installation</div>
-                                    <div className="text-sm font-bold text-green-700 dark:text-green-400">${INSTALL_TOTAL_COST.toLocaleString()}</div>
+                            {/* Cost totals */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <TruckIcon className="h-3.5 w-3.5 text-blue-500" />
+                                        <span className="text-[9px] text-muted-foreground uppercase">Delivery</span>
+                                    </div>
+                                    <div className="text-lg font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                    <div className="text-[9px] text-muted-foreground">{DELIVERY_BASE_MIN} min + Section G</div>
                                 </div>
-                                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 text-center">
-                                    <div className="text-[9px] text-muted-foreground uppercase">Delivery</div>
-                                    <div className="text-sm font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <WrenchScrewdriverIcon className="h-3.5 w-3.5 text-green-500" />
+                                        <span className="text-[9px] text-muted-foreground uppercase">Installation</span>
+                                    </div>
+                                    <div className="text-lg font-bold text-green-700 dark:text-green-400">${INSTALL_TOTAL_COST.toLocaleString()}</div>
+                                    <div className="text-[9px] text-muted-foreground">{INSTALL_TOTAL_HRS.toFixed(1)} hrs × $57/hr</div>
                                 </div>
-                                <div className="p-3 rounded-lg bg-brand-50 dark:bg-brand-500/5 border border-brand-300 dark:border-brand-500/20 text-center">
-                                    <div className="text-[9px] text-muted-foreground uppercase">Combined</div>
-                                    <div className="text-sm font-bold text-foreground">${COMBINED_TOTAL.toLocaleString()}</div>
-                                </div>
-                                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 text-center">
-                                    <div className="text-[9px] text-muted-foreground uppercase">Flagged</div>
-                                    <div className="text-sm font-bold text-amber-700 dark:text-amber-400">{FLAGGED_COUNT} items</div>
+                                <div className="p-3 rounded-xl bg-card border-2 border-foreground/20">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <CalculatorIcon className="h-3.5 w-3.5 text-foreground" />
+                                        <span className="text-[9px] text-muted-foreground uppercase">Combined</span>
+                                    </div>
+                                    <div className="text-lg font-bold text-foreground">${COMBINED_TOTAL.toLocaleString()}</div>
+                                    <div className="text-[9px] text-muted-foreground">24 items · {FLAGGED_COUNT} flagged</div>
                                 </div>
                             </div>
 
-                            {/* Email notification */}
-                            <div className={`flex items-center gap-3 p-3 rounded-lg border border-border bg-card transition-all duration-500 ${emailSent ? 'opacity-100' : 'opacity-50'}`}>
-                                <EnvelopeIcon className={`h-5 w-5 transition-all duration-700 ${emailSent ? 'text-green-500 translate-x-0' : 'text-muted-foreground -translate-x-2'}`} />
-                                <div className="flex-1">
-                                    <span className="text-[11px] font-bold text-foreground">
-                                        {emailSent ? 'Draft sent to Mark Williams' : 'Sending review notification...'}
-                                    </span>
-                                    <p className="text-[10px] text-muted-foreground">Token-based access link — no login required</p>
+                            {/* Business rules tracking */}
+                            <div className="p-4 rounded-xl bg-card border border-border">
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Estimation Criteria & Rules Applied</div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {BUSINESS_RULES.map(rule => {
+                                        const ruleIcons: Record<string, React.ReactNode> = {
+                                            rate: <CalculatorIcon className="h-4 w-4" />,
+                                            scope: <ShieldCheckIcon className="h-4 w-4" />,
+                                            site: <TruckIcon className="h-4 w-4" />,
+                                            confidence: <AdjustmentsHorizontalIcon className="h-4 w-4" />,
+                                        };
+                                        const isExpanded = expandedRules.has(rule.icon);
+                                        const colorMap: Record<string, string> = {
+                                            green: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/30',
+                                            amber: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20 dark:ring-amber-400/30',
+                                        };
+                                        return (
+                                            <div key={rule.icon} className="rounded-lg border border-border overflow-hidden">
+                                                <button
+                                                    onClick={() => setExpandedRules(prev => {
+                                                        const next = new Set(prev);
+                                                        next.has(rule.icon) ? next.delete(rule.icon) : next.add(rule.icon);
+                                                        return next;
+                                                    })}
+                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                                                >
+                                                    <span className="text-indigo-500 shrink-0">{ruleIcons[rule.icon]}</span>
+                                                    <span className="text-[10px] font-bold text-foreground flex-1">{rule.label}</span>
+                                                    <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold shrink-0 ${colorMap[rule.badgeColor]}`}>{rule.badge}</span>
+                                                    <ChevronDownIcon className={`w-3 h-3 text-muted-foreground transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
+                                                </button>
+                                                {isExpanded && (
+                                                    <div className="px-3 pb-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                        <div className="space-y-1 pt-1 border-t border-border">
+                                                            {rule.items.map((item, i) => (
+                                                                <div key={i} className="flex items-start gap-2 py-0.5">
+                                                                    <CheckCircleIcon className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />
+                                                                    <span className="text-[10px] text-foreground">{item}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                                {emailSent && <CheckCircleIcon className="h-4 w-4 text-green-500 animate-in fade-in duration-300" />}
+                            </div>
+
+                            {/* Expert Adjustments — flagged items for review */}
+                            {phase === 'revealed' && (
+                                <div className="p-4 rounded-xl bg-card border border-border">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Expert Review — Flagged Items</div>
+                                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${expertOnlyAdjusted ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20 dark:ring-amber-400/30' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20 dark:ring-amber-400/30'}`}>
+                                            {Object.values(adjustments).filter(Boolean).length}/{EXPERT_ADJUSTMENTS.filter(a => !a.requiresDesigner).length} REVIEWED
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {EXPERT_ADJUSTMENTS.map(adj => (
+                                            <div key={adj.id} className={`p-3 rounded-lg border transition-all duration-300 ${adjustments[adj.id] ? 'bg-green-50/50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20' : adj.requiresDesigner ? 'bg-sky-50/30 dark:bg-sky-500/5 border-sky-200 dark:border-sky-500/20' : 'bg-amber-50/30 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20'}`}>
+                                                <div className="flex items-start justify-between mb-2">
+                                                    <div>
+                                                        <div className="text-[11px] font-bold text-foreground">{adj.item}</div>
+                                                        <div className="text-[10px] text-muted-foreground">{adj.issue}</div>
+                                                    </div>
+                                                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">{adj.impact}</span>
+                                                </div>
+                                                {adj.requiresDesigner ? (
+                                                    /* Designer escalation — shown as pending, resolved in w2.2 */
+                                                    <div className="flex items-start gap-2 p-2 rounded-md bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200/50 dark:border-sky-500/20">
+                                                        <UserGroupIcon className="h-3.5 w-3.5 text-sky-500 shrink-0 mt-0.5" />
+                                                        <div className="flex-1">
+                                                            <div className="text-[9px] font-bold text-sky-600 dark:text-sky-400 mb-0.5">Requires Designer Verification</div>
+                                                            <div className="text-[10px] text-foreground">Connection hardware and modular configuration need designer sign-off before rate can be applied.</div>
+                                                        </div>
+                                                    </div>
+                                                ) : !adjustments[adj.id] ? (
+                                                    /* Standard expert adjustment — apply AI suggestion directly */
+                                                    <div className="flex items-start gap-2 p-2 rounded-md bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-200/50 dark:border-indigo-500/20">
+                                                        <SparklesIcon className="h-3.5 w-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                                                        <div className="flex-1">
+                                                            <div className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">AI Suggestion</div>
+                                                            <div className="text-[10px] text-foreground">{adj.aiSuggestion}</div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => setAdjustments(prev => ({ ...prev, [adj.id]: true }))}
+                                                            className="px-2.5 py-1.5 rounded-md text-[9px] font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shrink-0 flex items-center gap-1"
+                                                        >
+                                                            <CheckIcon className="h-3 w-3" />
+                                                            Apply
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 text-[10px] text-green-700 dark:text-green-400">
+                                                        <CheckCircleIcon className="h-3.5 w-3.5 shrink-0" />
+                                                        <span className="font-bold">Applied — {adj.aiSuggestion.split('.')[0]}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* "Ask Designer" button — appears when expert items resolved, triggers nextStep to w2.2 */}
+                            {phase === 'revealed' && expertOnlyAdjusted && (
+                                <button
+                                    onClick={() => nextStep()}
+                                    className="w-full py-3 rounded-xl text-xs font-bold bg-sky-600 text-white hover:bg-sky-700 shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <PaperAirplaneIcon className="h-3.5 w-3.5" />
+                                    Send to Designer for Verification
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* ── w2.2: Designer Verification Page ── */}
+            {stepId === 'w2.2' && (
+                <>
+                    {/* Notification — escalation request from Expert */}
+                    {phase === 'notification' && (
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-500 space-y-3">
+                            <div className="p-4 rounded-xl bg-sky-50 dark:bg-sky-500/10 border-2 border-sky-400 dark:border-sky-500/40 shadow-lg shadow-sky-500/10">
+                                <div className="flex items-start gap-3">
+                                    <img src={EXPERT_PHOTO} alt="" className="w-10 h-10 rounded-full ring-2 ring-sky-400" />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-foreground">Verification Request from David Park</span>
+                                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-sky-500 text-white font-bold">ESCALATED</span>
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground mt-1">
+                                            Custom OFS Coact Serpentine Lounge — 12 Seats. Need verification of connection hardware specs and modular assembly configuration before rate can be applied.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Processing — designer verification agents */}
+                    {phase === 'processing' && (
+                        <div className="space-y-3 animate-in fade-in duration-300">
+                            <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <img src={DESIGNER_PHOTO} alt="" className="w-6 h-6 rounded-full ring-1 ring-sky-400" />
+                                    <span className="text-xs font-bold text-foreground">Designer Verification</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                                    <div className="h-full rounded-full bg-sky-500 transition-all duration-[3500ms] ease-linear" style={{ width: `${progress}%` }} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    {agents.map(agent => (
+                                        <div key={agent.name} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${agent.visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                                            {agent.done ?
+                                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> :
+                                                <ArrowPathIcon className="h-3.5 w-3.5 text-sky-500 animate-spin shrink-0" />
+                                            }
+                                            <span className={agent.done ? 'text-foreground' : 'text-sky-600 dark:text-sky-400'}>{agent.name}</span>
+                                            <span className="text-muted-foreground">{agent.detail}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Revealed — Interactive module verification */}
+                    {(phase === 'breathing' || phase === 'revealed') && (
+                        <div className="animate-in fade-in duration-500 space-y-3">
+
+                            {/* Search bar */}
+                            <div className="relative">
+                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    placeholder="Search modules..."
+                                    value={searchFilter}
+                                    onChange={e => setSearchFilter(e.target.value)}
+                                    className="w-full pl-9 pr-8 py-2 rounded-lg border border-border bg-card text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+                                />
+                                {searchFilter && (
+                                    <button onClick={() => setSearchFilter('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                                        <XMarkIcon className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Validation progress */}
+                            <div className="flex items-center justify-between px-1">
+                                <span className="text-[10px] text-muted-foreground">
+                                    {Object.values(moduleValidated).filter(Boolean).length}/{VERIFICATION_MODULES.length} modules validated
+                                </span>
+                                {allModulesValidated && (
+                                    <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/30">ALL VALIDATED</span>
+                                )}
+                            </div>
+
+                            {/* Module 1: Expert Estimation Summary */}
+                            {(!searchFilter || 'expert estimation summary delivery installation combined'.includes(searchFilter.toLowerCase())) && (
+                                <div className={`p-4 rounded-xl border transition-all ${moduleValidated['estimation'] ? 'bg-green-50/30 dark:bg-green-500/5 border-green-200 dark:border-green-500/20' : 'bg-card border-border'}`}>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setModuleValidated(prev => ({ ...prev, estimation: !prev.estimation }))}
+                                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${moduleValidated['estimation'] ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground/40 hover:border-sky-400'}`}
+                                            >
+                                                {moduleValidated['estimation'] && <CheckIcon className="h-3 w-3" />}
+                                            </button>
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Expert Estimation Summary</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${moduleValidated['estimation'] ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20'}`}>
+                                                {moduleValidated['estimation'] ? 'VALIDATED' : 'PENDING'}
+                                            </span>
+                                            <button
+                                                onClick={() => { setCommentingModule(commentingModule === 'estimation' ? null : 'estimation'); setCommentDraft(moduleComments['estimation'] || ''); }}
+                                                className={`p-1 rounded hover:bg-muted transition-colors ${moduleComments['estimation'] ? 'text-sky-500' : 'text-muted-foreground'}`}
+                                            >
+                                                <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {commentingModule === 'estimation' && (
+                                        <div className="mb-3 p-2.5 rounded-lg bg-sky-50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 animate-in fade-in duration-200">
+                                            <textarea
+                                                value={commentDraft}
+                                                onChange={e => setCommentDraft(e.target.value)}
+                                                placeholder="Add comment for expert..."
+                                                className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
+                                                rows={2}
+                                            />
+                                            <div className="flex justify-end gap-2 mt-1.5">
+                                                <button onClick={() => setCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
+                                                <button onClick={() => { setModuleComments(prev => ({ ...prev, estimation: commentDraft })); setCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-sky-600 text-white font-bold">Save</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {moduleComments['estimation'] && commentingModule !== 'estimation' && (
+                                        <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200/50 dark:border-sky-500/20">
+                                            <div className="text-[9px] text-sky-600 dark:text-sky-400 font-bold mb-0.5">Designer Comment</div>
+                                            <div className="text-[10px] text-foreground">{moduleComments['estimation']}</div>
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
+                                            <div className="text-[9px] text-muted-foreground uppercase">Delivery</div>
+                                            <div className="text-sm font-black text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                            <div className="text-[9px] text-muted-foreground">{DELIVERY_BASE_MIN} min + Section G</div>
+                                        </div>
+                                        <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-500/5 border border-purple-200 dark:border-purple-500/20">
+                                            <div className="text-[9px] text-muted-foreground uppercase">Installation</div>
+                                            <div className="text-sm font-black text-purple-700 dark:text-purple-400">${REVIEWED_INSTALL_COST.toLocaleString()}</div>
+                                            <div className="text-[9px] text-muted-foreground">{INSTALL_TOTAL_HRS.toFixed(1)} hrs × $57/hr</div>
+                                        </div>
+                                        <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                            <div className="text-[9px] text-muted-foreground uppercase">Combined</div>
+                                            <div className="text-sm font-black text-green-700 dark:text-green-400">${REVIEWED_COMBINED.toLocaleString()}</div>
+                                            <div className="text-[9px] text-muted-foreground">24 items · {FLAGGED_COUNT} flagged</div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-3 space-y-1.5">
+                                        <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Expert Adjustments Applied</div>
+                                        {EXPERT_ADJUSTMENTS.filter(a => !a.requiresDesigner).map(adj => (
+                                            <div key={adj.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted/30 border border-border">
+                                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                                <span className="text-[10px] text-foreground flex-1">{adj.item}</span>
+                                                <span className="text-[9px] font-bold text-green-700 dark:text-green-400">{adj.impact}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Module 2: Project Scope */}
+                            {(!searchFilter || 'project scope healthcare hospital items rate card site conditions'.includes(searchFilter.toLowerCase())) && (
+                                <div className={`p-4 rounded-xl border transition-all ${moduleValidated['scope'] ? 'bg-green-50/30 dark:bg-green-500/5 border-green-200 dark:border-green-500/20' : 'bg-card border-border'}`}>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setModuleValidated(prev => ({ ...prev, scope: !prev.scope }))}
+                                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${moduleValidated['scope'] ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground/40 hover:border-sky-400'}`}
+                                            >
+                                                {moduleValidated['scope'] && <CheckIcon className="h-3 w-3" />}
+                                            </button>
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Project Scope</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${moduleValidated['scope'] ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20'}`}>
+                                                {moduleValidated['scope'] ? 'VALIDATED' : 'PENDING'}
+                                            </span>
+                                            <button
+                                                onClick={() => { setCommentingModule(commentingModule === 'scope' ? null : 'scope'); setCommentDraft(moduleComments['scope'] || ''); }}
+                                                className={`p-1 rounded hover:bg-muted transition-colors ${moduleComments['scope'] ? 'text-sky-500' : 'text-muted-foreground'}`}
+                                            >
+                                                <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {commentingModule === 'scope' && (
+                                        <div className="mb-3 p-2.5 rounded-lg bg-sky-50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 animate-in fade-in duration-200">
+                                            <textarea value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Add comment for expert..." className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
+                                            <div className="flex justify-end gap-2 mt-1.5">
+                                                <button onClick={() => setCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
+                                                <button onClick={() => { setModuleComments(prev => ({ ...prev, scope: commentDraft })); setCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-sky-600 text-white font-bold">Save</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {moduleComments['scope'] && commentingModule !== 'scope' && (
+                                        <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200/50 dark:border-sky-500/20">
+                                            <div className="text-[9px] text-sky-600 dark:text-sky-400 font-bold mb-0.5">Designer Comment</div>
+                                            <div className="text-[10px] text-foreground">{moduleComments['scope']}</div>
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            { k: 'Project', v: 'JPS Health Center for Women' },
+                                            { k: 'Vertical', v: 'Healthcare — Hospital' },
+                                            { k: 'Items', v: `24 products · ${FLAGGED_COUNT} flagged` },
+                                            { k: 'Rate Card', v: '$57/hr Strata HC Standard' },
+                                            { k: 'Site Conditions', v: 'Restricted hours, freight elevator' },
+                                            { k: 'Scope Alert', v: '119 KD chairs > 50 limit' },
+                                        ].map(r => (
+                                            <div key={r.k} className="flex items-start justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-muted/20 border border-border">
+                                                <span className="text-[9px] text-muted-foreground uppercase shrink-0">{r.k}</span>
+                                                <span className="text-[10px] text-foreground font-medium text-right">{r.v}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Module 3: Escalated Item */}
+                            {(!searchFilter || 'escalated item ofs serpentine custom assembly lounge'.includes(searchFilter.toLowerCase())) && (
+                                <div className={`p-4 rounded-xl border transition-all ${moduleValidated['escalated'] ? 'bg-green-50/30 dark:bg-green-500/5 border-green-200 dark:border-green-500/20' : 'bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20'}`}>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setModuleValidated(prev => ({ ...prev, escalated: !prev.escalated }))}
+                                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${moduleValidated['escalated'] ? 'bg-green-500 border-green-500 text-white' : 'border-amber-400 hover:border-sky-400'}`}
+                                            >
+                                                {moduleValidated['escalated'] && <CheckIcon className="h-3 w-3" />}
+                                            </button>
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Escalated Item — Requires Your Verification</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${moduleValidated['escalated'] ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20'}`}>
+                                                {moduleValidated['escalated'] ? 'VALIDATED' : 'PENDING'}
+                                            </span>
+                                            <button
+                                                onClick={() => { setCommentingModule(commentingModule === 'escalated' ? null : 'escalated'); setCommentDraft(moduleComments['escalated'] || ''); }}
+                                                className={`p-1 rounded hover:bg-muted transition-colors ${moduleComments['escalated'] ? 'text-sky-500' : 'text-muted-foreground'}`}
+                                            >
+                                                <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {commentingModule === 'escalated' && (
+                                        <div className="mb-3 p-2.5 rounded-lg bg-sky-50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 animate-in fade-in duration-200">
+                                            <textarea value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Add comment for expert..." className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
+                                            <div className="flex justify-end gap-2 mt-1.5">
+                                                <button onClick={() => setCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
+                                                <button onClick={() => { setModuleComments(prev => ({ ...prev, escalated: commentDraft })); setCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-sky-600 text-white font-bold">Save</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {moduleComments['escalated'] && commentingModule !== 'escalated' && (
+                                        <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200/50 dark:border-sky-500/20">
+                                            <div className="text-[9px] text-sky-600 dark:text-sky-400 font-bold mb-0.5">Designer Comment</div>
+                                            <div className="text-[10px] text-foreground">{moduleComments['escalated']}</div>
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1.5">
+                                            <div className="text-[9px] text-muted-foreground uppercase">Product</div>
+                                            <div className="text-[11px] font-bold text-foreground">OFS Coact Serpentine Lounge — 12 Seats</div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <div className="text-[9px] text-muted-foreground uppercase">Category</div>
+                                            <div className="text-[11px] font-bold text-foreground">Custom Assembly — Lounge</div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <div className="text-[9px] text-muted-foreground uppercase">Issue</div>
+                                            <div className="text-[11px] font-bold text-amber-700 dark:text-amber-400">No standard ganged lounge rate</div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <div className="text-[9px] text-muted-foreground uppercase">Confidence</div>
+                                            <div className="text-[11px] font-bold text-amber-700 dark:text-amber-400">58% — LOW</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Module 4: Assembly Verification */}
+                            {(!searchFilter || 'assembly verification modular brackets hardware'.includes(searchFilter.toLowerCase())) && (
+                                <div className={`p-4 rounded-xl border transition-all ${moduleValidated['verification'] ? 'bg-green-50/30 dark:bg-green-500/5 border-green-200 dark:border-green-500/20' : 'bg-card border-border'}`}>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setModuleValidated(prev => ({ ...prev, verification: !prev.verification }))}
+                                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${moduleValidated['verification'] ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground/40 hover:border-sky-400'}`}
+                                            >
+                                                {moduleValidated['verification'] && <CheckIcon className="h-3 w-3" />}
+                                            </button>
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Assembly Verification</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${moduleValidated['verification'] ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20'}`}>
+                                                {moduleValidated['verification'] ? 'VALIDATED' : 'PENDING'}
+                                            </span>
+                                            <button
+                                                onClick={() => { setCommentingModule(commentingModule === 'verification' ? null : 'verification'); setCommentDraft(moduleComments['verification'] || ''); }}
+                                                className={`p-1 rounded hover:bg-muted transition-colors ${moduleComments['verification'] ? 'text-sky-500' : 'text-muted-foreground'}`}
+                                            >
+                                                <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {commentingModule === 'verification' && (
+                                        <div className="mb-3 p-2.5 rounded-lg bg-sky-50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 animate-in fade-in duration-200">
+                                            <textarea value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Add comment for expert..." className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
+                                            <div className="flex justify-end gap-2 mt-1.5">
+                                                <button onClick={() => setCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
+                                                <button onClick={() => { setModuleComments(prev => ({ ...prev, verification: commentDraft })); setCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-sky-600 text-white font-bold">Save</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {moduleComments['verification'] && commentingModule !== 'verification' && (
+                                        <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200/50 dark:border-sky-500/20">
+                                            <div className="text-[9px] text-sky-600 dark:text-sky-400 font-bold mb-0.5">Designer Comment</div>
+                                            <div className="text-[10px] text-foreground">{moduleComments['verification']}</div>
+                                        </div>
+                                    )}
+                                    <div className="p-3 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                        <div className="flex items-start gap-3">
+                                            <img src={DESIGNER_PHOTO} alt="" className="w-8 h-8 rounded-full ring-2 ring-green-400" />
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[11px] font-bold text-foreground">Verification Complete</span>
+                                                    <span className="text-[8px] px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 font-bold ring-1 ring-inset ring-green-600/20">VERIFIED</span>
+                                                </div>
+                                                <div className="text-[10px] text-foreground mt-1.5 space-y-1">
+                                                    <p>Confirmed modular assembly approach — 12 seats × 1.0 hr + 2.0 hrs alignment/leveling.</p>
+                                                    <p>Connection hardware verified: standard brackets compatible. Total: <span className="font-bold">14.0 hrs</span>.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Module 5: Applied Rate */}
+                            {(!searchFilter || 'applied rate modular assembly hours cost'.includes(searchFilter.toLowerCase())) && (
+                                <div className={`p-4 rounded-xl border transition-all ${moduleValidated['rate'] ? 'bg-green-50/30 dark:bg-green-500/5 border-green-200 dark:border-green-500/20' : 'bg-card border-border'}`}>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setModuleValidated(prev => ({ ...prev, rate: !prev.rate }))}
+                                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${moduleValidated['rate'] ? 'bg-green-500 border-green-500 text-white' : 'border-muted-foreground/40 hover:border-sky-400'}`}
+                                            >
+                                                {moduleValidated['rate'] && <CheckIcon className="h-3 w-3" />}
+                                            </button>
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Applied Rate</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${moduleValidated['rate'] ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20'}`}>
+                                                {moduleValidated['rate'] ? 'VALIDATED' : 'PENDING'}
+                                            </span>
+                                            <button
+                                                onClick={() => { setCommentingModule(commentingModule === 'rate' ? null : 'rate'); setCommentDraft(moduleComments['rate'] || ''); }}
+                                                className={`p-1 rounded hover:bg-muted transition-colors ${moduleComments['rate'] ? 'text-sky-500' : 'text-muted-foreground'}`}
+                                            >
+                                                <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {commentingModule === 'rate' && (
+                                        <div className="mb-3 p-2.5 rounded-lg bg-sky-50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 animate-in fade-in duration-200">
+                                            <textarea value={commentDraft} onChange={e => setCommentDraft(e.target.value)} placeholder="Add comment for expert..." className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
+                                            <div className="flex justify-end gap-2 mt-1.5">
+                                                <button onClick={() => setCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
+                                                <button onClick={() => { setModuleComments(prev => ({ ...prev, rate: commentDraft })); setCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-sky-600 text-white font-bold">Save</button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {moduleComments['rate'] && commentingModule !== 'rate' && (
+                                        <div className="mb-3 px-2.5 py-1.5 rounded-lg bg-sky-50/50 dark:bg-sky-500/5 border border-sky-200/50 dark:border-sky-500/20">
+                                            <div className="text-[9px] text-sky-600 dark:text-sky-400 font-bold mb-0.5">Designer Comment</div>
+                                            <div className="text-[10px] text-foreground">{moduleComments['rate']}</div>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center justify-between">
+                                        <div className="text-[10px] text-foreground">Modular assembly: 12.0 hrs + 2.0 hrs alignment = <span className="font-bold">14.0 hrs × $57/hr</span></div>
+                                        <span className="text-[11px] font-bold text-green-700 dark:text-green-400">$798.00</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Preview Report + Send buttons */}
+                            {phase === 'revealed' && (
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowPdfPreview(true)}
+                                        className="flex-1 py-3 rounded-xl text-xs font-bold border border-border bg-card text-foreground hover:bg-muted transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <EyeIcon className="h-3.5 w-3.5" />
+                                        Preview Report
+                                    </button>
+                                    <button
+                                        onClick={() => { if (allModulesValidated) nextStep(); }}
+                                        disabled={!allModulesValidated}
+                                        className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${allModulesValidated ? 'bg-sky-600 text-white hover:bg-sky-700 shadow-lg shadow-sky-500/20' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
+                                    >
+                                        Send Back to Expert
+                                        <ArrowRightIcon className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* PDF Preview Modal */}
+                    {showPdfPreview && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200" onClick={() => setShowPdfPreview(false)}>
+                            <div className="w-full max-w-2xl max-h-[85vh] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                                {/* PDF header */}
+                                <div className="px-6 py-4 bg-zinc-100 dark:bg-zinc-800 border-b border-border flex items-center justify-between">
+                                    <div>
+                                        <div className="text-sm font-bold text-foreground">DESIGN VERIFICATION REPORT</div>
+                                        <div className="text-[10px] text-muted-foreground">JPS Health Center for Women — {new Date().toLocaleDateString()}</div>
+                                    </div>
+                                    <button onClick={() => setShowPdfPreview(false)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                                        <XMarkIcon className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                </div>
+                                {/* PDF body */}
+                                <div className="p-6 space-y-5 overflow-y-auto max-h-[65vh]">
+                                    {VERIFICATION_MODULES.map(mod => (
+                                        <div key={mod.id} className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="text-[11px] font-bold text-foreground uppercase tracking-wider">{mod.label}</div>
+                                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${moduleValidated[mod.id] ? 'bg-green-100 text-green-700 ring-1 ring-inset ring-green-600/20' : 'bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-600/20'}`}>
+                                                    {moduleValidated[mod.id] ? 'VALIDATED' : 'PENDING'}
+                                                </span>
+                                            </div>
+                                            <div className="text-[10px] text-muted-foreground">{mod.detail}</div>
+                                            {moduleComments[mod.id] && (
+                                                <div className="px-3 py-2 rounded-lg bg-sky-50 dark:bg-sky-500/5 border-l-2 border-sky-400">
+                                                    <div className="text-[9px] text-sky-600 font-bold mb-0.5">Designer Comment</div>
+                                                    <div className="text-[10px] text-foreground">{moduleComments[mod.id]}</div>
+                                                </div>
+                                            )}
+                                            <div className="border-b border-border" />
+                                        </div>
+                                    ))}
+                                </div>
+                                {/* PDF footer */}
+                                <div className="px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border-t border-border flex items-center justify-between">
+                                    <div className="text-[9px] text-muted-foreground">Verified by Alex Rivera, Designer — {new Date().toLocaleDateString()}</div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setShowPdfPreview(false)} className="px-4 py-2 rounded-lg text-[10px] font-bold border border-border bg-card text-foreground hover:bg-muted transition-colors">Close</button>
+                                        <button onClick={() => setShowPdfPreview(false)} className="px-4 py-2 rounded-lg text-[10px] font-bold bg-sky-600 text-white hover:bg-sky-700 transition-colors">Download PDF</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
                 </>
             )}
+
+            {/* ── w2.3: Expert Confirmation & Quote Assembly (sub-phases) ── */}
+            {stepId === 'w2.3' && (
+                <div className="animate-in fade-in duration-500 space-y-3">
+
+                    {/* ── Sub-phase A: Confirm — designer-verified modules + review ── */}
+                    {subPhase === 'confirm' && (<>
+                        {/* Designer verification summary */}
+                        <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20">
+                            <div className="flex items-center gap-2 mb-2">
+                                <img src={DESIGNER_PHOTO} alt="" className="w-6 h-6 rounded-full ring-1 ring-sky-400" />
+                                <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider">Designer Verification — All Modules Validated</span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1.5">
+                                {VERIFICATION_MODULES.map(mod => (
+                                    <div key={mod.id} className="flex items-center gap-1 px-2 py-1 rounded bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                        <CheckCircleIcon className="h-3 w-3 text-green-500 shrink-0" />
+                                        <span className="text-[8px] font-bold text-green-700 dark:text-green-400 truncate">{mod.label.split(' — ')[0]}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Cost totals */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                    <TruckIcon className="h-3.5 w-3.5 text-blue-500" />
+                                    <span className="text-[9px] text-muted-foreground uppercase">Delivery</span>
+                                </div>
+                                <div className="text-lg font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                <div className="text-[9px] text-muted-foreground">{DELIVERY_BASE_MIN} min + Section G</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                    <WrenchScrewdriverIcon className="h-3.5 w-3.5 text-green-500" />
+                                    <span className="text-[9px] text-muted-foreground uppercase">Installation</span>
+                                </div>
+                                <div className="text-lg font-bold text-green-700 dark:text-green-400">${REVIEWED_INSTALL_COST.toLocaleString()}</div>
+                                <div className="text-[9px] text-muted-foreground">{INSTALL_TOTAL_HRS.toFixed(1)} hrs × $57/hr</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-card border-2 border-foreground/20">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                    <CalculatorIcon className="h-3.5 w-3.5 text-foreground" />
+                                    <span className="text-[9px] text-muted-foreground uppercase">Combined</span>
+                                </div>
+                                <div className="text-lg font-bold text-foreground">${REVIEWED_COMBINED.toLocaleString()}</div>
+                                <div className="text-[9px] text-muted-foreground">24 items · all resolved</div>
+                            </div>
+                        </div>
+
+                        {/* All adjustments — pre-resolved */}
+                        <div className="p-4 rounded-xl bg-card border border-border">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">All Adjustments Applied</div>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded font-bold bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/30">
+                                    {EXPERT_ADJUSTMENTS.length}/{EXPERT_ADJUSTMENTS.length} COMPLETE
+                                </span>
+                            </div>
+                            <div className="space-y-2">
+                                {EXPERT_ADJUSTMENTS.map(adj => (
+                                    <div key={adj.id} className="p-3 rounded-lg border bg-green-50/50 dark:bg-green-500/5 border-green-200 dark:border-green-500/20">
+                                        <div className="flex items-start justify-between mb-1">
+                                            <div className="text-[11px] font-bold text-foreground">{adj.item}</div>
+                                            <span className="text-[10px] font-bold text-green-700 dark:text-green-400 shrink-0">{adj.impact}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[10px] text-green-700 dark:text-green-400">
+                                            <CheckCircleIcon className="h-3.5 w-3.5 shrink-0" />
+                                            <span className="font-bold">Applied — {adj.aiSuggestion.split('.')[0]}</span>
+                                            {adj.requiresDesigner && <span className="text-[8px] px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20 ring-1 ring-inset ring-sky-600/20 font-bold">DESIGNER VERIFIED</span>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Continue to quote assembly */}
+                        <button
+                            onClick={() => { setSubPhase('staging'); setTimeout(pauseAware(() => setSubPhase('staging-pipeline')), 500); }}
+                            className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
+                        >
+                            Continue to Quote Assembly
+                            <ArrowRightIcon className="h-3.5 w-3.5" />
+                        </button>
+                    </>)}
+
+                    {/* ── Sub-phase B: Staging pipeline ── */}
+                    {(subPhase === 'staging' || subPhase === 'staging-pipeline') && (<>
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-brand-500 text-zinc-900"><CheckCircleIcon className="h-5 w-5" /></div>
+                                    <div>
+                                        <div className="text-xs font-bold text-foreground">Staging for Assembly</div>
+                                        <div className="text-[11px] text-muted-foreground mt-1">Retrieving MillerKnoll product quote and staging both labor and product components for proposal assembly.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {subPhase === 'staging-pipeline' && renderAgentPipeline(subAgents, subProgress, 'Estimate Staging')}
+                    </>)}
+
+                    {/* ── Sub-phase B revealed: Labor + Product cards ── */}
+                    {subPhase === 'staging-revealed' && (
+                        <div className="animate-in fade-in duration-500 space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                    <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Labor Estimate</div>
+                                    <div className="text-xl font-bold text-green-700 dark:text-green-400">$15,378</div>
+                                    <div className="text-[10px] text-muted-foreground mt-1">Install ${REVIEWED_INSTALL_COST.toLocaleString()} + Delivery ${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                    <div className="mt-2"><span className="text-[9px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/30 font-bold">DAVID PARK &#10003;</span></div>
+                                </div>
+                                <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20">
+                                    <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider">Product Quote</div>
+                                    <div className="text-xl font-bold text-blue-700 dark:text-blue-400">$287,450</div>
+                                    <div className="mt-1"><span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 ring-1 ring-inset ring-blue-600/20 dark:ring-blue-400/30 font-bold">MILLERKNOLL LIST</span></div>
+                                    <div className="text-[10px] text-muted-foreground mt-1">24 line items</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-center gap-2 py-1">
+                                <ArrowRightIcon className="h-4 w-4 text-brand-500" />
+                                <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">Ready for Markup</span>
+                                <ArrowRightIcon className="h-4 w-4 text-brand-500" />
+                            </div>
+                            <button
+                                onClick={() => { setSubPhase('markup'); setTimeout(pauseAware(() => setSubPhase('markup-pipeline')), 500); }}
+                                className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                Continue to Markup
+                                <ArrowRightIcon className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ── Sub-phase C: Markup pipeline ── */}
+                    {(subPhase === 'markup' || subPhase === 'markup-pipeline') && (<>
+                        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-400 dark:border-brand-500/40 shadow-lg shadow-brand-500/10">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-brand-500 text-zinc-900"><CpuChipIcon className="h-5 w-5" /></div>
+                                    <div>
+                                        <div className="text-xs font-bold text-foreground">Running Markup Engine</div>
+                                        <div className="text-[11px] text-muted-foreground mt-1">Applying JPS Health Network contract discount, labor margin, and freight calculation.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {subPhase === 'markup-pipeline' && renderAgentPipeline(subAgents, subProgress, 'Markup & Proposal')}
+                    </>)}
+
+                    {/* ── Sub-phase C revealed: Pricing waterfall + send ── */}
+                    {subPhase === 'markup-revealed' && (
+                        <div className="animate-in fade-in duration-500 space-y-3">
+                            {/* Pricing waterfall */}
+                            <div className="rounded-xl border border-border overflow-hidden">
+                                {WATERFALL_ROWS.map(row => (
+                                    <div key={row.label} className={`flex items-center justify-between ${waterfallStyles[row.type]}`}>
+                                        {row.type === 'discount' ? (
+                                            <div className="flex items-center gap-2">
+                                                <ArrowDownIcon className="h-3 w-3 text-green-500" />
+                                                <span className="text-[10px] font-bold text-green-700 dark:text-green-400">{row.label}</span>
+                                            </div>
+                                        ) : (
+                                            <span className={`text-[11px] ${row.type === 'total' ? 'text-xs font-bold uppercase tracking-wider' : 'font-medium'} ${waterfallTextStyles[row.type]}`}>{row.label}</span>
+                                        )}
+                                        {row.value && (
+                                            <span className={`${row.type === 'total' ? 'text-xl font-black' : 'text-sm font-bold'} ${waterfallTextStyles[row.type]}`}>{row.value}</span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex items-center justify-center">
+                                <span className="text-[9px] px-3 py-1 rounded-full bg-muted text-muted-foreground font-bold uppercase tracking-wider">TAX EXEMPT — Government Healthcare Entity</span>
+                            </div>
+
+                            {/* Send to dealer — opens picker */}
+                            <button
+                                onClick={() => setShowDealerPicker(true)}
+                                className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
+                            >
+                                <PaperAirplaneIcon className="h-3.5 w-3.5" />
+                                Send Proposal for Dealer Review
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Dealer picker floating window */}
+                    {showDealerPicker && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200" onClick={() => setShowDealerPicker(false)}>
+                            <div className="w-full max-w-sm bg-card rounded-2xl shadow-2xl border border-border overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                                <div className="px-5 py-4 border-b border-border">
+                                    <div className="text-sm font-bold text-foreground">Select Dealer for Review</div>
+                                    <div className="text-[10px] text-muted-foreground mt-0.5">The selected dealer will review the proposal, generate the approval chain, and assemble the final quote.</div>
+                                </div>
+                                <div className="p-4 space-y-2">
+                                    {DEALER_OPTIONS.map(dealer => (
+                                        <button
+                                            key={dealer.name}
+                                            onClick={() => setSelectedDealer(dealer.name)}
+                                            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${selectedDealer === dealer.name ? 'border-brand-400 bg-brand-50 dark:bg-brand-500/10 ring-2 ring-brand-400/30' : 'border-border hover:bg-muted/50'}`}
+                                        >
+                                            <img src={dealer.photo} alt="" className="w-10 h-10 rounded-full ring-1 ring-border" />
+                                            <div className="flex-1">
+                                                <div className="text-xs font-bold text-foreground">{dealer.name}</div>
+                                                <div className="text-[10px] text-muted-foreground">{dealer.role}</div>
+                                            </div>
+                                            {selectedDealer === dealer.name && (
+                                                <CheckCircleIcon className="h-5 w-5 text-brand-500 shrink-0" />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="px-5 py-3 border-t border-border flex gap-2">
+                                    <button onClick={() => setShowDealerPicker(false)} className="flex-1 py-2.5 rounded-xl text-xs font-bold border border-border bg-card text-foreground hover:bg-muted transition-colors">Cancel</button>
+                                    <button
+                                        onClick={() => {
+                                            if (!selectedDealer) return;
+                                            setSendingToDealer(true);
+                                            setShowDealerPicker(false);
+                                            setTimeout(pauseAware(() => nextStep()), 1500);
+                                        }}
+                                        disabled={!selectedDealer}
+                                        className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${selectedDealer ? 'bg-brand-400 text-zinc-900 hover:bg-brand-300' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
+                                    >
+                                        <PaperAirplaneIcon className="h-3.5 w-3.5" />
+                                        Send to {selectedDealer || 'Dealer'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Sending toast */}
+                    {sendingToDealer && (
+                        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <div className="px-4 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xl flex items-center gap-2">
+                                <CheckCircleIcon className="h-4 w-4 text-green-400 dark:text-green-600" />
+                                <span className="text-xs font-bold">Proposal sent to {selectedDealer} for review</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
         </div>
     );
 }
 
 
 // ═════════════════════════════════════════════════════════════════════════════
-// NAMED EXPORT: WrgEstimatorReview (steps w2.6-w2.7)
-// Rendered inside Dashboard.tsx follow_up tab
+// NAMED EXPORT: WrgEstimatorReview (step w2.4 — Dealer Review + Approval + Release)
+// Rendered inside Dashboard.tsx
 // ═════════════════════════════════════════════════════════════════════════════
+
+// Review module definitions for dealer-level review
+const REVIEW_MODULES = [
+    { id: 'pricing', label: 'Pricing Summary', detail: 'Product $178K · Labor $17.7K · Freight $6.2K · Total $202,138' },
+    { id: 'labor', label: 'Labor Estimation', detail: `Delivery $${DELIVERY_TOTAL_COST.toLocaleString()} + Installation $${REVIEWED_INSTALL_COST.toLocaleString()} = $${REVIEWED_COMBINED.toLocaleString()}` },
+    { id: 'adjustments', label: 'Expert Adjustments', detail: `${EXPERT_ADJUSTMENTS.length} items reviewed — all resolved, designer-verified` },
+    { id: 'timeline', label: 'Delivery Timeline', detail: 'Standard 8-10 weeks, Custom OFS 12 weeks' },
+];
 
 export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) => void }) {
     const { currentStep, nextStep, isPaused } = useDemo();
 
-    if (currentStep.id !== 'w2.6' && currentStep.id !== 'w2.7') return null;
-
-    const isD26 = currentStep.id === 'w2.6';
-    const isD27 = currentStep.id === 'w2.7';
+    if (currentStep.id !== 'w2.4') return null;
 
     // pauseAware
     const isPausedRef = useRef(isPaused);
@@ -696,366 +1469,362 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
     const pauseAware = useCallback((fn: () => void) => {
         return () => {
             if (!isPausedRef.current) { fn(); return; }
-            const poll = setInterval(() => {
-                if (!isPausedRef.current) { clearInterval(poll); fn(); }
-            }, 200);
+            const poll = setInterval(() => { if (!isPausedRef.current) { clearInterval(poll); fn(); } }, 200);
         };
     }, []);
 
-    // ── w2.6 state ───────────────────────────────────────────────────────────
-    const [reviewPhase, setReviewPhase] = useState<ReviewPhase>('idle');
-    const [resolvedItems, setResolvedItems] = useState<Record<number, boolean>>({});
-    const [expandedItem, setExpandedItem] = useState<number | null>(null);
-    const [tablePage, setTablePage] = useState(0);
-
-    // ── w2.7 state ───────────────────────────────────────────────────────────
-    const [wbPhase, setWbPhase] = useState<WriteBackPhase>('idle');
-    const [wbAgents, setWbAgents] = useState<AgentVis[]>(WRITEBACK_AGENTS.map(a => ({ ...a, visible: false, done: false })));
-    const [wbProgress, setWbProgress] = useState(0);
+    const [reviewPhase, setReviewPhase] = useState<ReviewPhase>('reviewing');
+    const [showApprovalChain, setShowApprovalChain] = useState(false);
+    const [dealerModuleComments, setDealerModuleComments] = useState<Record<string, string>>({});
+    const [dealerCommentingModule, setDealerCommentingModule] = useState<string | null>(null);
+    const [dealerCommentDraft, setDealerCommentDraft] = useState('');
+    const [showQuotePreview, setShowQuotePreview] = useState(false);
+    const [clarificationSent, setClarificationSent] = useState(false);
+    const [clarificationConfirmed, setClarificationConfirmed] = useState(false);
+    const [releaseAgents, setReleaseAgents] = useState<AgentVis[]>(RELEASE_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+    const [releaseProgress, setReleaseProgress] = useState(0);
     const [showToast, setShowToast] = useState(false);
 
-    // ── Init effects ─────────────────────────────────────────────────────────
+    // ── Release pipeline ──────────────────────────────────────────────────
     useEffect(() => {
-        if (isD26) {
-            setReviewPhase('idle');
-            setResolvedItems({});
-            setExpandedItem(null);
-            setTablePage(0);
-            const timer = setTimeout(pauseAware(() => setReviewPhase('notification')), 1500);
-            return () => clearTimeout(timer);
-        }
-    }, [isD26, pauseAware]);
-
-    useEffect(() => {
-        if (isD27) {
-            setWbPhase('summary');
-            setWbAgents(WRITEBACK_AGENTS.map(a => ({ ...a, visible: false, done: false })));
-            setWbProgress(0);
-            setShowToast(false);
-        }
-    }, [isD27]);
-
-    // ── Resolve helpers ──────────────────────────────────────────────────────
-    const flaggedItems = JPS_LINE_ITEMS.filter(i => i.flagged);
-    const resolvedCount = Object.values(resolvedItems).filter(Boolean).length;
-    const allResolved = resolvedCount >= flaggedItems.length;
-    const nonFlaggedCount = JPS_LINE_ITEMS.length - flaggedItems.length;
-
-    const handleResolve = (id: number) => {
-        setResolvedItems(prev => ({ ...prev, [id]: true }));
-        setExpandedItem(null);
-    };
-
-    // ── w2.7: Submit to CORE ─────────────────────────────────────────────────
-    const handleSubmit = () => {
-        setWbPhase('submitting');
-        setWbAgents(WRITEBACK_AGENTS.map(a => ({ ...a, visible: false, done: false })));
-        setWbProgress(0);
-
+        if (reviewPhase !== 'releasing') return;
+        setReleaseAgents(RELEASE_AGENTS.map(a => ({ ...a, visible: false, done: false })));
+        setReleaseProgress(0);
         const timers: ReturnType<typeof setTimeout>[] = [];
-        // Stagger agents
-        for (let i = 0; i < WRITEBACK_AGENTS.length; i++) {
-            timers.push(setTimeout(pauseAware(() => {
-                setWbAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a));
-            }), 800 * i));
-            timers.push(setTimeout(pauseAware(() => {
-                setWbAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a));
-            }), 800 * i + 500));
+        for (let i = 0; i < RELEASE_AGENTS.length; i++) {
+            timers.push(setTimeout(pauseAware(() => setReleaseAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a))), 800 * i));
+            timers.push(setTimeout(pauseAware(() => setReleaseAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a))), 800 * i + 500));
         }
-        // Progress
-        for (let i = 1; i <= 20; i++) {
-            timers.push(setTimeout(pauseAware(() => setWbProgress(i * 5)), 150 * i));
-        }
-        // Done
-        timers.push(setTimeout(pauseAware(() => {
-            setWbPhase('done');
-            setShowToast(true);
-        }), 3000));
-        timers.push(setTimeout(pauseAware(() => setShowToast(false)), 6000));
-    };
-
-    // ── Pagination ───────────────────────────────────────────────────────────
-    const totalPages = Math.ceil(JPS_LINE_ITEMS.length / ITEMS_PER_PAGE);
-    const pagedItems = JPS_LINE_ITEMS.slice(tablePage * ITEMS_PER_PAGE, (tablePage + 1) * ITEMS_PER_PAGE);
-
-    // ── Agent pipeline helper ────────────────────────────────────────────────
-    const renderAgentPipeline = (agts: AgentVis[], prog: number, label: string) => (
-        <div className="p-4 rounded-xl bg-card border border-border shadow-sm animate-in fade-in duration-300">
-            <div className="flex items-center gap-2 mb-3">
-                <AIAgentAvatar />
-                <span className="text-xs font-bold text-foreground">{label}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
-                <div className="h-full rounded-full bg-brand-400 transition-all duration-[3500ms] ease-linear" style={{ width: `${prog}%` }} />
-            </div>
-            <div className="space-y-1.5">
-                {agts.map(agent => (
-                    <div key={agent.name} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${agent.visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
-                        {agent.done ?
-                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> :
-                            <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />
-                        }
-                        <span className={agent.done ? 'text-foreground' : 'text-indigo-600 dark:text-indigo-400'}>{agent.name}</span>
-                        <span className="text-muted-foreground">{agent.detail}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+        for (let i = 1; i <= 20; i++) timers.push(setTimeout(pauseAware(() => setReleaseProgress(i * 5)), 150 * i));
+        timers.push(setTimeout(pauseAware(() => { setReviewPhase('done'); setShowToast(true); }), 3000));
+        timers.push(setTimeout(pauseAware(() => setShowToast(false)), 9000));
+        return () => timers.forEach(clearTimeout);
+    }, [reviewPhase, pauseAware]);
 
     return (
         <div className="space-y-4">
-            {/* ── w2.6: Estimator Review ── */}
-            {isD26 && (
-                <>
-                    {/* Notification */}
-                    {reviewPhase === 'notification' && (
-                        <button onClick={() => setReviewPhase('reviewing')} className="w-full text-left animate-in fade-in slide-in-from-top-4 duration-500">
-                            <div className="p-5 bg-brand-50 dark:bg-brand-500/10 border-l-4 border-brand-400 rounded-r-xl">
-                                <div className="flex items-start gap-3">
-                                    <img src={ESTIMATOR_PHOTO} alt="" className="w-10 h-10 rounded-full ring-2 ring-brand-400" />
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-foreground">Draft Estimate Ready for Review</span>
-                                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-500 text-zinc-900 font-bold">DRAFT</span>
-                                        </div>
-                                        <p className="text-[11px] text-muted-foreground mt-1">
-                                            JPS Health Center for Women — 24 line items, {FLAGGED_COUNT} flagged for attention
-                                        </p>
-                                        <p className="text-[10px] text-brand-600 dark:text-brand-400 mt-2 flex items-center gap-1">Click to review <ArrowRightIcon className="h-3 w-3" /></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </button>
-                    )}
 
-                    {/* Full review table */}
-                    {reviewPhase === 'reviewing' && (
-                        <div className="animate-in fade-in duration-500 space-y-3">
-                            {/* Header */}
-                            <div className="flex items-center justify-between">
+            {/* ── Reviewing phase ── */}
+            {reviewPhase === 'reviewing' && (
+                <div className="animate-in fade-in duration-500 space-y-3">
+                    {/* Header */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-foreground">Proposal Review — JPS Health Center</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300 font-bold ring-1 ring-inset ring-brand-600/20">$202,138</span>
+                    </div>
+
+                    {/* Pricing summary grid */}
+                    <div className="grid grid-cols-4 gap-2">
+                        {[
+                            { label: 'Product', val: '$178,219', color: 'text-foreground' },
+                            { label: 'Labor', val: '$17,685', color: 'text-green-700 dark:text-green-400' },
+                            { label: 'Freight', val: '$6,234', color: 'text-blue-700 dark:text-blue-400' },
+                        ].map(c => (
+                            <div key={c.label} className="p-3 rounded-lg bg-card border border-border text-center">
+                                <div className="text-[9px] text-muted-foreground uppercase">{c.label}</div>
+                                <div className={`text-sm font-bold ${c.color}`}>{c.val}</div>
+                            </div>
+                        ))}
+                        <div className="p-3 rounded-lg bg-brand-50 dark:bg-brand-500/5 border-2 border-brand-400 dark:border-brand-500/40 text-center">
+                            <div className="text-[9px] text-muted-foreground uppercase">Total</div>
+                            <div className="text-sm font-bold text-foreground">$202,138</div>
+                        </div>
+                    </div>
+
+                    {/* AI Draft vs Expert comparison */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
+                            <div className="text-[9px] text-muted-foreground uppercase mb-1">AI Draft</div>
+                            <div className="text-lg font-bold text-foreground">${COMBINED_TOTAL.toLocaleString()}</div>
+                            <div className="text-[10px] text-muted-foreground">24 items, {FLAGGED_COUNT} flagged</div>
+                        </div>
+                        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
+                            <div className="text-[9px] text-muted-foreground uppercase mb-1">After Expert Review</div>
+                            <div className="text-lg font-bold text-green-700 dark:text-green-400">${REVIEWED_COMBINED.toLocaleString()}</div>
+                            <div className="text-[10px] text-muted-foreground">24 approved, {FLAGGED_COUNT} adjustments</div>
+                        </div>
+                    </div>
+
+                    {/* Review modules with comment capability */}
+                    {REVIEW_MODULES.map(mod => (
+                        <div key={mod.id} className="p-3 rounded-xl bg-card border border-border">
+                            <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-bold text-foreground">JPS Health Center — Draft Estimate</span>
-                                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold">
-                                        {FLAGGED_COUNT - resolvedCount} PENDING
-                                    </span>
+                                    <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                    <span className="text-[10px] font-bold text-foreground">{mod.label}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] text-muted-foreground">
-                                        {nonFlaggedCount + resolvedCount}/{JPS_LINE_ITEMS.length} approved
-                                    </span>
-                                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-                                        <div className="h-full rounded-full bg-green-500 transition-all duration-300" style={{ width: `${((nonFlaggedCount + resolvedCount) / JPS_LINE_ITEMS.length) * 100}%` }} />
+                                <button
+                                    onClick={() => { setDealerCommentingModule(dealerCommentingModule === mod.id ? null : mod.id); setDealerCommentDraft(dealerModuleComments[mod.id] || ''); }}
+                                    className={`p-1 rounded hover:bg-muted transition-colors ${dealerModuleComments[mod.id] ? 'text-brand-500' : 'text-muted-foreground'}`}
+                                >
+                                    <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">{mod.detail}</div>
+                            {dealerCommentingModule === mod.id && (
+                                <div className="mt-2 p-2.5 rounded-lg bg-brand-50 dark:bg-brand-500/5 border border-brand-200 dark:border-brand-500/20 animate-in fade-in duration-200">
+                                    <textarea value={dealerCommentDraft} onChange={e => setDealerCommentDraft(e.target.value)} placeholder="Add observation..." className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
+                                    <div className="flex justify-end gap-2 mt-1.5">
+                                        <button onClick={() => setDealerCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
+                                        <button onClick={() => { setDealerModuleComments(prev => ({ ...prev, [mod.id]: dealerCommentDraft })); setDealerCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-brand-400 text-zinc-900 font-bold">Save</button>
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Summary row */}
-                            <div className="grid grid-cols-3 gap-2">
-                                <div className="p-2 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
-                                    <div className="text-[9px] text-muted-foreground">Installation</div>
-                                    <div className="text-xs font-bold text-green-700 dark:text-green-400">${INSTALL_TOTAL_COST.toLocaleString()}</div>
-                                </div>
-                                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 text-center">
-                                    <div className="text-[9px] text-muted-foreground">Delivery</div>
-                                    <div className="text-xs font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
-                                </div>
-                                <div className="p-2 rounded-lg bg-card border border-border text-center">
-                                    <div className="text-[9px] text-muted-foreground">Combined</div>
-                                    <div className="text-xs font-bold text-foreground">${COMBINED_TOTAL.toLocaleString()}</div>
-                                </div>
-                            </div>
-
-                            {/* Table */}
-                            <div className="rounded-lg border border-border overflow-hidden">
-                                <table className="w-full text-[10px]">
-                                    <thead>
-                                        <tr className="bg-muted/50 border-b border-border">
-                                            <th className="w-6" />
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground w-8">#</th>
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground w-10">Qty</th>
-                                            <th className="px-2 py-1.5 text-left font-bold text-muted-foreground">Product</th>
-                                            <th className="px-2 py-1.5 text-right font-bold text-muted-foreground w-14">Hrs/u</th>
-                                            <th className="px-2 py-1.5 text-right font-bold text-muted-foreground w-16">Total $</th>
-                                            <th className="px-2 py-1.5 text-center font-bold text-muted-foreground w-20">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {pagedItems.map(item => {
-                                            const isExpanded = expandedItem === item.id;
-                                            const isResolved = resolvedItems[item.id];
-                                            return (
-                                                <React.Fragment key={item.id}>
-                                                    <tr
-                                                        className={`border-b border-border/50 cursor-pointer hover:bg-muted/30 transition-colors ${
-                                                            item.flagged && !isResolved ? 'bg-amber-50/50 dark:bg-amber-500/5 border-l-2 border-l-amber-400' : ''
-                                                        }`}
-                                                        onClick={() => item.flagged ? setExpandedItem(isExpanded ? null : item.id) : undefined}
-                                                    >
-                                                        <td className="px-1 py-1.5 text-center">
-                                                            {item.flagged && (
-                                                                isExpanded
-                                                                    ? <ChevronUpIcon className="h-3 w-3 text-muted-foreground" />
-                                                                    : <ChevronDownIcon className="h-3 w-3 text-muted-foreground" />
-                                                            )}
-                                                        </td>
-                                                        <td className="px-2 py-1.5 text-muted-foreground">{item.id}</td>
-                                                        <td className="px-2 py-1.5 font-medium">{item.qty}</td>
-                                                        <td className="px-2 py-1.5">{item.product}</td>
-                                                        <td className="px-2 py-1.5 text-right font-mono">{item.installHrsPerItem.toFixed(2)}</td>
-                                                        <td className="px-2 py-1.5 text-right font-mono">${(item.qty * item.installHrsPerItem * INSTALL_RATE).toFixed(0)}</td>
-                                                        <td className="px-2 py-1.5 text-center">
-                                                            {item.flagged && !isResolved ? (
-                                                                <span className="text-[8px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 font-bold">REVIEW</span>
-                                                            ) : (
-                                                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 mx-auto" />
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                    {/* Expanded override panel */}
-                                                    {isExpanded && item.flagged && !isResolved && (
-                                                        <tr className="border-b border-border/50">
-                                                            <td colSpan={7} className="p-0">
-                                                                <div className="px-4 py-3 bg-amber-50/30 dark:bg-amber-500/5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                                                    <div className="flex items-start justify-between gap-4">
-                                                                        <div className="flex-1 space-y-1">
-                                                                            <div className="text-[10px] font-bold text-amber-800 dark:text-amber-400">
-                                                                                <ExclamationTriangleIcon className="h-3 w-3 inline mr-1" />
-                                                                                {item.flagReason}
-                                                                            </div>
-                                                                            <div className="text-[10px] text-muted-foreground">
-                                                                                AI mapped to: <span className="font-medium">{item.installCategory}</span> ({item.installHrsPerItem} hrs/unit)
-                                                                            </div>
-                                                                            <div className="text-[10px] text-muted-foreground">
-                                                                                Confidence: <span className={`font-bold ${item.confidence === 'LOW' ? 'text-amber-600' : 'text-green-600'}`}>{item.confidenceScore}%</span>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex gap-2">
-                                                                            <button
-                                                                                onClick={() => handleResolve(item.id)}
-                                                                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center gap-1"
-                                                                            >
-                                                                                <CheckIcon className="h-3 w-3" /> Approve
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => handleResolve(item.id)}
-                                                                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold bg-muted text-foreground hover:bg-muted/80 transition-colors flex items-center gap-1"
-                                                                            >
-                                                                                <PencilSquareIcon className="h-3 w-3" /> Override
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </React.Fragment>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <div className="flex items-center justify-center gap-2">
-                                    <button onClick={() => setTablePage(p => Math.max(0, p - 1))} disabled={tablePage === 0} className="p-1 rounded hover:bg-muted disabled:opacity-30"><ChevronUpIcon className="h-3.5 w-3.5" /></button>
-                                    <span className="text-[10px] text-muted-foreground font-medium">Page {tablePage + 1} of {totalPages}</span>
-                                    <button onClick={() => setTablePage(p => Math.min(totalPages - 1, p + 1))} disabled={tablePage >= totalPages - 1} className="p-1 rounded hover:bg-muted disabled:opacity-30"><ChevronDownIcon className="h-3.5 w-3.5" /></button>
                                 </div>
                             )}
-
-                            {/* CTA */}
-                            <button
-                                onClick={() => { if (allResolved) nextStep(); }}
-                                disabled={!allResolved}
-                                className={`w-full py-3 rounded-xl text-xs font-bold transition-all ${
-                                    allResolved
-                                        ? 'bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20'
-                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
-                                }`}
-                            >
-                                {allResolved ? 'Approve & Submit to CORE' : `Resolve ${FLAGGED_COUNT - resolvedCount} remaining items to continue`}
-                            </button>
-                        </div>
-                    )}
-                </>
-            )}
-
-            {/* ── w2.7: Approval & CORE Write-Back ── */}
-            {isD27 && (
-                <>
-                    {/* Summary comparison */}
-                    {(wbPhase === 'summary' || wbPhase === 'done') && (
-                        <div className="animate-in fade-in duration-500 space-y-3">
-                            <div className="text-xs font-bold text-foreground">AI Draft vs Estimator Review</div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
-                                    <div className="text-[9px] text-muted-foreground uppercase mb-1">AI Draft</div>
-                                    <div className="text-lg font-bold text-foreground">${COMBINED_TOTAL.toLocaleString()}</div>
-                                    <div className="text-[10px] text-muted-foreground">24 items, {FLAGGED_COUNT} flagged</div>
+                            {dealerModuleComments[mod.id] && dealerCommentingModule !== mod.id && (
+                                <div className="mt-2 px-2.5 py-1.5 rounded-lg bg-brand-50/50 dark:bg-brand-500/5 border border-brand-200/50 dark:border-brand-500/20">
+                                    <div className="text-[9px] text-brand-600 dark:text-brand-400 font-bold mb-0.5">Dealer Observation</div>
+                                    <div className="text-[10px] text-foreground">{dealerModuleComments[mod.id]}</div>
                                 </div>
-                                <div className="p-3 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
-                                    <div className="text-[9px] text-muted-foreground uppercase mb-1">After Review</div>
-                                    <div className="text-lg font-bold text-green-700 dark:text-green-400">${COMBINED_TOTAL.toLocaleString()}</div>
-                                    <div className="text-[10px] text-muted-foreground">24 approved, {FLAGGED_COUNT} overrides</div>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Delivery timeline */}
+                    <div className="p-3 rounded-lg bg-card border border-border">
+                        <div className="text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-wider">Delivery Timeline</div>
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                                <ClockIcon className="h-3 w-3 text-green-500 shrink-0" />
+                                <span className="text-[10px] text-foreground">Standard items: <span className="font-bold">8-10 weeks</span></span>
+                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                    <div className="h-full rounded-full bg-green-500" style={{ width: '70%' }} />
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <ClockIcon className="h-3 w-3 text-amber-500 shrink-0" />
+                                <span className="text-[10px] text-foreground">Custom OFS Serpentine: <span className="font-bold">12 weeks</span></span>
+                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                    <div className="h-full rounded-full bg-amber-500" style={{ width: '85%' }} />
                                 </div>
                             </div>
                         </div>
-                    )}
+                    </div>
 
-                    {/* Submit button */}
-                    {wbPhase === 'summary' && (
+                    {/* Expert clarification simulation */}
+                    {!clarificationSent && (
                         <button
-                            onClick={handleSubmit}
-                            className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all"
+                            onClick={() => setClarificationSent(true)}
+                            className="w-full py-2.5 rounded-xl text-xs font-bold border border-sky-300 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/5 text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-500/10 transition-all flex items-center justify-center gap-2"
                         >
-                            Submit to CORE
+                            <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                            Request Clarification from Expert
                         </button>
                     )}
-
-                    {/* Write-back animation */}
-                    {wbPhase === 'submitting' && renderAgentPipeline(wbAgents, wbProgress, 'CORE Write-Back')}
-
-                    {/* Done state */}
-                    {wbPhase === 'done' && (
-                        <div className="animate-in fade-in scale-in-95 duration-500 space-y-3">
-                            {/* Time saved card */}
-                            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <div className="text-xs font-bold text-foreground">Estimate Submitted to CORE</div>
-                                        <div className="text-[10px] text-muted-foreground mt-1">
-                                            90s automated + 4 min review = <span className="font-bold text-foreground">4m 32s total</span>
-                                        </div>
-                                        <div className="text-[10px] text-muted-foreground">
-                                            Manual estimate: <span className="font-bold text-foreground">4-8 hours</span>
-                                        </div>
+                    {clarificationSent && !clarificationConfirmed && (
+                        <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className="flex items-start gap-3">
+                                <img src={EXPERT_PHOTO} alt="" className="w-8 h-8 rounded-full ring-2 ring-sky-400" />
+                                <div className="flex-1">
+                                    <div className="text-[11px] font-bold text-foreground">Response from David Park</div>
+                                    <div className="text-[10px] text-muted-foreground mt-1">
+                                        The bariatric chair rate includes a 20% handling surcharge based on Strata HC Standard guidelines. The OFS Serpentine assembly time was verified by the designer — 14.0 hrs total confirmed.
                                     </div>
-                                    <div className="px-4 py-2 rounded-xl bg-brand-400 text-zinc-900">
-                                        <div className="text-2xl font-black">85%</div>
-                                        <div className="text-[9px] font-bold uppercase tracking-wider">Time Saved</div>
+                                    <button
+                                        onClick={() => setClarificationConfirmed(true)}
+                                        className="mt-2 px-3 py-1.5 rounded-lg text-[9px] font-bold bg-sky-600 text-white hover:bg-sky-700 transition-colors flex items-center gap-1"
+                                    >
+                                        <CheckIcon className="h-3 w-3" />
+                                        Clarification Received
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {clarificationConfirmed && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                            <span className="text-[10px] font-bold text-green-700 dark:text-green-400">Expert clarification confirmed — all items resolved</span>
+                        </div>
+                    )}
+
+                    {/* Review activity log */}
+                    <div className="p-3 rounded-xl bg-card border border-border">
+                        <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Review Activity</div>
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-[10px]">
+                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                <span className="text-foreground"><span className="font-bold">David Park</span> (Expert) — reviewed 24 items, applied {FLAGGED_COUNT} adjustments</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px]">
+                                <CheckCircleIcon className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+                                <span className="text-foreground"><span className="font-bold">Alex Rivera</span> (Designer) — verified 5 modules, custom assembly confirmed</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px]">
+                                <SparklesIcon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                                <span className="text-foreground">AI: rate cards, scope limits, site conditions, markup engine validated</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action buttons: Preview + Approve */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowQuotePreview(true)}
+                            className="flex-1 py-3 rounded-xl text-xs font-bold border border-border bg-card text-foreground hover:bg-muted transition-all flex items-center justify-center gap-2"
+                        >
+                            <EyeIcon className="h-3.5 w-3.5" />
+                            Preview Quote
+                        </button>
+                        <button
+                            onClick={() => setShowApprovalChain(true)}
+                            className="flex-1 py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
+                        >
+                            Approve & Release
+                            <ArrowRightIcon className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Releasing phase — agent pipeline ── */}
+            {reviewPhase === 'releasing' && (
+                <div className="animate-in fade-in duration-500 space-y-3">
+                    <div className="p-4 rounded-xl bg-card border border-border shadow-sm">
+                        <div className="flex items-center gap-2 mb-3">
+                            <AIAgentAvatar />
+                            <span className="text-xs font-bold text-foreground">Quote Generation & Client Release</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden mb-3">
+                            <div className="h-full rounded-full bg-brand-400 transition-all duration-[3500ms] ease-linear" style={{ width: `${releaseProgress}%` }} />
+                        </div>
+                        <div className="space-y-1.5">
+                            {releaseAgents.map(agent => (
+                                <div key={agent.name} className={`flex items-center gap-2 text-[10px] transition-all duration-300 ${agent.visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+                                    {agent.done ? <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" /> : <ArrowPathIcon className="h-3.5 w-3.5 text-indigo-500 animate-spin shrink-0" />}
+                                    <span className={agent.done ? 'text-foreground' : 'text-indigo-600 dark:text-indigo-400'}>{agent.name}</span>
+                                    <span className="text-muted-foreground">{agent.detail}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Done state ── */}
+            {reviewPhase === 'done' && (
+                <div className="animate-in fade-in scale-in-95 duration-500 space-y-3">
+                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="text-xs font-bold text-foreground">Proposal Released to JPS Health Network</div>
+                                <div className="text-[10px] text-muted-foreground mt-1">Total process: <span className="font-bold text-foreground">22 minutes</span></div>
+                                <div className="text-[10px] text-muted-foreground">Manual process: <span className="font-bold text-foreground">3-5 days</span></div>
+                            </div>
+                            <div className="px-4 py-2 rounded-xl bg-brand-400 text-zinc-900">
+                                <div className="text-2xl font-black">92%</div>
+                                <div className="text-[9px] font-bold uppercase tracking-wider">Time Saved</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border">
+                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
+                            <span className="text-[10px] text-foreground">Quote $202,138 written to CORE — audit trail attached</span>
+                        </div>
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border">
+                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
+                            <span className="text-[10px] text-foreground">PDF proposal sent to JPS Health Network</span>
+                        </div>
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border">
+                            <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
+                            <span className="text-[10px] text-foreground">Stakeholders notified — David Park, Alex Rivera, Sara Chen</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Quote Preview Modal */}
+            {showQuotePreview && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200" onClick={() => setShowQuotePreview(false)}>
+                    <div className="w-full max-w-2xl max-h-[85vh] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                        <div className="px-6 py-4 bg-zinc-100 dark:bg-zinc-800 border-b border-border flex items-center justify-between">
+                            <div>
+                                <div className="text-sm font-bold text-foreground">CLIENT PROPOSAL — JPS HEALTH CENTER</div>
+                                <div className="text-[10px] text-muted-foreground">Quote #WRG-2024-0847 · {new Date().toLocaleDateString()}</div>
+                            </div>
+                            <button onClick={() => setShowQuotePreview(false)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                                <XMarkIcon className="h-4 w-4 text-muted-foreground" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-5 overflow-y-auto max-h-[65vh]">
+                            {/* Quote pricing waterfall */}
+                            <div>
+                                <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Pricing Summary</div>
+                                <div className="rounded-xl border border-border overflow-hidden">
+                                    {WATERFALL_ROWS.map(row => (
+                                        <div key={row.label} className={`flex items-center justify-between ${waterfallStyles[row.type]}`}>
+                                            {row.type === 'discount' ? (
+                                                <div className="flex items-center gap-2">
+                                                    <ArrowDownIcon className="h-3 w-3 text-green-500" />
+                                                    <span className="text-[10px] font-bold text-green-700 dark:text-green-400">{row.label}</span>
+                                                </div>
+                                            ) : (
+                                                <span className={`text-[11px] ${row.type === 'total' ? 'text-xs font-bold uppercase' : 'font-medium'} ${waterfallTextStyles[row.type]}`}>{row.label}</span>
+                                            )}
+                                            {row.value && <span className={`${row.type === 'total' ? 'text-lg font-black' : 'text-sm font-bold'} ${waterfallTextStyles[row.type]}`}>{row.value}</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            {/* Labor detail */}
+                            <div>
+                                <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Labor Breakdown</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 text-center">
+                                        <div className="text-[9px] text-muted-foreground uppercase">Delivery</div>
+                                        <div className="text-sm font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                    </div>
+                                    <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
+                                        <div className="text-[9px] text-muted-foreground uppercase">Installation</div>
+                                        <div className="text-sm font-bold text-green-700 dark:text-green-400">${REVIEWED_INSTALL_COST.toLocaleString()}</div>
+                                    </div>
+                                    <div className="p-2.5 rounded-lg bg-card border border-border text-center">
+                                        <div className="text-[9px] text-muted-foreground uppercase">Items</div>
+                                        <div className="text-sm font-bold text-foreground">24</div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="flex items-center gap-2 p-3 rounded-lg bg-card border border-border">
-                                <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                                <span className="text-[11px] text-foreground">Salesperson notified — service request marked complete in CORE</span>
+                            {/* Timeline */}
+                            <div>
+                                <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Delivery Timeline</div>
+                                <div className="text-[10px] text-muted-foreground space-y-1">
+                                    <p>Standard items: 8-10 weeks from order confirmation</p>
+                                    <p>Custom OFS Serpentine: 12 weeks (includes fabrication)</p>
+                                </div>
+                            </div>
+                            <div className="text-center text-[9px] text-muted-foreground italic">TAX EXEMPT — Government Healthcare Entity</div>
+                        </div>
+                        <div className="px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border-t border-border flex items-center justify-between">
+                            <div className="text-[9px] text-muted-foreground">Prepared by Strata for WRG — {new Date().toLocaleDateString()}</div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setShowQuotePreview(false)} className="px-4 py-2 rounded-lg text-[10px] font-bold border border-border bg-card text-foreground hover:bg-muted transition-colors">Close</button>
+                                <button onClick={() => setShowQuotePreview(false)} className="px-4 py-2 rounded-lg text-[10px] font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 transition-colors">Download PDF</button>
                             </div>
                         </div>
-                    )}
+                    </div>
+                </div>
+            )}
 
-                    {/* Toast */}
-                    {showToast && (
-                        <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            <div className="px-4 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xl flex items-center gap-2">
-                                <CheckCircleIcon className="h-4 w-4 text-green-400 dark:text-green-600" />
-                                <span className="text-xs font-bold">Estimate submitted — Salesperson notified</span>
-                            </div>
-                        </div>
-                    )}
-                </>
+            {/* Approval Chain Modal */}
+            <ApprovalChainModal
+                isOpen={showApprovalChain}
+                onClose={() => setShowApprovalChain(false)}
+                trigger="Proposal $202,138 requires multi-role approval before client release"
+                approvers={ESTIMATION_APPROVERS}
+                onComplete={() => {
+                    setShowApprovalChain(false);
+                    setReviewPhase('releasing');
+                }}
+            />
+
+            {/* Toast */}
+            {showToast && (
+                <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="px-4 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xl flex items-center gap-2">
+                        <CheckCircleIcon className="h-4 w-4 text-green-400 dark:text-green-600" />
+                        <span className="text-xs font-bold">Proposal released — JPS Health Network notified</span>
+                    </div>
+                </div>
             )}
         </div>
     );

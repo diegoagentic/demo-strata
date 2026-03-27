@@ -67,8 +67,6 @@ import DuplerReporting, { DuplerReportingNotification } from './components/simul
 import { DuplerScReview } from './components/simulations/DuplerPdfProcessor'
 import { WrgEstimatorReview } from './components/simulations/WrgLaborEstimation'
 import { WrgIntakeReview } from './components/simulations/WrgIntake'
-import { WrgHandoffReview } from './components/simulations/WrgHandoff'
-import { WrgAssemblyReview } from './components/simulations/WrgAssembly'
 
 // Urgent Actions Data (Dealer Persona)
 const urgentActions = [
@@ -3234,23 +3232,14 @@ export default function Dashboard({ onLogout, onNavigateToDetail, onNavigateToWo
                             {(currentStep.id === 'd1.4' || currentStep.id === 'd1.5') && (
                                 <DuplerScReview onNavigate={onNavigate} />
                             )}
-                            {/* WRG w2.6-w2.7: Estimator Review & CORE Write-Back */}
-                            {(currentStep.id === 'w2.6' || currentStep.id === 'w2.7') && (
+                            {/* WRG w2.4: Dealer Review & Approval */}
+                            {currentStep.id === 'w2.4' && (
                                 <WrgEstimatorReview onNavigate={onNavigate} />
                             )}
-                            {/* WRG w1.5: Sales Review & Pipeline Confirmation */}
+                            {/* WRG w1.5: Design Review */}
                             {currentStep.id === 'w1.5' && (
                                 <WrgIntakeReview onNavigate={onNavigate} />
                             )}
-                            {/* WRG w3.5: Design Package Validation */}
-                            {currentStep.id === 'w3.5' && (
-                                <WrgHandoffReview onNavigate={onNavigate} />
-                            )}
-                            {/* WRG w4.5: Proposal Review & Release */}
-                            {currentStep.id === 'w4.5' && (
-                                <WrgAssemblyReview onNavigate={onNavigate} />
-                            )}
-
                             {/* Dupler Flow 3: Notification card → switch to Metrics */}
                             {currentStep.id.startsWith('d3.') && (
                                 <DuplerReportingNotification onSwitchToMetrics={() => setMainTab('metrics')} />
