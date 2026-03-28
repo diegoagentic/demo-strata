@@ -1630,30 +1630,71 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
                         </div>
                     </div>
 
-                    {/* AI Draft vs Expert comparison */}
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* 2x2 Grid: AI Draft + Delivery | Review Activity + Timeline */}
+                    <div className="grid grid-cols-2 gap-2">
+                        {/* AI Draft */}
                         <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
                             <div className="text-[9px] text-muted-foreground uppercase mb-1">AI Draft (Labor)</div>
                             <div className="text-lg font-bold text-foreground">${COMBINED_TOTAL.toLocaleString()}</div>
                             <div className="text-[10px] text-muted-foreground">24 items · {FLAGGED_COUNT} flagged</div>
                         </div>
+                        {/* Expert+Designer Review */}
                         <div className="p-3 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
-                            <div className="text-[9px] text-muted-foreground uppercase mb-1">After Expert + Designer Review</div>
+                            <div className="text-[9px] text-muted-foreground uppercase mb-1">Expert + Designer Review</div>
                             <div className="text-lg font-bold text-green-700 dark:text-green-400">${REVIEWED_COMBINED.toLocaleString()}</div>
                             <div className="text-[10px] text-muted-foreground">24 approved · {FLAGGED_COUNT} adjusted</div>
                         </div>
+                        {/* Delivery Timeline */}
+                        <div className="p-3 rounded-lg bg-card border border-border">
+                            <div className="text-[9px] font-bold text-muted-foreground mb-1.5 uppercase tracking-wider">Delivery Timeline</div>
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5">
+                                    <ClockIcon className="h-3 w-3 text-green-500 shrink-0" />
+                                    <span className="text-[9px] text-foreground">Standard: <span className="font-bold">8-10 wk</span></span>
+                                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                        <div className="h-full rounded-full bg-green-500" style={{ width: '70%' }} />
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <ClockIcon className="h-3 w-3 text-amber-500 shrink-0" />
+                                    <span className="text-[9px] text-foreground">Custom OFS: <span className="font-bold">12 wk</span></span>
+                                    <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                        <div className="h-full rounded-full bg-amber-500" style={{ width: '85%' }} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Review Activity */}
+                        <div className="p-3 rounded-lg bg-card border border-border">
+                            <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Review Activity</div>
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-1.5 text-[9px]">
+                                    <CheckCircleIcon className="h-3 w-3 text-green-500 shrink-0" />
+                                    <span className="text-foreground"><span className="font-bold">David Park</span> — 24 items, {FLAGGED_COUNT} adjusted</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[9px]">
+                                    <CheckCircleIcon className="h-3 w-3 text-sky-500 shrink-0" />
+                                    <span className="text-foreground"><span className="font-bold">Alex Rivera</span> — 5 modules verified</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[9px]">
+                                    <SparklesIcon className="h-3 w-3 text-indigo-500 shrink-0" />
+                                    <span className="text-foreground">AI — Pricer A-G, scope, markup</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Estimation criteria — detailed modules with icons and chips */}
+                    {/* Estimation criteria — 2-col grid */}
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">Estimation Criteria Applied</div>
+                    <div className="grid grid-cols-2 gap-2">
                     {ESTIMATION_CRITERIA.map(criteria => {
                         const iconMap: Record<string, React.ReactNode> = {
-                            calculator: <CalculatorIcon className="h-4 w-4" />,
-                            truck: <TruckIcon className="h-4 w-4" />,
-                            building: <ExclamationTriangleIcon className="h-4 w-4" />,
-                            shield: <ShieldCheckIcon className="h-4 w-4" />,
-                            chart: <SparklesIcon className="h-4 w-4" />,
-                            cube: <CubeIcon className="h-4 w-4" />,
+                            calculator: <CalculatorIcon className="h-3.5 w-3.5" />,
+                            truck: <TruckIcon className="h-3.5 w-3.5" />,
+                            building: <ExclamationTriangleIcon className="h-3.5 w-3.5" />,
+                            shield: <ShieldCheckIcon className="h-3.5 w-3.5" />,
+                            chart: <SparklesIcon className="h-3.5 w-3.5" />,
+                            cube: <CubeIcon className="h-3.5 w-3.5" />,
                         };
                         const chipColors: Record<string, string> = {
                             green: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/30',
@@ -1662,97 +1703,77 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
                             purple: 'bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300 ring-1 ring-inset ring-purple-600/20 dark:ring-purple-400/30',
                         };
                         return (
-                            <div key={criteria.id} className="p-3 rounded-xl bg-card border border-border">
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className="flex items-center gap-2">
+                            <div key={criteria.id} className="p-2.5 rounded-xl bg-card border border-border">
+                                <div className="flex items-start justify-between mb-1.5">
+                                    <div className="flex items-center gap-1.5">
                                         <span className="text-indigo-500 shrink-0">{iconMap[criteria.icon]}</span>
-                                        <span className="text-[10px] font-bold text-foreground">{criteria.label}</span>
+                                        <span className="text-[9px] font-bold text-foreground leading-tight">{criteria.label}</span>
                                     </div>
                                     <button
                                         onClick={() => { setDealerCommentingModule(dealerCommentingModule === criteria.id ? null : criteria.id); setDealerCommentDraft(dealerModuleComments[criteria.id] || ''); }}
-                                        className={`p-1 rounded hover:bg-muted transition-colors shrink-0 ${dealerModuleComments[criteria.id] ? 'text-brand-500' : 'text-muted-foreground'}`}
+                                        className={`p-0.5 rounded hover:bg-muted transition-colors shrink-0 ${dealerModuleComments[criteria.id] ? 'text-brand-500' : 'text-muted-foreground'}`}
                                     >
-                                        <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                                        <ChatBubbleLeftEllipsisIcon className="h-3 w-3" />
                                     </button>
                                 </div>
                                 {/* Chips */}
-                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                <div className="flex flex-wrap gap-1 mb-1.5">
                                     {criteria.chips.map(chip => (
-                                        <span key={chip.text} className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${chipColors[chip.color]}`}>{chip.text}</span>
+                                        <span key={chip.text} className={`text-[7px] px-1 py-0.5 rounded font-bold ${chipColors[chip.color]}`}>{chip.text}</span>
                                     ))}
                                 </div>
                                 {/* Detail items */}
-                                <div className="space-y-1">
+                                <div className="space-y-0.5">
                                     {criteria.items.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-2 py-0.5">
-                                            <CheckCircleIcon className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />
-                                            <span className="text-[10px] text-muted-foreground">{item}</span>
+                                        <div key={i} className="flex items-start gap-1.5 py-0.5">
+                                            <CheckCircleIcon className="h-2.5 w-2.5 text-green-500 shrink-0 mt-0.5" />
+                                            <span className="text-[9px] text-muted-foreground leading-tight">{item}</span>
                                         </div>
                                     ))}
                                 </div>
                                 {/* Comment editor */}
                                 {dealerCommentingModule === criteria.id && (
-                                    <div className="mt-2 p-2.5 rounded-lg bg-brand-50 dark:bg-brand-500/5 border border-brand-200 dark:border-brand-500/20 animate-in fade-in duration-200">
-                                        <textarea value={dealerCommentDraft} onChange={e => setDealerCommentDraft(e.target.value)} placeholder="Add observation..." className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
-                                        <div className="flex justify-end gap-2 mt-1.5">
-                                            <button onClick={() => setDealerCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
-                                            <button onClick={() => { setDealerModuleComments(prev => ({ ...prev, [criteria.id]: dealerCommentDraft })); setDealerCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-brand-400 text-zinc-900 font-bold">Save</button>
+                                    <div className="mt-1.5 p-2 rounded-lg bg-brand-50 dark:bg-brand-500/5 border border-brand-200 dark:border-brand-500/20 animate-in fade-in duration-200">
+                                        <textarea value={dealerCommentDraft} onChange={e => setDealerCommentDraft(e.target.value)} placeholder="Add observation..." className="w-full text-[9px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
+                                        <div className="flex justify-end gap-2 mt-1">
+                                            <button onClick={() => setDealerCommentingModule(null)} className="text-[8px] px-2 py-0.5 rounded text-muted-foreground hover:text-foreground">Cancel</button>
+                                            <button onClick={() => { setDealerModuleComments(prev => ({ ...prev, [criteria.id]: dealerCommentDraft })); setDealerCommentingModule(null); }} className="text-[8px] px-2 py-0.5 rounded bg-brand-400 text-zinc-900 font-bold">Save</button>
                                         </div>
                                     </div>
                                 )}
                                 {dealerModuleComments[criteria.id] && dealerCommentingModule !== criteria.id && (
-                                    <div className="mt-2 px-2.5 py-1.5 rounded-lg bg-brand-50/50 dark:bg-brand-500/5 border border-brand-200/50 dark:border-brand-500/20">
-                                        <div className="text-[9px] text-brand-600 dark:text-brand-400 font-bold mb-0.5">Dealer Observation</div>
-                                        <div className="text-[10px] text-foreground">{dealerModuleComments[criteria.id]}</div>
+                                    <div className="mt-1.5 px-2 py-1 rounded-lg bg-brand-50/50 dark:bg-brand-500/5 border border-brand-200/50 dark:border-brand-500/20">
+                                        <div className="text-[8px] text-brand-600 dark:text-brand-400 font-bold mb-0.5">Dealer Observation</div>
+                                        <div className="text-[9px] text-foreground">{dealerModuleComments[criteria.id]}</div>
                                     </div>
                                 )}
                             </div>
                         );
                     })}
-
-                    {/* Delivery timeline */}
-                    <div className="p-3 rounded-lg bg-card border border-border">
-                        <div className="text-[10px] font-bold text-muted-foreground mb-2 uppercase tracking-wider">Delivery Timeline</div>
-                        <div className="space-y-1.5">
-                            <div className="flex items-center gap-2">
-                                <ClockIcon className="h-3 w-3 text-green-500 shrink-0" />
-                                <span className="text-[10px] text-foreground">Standard items: <span className="font-bold">8-10 weeks</span></span>
-                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                                    <div className="h-full rounded-full bg-green-500" style={{ width: '70%' }} />
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <ClockIcon className="h-3 w-3 text-amber-500 shrink-0" />
-                                <span className="text-[10px] text-foreground">Custom OFS Serpentine: <span className="font-bold">12 weeks</span></span>
-                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                                    <div className="h-full rounded-full bg-amber-500" style={{ width: '85%' }} />
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     {/* Expert clarification simulation */}
                     {!clarificationSent && (
                         <button
                             onClick={() => setClarificationSent(true)}
-                            className="w-full py-2.5 rounded-xl text-xs font-bold border border-sky-300 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/5 text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-500/10 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-2 rounded-xl text-[10px] font-bold border border-sky-300 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/5 text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-500/10 transition-all flex items-center justify-center gap-2"
                         >
-                            <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                            <ChatBubbleLeftEllipsisIcon className="h-3 w-3" />
                             Request Clarification from Expert
                         </button>
                     )}
                     {clarificationSent && !clarificationConfirmed && (
                         <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-500/5 border border-sky-200 dark:border-sky-500/20 animate-in fade-in slide-in-from-bottom-2 duration-300">
                             <div className="flex items-start gap-3">
-                                <img src={EXPERT_PHOTO} alt="" className="w-8 h-8 rounded-full ring-2 ring-sky-400" />
+                                <img src={EXPERT_PHOTO} alt="" className="w-7 h-7 rounded-full ring-2 ring-sky-400" />
                                 <div className="flex-1">
-                                    <div className="text-[11px] font-bold text-foreground">Response from David Park</div>
-                                    <div className="text-[10px] text-muted-foreground mt-1">
+                                    <div className="text-[10px] font-bold text-foreground">Response from David Park</div>
+                                    <div className="text-[9px] text-muted-foreground mt-1">
                                         The bariatric chair rate includes a 20% handling surcharge per Strata HC Standard. The OFS Serpentine assembly was verified by the designer — 14.0 hrs total, standard brackets confirmed. Section G charges include hospital surcharge ($114) as required for healthcare facilities.
                                     </div>
                                     <button
                                         onClick={() => setClarificationConfirmed(true)}
-                                        className="mt-2 px-3 py-1.5 rounded-lg text-[9px] font-bold bg-sky-600 text-white hover:bg-sky-700 transition-colors flex items-center gap-1"
+                                        className="mt-1.5 px-3 py-1 rounded-lg text-[9px] font-bold bg-sky-600 text-white hover:bg-sky-700 transition-colors flex items-center gap-1"
                                     >
                                         <CheckIcon className="h-3 w-3" />
                                         Clarification Received
@@ -1767,25 +1788,6 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
                             <span className="text-[10px] font-bold text-green-700 dark:text-green-400">Expert clarification confirmed — all items resolved</span>
                         </div>
                     )}
-
-                    {/* Review activity log */}
-                    <div className="p-3 rounded-xl bg-card border border-border">
-                        <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Review Activity</div>
-                        <div className="space-y-1.5">
-                            <div className="flex items-center gap-2 text-[10px]">
-                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                <span className="text-foreground"><span className="font-bold">David Park</span> (Expert) — reviewed 24 items, applied {FLAGGED_COUNT} adjustments</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[10px]">
-                                <CheckCircleIcon className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                                <span className="text-foreground"><span className="font-bold">Alex Rivera</span> (Designer) — verified 5 modules, OFS Serpentine confirmed</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[10px]">
-                                <SparklesIcon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-                                <span className="text-foreground">AI: Delivery Pricer sections A-G, scope limits, site conditions, markup engine</span>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Action buttons: Preview + Approve */}
                     <div className="flex gap-3">
@@ -1845,60 +1847,64 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
                         </div>
                     </div>
 
-                    {/* Process comparison: Manual vs AI */}
-                    <div className="p-4 rounded-xl bg-card border border-border">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Process Time Comparison</div>
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-2.5 h-2.5 rounded-sm bg-zinc-300 dark:bg-zinc-600" />
-                                    <span className="text-[9px] text-muted-foreground font-medium">Manual</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-2.5 h-2.5 rounded-sm bg-brand-400" />
-                                    <span className="text-[9px] text-muted-foreground font-medium">AI-Assisted</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="space-y-2.5">
-                            {PROCESS_COMPARISON.map(row => {
-                                const maxMin = Math.max(...PROCESS_COMPARISON.map(r => r.manualMin));
-                                const manualPct = (row.manualMin / maxMin) * 100;
-                                const aiPct = Math.max((row.aiMin / maxMin) * 100, 1.5);
-                                return (
-                                    <div key={row.phase}>
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-[10px] font-semibold text-foreground">{row.phase}</span>
-                                            <span className="text-[8px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{row.steps}</span>
-                                        </div>
-                                        <div className="space-y-0.5">
-                                            {/* Manual bar */}
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex-1 h-3.5 rounded bg-muted overflow-hidden">
-                                                    <div className="h-full rounded bg-zinc-300 dark:bg-zinc-600 transition-all duration-1000 ease-out" style={{ width: `${manualPct}%` }} />
-                                                </div>
-                                                <span className="text-[9px] font-bold text-muted-foreground w-14 text-right">{row.manual}</span>
-                                            </div>
-                                            {/* AI bar */}
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex-1 h-3.5 rounded bg-muted overflow-hidden">
-                                                    <div className="h-full rounded bg-brand-400 transition-all duration-1000 ease-out" style={{ width: `${aiPct}%` }} />
-                                                </div>
-                                                <span className="text-[9px] font-bold text-brand-600 dark:text-brand-400 w-14 text-right">{row.ai}</span>
-                                            </div>
+                    {/* Process comparison: 2x2 + 1 cards with icons */}
+                    <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-1">Process Time — Manual vs AI</div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {PROCESS_COMPARISON.map(row => {
+                            const iconMap: Record<string, React.ReactNode> = {
+                                'w1.1–w1.5': <DocumentTextIcon className="h-4 w-4" />,
+                                'w2.1': <CalculatorIcon className="h-4 w-4" />,
+                                'w2.2': <ClipboardDocumentListIcon className="h-4 w-4" />,
+                                'w2.3': <CubeIcon className="h-4 w-4" />,
+                                'w2.4': <PaperAirplaneIcon className="h-4 w-4" />,
+                            };
+                            const maxMin = Math.max(...PROCESS_COMPARISON.map(r => r.manualMin));
+                            const savingPct = Math.round((1 - row.aiMin / row.manualMin) * 100);
+                            return (
+                                <div key={row.phase} className="p-2.5 rounded-xl bg-card border border-border">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-indigo-500 shrink-0">{iconMap[row.steps]}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-[9px] font-bold text-foreground truncate">{row.phase}</div>
+                                            <span className="text-[7px] font-bold text-muted-foreground bg-muted px-1 py-0.5 rounded">{row.steps}</span>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                        {/* Totals */}
-                        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                            <div className="text-[10px] text-muted-foreground">
-                                Total: <span className="font-bold text-foreground">22 min</span> vs <span className="font-bold text-muted-foreground line-through">3–5 days</span>
+                                    {/* Stacked mini bars */}
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="flex-1 h-2 rounded bg-muted overflow-hidden">
+                                                <div className="h-full rounded bg-zinc-300 dark:bg-zinc-600" style={{ width: `${(row.manualMin / maxMin) * 100}%` }} />
+                                            </div>
+                                            <span className="text-[8px] font-bold text-muted-foreground w-12 text-right">{row.manual}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="flex-1 h-2 rounded bg-muted overflow-hidden">
+                                                <div className="h-full rounded bg-brand-400" style={{ width: `${Math.max((row.aiMin / maxMin) * 100, 2)}%` }} />
+                                            </div>
+                                            <span className="text-[8px] font-bold text-brand-600 dark:text-brand-400 w-12 text-right">{row.ai}</span>
+                                        </div>
+                                    </div>
+                                    <div className="mt-1.5 text-right">
+                                        <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 font-bold">{savingPct}% faster</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {/* Total summary card */}
+                        <div className="col-span-2 p-3 rounded-xl bg-brand-50 dark:bg-brand-500/5 border-2 border-brand-300 dark:border-brand-500/30">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <SparklesIcon className="h-4 w-4 text-brand-600 dark:text-brand-400" />
+                                    <div>
+                                        <div className="text-[10px] font-bold text-foreground">Full Process</div>
+                                        <div className="text-[9px] text-muted-foreground"><span className="line-through">3–5 days manual</span></div>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-lg font-black text-brand-700 dark:text-brand-400">22 min</div>
+                                    <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-brand-200 dark:bg-brand-500/20 text-brand-800 dark:text-brand-300 font-bold">~99% faster</span>
+                                </div>
                             </div>
-                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 font-bold">
-                                ~99% faster
-                            </span>
                         </div>
                     </div>
 
