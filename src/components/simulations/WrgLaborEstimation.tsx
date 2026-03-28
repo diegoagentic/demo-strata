@@ -1450,12 +1450,109 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
 // Rendered inside Dashboard.tsx
 // ═════════════════════════════════════════════════════════════════════════════
 
-// Review module definitions for dealer-level review
-const REVIEW_MODULES = [
-    { id: 'pricing', label: 'Pricing Summary', detail: 'Product $178K · Labor $17.7K · Freight $6.2K · Total $202,138' },
-    { id: 'labor', label: 'Labor Estimation', detail: `Delivery $${DELIVERY_TOTAL_COST.toLocaleString()} + Installation $${REVIEWED_INSTALL_COST.toLocaleString()} = $${REVIEWED_COMBINED.toLocaleString()}` },
-    { id: 'adjustments', label: 'Expert Adjustments', detail: `${EXPERT_ADJUSTMENTS.length} items reviewed — all resolved, designer-verified` },
-    { id: 'timeline', label: 'Delivery Timeline', detail: 'Standard 8-10 weeks, Custom OFS 12 weeks' },
+// ─── Estimation criteria for dealer review (from Delivery Pricer 2026) ───────
+const ESTIMATION_CRITERIA = [
+    {
+        id: 'rate-cards',
+        icon: 'calculator',
+        label: 'Rate Cards Applied',
+        chips: [
+            { text: '$57/hr INSTALL', color: 'green' },
+            { text: '$0.95/min DELIVERY', color: 'blue' },
+            { text: 'KD +15%', color: 'purple' },
+        ],
+        items: [
+            'Installation rate: $57/hr — Strata Healthcare Standard (TX metro)',
+            'Delivery base rate: $0.95/min — DFW area multiplier',
+            'KD assembly surcharge: +15% on knock-down items (124 chairs)',
+        ],
+    },
+    {
+        id: 'delivery-sections',
+        icon: 'truck',
+        label: 'Delivery Pricer — Sections A-G',
+        chips: [
+            { text: '7 SECTIONS', color: 'blue' },
+            { text: 'SECTION G: $285', color: 'amber' },
+        ],
+        items: [
+            'Section A (Seating): 241 items — task, guest, lounge, bariatric',
+            'Section D (Tables): 25 items — conference, training, café, side',
+            'Section E (Accessories): 12 glassboards — wall-mount installation',
+            'Section F (Multipliers): Hospital site — restricted hours, freight elevator',
+            'Section G (Transport): Trip charge $171 + hospital surcharge $114 = $285',
+        ],
+    },
+    {
+        id: 'site-conditions',
+        icon: 'building',
+        label: 'Site Conditions — Hospital',
+        chips: [
+            { text: 'RESTRICTED HOURS', color: 'amber' },
+            { text: 'FREIGHT ELEVATOR', color: 'amber' },
+            { text: 'TAX EXEMPT', color: 'green' },
+        ],
+        items: [
+            'Delivery window: 6PM–6AM only (hospital policy)',
+            'Freight elevator required — max load 3,000 lbs per trip',
+            'Government Healthcare Entity — tax exempt',
+            '3 floors — furniture distributed across Women\'s Health Center',
+        ],
+    },
+    {
+        id: 'scope-limits',
+        icon: 'shield',
+        label: 'Scope Limits & Overrides',
+        chips: [
+            { text: '1 OVERRIDE', color: 'amber' },
+            { text: '2 CUSTOM', color: 'purple' },
+        ],
+        items: [
+            '119 KD Task Chairs exceed 50-chair Delivery Pricer limit — expert override applied',
+            'Custom 8-seat Carolina Booth — manual rate: 3.0 hrs + 1.5 hrs site fit',
+            'Custom OFS Serpentine 12-seat — designer-verified: 14.0 hrs assembly',
+        ],
+    },
+    {
+        id: 'confidence',
+        icon: 'chart',
+        label: 'AI Confidence Analysis',
+        chips: [
+            { text: '19 HIGH', color: 'green' },
+            { text: '5 LOW', color: 'amber' },
+            { text: 'ALL RESOLVED', color: 'green' },
+        ],
+        items: [
+            '19 items mapped automatically — confidence >85%',
+            '5 items flagged for expert review — bariatric, pediatric, custom assembly',
+            'All 5 resolved: 2 by expert, 1 by designer, 2 AI-suggested rates applied',
+        ],
+    },
+    {
+        id: 'product-categories',
+        icon: 'cube',
+        label: 'Product Categories — 24 Line Items',
+        chips: [
+            { text: '287 UNITS', color: 'blue' },
+            { text: '185 MAN-HRS', color: 'green' },
+        ],
+        items: [
+            'Seating (241 pcs): task chairs, guest, lounge, bariatric, folding, stacking',
+            'Tables (25 pcs): conference, training, café, side, coffee',
+            'Accessories (12 pcs): glassboards 36×48 with wall-mount',
+            'Overhead (5 trips): pre-install site visit, punch walk, extra trips',
+            'Custom (2 pcs): Carolina Booth + OFS Serpentine Lounge',
+        ],
+    },
+];
+
+// ─── Process comparison data (manual vs AI) ──────────────────────────────────
+const PROCESS_COMPARISON = [
+    { phase: 'Project intake & scope', manual: '2–3 days', manualMin: 2880, ai: '8 min', aiMin: 8, steps: 'w1.1–w1.5' },
+    { phase: 'Cost estimation', manual: '4–8 hours', manualMin: 360, ai: '90s + 4 min review', aiMin: 5.5, steps: 'w2.1' },
+    { phase: 'Designer verification', manual: '1–2 days', manualMin: 1440, ai: '3 min', aiMin: 3, steps: 'w2.2' },
+    { phase: 'Quote assembly', manual: '2–4 hours', manualMin: 180, ai: '80s + 2 min review', aiMin: 3.3, steps: 'w2.3' },
+    { phase: 'Approval & release', manual: '1–2 days', manualMin: 1440, ai: '2 min', aiMin: 2, steps: 'w2.4' },
 ];
 
 export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) => void }) {
@@ -1509,75 +1606,109 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
                 <div className="animate-in fade-in duration-500 space-y-3">
                     {/* Header */}
                     <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-foreground">Proposal Review — JPS Health Center</span>
+                        <span className="text-xs font-bold text-foreground">Proposal Review — JPS Health Center for Women</span>
                         <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300 font-bold ring-1 ring-inset ring-brand-600/20">$202,138</span>
                     </div>
 
                     {/* Pricing summary grid */}
                     <div className="grid grid-cols-4 gap-2">
                         {[
-                            { label: 'Product', val: '$178,219', color: 'text-foreground' },
-                            { label: 'Labor', val: '$17,685', color: 'text-green-700 dark:text-green-400' },
-                            { label: 'Freight', val: '$6,234', color: 'text-blue-700 dark:text-blue-400' },
+                            { label: 'Product Net', val: '$178,219', sub: 'MillerKnoll -38%', color: 'text-foreground' },
+                            { label: 'Labor', val: '$17,685', sub: '15% margin', color: 'text-green-700 dark:text-green-400' },
+                            { label: 'Freight', val: '$6,234', sub: 'DFW metro', color: 'text-blue-700 dark:text-blue-400' },
                         ].map(c => (
                             <div key={c.label} className="p-3 rounded-lg bg-card border border-border text-center">
                                 <div className="text-[9px] text-muted-foreground uppercase">{c.label}</div>
                                 <div className={`text-sm font-bold ${c.color}`}>{c.val}</div>
+                                <div className="text-[8px] text-muted-foreground">{c.sub}</div>
                             </div>
                         ))}
                         <div className="p-3 rounded-lg bg-brand-50 dark:bg-brand-500/5 border-2 border-brand-400 dark:border-brand-500/40 text-center">
                             <div className="text-[9px] text-muted-foreground uppercase">Total</div>
                             <div className="text-sm font-bold text-foreground">$202,138</div>
+                            <div className="text-[8px] text-muted-foreground">Tax exempt</div>
                         </div>
                     </div>
 
                     {/* AI Draft vs Expert comparison */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="p-3 rounded-lg bg-muted/30 border border-border text-center">
-                            <div className="text-[9px] text-muted-foreground uppercase mb-1">AI Draft</div>
+                            <div className="text-[9px] text-muted-foreground uppercase mb-1">AI Draft (Labor)</div>
                             <div className="text-lg font-bold text-foreground">${COMBINED_TOTAL.toLocaleString()}</div>
-                            <div className="text-[10px] text-muted-foreground">24 items, {FLAGGED_COUNT} flagged</div>
+                            <div className="text-[10px] text-muted-foreground">24 items · {FLAGGED_COUNT} flagged</div>
                         </div>
                         <div className="p-3 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
-                            <div className="text-[9px] text-muted-foreground uppercase mb-1">After Expert Review</div>
+                            <div className="text-[9px] text-muted-foreground uppercase mb-1">After Expert + Designer Review</div>
                             <div className="text-lg font-bold text-green-700 dark:text-green-400">${REVIEWED_COMBINED.toLocaleString()}</div>
-                            <div className="text-[10px] text-muted-foreground">24 approved, {FLAGGED_COUNT} adjustments</div>
+                            <div className="text-[10px] text-muted-foreground">24 approved · {FLAGGED_COUNT} adjusted</div>
                         </div>
                     </div>
 
-                    {/* Review modules with comment capability */}
-                    {REVIEW_MODULES.map(mod => (
-                        <div key={mod.id} className="p-3 rounded-xl bg-card border border-border">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircleIcon className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                    <span className="text-[10px] font-bold text-foreground">{mod.label}</span>
-                                </div>
-                                <button
-                                    onClick={() => { setDealerCommentingModule(dealerCommentingModule === mod.id ? null : mod.id); setDealerCommentDraft(dealerModuleComments[mod.id] || ''); }}
-                                    className={`p-1 rounded hover:bg-muted transition-colors ${dealerModuleComments[mod.id] ? 'text-brand-500' : 'text-muted-foreground'}`}
-                                >
-                                    <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
-                                </button>
-                            </div>
-                            <div className="text-[10px] text-muted-foreground">{mod.detail}</div>
-                            {dealerCommentingModule === mod.id && (
-                                <div className="mt-2 p-2.5 rounded-lg bg-brand-50 dark:bg-brand-500/5 border border-brand-200 dark:border-brand-500/20 animate-in fade-in duration-200">
-                                    <textarea value={dealerCommentDraft} onChange={e => setDealerCommentDraft(e.target.value)} placeholder="Add observation..." className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
-                                    <div className="flex justify-end gap-2 mt-1.5">
-                                        <button onClick={() => setDealerCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
-                                        <button onClick={() => { setDealerModuleComments(prev => ({ ...prev, [mod.id]: dealerCommentDraft })); setDealerCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-brand-400 text-zinc-900 font-bold">Save</button>
+                    {/* Estimation criteria — detailed modules with icons and chips */}
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">Estimation Criteria Applied</div>
+                    {ESTIMATION_CRITERIA.map(criteria => {
+                        const iconMap: Record<string, React.ReactNode> = {
+                            calculator: <CalculatorIcon className="h-4 w-4" />,
+                            truck: <TruckIcon className="h-4 w-4" />,
+                            building: <ExclamationTriangleIcon className="h-4 w-4" />,
+                            shield: <ShieldCheckIcon className="h-4 w-4" />,
+                            chart: <SparklesIcon className="h-4 w-4" />,
+                            cube: <CubeIcon className="h-4 w-4" />,
+                        };
+                        const chipColors: Record<string, string> = {
+                            green: 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-300 ring-1 ring-inset ring-green-600/20 dark:ring-green-400/30',
+                            blue: 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 ring-1 ring-inset ring-blue-600/20 dark:ring-blue-400/30',
+                            amber: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20 dark:ring-amber-400/30',
+                            purple: 'bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300 ring-1 ring-inset ring-purple-600/20 dark:ring-purple-400/30',
+                        };
+                        return (
+                            <div key={criteria.id} className="p-3 rounded-xl bg-card border border-border">
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-indigo-500 shrink-0">{iconMap[criteria.icon]}</span>
+                                        <span className="text-[10px] font-bold text-foreground">{criteria.label}</span>
                                     </div>
+                                    <button
+                                        onClick={() => { setDealerCommentingModule(dealerCommentingModule === criteria.id ? null : criteria.id); setDealerCommentDraft(dealerModuleComments[criteria.id] || ''); }}
+                                        className={`p-1 rounded hover:bg-muted transition-colors shrink-0 ${dealerModuleComments[criteria.id] ? 'text-brand-500' : 'text-muted-foreground'}`}
+                                    >
+                                        <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5" />
+                                    </button>
                                 </div>
-                            )}
-                            {dealerModuleComments[mod.id] && dealerCommentingModule !== mod.id && (
-                                <div className="mt-2 px-2.5 py-1.5 rounded-lg bg-brand-50/50 dark:bg-brand-500/5 border border-brand-200/50 dark:border-brand-500/20">
-                                    <div className="text-[9px] text-brand-600 dark:text-brand-400 font-bold mb-0.5">Dealer Observation</div>
-                                    <div className="text-[10px] text-foreground">{dealerModuleComments[mod.id]}</div>
+                                {/* Chips */}
+                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                    {criteria.chips.map(chip => (
+                                        <span key={chip.text} className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${chipColors[chip.color]}`}>{chip.text}</span>
+                                    ))}
                                 </div>
-                            )}
-                        </div>
-                    ))}
+                                {/* Detail items */}
+                                <div className="space-y-1">
+                                    {criteria.items.map((item, i) => (
+                                        <div key={i} className="flex items-start gap-2 py-0.5">
+                                            <CheckCircleIcon className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />
+                                            <span className="text-[10px] text-muted-foreground">{item}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                {/* Comment editor */}
+                                {dealerCommentingModule === criteria.id && (
+                                    <div className="mt-2 p-2.5 rounded-lg bg-brand-50 dark:bg-brand-500/5 border border-brand-200 dark:border-brand-500/20 animate-in fade-in duration-200">
+                                        <textarea value={dealerCommentDraft} onChange={e => setDealerCommentDraft(e.target.value)} placeholder="Add observation..." className="w-full text-[10px] bg-transparent text-foreground placeholder:text-muted-foreground resize-none focus:outline-none" rows={2} />
+                                        <div className="flex justify-end gap-2 mt-1.5">
+                                            <button onClick={() => setDealerCommentingModule(null)} className="text-[9px] px-2 py-1 rounded text-muted-foreground hover:text-foreground">Cancel</button>
+                                            <button onClick={() => { setDealerModuleComments(prev => ({ ...prev, [criteria.id]: dealerCommentDraft })); setDealerCommentingModule(null); }} className="text-[9px] px-2 py-1 rounded bg-brand-400 text-zinc-900 font-bold">Save</button>
+                                        </div>
+                                    </div>
+                                )}
+                                {dealerModuleComments[criteria.id] && dealerCommentingModule !== criteria.id && (
+                                    <div className="mt-2 px-2.5 py-1.5 rounded-lg bg-brand-50/50 dark:bg-brand-500/5 border border-brand-200/50 dark:border-brand-500/20">
+                                        <div className="text-[9px] text-brand-600 dark:text-brand-400 font-bold mb-0.5">Dealer Observation</div>
+                                        <div className="text-[10px] text-foreground">{dealerModuleComments[criteria.id]}</div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
 
                     {/* Delivery timeline */}
                     <div className="p-3 rounded-lg bg-card border border-border">
@@ -1617,7 +1748,7 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
                                 <div className="flex-1">
                                     <div className="text-[11px] font-bold text-foreground">Response from David Park</div>
                                     <div className="text-[10px] text-muted-foreground mt-1">
-                                        The bariatric chair rate includes a 20% handling surcharge based on Strata HC Standard guidelines. The OFS Serpentine assembly time was verified by the designer — 14.0 hrs total confirmed.
+                                        The bariatric chair rate includes a 20% handling surcharge per Strata HC Standard. The OFS Serpentine assembly was verified by the designer — 14.0 hrs total, standard brackets confirmed. Section G charges include hospital surcharge ($114) as required for healthcare facilities.
                                     </div>
                                     <button
                                         onClick={() => setClarificationConfirmed(true)}
@@ -1647,11 +1778,11 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
                             </div>
                             <div className="flex items-center gap-2 text-[10px]">
                                 <CheckCircleIcon className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                                <span className="text-foreground"><span className="font-bold">Alex Rivera</span> (Designer) — verified 5 modules, custom assembly confirmed</span>
+                                <span className="text-foreground"><span className="font-bold">Alex Rivera</span> (Designer) — verified 5 modules, OFS Serpentine confirmed</span>
                             </div>
                             <div className="flex items-center gap-2 text-[10px]">
                                 <SparklesIcon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-                                <span className="text-foreground">AI: rate cards, scope limits, site conditions, markup engine validated</span>
+                                <span className="text-foreground">AI: Delivery Pricer sections A-G, scope limits, site conditions, markup engine</span>
                             </div>
                         </div>
                     </div>
@@ -1703,19 +1834,75 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
             {/* ── Done state ── */}
             {reviewPhase === 'done' && (
                 <div className="animate-in fade-in scale-in-95 duration-500 space-y-3">
+                    {/* Header */}
                     <div className="p-4 rounded-xl bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <CheckCircleIcon className="h-6 w-6 text-green-500 shrink-0" />
                             <div>
                                 <div className="text-xs font-bold text-foreground">Proposal Released to JPS Health Network</div>
-                                <div className="text-[10px] text-muted-foreground mt-1">Total process: <span className="font-bold text-foreground">22 minutes</span></div>
-                                <div className="text-[10px] text-muted-foreground">Manual process: <span className="font-bold text-foreground">3-5 days</span></div>
-                            </div>
-                            <div className="px-4 py-2 rounded-xl bg-brand-400 text-zinc-900">
-                                <div className="text-2xl font-black">92%</div>
-                                <div className="text-[9px] font-bold uppercase tracking-wider">Time Saved</div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">Quote #WRG-2024-0847 · $202,138 · {new Date().toLocaleDateString()}</div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Process comparison: Manual vs AI */}
+                    <div className="p-4 rounded-xl bg-card border border-border">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Process Time Comparison</div>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-sm bg-zinc-300 dark:bg-zinc-600" />
+                                    <span className="text-[9px] text-muted-foreground font-medium">Manual</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2.5 h-2.5 rounded-sm bg-brand-400" />
+                                    <span className="text-[9px] text-muted-foreground font-medium">AI-Assisted</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2.5">
+                            {PROCESS_COMPARISON.map(row => {
+                                const maxMin = Math.max(...PROCESS_COMPARISON.map(r => r.manualMin));
+                                const manualPct = (row.manualMin / maxMin) * 100;
+                                const aiPct = Math.max((row.aiMin / maxMin) * 100, 1.5);
+                                return (
+                                    <div key={row.phase}>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-[10px] font-semibold text-foreground">{row.phase}</span>
+                                            <span className="text-[8px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{row.steps}</span>
+                                        </div>
+                                        <div className="space-y-0.5">
+                                            {/* Manual bar */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 h-3.5 rounded bg-muted overflow-hidden">
+                                                    <div className="h-full rounded bg-zinc-300 dark:bg-zinc-600 transition-all duration-1000 ease-out" style={{ width: `${manualPct}%` }} />
+                                                </div>
+                                                <span className="text-[9px] font-bold text-muted-foreground w-14 text-right">{row.manual}</span>
+                                            </div>
+                                            {/* AI bar */}
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 h-3.5 rounded bg-muted overflow-hidden">
+                                                    <div className="h-full rounded bg-brand-400 transition-all duration-1000 ease-out" style={{ width: `${aiPct}%` }} />
+                                                </div>
+                                                <span className="text-[9px] font-bold text-brand-600 dark:text-brand-400 w-14 text-right">{row.ai}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {/* Totals */}
+                        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                            <div className="text-[10px] text-muted-foreground">
+                                Total: <span className="font-bold text-foreground">22 min</span> vs <span className="font-bold text-muted-foreground line-through">3–5 days</span>
+                            </div>
+                            <span className="text-[9px] px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-500/10 text-brand-700 dark:text-brand-400 font-bold">
+                                ~99% faster
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Completion items */}
                     <div className="space-y-1.5">
                         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-card border border-border">
                             <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
@@ -1819,7 +2006,7 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
 
             {/* Toast */}
             {showToast && (
-                <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="fixed bottom-20 right-6 z-[60] animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="px-4 py-3 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-xl flex items-center gap-2">
                         <CheckCircleIcon className="h-4 w-4 text-green-400 dark:text-green-600" />
                         <span className="text-xs font-bold">Proposal released — JPS Health Network notified</span>

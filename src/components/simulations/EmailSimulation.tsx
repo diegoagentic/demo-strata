@@ -43,8 +43,19 @@ function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
 }
 
+// ─── WRG Email Data ──────────────────────────────────────────────────────────
+
+const WRG_EMAILS: Array<{ id: number; sender: string; senderEmail: string; subject: string; snippet: string; time: string; unread: boolean; labels: string[] }> = [
+    { id: 1, sender: 'Jennifer Martinez', senderEmail: 'jmartinez@jpshealthnet.org', subject: 'Quote Request — JPS Women\'s Health Center (Installation + Delivery Required)', snippet: 'We need a full quote including product pricing, installation labor, and delivery logistics for the new Women\'s Health Center...', time: '9:14 AM', unread: true, labels: ['Inbox', 'Urgent'] },
+    { id: 2, sender: 'Herman Miller Support', senderEmail: 'support@hermanmiller.com', subject: 'Catalog Update Q2 — Ergonomic Series pricing', snippet: 'Please review the latest pricing updates for the ergonomic seating catalog...', time: '8:15 AM', unread: false, labels: ['Inbox'] },
+    { id: 3, sender: 'Smartsheet Notification', senderEmail: 'notify@smartsheet.com', subject: 'Row Updated: UTSW Lab Renovation #2026-UTX', snippet: 'A row was updated in your sheet: Design phase complete, ready for estimation...', time: 'Yesterday', unread: false, labels: ['Inbox'] },
+    { id: 4, sender: 'Lisa Chen', senderEmail: 'lchen@wrgtexas.com', subject: 'RE: Parkland Phase 2 — Estimate finalized', snippet: 'The estimate for Parkland Phase 2 is ready. Total labor: $12,340, delivery: $3,280...', time: 'Yesterday', unread: false, labels: ['Inbox'] },
+];
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
 export default function EmailSimulation() {
-    const { isDemoActive, nextStep, currentStep, isPaused } = useDemo();
+    const { isDemoActive, nextStep, currentStep, isPaused, demoProfile } = useDemo();
     const [selectedEmail, setSelectedEmail] = useState<number | null>(null);
     const [starred, setStarred] = useState<Record<number, boolean>>({ 1: true });
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -62,9 +73,11 @@ export default function EmailSimulation() {
         };
     }, []);
 
-    // Auto-open RFQ email and auto-start processing during demo step 1.1
+    const isWRG = demoProfile?.id === 'wrg';
+
+    // Auto-open RFQ email and auto-start processing during demo step 1.1 / w1.1
     useEffect(() => {
-        if (!isDemoActive || currentStep.id !== '1.1') return;
+        if (!isDemoActive || (currentStep.id !== '1.1' && currentStep.id !== 'w1.1')) return;
 
         const timers: ReturnType<typeof setTimeout>[] = [];
         // Auto-click on email #1 after a short delay
@@ -80,12 +93,14 @@ export default function EmailSimulation() {
         nextStep();
     }, [nextStep]);
 
-    const emails: Array<{ id: number; sender: string; senderEmail: string; subject: string; snippet: string; time: string; unread: boolean; labels: string[] }> = [
+    const defaultEmails: Array<{ id: number; sender: string; senderEmail: string; subject: string; snippet: string; time: string; unread: boolean; labels: string[] }> = [
         { id: 1, sender: 'Apex Furniture Procurement', senderEmail: 'orders@apexfurniture.com', subject: 'RFQ: 200 Executive Task Chairs & Specs', snippet: 'Please review the attached RFQ data and PDF specifications for 200 Task Chairs...', time: '10:42 AM', unread: true, labels: ['Inbox', 'Urgent'] },
         { id: 2, sender: 'Expert Hub System', senderEmail: 'alerts@experthub.io', subject: 'Daily Recap: 12 Transactions Pending Action', snippet: 'Your daily summary of transactions that require your expertise for reconciliation...', time: '8:15 AM', unread: false, labels: ['Inbox'] },
         { id: 3, sender: 'IT Service Desk', senderEmail: 'help@it.agentic.com', subject: 'ServiceNow: New Incident INC-1102 Assigned', snippet: 'A new high-priority infrastructure incident has been assigned to your workspace group...', time: 'Yesterday', unread: false, labels: ['Inbox', 'Work'] },
         { id: 4, sender: 'Herman Miller Support', senderEmail: 'support@hermanmiller.com', subject: 'Catalog Update Notification: Q2 Ergonomic Series', snippet: 'Please review the latest pricing updates for the ergonomic seating catalog...', time: 'Yesterday', unread: false, labels: ['Inbox'] },
     ];
+
+    const emails = isWRG ? WRG_EMAILS : defaultEmails;
 
     const currentEmail = emails.find(e => e.id === selectedEmail);
 
@@ -311,7 +326,7 @@ export default function EmailSimulation() {
 
                             {/* Email Content */}
                             <div className="pl-0 md:pl-16 space-y-10 max-w-4xl">
-                                {currentEmail?.id === 1 && (
+                                {currentEmail?.id === 1 && !isWRG && (
                                     <>
                                         <div className="text-[15px] leading-relaxed text-zinc-700 dark:text-zinc-300 space-y-5 font-normal">
                                             <p>Hello Sales Team,</p>
@@ -379,6 +394,80 @@ export default function EmailSimulation() {
                                                     </div>
                                                     <ArrowDownTrayIcon className="w-5 h-5 text-zinc-400 group-hover:text-brand-600 group-hover:translate-y-0.5 transition-all" />
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* WRG: JPS Health Network email body */}
+                                {currentEmail?.id === 1 && isWRG && (
+                                    <>
+                                        <div className="text-[15px] leading-relaxed text-zinc-700 dark:text-zinc-300 space-y-5 font-normal">
+                                            <p>Dear WRG Team,</p>
+                                            <p>
+                                                We need a <span className="font-bold text-zinc-900 dark:text-white underline decoration-brand-500/50 decoration-2 underline-offset-4 cursor-help">complete quote</span> for our new Women's Health Center Wing at JPS Health Network — including <span className="font-bold text-zinc-900 dark:text-white">product pricing, installation labor, and delivery logistics</span>.
+                                            </p>
+                                            <p>
+                                                The project covers <span className="font-bold text-zinc-900 dark:text-white">14,200 sqft across 6 floors</span> — patient rooms, consultation areas, waiting spaces, and administrative offices. Primary spec is MillerKnoll, with select items from OFS and Nemschoff.
+                                            </p>
+                                            <p>
+                                                Please account for the <span className="font-bold text-zinc-900 dark:text-white">installation effort</span> — this is a hospital environment requiring phased installation, after-hours work, and specialized handling. <span className="font-bold text-zinc-900 dark:text-white">Delivery</span> will need sterile corridor access, freight elevator reservations, and dock scheduling.
+                                            </p>
+                                            <p>
+                                                Attached: <span className="italic">Spec Narrative</span>, <span className="italic">Selection Document</span>, and <span className="italic">Site Requirements</span> with delivery constraints.
+                                            </p>
+                                            <p>Best regards,<br />Jennifer Martinez<br /><span className="text-sm text-zinc-500">Facilities Director, JPS Health Network</span></p>
+                                        </div>
+
+                                        {/* AI Monitoring Strip */}
+                                        <div
+                                            id="email-rfq-incoming"
+                                            className="w-full bg-indigo-500/5 dark:bg-indigo-500/5 border border-indigo-200/50 dark:border-indigo-500/20 p-5 rounded-2xl flex items-center gap-5 overflow-hidden relative shadow-sm"
+                                        >
+                                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-transparent to-purple-500/5 animate-pulse transition-all" />
+                                            <div className="relative shrink-0">
+                                                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 border border-indigo-500/20 dark:border-indigo-500/30 flex items-center justify-center">
+                                                    <SparklesIcon className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+                                                </div>
+                                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full animate-pulse" />
+                                            </div>
+                                            <div className="relative z-10 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="text-sm font-bold text-indigo-900 dark:text-indigo-100">AI Agent Monitoring</h4>
+                                                    <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 rounded-full border border-indigo-500/20">Active</span>
+                                                </div>
+                                                <p className="text-[11px] text-indigo-700/60 dark:text-indigo-300/60 mt-0.5">
+                                                    EmailIntakeAgent detected procurement request with 3 PDFs — <span className="text-indigo-600 dark:text-indigo-300 font-semibold">auto-processing initiated</span>
+                                                </p>
+                                            </div>
+                                            <div className="relative z-10 flex items-center gap-2 shrink-0 px-4 py-2 bg-indigo-500/10 dark:bg-indigo-500/20 rounded-xl border border-indigo-500/20">
+                                                <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-300">Processing</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Attachments — 3 PDFs */}
+                                        <div className="pt-6">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em]">3 Attachments</span>
+                                                <div className="flex-1 h-px bg-zinc-100 dark:bg-zinc-800" />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl">
+                                                {[
+                                                    { name: 'JPS_Spec_Narrative.pdf', size: '1.8 MB • 12 pages', color: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600' },
+                                                    { name: 'JPS_Selection_Document.pdf', size: '2.4 MB • 18 pages', color: 'bg-red-50 dark:bg-red-500/10 text-red-600' },
+                                                    { name: 'JPS_Site_Requirements.pdf', size: '0.9 MB • 8 pages', color: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600' },
+                                                ].map((file) => (
+                                                    <div key={file.name} className="inline-flex items-center gap-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 p-3 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
+                                                        <div className={cn("p-2.5 rounded-xl group-hover:scale-105 transition-transform", file.color)}>
+                                                            <DocumentIcon className="w-6 h-6" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">{file.name}</p>
+                                                            <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">{file.size}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </>

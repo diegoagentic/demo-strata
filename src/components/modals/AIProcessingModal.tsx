@@ -11,6 +11,7 @@ import {
 import AgentPipelineStrip from '../simulations/AgentPipelineStrip';
 import type { AgentStep } from '../simulations/AgentPipelineStrip';
 import { useDemo } from '../../context/DemoContext';
+import { useDemoProfile } from '../../context/DemoProfileContext';
 
 interface AIProcessingModalProps {
     open: boolean;
@@ -23,7 +24,8 @@ interface ProcessingLog {
     type: 'info' | 'success' | 'extract';
 }
 
-const EXTRACTED_ITEMS = [
+// ─── COI/OPS profile data ───
+const COI_EXTRACTED_ITEMS = [
     { label: 'Product', value: '200 Executive Task Chairs', icon: '🪑' },
     { label: 'Spec File', value: 'Specs.pdf (1.4 MB) — Ergonomic features parsed', icon: '📄' },
     { label: 'Line Items', value: 'OrderData.csv — 200 items, 4 delivery zones', icon: '📊' },
@@ -32,8 +34,21 @@ const EXTRACTED_ITEMS = [
     { label: 'Freight', value: 'Multi-zone routing required (4 locations)', icon: '🚚' },
 ];
 
+// ─── WRG profile data ───
+const WRG_EXTRACTED_ITEMS = [
+    { label: 'Facility', value: 'JPS Health Center for Women — 14,200 sqft, 6 floors', icon: '🏥' },
+    { label: 'Floor Plans', value: 'JPS_Floor_Plans.pdf (3.2 MB) — Room layouts parsed', icon: '📐' },
+    { label: 'Spec Sheet', value: 'JPS_Spec_Narrative.pdf — Product specifications extracted', icon: '📄' },
+    { label: 'Site Reqs', value: 'JPS_Site_Requirements.pdf — Delivery constraints identified', icon: '📋' },
+    { label: 'Client', value: 'JPS Health Network (jennifer.martinez@jpshealth.org)', icon: '🏢' },
+    { label: 'Vertical', value: 'Healthcare — Hospital delivery site', icon: '⚕️' },
+];
+
 export default function AIProcessingModal({ open, onComplete }: AIProcessingModalProps) {
     const { isPaused } = useDemo();
+    const { activeProfile } = useDemoProfile();
+    const isWRG = activeProfile?.id === 'wrg';
+    const EXTRACTED_ITEMS = isWRG ? WRG_EXTRACTED_ITEMS : COI_EXTRACTED_ITEMS;
     const [progress, setProgress] = useState(0);
     const [logs, setLogs] = useState<ProcessingLog[]>([]);
     const [pipeline, setPipeline] = useState<AgentStep[]>([]);
@@ -71,6 +86,25 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
         if (!open) return;
         reset();
 
+        // Pipeline snapshots reused across timeline entries
+        const p = (overrides: Partial<Record<string, { status: string; detail?: string }>>) => {
+            const base: Record<string, AgentStep> = {
+                intake: { id: 'intake', name: 'EmailIntake', status: 'pending' },
+                ocr: { id: 'ocr', name: 'OCR/TextExtract', status: 'pending' },
+                parser: { id: 'parser', name: 'DataParser', status: 'pending' },
+                normalizer: { id: 'normalizer', name: 'Normalizer', status: 'pending' },
+                validator: { id: 'validator', name: 'Validator', status: 'pending' },
+            };
+            for (const [k, v] of Object.entries(overrides)) {
+                if (v && base[k]) { base[k] = { ...base[k], ...v }; }
+            }
+            return Object.values(base);
+        };
+
+        const fileCount = isWRG ? '3 PDFs' : '2 files';
+        const itemCount = isWRG ? '24 products' : '200 items';
+        const confidence = isWRG ? '96%' : '82%';
+
         const timeline: Array<{
             delay: number;
             log: ProcessingLog;
@@ -79,87 +113,59 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
         }> = [
             {
                 delay: 2025,
-                log: { agent: 'EmailIntakeAgent', message: 'Parsing email body — identified RFQ request with 2 attachments.', type: 'info' },
+                log: { agent: 'EmailIntakeAgent', message: isWRG
+                    ? 'Parsing email body — identified RFQ with 3 PDF attachments.'
+                    : 'Parsing email body — identified RFQ request with 2 attachments.', type: 'info' },
                 progress: 10,
-                pipelineUpdate: [
-                    { id: 'intake', name: 'EmailIntake', status: 'running', detail: 'Parsing...' },
-                    { id: 'ocr', name: 'OCR/TextExtract', status: 'pending' },
-                    { id: 'parser', name: 'DataParser', status: 'pending' },
-                    { id: 'normalizer', name: 'Normalizer', status: 'pending' },
-                    { id: 'validator', name: 'Validator', status: 'pending' },
-                ],
+                pipelineUpdate: p({ intake: { status: 'running', detail: 'Parsing...' } }),
             },
             {
                 delay: 5400,
-                log: { agent: 'EmailIntakeAgent', message: 'Extracted sender: Apex Furniture, subject: RFQ for 200 Executive Task Chairs.', type: 'extract' },
+                log: { agent: 'EmailIntakeAgent', message: isWRG
+                    ? 'Extracted sender: JPS Health Network, subject: RFQ for Women\'s Health Center.'
+                    : 'Extracted sender: Apex Furniture, subject: RFQ for 200 Executive Task Chairs.', type: 'extract' },
                 progress: 20,
-                pipelineUpdate: [
-                    { id: 'intake', name: 'EmailIntake', status: 'done' },
-                    { id: 'ocr', name: 'OCR/TextExtract', status: 'running' },
-                    { id: 'parser', name: 'DataParser', status: 'pending' },
-                    { id: 'normalizer', name: 'Normalizer', status: 'pending' },
-                    { id: 'validator', name: 'Validator', status: 'pending' },
-                ],
+                pipelineUpdate: p({ intake: { status: 'done' }, ocr: { status: 'running' } }),
             },
             {
                 delay: 8775,
-                log: { agent: 'OCR/TextExtract', message: 'Processing Specs.pdf — extracted ergonomic feature requirements and dimensions.', type: 'info' },
+                log: { agent: 'OCR/TextExtract', message: isWRG
+                    ? 'Processing JPS_Floor_Plans.pdf — extracted room layouts and facility dimensions.'
+                    : 'Processing Specs.pdf — extracted ergonomic feature requirements and dimensions.', type: 'info' },
                 progress: 35,
-                pipelineUpdate: [
-                    { id: 'intake', name: 'EmailIntake', status: 'done' },
-                    { id: 'ocr', name: 'OCR/TextExtract', status: 'running', detail: 'Specs.pdf' },
-                    { id: 'parser', name: 'DataParser', status: 'pending' },
-                    { id: 'normalizer', name: 'Normalizer', status: 'pending' },
-                    { id: 'validator', name: 'Validator', status: 'pending' },
-                ],
+                pipelineUpdate: p({ intake: { status: 'done' }, ocr: { status: 'running', detail: isWRG ? 'Floor Plans' : 'Specs.pdf' } }),
             },
             {
                 delay: 12150,
-                log: { agent: 'OCR/TextExtract', message: 'Processing OrderData.csv — 200 line items with quantities, finishes, and ship-to addresses.', type: 'extract' },
+                log: { agent: 'OCR/TextExtract', message: isWRG
+                    ? 'Processing JPS_Spec_Narrative.pdf + JPS_Site_Requirements.pdf — specifications and constraints extracted.'
+                    : 'Processing OrderData.csv — 200 line items with quantities, finishes, and ship-to addresses.', type: 'extract' },
                 progress: 50,
-                pipelineUpdate: [
-                    { id: 'intake', name: 'EmailIntake', status: 'done' },
-                    { id: 'ocr', name: 'OCR/TextExtract', status: 'done', detail: '2 files' },
-                    { id: 'parser', name: 'DataParser', status: 'running' },
-                    { id: 'normalizer', name: 'Normalizer', status: 'pending' },
-                    { id: 'validator', name: 'Validator', status: 'pending' },
-                ],
+                pipelineUpdate: p({ intake: { status: 'done' }, ocr: { status: 'done', detail: fileCount }, parser: { status: 'running' } }),
             },
             {
                 delay: 15525,
-                log: { agent: 'DataParser', message: 'Mapped 200 line items to catalog schema. Identified 4 delivery zones.', type: 'info' },
+                log: { agent: 'DataParser', message: isWRG
+                    ? 'Mapped 24 products to healthcare furniture catalog. Identified 1 delivery site.'
+                    : 'Mapped 200 line items to catalog schema. Identified 4 delivery zones.', type: 'info' },
                 progress: 65,
-                pipelineUpdate: [
-                    { id: 'intake', name: 'EmailIntake', status: 'done' },
-                    { id: 'ocr', name: 'OCR/TextExtract', status: 'done', detail: '2 files' },
-                    { id: 'parser', name: 'DataParser', status: 'done', detail: '200 items' },
-                    { id: 'normalizer', name: 'Normalizer', status: 'running' },
-                    { id: 'validator', name: 'Validator', status: 'pending' },
-                ],
+                pipelineUpdate: p({ intake: { status: 'done' }, ocr: { status: 'done', detail: fileCount }, parser: { status: 'done', detail: itemCount }, normalizer: { status: 'running' } }),
             },
             {
                 delay: 18900,
-                log: { agent: 'Normalizer', message: 'Unified product codes, quantities, and shipping addresses to standard RFQ model.', type: 'info' },
+                log: { agent: 'Normalizer', message: isWRG
+                    ? 'Unified product codes, quantities, and facility requirements to standard RFQ model.'
+                    : 'Unified product codes, quantities, and shipping addresses to standard RFQ model.', type: 'info' },
                 progress: 80,
-                pipelineUpdate: [
-                    { id: 'intake', name: 'EmailIntake', status: 'done' },
-                    { id: 'ocr', name: 'OCR/TextExtract', status: 'done', detail: '2 files' },
-                    { id: 'parser', name: 'DataParser', status: 'done', detail: '200 items' },
-                    { id: 'normalizer', name: 'Normalizer', status: 'done' },
-                    { id: 'validator', name: 'Validator', status: 'running' },
-                ],
+                pipelineUpdate: p({ intake: { status: 'done' }, ocr: { status: 'done', detail: fileCount }, parser: { status: 'done', detail: itemCount }, normalizer: { status: 'done' }, validator: { status: 'running' } }),
             },
             {
                 delay: 22275,
-                log: { agent: 'Validator', message: 'Validation complete. Confidence: 82%. Flagged: multi-zone freight routing needs Expert review.', type: 'success' },
+                log: { agent: 'Validator', message: isWRG
+                    ? `Validation complete. Confidence: ${confidence}. Healthcare vertical detected — flagged for CORE registration.`
+                    : `Validation complete. Confidence: ${confidence}. Flagged: multi-zone freight routing needs Expert review.`, type: 'success' },
                 progress: 100,
-                pipelineUpdate: [
-                    { id: 'intake', name: 'EmailIntake', status: 'done' },
-                    { id: 'ocr', name: 'OCR/TextExtract', status: 'done', detail: '2 files' },
-                    { id: 'parser', name: 'DataParser', status: 'done', detail: '200 items' },
-                    { id: 'normalizer', name: 'Normalizer', status: 'done' },
-                    { id: 'validator', name: 'Validator', status: 'done', detail: '82% confidence' },
-                ],
+                pipelineUpdate: p({ intake: { status: 'done' }, ocr: { status: 'done', detail: fileCount }, parser: { status: 'done', detail: itemCount }, normalizer: { status: 'done' }, validator: { status: 'done', detail: `${confidence} confidence` } }),
             },
         ];
 
@@ -208,7 +214,7 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" />
 
             {/* Modal */}
-            <div className="relative w-full max-w-2xl mx-4 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700/50 rounded-2xl shadow-2xl shadow-indigo-500/10 animate-in zoom-in-95 fade-in duration-500 overflow-hidden">
+            <div className="relative w-full max-w-2xl mx-4 max-h-[85vh] bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700/50 rounded-2xl shadow-2xl shadow-indigo-500/10 animate-in zoom-in-95 fade-in duration-500 overflow-hidden flex flex-col">
                 {/* Top glow bar */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500" />
 
@@ -232,7 +238,7 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
                             </h3>
                             <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                                 {phase === 'processing'
-                                    ? '5 agents working on Apex Furniture RFQ'
+                                    ? `5 agents working on ${isWRG ? 'JPS Health Network' : 'Apex Furniture'} RFQ`
                                     : '5 agents completed — RFQ data extracted and normalized'}
                             </p>
                         </div>
@@ -254,11 +260,11 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
                 <div className="px-6 pb-3 flex flex-wrap items-center gap-2">
                     <span className="text-[9px] text-zinc-400 font-medium uppercase tracking-wider">Connected to:</span>
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[11px] font-bold text-blue-500">
-                        <EnvelopeOpenIcon className="w-3.5 h-3.5" /> MillerKnoll Vendor Email
+                        <EnvelopeOpenIcon className="w-3.5 h-3.5" /> {isWRG ? 'JPS Health Network Email' : 'MillerKnoll Vendor Email'}
                     </span>
                     <ArrowRightIcon className="w-3 h-3 text-zinc-500" />
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[11px] font-bold text-purple-500">
-                        <DocumentTextIcon className="w-3.5 h-3.5" /> PDF Spec + CSV Pricing
+                        <DocumentTextIcon className="w-3.5 h-3.5" /> {isWRG ? '3 PDF Attachments' : 'PDF Spec + CSV Pricing'}
                     </span>
                 </div>
 
@@ -325,8 +331,8 @@ export default function AIProcessingModal({ open, onComplete }: AIProcessingModa
                     </div>
                 ) : (
                     /* Extracted Items Summary */
-                    <div className="px-6 pb-5">
-                        <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
+                    <div className="px-6 pb-5 min-h-0 flex-1">
+                        <div className="bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 max-h-[240px] overflow-y-auto scrollbar-micro">
                             <div className="flex items-center gap-2 mb-3">
                                 <DocumentTextIcon className="w-4 h-4 text-zinc-500" />
                                 <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Extracted Data Summary</span>
