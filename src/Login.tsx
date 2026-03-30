@@ -525,7 +525,7 @@ export default function Login() {
                                                 </p>
                                                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
                                                     Select an MFA App from the{' '}
-                                                    <button onClick={() => setShowAppList(true)} className="text-primary hover:underline font-medium">
+                                                    <button onClick={() => setShowAppList(true)} className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
                                                         list of compatible applications
                                                     </button>
                                                 </p>
@@ -585,7 +585,7 @@ export default function Login() {
                                                         <button
                                                             key={app}
                                                             onClick={() => { setShowAppList(false); setMfaPhase('totp-qr'); }}
-                                                            className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 dark:hover:bg-primary/15 transition-colors"
+                                                            className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
                                                         >
                                                             {app}
                                                         </button>
@@ -658,7 +658,7 @@ export default function Login() {
                                         </p>
                                         <button
                                             onClick={() => setShowSecretKey(!showSecretKey)}
-                                            className="text-xs text-primary hover:underline font-medium mt-0.5"
+                                            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium mt-0.5"
                                         >
                                             {showSecretKey ? 'Hide secret key' : 'Show secret key.'}
                                         </button>
