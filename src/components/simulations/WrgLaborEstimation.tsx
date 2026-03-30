@@ -276,6 +276,11 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
     const [showScopeAlert, setShowScopeAlert] = useState(false);
     const [expandedRules, setExpandedRules] = useState<Set<string>>(new Set(['rate', 'scope', 'site', 'confidence']));
     const [adjustments, setAdjustments] = useState<Record<number, boolean>>({});
+    const [editingItemId, setEditingItemId] = useState<number | null>(null);
+    const [manualRate, setManualRate] = useState('');
+    const [manualHrs, setManualHrs] = useState('');
+    const [manualNote, setManualNote] = useState('');
+    const [manualEdits, setManualEdits] = useState<Record<number, { rate: string; hrs: string; note: string }>>({});
 
     // w2.1: only non-designer items can be adjusted here
     const expertOnlyAdjusted = EXPERT_ADJUSTMENTS.filter(a => !a.requiresDesigner).every(a => adjustments[a.id]);
@@ -702,25 +707,76 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
                                                         </div>
                                                     </div>
                                                 ) : !adjustments[adj.id] ? (
-                                                    /* Standard expert adjustment — apply AI suggestion directly */
-                                                    <div className="flex items-start gap-2 p-2 rounded-md bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-200/50 dark:border-indigo-500/20">
-                                                        <SparklesIcon className="h-3.5 w-3.5 text-indigo-500 shrink-0 mt-0.5" />
-                                                        <div className="flex-1">
-                                                            <div className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">AI Suggestion</div>
-                                                            <div className="text-[10px] text-foreground">{adj.aiSuggestion}</div>
+                                                    /* Standard expert adjustment — apply AI or edit manually */
+                                                    editingItemId === adj.id ? (
+                                                        /* Manual edit form */
+                                                        <div className="p-2.5 rounded-md bg-amber-50/50 dark:bg-amber-500/5 border border-amber-200/50 dark:border-amber-500/20 space-y-2 animate-in fade-in duration-200">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <PencilSquareIcon className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                                                                <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400">Manual Override</span>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <div>
+                                                                    <label className="text-[8px] font-bold text-muted-foreground uppercase">Rate / Unit</label>
+                                                                    <input value={manualRate} onChange={e => setManualRate(e.target.value)} placeholder="e.g. $0.40/hr" className="w-full mt-0.5 px-2 py-1 rounded-md text-[10px] bg-white dark:bg-zinc-800 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-amber-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[8px] font-bold text-muted-foreground uppercase">Hours</label>
+                                                                    <input value={manualHrs} onChange={e => setManualHrs(e.target.value)} placeholder="e.g. 1.5 hrs" className="w-full mt-0.5 px-2 py-1 rounded-md text-[10px] bg-white dark:bg-zinc-800 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-amber-400" />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-[8px] font-bold text-muted-foreground uppercase">Note</label>
+                                                                <input value={manualNote} onChange={e => setManualNote(e.target.value)} placeholder="Justification for override..." className="w-full mt-0.5 px-2 py-1 rounded-md text-[10px] bg-white dark:bg-zinc-800 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-amber-400" />
+                                                            </div>
+                                                            <div className="flex justify-end gap-2">
+                                                                <button onClick={() => setEditingItemId(null)} className="px-2.5 py-1 rounded-md text-[9px] font-bold text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
+                                                                <button
+                                                                    onClick={() => { setManualEdits(prev => ({ ...prev, [adj.id]: { rate: manualRate, hrs: manualHrs, note: manualNote } })); setAdjustments(prev => ({ ...prev, [adj.id]: true })); setEditingItemId(null); }}
+                                                                    className="px-2.5 py-1 rounded-md text-[9px] font-bold bg-amber-600 text-white hover:bg-amber-700 transition-colors flex items-center gap-1"
+                                                                >
+                                                                    <CheckIcon className="h-3 w-3" />
+                                                                    Apply Override
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                        <button
-                                                            onClick={() => setAdjustments(prev => ({ ...prev, [adj.id]: true }))}
-                                                            className="px-2.5 py-1.5 rounded-md text-[9px] font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shrink-0 flex items-center gap-1"
-                                                        >
-                                                            <CheckIcon className="h-3 w-3" />
-                                                            Apply
-                                                        </button>
-                                                    </div>
+                                                    ) : (
+                                                        /* AI suggestion + Edit button */
+                                                        <div className="space-y-1.5">
+                                                            <div className="flex items-start gap-2 p-2 rounded-md bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-200/50 dark:border-indigo-500/20">
+                                                                <SparklesIcon className="h-3.5 w-3.5 text-indigo-500 shrink-0 mt-0.5" />
+                                                                <div className="flex-1">
+                                                                    <div className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">AI Suggestion</div>
+                                                                    <div className="text-[10px] text-foreground">{adj.aiSuggestion}</div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setAdjustments(prev => ({ ...prev, [adj.id]: true }))}
+                                                                    className="px-2.5 py-1.5 rounded-md text-[9px] font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shrink-0 flex items-center gap-1"
+                                                                >
+                                                                    <CheckIcon className="h-3 w-3" />
+                                                                    Apply
+                                                                </button>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => { setEditingItemId(adj.id); setManualRate(''); setManualHrs(''); setManualNote(''); }}
+                                                                className="w-full py-1.5 rounded-md text-[9px] font-bold border border-dashed border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/5 transition-colors flex items-center justify-center gap-1.5"
+                                                            >
+                                                                <PencilSquareIcon className="h-3 w-3" />
+                                                                Edit Manually
+                                                            </button>
+                                                        </div>
+                                                    )
                                                 ) : (
                                                     <div className="flex items-center gap-2 text-[10px] text-green-700 dark:text-green-400">
                                                         <CheckCircleIcon className="h-3.5 w-3.5 shrink-0" />
-                                                        <span className="font-bold">Applied — {adj.aiSuggestion.split('.')[0]}</span>
+                                                        {manualEdits[adj.id] ? (
+                                                            <div>
+                                                                <span className="font-bold">Manual override applied</span>
+                                                                <span className="text-muted-foreground ml-1">— {manualEdits[adj.id].rate} · {manualEdits[adj.id].hrs}{manualEdits[adj.id].note ? ` · "${manualEdits[adj.id].note}"` : ''}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="font-bold">Applied — {adj.aiSuggestion.split('.')[0]}</span>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
