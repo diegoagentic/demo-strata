@@ -2847,20 +2847,178 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
             {/* Quote Preview Modal */}
             {showQuotePreview && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200" onClick={() => setShowQuotePreview(false)}>
-                    <div className="w-full max-w-2xl max-h-[85vh] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                    <div className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
                         <div className="px-6 py-4 bg-zinc-100 dark:bg-zinc-800 border-b border-border flex items-center justify-between">
                             <div>
-                                <div className="text-sm font-bold text-foreground">CLIENT PROPOSAL — JPS HEALTH CENTER</div>
-                                <div className="text-[10px] text-muted-foreground">Quote #WRG-2024-0847 · {new Date().toLocaleDateString()}</div>
+                                <div className="text-sm font-bold text-foreground tracking-wide">CLIENT PROPOSAL — JPS HEALTH CENTER FOR WOMEN</div>
+                                <div className="text-[10px] text-muted-foreground">Quote #WRG-2024-0847 · Prepared by David Park · {new Date().toLocaleDateString()}</div>
                             </div>
                             <button onClick={() => setShowQuotePreview(false)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
                                 <XMarkIcon className="h-4 w-4 text-muted-foreground" />
                             </button>
                         </div>
-                        <div className="p-6 space-y-5 overflow-y-auto max-h-[65vh]">
-                            {/* Quote pricing waterfall */}
+                        <div className="p-5 space-y-4 overflow-y-auto max-h-[72vh]">
+
+                            {/* §1 — Project & Intake Summary */}
                             <div>
-                                <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Pricing Summary</div>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <DocumentTextIcon className="h-3.5 w-3.5 text-indigo-500" />1. Project & Intake Summary
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 mb-2">
+                                    {INTAKE_REPORT.project.map(f => (
+                                        <div key={f.label} className="px-2 py-1.5 rounded-lg bg-muted/40">
+                                            <div className="text-[8px] text-muted-foreground uppercase">{f.label}</div>
+                                            <div className="text-[10px] font-bold text-foreground flex items-center gap-1">
+                                                {f.value}
+                                                {f.badge && <span className="text-[7px] px-1 py-0.5 rounded bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 font-bold">{f.badge}</span>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <div className="text-[8px] font-bold text-muted-foreground uppercase mb-1">Product Scope</div>
+                                        {INTAKE_REPORT.scope.map(s => (
+                                            <div key={s.label} className="flex items-center justify-between py-0.5">
+                                                <span className="text-[8px] text-muted-foreground">{s.label}</span>
+                                                <span className="text-[8px] font-bold text-foreground">{s.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div>
+                                        <div className="text-[8px] font-bold text-muted-foreground uppercase mb-1">Strata Registration</div>
+                                        {INTAKE_REPORT.registration.map(r => (
+                                            <div key={r.label} className="flex items-center justify-between py-0.5">
+                                                <span className="text-[8px] text-muted-foreground">{r.label}</span>
+                                                <span className="text-[8px] font-bold text-foreground">{r.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="h-px bg-border" />
+
+                            {/* §2 — Assigned Team */}
+                            <div>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <UserGroupIcon className="h-3.5 w-3.5 text-sky-500" />2. Assigned Team
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {INTAKE_REPORT.team.map(t => (
+                                        <div key={t.name} className="flex items-center gap-2.5 p-2 rounded-lg bg-muted/30 border border-border">
+                                            <img src={t.photo} alt="" className="w-8 h-8 rounded-full ring-1 ring-border" />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-[10px] font-bold text-foreground">{t.name}</div>
+                                                <div className="text-[8px] text-muted-foreground">{t.role} — {t.detail}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="h-px bg-border" />
+
+                            {/* §3 — Mismatches Resolved */}
+                            <div>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <ExclamationTriangleIcon className="h-3.5 w-3.5 text-amber-500" />3. Mismatches Resolved (Flow 1)
+                                </div>
+                                <div className="space-y-1">
+                                    {INTAKE_REPORT.mismatches.map(m => (
+                                        <div key={m.item} className="flex items-center justify-between py-0.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <CheckCircleIcon className="h-3 w-3 text-green-500 shrink-0" />
+                                                <span className="text-[9px] font-bold text-foreground">{m.item}</span>
+                                                <span className="text-[7px] px-1 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold ring-1 ring-inset ring-amber-600/20">{m.badge}</span>
+                                            </div>
+                                            <span className="text-[8px] text-muted-foreground">{m.resolution}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="h-px bg-border" />
+
+                            {/* §4 — Flagged Items & Expert Adjustments */}
+                            <div>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <AdjustmentsHorizontalIcon className="h-3.5 w-3.5 text-violet-500" />4. Flagged Items & Expert Adjustments
+                                </div>
+                                <div className="space-y-1.5">
+                                    {EXPERT_ADJUSTMENTS.map(adj => (
+                                        <div key={adj.id} className="p-2 rounded-lg bg-muted/30 border border-border">
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <span className="text-[9px] font-bold text-foreground">{adj.item}</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[8px] font-bold text-green-600 dark:text-green-400">{adj.impact}</span>
+                                                    {adj.requiresDesigner && <span className="text-[7px] px-1 py-0.5 rounded bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold">DESIGNER</span>}
+                                                </div>
+                                            </div>
+                                            <div className="text-[8px] text-muted-foreground">{adj.aiSuggestion}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="h-px bg-border" />
+
+                            {/* §5 — Labor Cost Breakdown */}
+                            <div>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <CalculatorIcon className="h-3.5 w-3.5 text-blue-500" />5. Labor Cost Breakdown
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 mb-2">
+                                    <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 text-center">
+                                        <div className="text-[8px] text-muted-foreground uppercase">Delivery</div>
+                                        <div className="text-sm font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                    </div>
+                                    <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
+                                        <div className="text-[8px] text-muted-foreground uppercase">Installation</div>
+                                        <div className="text-sm font-bold text-green-700 dark:text-green-400">${REVIEWED_INSTALL_COST.toLocaleString()}</div>
+                                    </div>
+                                    <div className="p-2.5 rounded-lg bg-card border border-border text-center">
+                                        <div className="text-[8px] text-muted-foreground uppercase">Combined</div>
+                                        <div className="text-sm font-bold text-foreground">${REVIEWED_COMBINED.toLocaleString()}</div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <div className="text-[8px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Delivery Detail</div>
+                                        {DELIVERY_BREAKDOWN.map(d => (
+                                            <div key={d.category} className="flex items-center justify-between py-0.5 border-b border-border/50 last:border-0">
+                                                <span className="text-[8px] text-muted-foreground">{d.category}</span>
+                                                <span className="text-[8px] font-bold text-foreground">{d.minutes}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div>
+                                        <div className="text-[8px] font-bold text-green-600 dark:text-green-400 uppercase mb-1">Installation Detail</div>
+                                        {INSTALLATION_BREAKDOWN.map(d => (
+                                            <div key={d.category} className="flex items-center justify-between py-0.5 border-b border-border/50 last:border-0">
+                                                <span className="text-[8px] text-muted-foreground">{d.category}</span>
+                                                <span className="text-[8px] font-bold text-foreground">{d.hours}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="h-px bg-border" />
+
+                            {/* §6 — Product Quote & Pricing Waterfall */}
+                            <div>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <CubeIcon className="h-3.5 w-3.5 text-emerald-500" />6. Product Quote & Pricing Waterfall
+                                </div>
+                                <div className="mb-2">
+                                    <div className="text-[8px] font-bold text-muted-foreground uppercase mb-1">MillerKnoll Product Breakdown</div>
+                                    {PRODUCT_QUOTE_BREAKDOWN.map(p => (
+                                        <div key={p.label} className="flex items-center justify-between py-0.5 border-b border-border/50 last:border-0">
+                                            <div>
+                                                <span className="text-[9px] font-bold text-foreground">{p.label}</span>
+                                                <span className="text-[8px] text-muted-foreground ml-1.5">{p.detail}</span>
+                                            </div>
+                                            <span className="text-[9px] font-bold text-foreground">{p.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
                                 <div className="rounded-xl border border-border overflow-hidden">
                                     {WATERFALL_ROWS.map(row => (
                                         <div key={row.label} className={`flex items-center justify-between ${waterfallStyles[row.type]}`}>
@@ -2876,37 +3034,97 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
                                         </div>
                                     ))}
                                 </div>
+                                <div className="flex items-center justify-center mt-1.5">
+                                    <span className="text-[8px] px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground font-bold uppercase tracking-wider">TAX EXEMPT — Government Healthcare Entity</span>
+                                </div>
                             </div>
-                            {/* Labor detail */}
+                            <div className="h-px bg-border" />
+
+                            {/* §7 — Estimation Criteria */}
                             <div>
-                                <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Labor Breakdown</div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 text-center">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Delivery</div>
-                                        <div className="text-sm font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <ShieldCheckIcon className="h-3.5 w-3.5 text-indigo-500" />7. Estimation Criteria Applied
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                                    {[
+                                        { icon: <CalculatorIcon className="h-3 w-3" />, text: 'Rate cards: $57/hr install · $0.95/min delivery' },
+                                        { icon: <TruckIcon className="h-3 w-3" />, text: 'Delivery Pricer sections A-G applied' },
+                                        { icon: <ExclamationTriangleIcon className="h-3 w-3" />, text: 'Hospital site: restricted hrs, freight elevator' },
+                                        { icon: <ShieldCheckIcon className="h-3 w-3" />, text: 'Scope limit: 119 KD chairs > 50-chair cap' },
+                                        { icon: <SparklesIcon className="h-3 w-3" />, text: '20 HIGH + 5 LOW confidence items reviewed' },
+                                        { icon: <CubeIcon className="h-3 w-3" />, text: '24 items: seating, tables, boards, custom' },
+                                    ].map((c, i) => (
+                                        <div key={i} className="flex items-center gap-1.5 py-0.5">
+                                            <span className="text-indigo-500 shrink-0">{c.icon}</span>
+                                            <span className="text-[8px] text-muted-foreground">{c.text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="h-px bg-border" />
+
+                            {/* §8 — Delivery Timeline */}
+                            <div>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <ClockIcon className="h-3.5 w-3.5 text-green-500" />8. Delivery Timeline
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20">
+                                        <div className="text-[9px] font-bold text-foreground mb-0.5">Standard items</div>
+                                        <div className="text-sm font-bold text-green-700 dark:text-green-400">8–10 weeks</div>
+                                        <div className="text-[8px] text-muted-foreground">22 standard MillerKnoll items</div>
                                     </div>
-                                    <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Installation</div>
-                                        <div className="text-sm font-bold text-green-700 dark:text-green-400">${REVIEWED_INSTALL_COST.toLocaleString()}</div>
-                                    </div>
-                                    <div className="p-2.5 rounded-lg bg-card border border-border text-center">
-                                        <div className="text-[9px] text-muted-foreground uppercase">Items</div>
-                                        <div className="text-sm font-bold text-foreground">24</div>
+                                    <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20">
+                                        <div className="text-[9px] font-bold text-foreground mb-0.5">Custom OFS Serpentine</div>
+                                        <div className="text-sm font-bold text-amber-600 dark:text-amber-400">12 weeks</div>
+                                        <div className="text-[8px] text-muted-foreground">Custom 12-seat — designer verified</div>
                                     </div>
                                 </div>
                             </div>
-                            {/* Timeline */}
+                            <div className="h-px bg-border" />
+
+                            {/* §9 — Review Trail */}
                             <div>
-                                <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Delivery Timeline</div>
-                                <div className="text-[10px] text-muted-foreground space-y-1">
-                                    <p>Standard items: 8-10 weeks from order confirmation</p>
-                                    <p>Custom OFS Serpentine: 12 weeks (includes fabrication)</p>
+                                <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <ClipboardDocumentCheckIcon className="h-3.5 w-3.5 text-sky-500" />9. Review Trail
+                                </div>
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center gap-2 text-[9px]">
+                                        <CheckCircleIcon className="h-3 w-3 text-green-500 shrink-0" />
+                                        <span><span className="font-bold">David Park</span> (Expert) — 24 items reviewed, 5 adjustments, OFS escalated</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[9px]">
+                                        <CheckCircleIcon className="h-3 w-3 text-sky-500 shrink-0" />
+                                        <span><span className="font-bold">Alex Rivera</span> (Designer) — 5 modules validated, OFS Serpentine confirmed</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[9px]">
+                                        <SparklesIcon className="h-3 w-3 text-indigo-500 shrink-0" />
+                                        <span>AI — Intake processing, Delivery Pricer A-G, scope limits, markup engine</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="text-center text-[9px] text-muted-foreground italic">TAX EXEMPT — Government Healthcare Entity</div>
+
+                            {/* Dealer comments if any */}
+                            {Object.keys(dealerModuleComments).length > 0 && (<>
+                                <div className="h-px bg-border" />
+                                <div>
+                                    <div className="text-[10px] font-bold text-foreground uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                        <ChatBubbleLeftEllipsisIcon className="h-3.5 w-3.5 text-brand-500" />Dealer Comments
+                                    </div>
+                                    <div className="space-y-1">
+                                        {Object.entries(dealerModuleComments).map(([moduleId, comment]) => (
+                                            <div key={moduleId} className="text-[9px] px-3 py-1.5 rounded-lg bg-muted/30 border border-border">
+                                                <span className="font-bold text-foreground capitalize">{moduleId.replace(/-/g, ' ')}:</span>{' '}
+                                                <span className="text-muted-foreground italic">{comment}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>)}
                         </div>
+                        {/* Footer */}
                         <div className="px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border-t border-border flex items-center justify-between">
-                            <div className="text-[9px] text-muted-foreground">Prepared by Strata for WRG — {new Date().toLocaleDateString()}</div>
+                            <div className="text-[9px] text-muted-foreground">Prepared by David Park, Expert — Strata Services · {new Date().toLocaleDateString()}</div>
                             <div className="flex gap-2">
                                 <button onClick={() => setShowQuotePreview(false)} className="px-4 py-2 rounded-lg text-[10px] font-bold border border-border bg-card text-foreground hover:bg-muted transition-colors">Close</button>
                                 <button onClick={() => setShowQuotePreview(false)} className="px-4 py-2 rounded-lg text-[10px] font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 transition-colors">Download PDF</button>
