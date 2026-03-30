@@ -352,6 +352,10 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
     const [showDealerPicker, setShowDealerPicker] = useState(false);
     const [selectedDealer, setSelectedDealer] = useState<string | null>(null);
     const [sendingToDealer, setSendingToDealer] = useState(false);
+    const [showProposalPreview, setShowProposalPreview] = useState(false);
+    const [editingField, setEditingField] = useState<string | null>(null);
+    const [fieldOverrides, setFieldOverrides] = useState<Record<string, string>>({});
+    const [expertNotes, setExpertNotes] = useState('');
 
     // ── Step init effect ─────────────────────────────────────────────────────
     useEffect(() => {
@@ -1570,10 +1574,34 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
                         {subPhase === 'markup-pipeline' && renderAgentPipeline(subAgents, subProgress, 'Markup & Proposal')}
                     </>)}
 
-                    {/* ── Sub-phase C revealed: Pricing waterfall + send ── */}
+                    {/* ── Sub-phase C revealed: Full proposal report ── */}
                     {subPhase === 'markup-revealed' && (
                         <div className="animate-in fade-in duration-500 space-y-3">
-                            {/* Pricing waterfall */}
+
+                            {/* Project context — from intake */}
+                            <div className="p-3 rounded-xl bg-card border border-border">
+                                <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Project Context</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { label: 'Client', value: 'JPS Health Center for Women' },
+                                        { label: 'Vertical', value: 'Healthcare', badge: 'HC' },
+                                        { label: 'Area', value: '14,200 sqft · 6 floors' },
+                                        { label: 'Manufacturer', value: 'MillerKnoll' },
+                                        { label: 'Site', value: 'Hospital delivery', badge: 'HOSP' },
+                                        { label: 'Template', value: 'Complex Sheet (>50 items)' },
+                                    ].map(f => (
+                                        <div key={f.label} className="px-2 py-1.5 rounded-lg bg-muted/50">
+                                            <div className="text-[7px] text-muted-foreground uppercase">{f.label}</div>
+                                            <div className="text-[9px] font-bold text-foreground flex items-center gap-1">
+                                                {f.value}
+                                                {f.badge && <span className="text-[7px] px-1 py-0.5 rounded bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 font-bold">{f.badge}</span>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Pricing waterfall — editable */}
                             <div className="rounded-xl border border-border overflow-hidden">
                                 {WATERFALL_ROWS.map(row => (
                                     <div key={row.label} className={`flex items-center justify-between ${waterfallStyles[row.type]}`}>
@@ -1585,9 +1613,28 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
                                         ) : (
                                             <span className={`text-[11px] ${row.type === 'total' ? 'text-xs font-bold uppercase tracking-wider' : 'font-medium'} ${waterfallTextStyles[row.type]}`}>{row.label}</span>
                                         )}
-                                        {row.value && (
-                                            <span className={`${row.type === 'total' ? 'text-xl font-black' : 'text-sm font-bold'} ${waterfallTextStyles[row.type]}`}>{row.value}</span>
-                                        )}
+                                        <div className="flex items-center gap-1.5">
+                                            {row.value && (
+                                                editingField === row.label ? (
+                                                    <input
+                                                        autoFocus
+                                                        defaultValue={fieldOverrides[row.label] || row.value}
+                                                        onBlur={e => { setFieldOverrides(prev => ({ ...prev, [row.label]: e.target.value })); setEditingField(null); }}
+                                                        onKeyDown={e => { if (e.key === 'Enter') { setFieldOverrides(prev => ({ ...prev, [row.label]: (e.target as HTMLInputElement).value })); setEditingField(null); } }}
+                                                        className="w-24 text-right text-sm font-bold bg-white dark:bg-zinc-800 border border-brand-400 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-400"
+                                                    />
+                                                ) : (
+                                                    <span className={`${row.type === 'total' ? 'text-xl font-black' : 'text-sm font-bold'} ${waterfallTextStyles[row.type]} ${fieldOverrides[row.label] ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                                                        {fieldOverrides[row.label] || row.value}
+                                                    </span>
+                                                )
+                                            )}
+                                            {row.value && row.type !== 'discount' && row.type !== 'total' && (
+                                                <button onClick={() => setEditingField(editingField === row.label ? null : row.label)} className="p-0.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors">
+                                                    <PencilSquareIcon className="h-3 w-3" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -1595,14 +1642,197 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
                                 <span className="text-[9px] px-3 py-1 rounded-full bg-muted text-muted-foreground font-bold uppercase tracking-wider">TAX EXEMPT — Government Healthcare Entity</span>
                             </div>
 
-                            {/* Send to dealer — opens picker */}
-                            <button
-                                onClick={() => setShowDealerPicker(true)}
-                                className="w-full py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
-                            >
-                                <PaperAirplaneIcon className="h-3.5 w-3.5" />
-                                Send Proposal for Dealer Review
-                            </button>
+                            {/* Estimation criteria summary — 2-col */}
+                            <div className="p-3 rounded-xl bg-card border border-border">
+                                <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Estimation Criteria Applied</div>
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                                    {[
+                                        { icon: <CalculatorIcon className="h-3 w-3" />, text: 'Rate cards: $57/hr install · $0.95/min delivery' },
+                                        { icon: <TruckIcon className="h-3 w-3" />, text: 'Delivery Pricer sections A-G applied' },
+                                        { icon: <ExclamationTriangleIcon className="h-3 w-3" />, text: 'Hospital site: restricted hrs, freight elevator' },
+                                        { icon: <ShieldCheckIcon className="h-3 w-3" />, text: 'Scope limit: 119 KD chairs > 50-chair cap' },
+                                        { icon: <SparklesIcon className="h-3 w-3" />, text: '20 HIGH + 5 LOW confidence items reviewed' },
+                                        { icon: <CubeIcon className="h-3 w-3" />, text: '24 items: seating, tables, boards, custom' },
+                                    ].map((c, i) => (
+                                        <div key={i} className="flex items-center gap-1.5 py-0.5">
+                                            <span className="text-indigo-500 shrink-0">{c.icon}</span>
+                                            <span className="text-[8px] text-muted-foreground">{c.text}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Delivery timeline */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="p-2.5 rounded-lg bg-card border border-border">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <ClockIcon className="h-3 w-3 text-green-500" />
+                                        <span className="text-[9px] font-bold text-foreground">Standard items</span>
+                                    </div>
+                                    <div className="text-sm font-bold text-green-700 dark:text-green-400">8–10 weeks</div>
+                                    <div className="text-[8px] text-muted-foreground">22 standard MillerKnoll items</div>
+                                </div>
+                                <div className="p-2.5 rounded-lg bg-card border border-border">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <ClockIcon className="h-3 w-3 text-amber-500" />
+                                        <span className="text-[9px] font-bold text-foreground">Custom OFS Serpentine</span>
+                                    </div>
+                                    <div className="text-sm font-bold text-amber-600 dark:text-amber-400">12 weeks</div>
+                                    <div className="text-[8px] text-muted-foreground">Custom 12-seat — designer verified</div>
+                                </div>
+                            </div>
+
+                            {/* Review activity trail */}
+                            <div className="p-3 rounded-xl bg-card border border-border">
+                                <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Review Trail</div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2 text-[9px]">
+                                        <CheckCircleIcon className="h-3 w-3 text-green-500 shrink-0" />
+                                        <span><span className="font-bold">David Park</span> (Expert) — 24 items reviewed, 5 adjustments, OFS escalated</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[9px]">
+                                        <CheckCircleIcon className="h-3 w-3 text-sky-500 shrink-0" />
+                                        <span><span className="font-bold">Alex Rivera</span> (Designer) — 5 modules validated, OFS Serpentine confirmed</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[9px]">
+                                        <SparklesIcon className="h-3 w-3 text-indigo-500 shrink-0" />
+                                        <span>AI — Intake, Delivery Pricer A-G, scope limits, markup engine</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Expert notes */}
+                            <div className="p-3 rounded-xl bg-card border border-border">
+                                <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Expert Notes for Dealer</div>
+                                <textarea
+                                    value={expertNotes}
+                                    onChange={e => setExpertNotes(e.target.value)}
+                                    placeholder="Add notes or observations for the dealer review (optional)..."
+                                    className="w-full text-[10px] bg-muted/30 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-1 focus:ring-brand-400 border border-border"
+                                    rows={2}
+                                />
+                            </div>
+
+                            {/* Action buttons: Preview + Send */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowProposalPreview(true)}
+                                    className="flex-1 py-3 rounded-xl text-xs font-bold border border-border bg-card text-foreground hover:bg-muted transition-all flex items-center justify-center gap-2"
+                                >
+                                    <EyeIcon className="h-3.5 w-3.5" />
+                                    Preview Proposal
+                                </button>
+                                <button
+                                    onClick={() => setShowDealerPicker(true)}
+                                    className="flex-1 py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <PaperAirplaneIcon className="h-3.5 w-3.5" />
+                                    Send for Dealer Review
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Proposal Preview Modal (w2.3) */}
+                    {showProposalPreview && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200" onClick={() => setShowProposalPreview(false)}>
+                            <div className="w-full max-w-2xl max-h-[85vh] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+                                <div className="px-6 py-4 bg-zinc-100 dark:bg-zinc-800 border-b border-border flex items-center justify-between">
+                                    <div>
+                                        <div className="text-sm font-bold text-foreground">PROPOSAL — JPS HEALTH CENTER FOR WOMEN</div>
+                                        <div className="text-[10px] text-muted-foreground">Quote #WRG-2024-0847 · Prepared by David Park · {new Date().toLocaleDateString()}</div>
+                                    </div>
+                                    <button onClick={() => setShowProposalPreview(false)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                                        <XMarkIcon className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                </div>
+                                <div className="p-6 space-y-5 overflow-y-auto max-h-[65vh]">
+                                    {/* Project info */}
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {[
+                                            { label: 'Client', value: 'JPS Health Network' },
+                                            { label: 'Facility', value: 'Health Center for Women' },
+                                            { label: 'Area', value: '14,200 sqft · 6 floors' },
+                                            { label: 'Manufacturer', value: 'MillerKnoll' },
+                                            { label: 'Delivery', value: 'Hospital restricted (6PM-6AM)' },
+                                            { label: 'Tax Status', value: 'Exempt — Government HC' },
+                                        ].map(f => (
+                                            <div key={f.label}>
+                                                <div className="text-[9px] text-muted-foreground uppercase">{f.label}</div>
+                                                <div className="text-[11px] font-bold text-foreground">{f.value}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="h-px bg-border" />
+                                    {/* Pricing */}
+                                    <div>
+                                        <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Pricing Summary</div>
+                                        <div className="rounded-xl border border-border overflow-hidden">
+                                            {WATERFALL_ROWS.map(row => (
+                                                <div key={row.label} className={`flex items-center justify-between ${waterfallStyles[row.type]}`}>
+                                                    {row.type === 'discount' ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <ArrowDownIcon className="h-3 w-3 text-green-500" />
+                                                            <span className="text-[10px] font-bold text-green-700 dark:text-green-400">{row.label}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className={`text-[11px] ${row.type === 'total' ? 'text-xs font-bold uppercase' : 'font-medium'} ${waterfallTextStyles[row.type]}`}>{row.label}</span>
+                                                    )}
+                                                    {row.value && <span className={`${row.type === 'total' ? 'text-lg font-black' : 'text-sm font-bold'} ${waterfallTextStyles[row.type]} ${fieldOverrides[row.label] ? 'text-amber-600 dark:text-amber-400' : ''}`}>{fieldOverrides[row.label] || row.value}</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Labor detail */}
+                                    <div>
+                                        <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Labor Breakdown</div>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 text-center">
+                                                <div className="text-[9px] text-muted-foreground uppercase">Delivery</div>
+                                                <div className="text-sm font-bold text-blue-700 dark:text-blue-400">${DELIVERY_TOTAL_COST.toLocaleString()}</div>
+                                            </div>
+                                            <div className="p-2.5 rounded-lg bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20 text-center">
+                                                <div className="text-[9px] text-muted-foreground uppercase">Installation</div>
+                                                <div className="text-sm font-bold text-green-700 dark:text-green-400">${REVIEWED_INSTALL_COST.toLocaleString()}</div>
+                                            </div>
+                                            <div className="p-2.5 rounded-lg bg-card border border-border text-center">
+                                                <div className="text-[9px] text-muted-foreground uppercase">Combined</div>
+                                                <div className="text-sm font-bold text-foreground">${REVIEWED_COMBINED.toLocaleString()}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Timeline */}
+                                    <div>
+                                        <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">Delivery Timeline</div>
+                                        <div className="space-y-1.5">
+                                            <div className="flex items-center gap-2">
+                                                <ClockIcon className="h-3 w-3 text-green-500" />
+                                                <span className="text-[10px]">Standard items: <span className="font-bold">8-10 weeks</span></span>
+                                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-green-500" style={{ width: '70%' }} /></div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <ClockIcon className="h-3 w-3 text-amber-500" />
+                                                <span className="text-[10px]">Custom OFS Serpentine: <span className="font-bold">12 weeks</span></span>
+                                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-amber-500" style={{ width: '85%' }} /></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Expert notes in preview */}
+                                    {expertNotes && (
+                                        <div>
+                                            <div className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-1">Expert Notes</div>
+                                            <div className="text-[10px] text-muted-foreground italic px-3 py-2 rounded-lg bg-muted/30 border border-border">{expertNotes}</div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border-t border-border flex items-center justify-between">
+                                    <div className="text-[9px] text-muted-foreground">Prepared by David Park, Expert — Strata Services</div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setShowProposalPreview(false)} className="px-4 py-2 rounded-lg text-[10px] font-bold border border-border bg-card text-foreground hover:bg-muted transition-colors">Close</button>
+                                        <button onClick={() => setShowProposalPreview(false)} className="px-4 py-2 rounded-lg text-[10px] font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 transition-colors">Download PDF</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
