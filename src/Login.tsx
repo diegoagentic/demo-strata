@@ -426,13 +426,13 @@ export default function Login() {
                         {/* Header */}
                         <div className="px-8 pt-8 pb-4 text-center">
                             {mfaPhase !== 'welcome' && mfaPhase !== 'totp-setup' && (
-                                <div className="mx-auto w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                                <div className="mx-auto w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center mb-4">
                                     {mfaPhase === 'success' ? (
                                         <ShieldCheckIcon className="w-7 h-7 text-green-500 dark:text-green-400" />
                                     ) : (mfaPhase === 'totp-qr' || mfaPhase === 'method-select') ? (
-                                        <QrCodeIcon className="w-7 h-7 text-primary" />
+                                        <QrCodeIcon className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
                                     ) : (
-                                        <DevicePhoneMobileIcon className="w-7 h-7 text-primary" />
+                                        <DevicePhoneMobileIcon className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
                                     )}
                                 </div>
                             )}
