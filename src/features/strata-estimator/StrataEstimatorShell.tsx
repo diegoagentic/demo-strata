@@ -10,11 +10,13 @@
 // and Sara is visible inside the single collaborative Shell.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDemo } from '../../context/DemoContext'
 import StrataEstimatorNavbar from './StrataEstimatorNavbar'
 import EstimatorDossierCard from './EstimatorDossierCard'
+import FinancialSummaryHero from './FinancialSummaryHero'
 import HandoffBanner from './HandoffBanner'
+import { calculateInstall } from './calculations'
 import { getStepRole, getStepState, getStepTab } from './stepStates'
 import {
     INITIAL_CONFIG,
@@ -49,6 +51,12 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [variables, _setVariables] = useState<OperationalVariables>(INITIAL_VARIABLES)
     const [config, _setConfig] = useState<ConfigState>(INITIAL_CONFIG)
     const [isSearchingRates, setIsSearchingRates] = useState(false)
+
+    // ── Derived: financial estimate (pure calc) ──────────────────────────────
+    const estimate = useMemo(
+        () => calculateInstall(lineItems, variables, config),
+        [lineItems, variables, config]
+    )
 
     // ── Handoff banner (fires when step role changes) ────────────────────────
     const prevStepIdRef = useRef<string | undefined>(undefined)
@@ -97,6 +105,11 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setTimeout(() => setIsSearchingRates(false), 1500)
     }
 
+    const handleGenerateProposal = () => {
+        // Phase 13: triggers the pricing waterfall modal
+        console.log('Generate proposal — Phase 13')
+    }
+
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Top navbar */}
@@ -131,7 +144,12 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                             isSearchingRates={isSearchingRates}
                         />
 
-                        {/* Phase 5: Financial Summary Hero — coming next */}
+                        {/* Phase 5: Financial Summary Hero */}
+                        <FinancialSummaryHero
+                            estimate={estimate}
+                            onGenerateProposal={handleGenerateProposal}
+                        />
+
                         {/* Phase 6: Bill of Materials — coming next */}
                         {/* Phase 7: Operational Constraints — coming next */}
 

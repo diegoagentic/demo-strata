@@ -26,6 +26,7 @@ export type { ConnectedUser } from './StrataEstimatorNavbar'
 
 // Estimator sections (Phase 4+)
 export { default as EstimatorDossierCard } from './EstimatorDossierCard'
+export { default as FinancialSummaryHero } from './FinancialSummaryHero'
 
 // WRG Demo v6 Origin Splash (Phase 4.6)
 export { default as WrgOriginSplash } from './WrgOriginSplash'
