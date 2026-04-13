@@ -7,8 +7,9 @@
 export type EstimatorTab = 'ESTIMATOR' | 'PROJECTS' | 'CONFIG'
 
 // ── Status ────────────────────────────────────────────────────────────────────
+// Aries parity: only 2 sync states (synced | saving). No idle/error.
 export type EstimateStatus = 'DRAFT' | 'PENDING' | 'APPROVED' | 'COMPLETED'
-export type SyncStatus = 'idle' | 'saving' | 'synced' | 'error'
+export type SyncStatus = 'synced' | 'saving'
 
 // ── Categories & Subcategories ────────────────────────────────────────────────
 export interface Subcategory {

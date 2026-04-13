@@ -61,7 +61,7 @@ export default function StrataEstimatorNavbar({
                             </div>
                         </div>
 
-                        {/* Sync status */}
+                        {/* Sync status — Aries parity: 2 states only (synced | saving) */}
                         <div className="ml-2 hidden md:flex items-center gap-1.5">
                             {syncStatus === 'synced' && (
                                 <>
@@ -78,16 +78,6 @@ export default function StrataEstimatorNavbar({
                                         Auto-Saving
                                     </span>
                                 </>
-                            )}
-                            {syncStatus === 'idle' && (
-                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                                    Ready
-                                </span>
-                            )}
-                            {syncStatus === 'error' && (
-                                <span className="text-[10px] font-semibold text-destructive uppercase tracking-wider">
-                                    Sync Error
-                                </span>
                             )}
                         </div>
                     </div>
