@@ -2,8 +2,14 @@
 
 **Branch:** `demo`
 **Base:** `99a05a7` (latest demo-strata/main)
-**Target:** New "Strata Estimator" app inspired by Project Aries structure, using Strata DS components
-**Date:** 2026-04-10
+**Target:** New "Strata Estimator" app based on Project Aries structure, using Strata DS components.
+**Flow strategy:** 1 splash + 4 collaborative steps in a single unified Shell (Opción F).
+**Date:** 2026-04-10 (updated with Opción F + CORE constraint)
+
+## Related documents
+- `docs/wrg-demo/FLOW_AND_STEPS.md` — full step-by-step narrative with sub-steps
+- `docs/wrg-demo/requirements/CORE_INTEGRATION_CONSTRAINT.md` — CORE is export-only (critical)
+- `docs/wrg-demo/requirements/estimating app V1.txt` — Project Aries reference code
 
 ---
 
@@ -353,6 +359,260 @@ export function calculateInstall(
 - Build passes
 - Card renders with 3 functional inputs
 - Commit: `feat(estimator): add project dossier card`
+
+---
+
+### Phase 4.5 — Role Profiles + Step State Mapping (45 min) 🆕
+
+**Goal:** Infrastructure for role-aware demo — who is connected + what the Estimator shows per step.
+
+**Files to create:**
+- `src/features/strata-estimator/roles.ts` — 3 ConnectedUser profiles
+- `src/features/strata-estimator/stepStates.ts` — step → estimator state mapping
+
+**Roles (exact):**
+```typescript
+export const ROLE_PROFILES: Record<string, ConnectedUser> = {
+    Expert: {
+        name: 'David Park',
+        role: 'Regional Sales Manager',
+        photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
+    },
+    Designer: {
+        name: 'Alex Rivera',
+        role: 'Designer',
+        photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&h=80&fit=crop&crop=face',
+    },
+    Dealer: {
+        name: 'Sara Chen',
+        role: 'Account Manager',
+        photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
+    },
+}
+```
+
+**Step states:**
+```typescript
+export type EstimatorStepState =
+    | 'idle'                // default — JPS pre-loaded
+    | 'estimation-active'   // w2.1 — Hero live, checkboxes enabled
+    | 'estimation-escalated'// w2.2 — focus item 19, others opacity-40
+    | 'estimation-assembly' // w2.3 — Generate Proposal pulsing
+    | 'proposal-review'     // w2.4 — read-only + approval chain
+
+export function getStepState(stepId: string): EstimatorStepState
+export function getStepRole(stepId: string): ConnectedUser | null
+```
+
+**Mapping:**
+- w2.1 → `estimation-active`, Expert
+- w2.2 → `estimation-escalated`, Designer
+- w2.3 → `estimation-assembly`, Expert
+- w2.4 → `proposal-review`, Dealer
+
+**Must NOT include (Aries parity):**
+- ❌ Intake states (w1.x flows removed per Opción F)
+- ❌ Roles beyond Expert/Designer/Dealer
+
+**Exit criteria:**
+- Build passes
+- Functions exported from barrel
+- Commit: `feat(estimator): add role profiles and step state mapping`
+
+---
+
+### Phase 4.6 — WrgOriginSplash Component (1 hour) 🆕
+
+**Goal:** Fullscreen splash animation explaining "the old way" before the Estimator appears.
+
+**File:** `src/features/strata-estimator/WrgOriginSplash.tsx`
+
+**Props:**
+```typescript
+{
+    onComplete: () => void
+}
+```
+
+**Narrative (CORE export-only compliant):**
+Refer to `docs/wrg-demo/FLOW_AND_STEPS.md` section w0.1 for the full sub-step sequence.
+
+**Key rule:** CORE is shown as a **file source** that users manually export FROM, not as an integration. The splash says:
+- "Estimator opens CORE manually → downloads scope files (PDF + CSV)"
+- NOT: "CORE syncs with Strata"
+
+**Structure:**
+- Fullscreen container: `fixed inset-0 z-50 bg-zinc-950 text-white`
+- Title fade-in (1s)
+- 5 tool icons appear sequentially (5s): Outlook, CORE, PDF, Excel (Selection), Excel (Pricer)
+- Pain statement (1.5s): "4 disconnected tools. 8 hours of manual work."
+- Transformation (2s): icons collapse into Strata logo
+- Final text: "Strata Estimator replaces the tools in the middle. CORE still receives the final file."
+- Fade out (0.5s) + `onComplete()` callback
+
+**Icons:** Use `Mail`, `Database`, `FileText`, `FileSpreadsheet`, `FileSpreadsheet` from lucide-react.
+
+**DS tokens:**
+- Background: `bg-zinc-950`
+- Text: `text-white`
+- Accent brand: `text-brand-400`
+- Pain red: `text-red-400`
+- Icons: `w-16 h-16`
+
+**Must NOT include:**
+- ❌ Claims of CORE integration / sync / API
+- ❌ Icons or references to tools that aren't in the WRG BPMN
+- ❌ Skip button during auto-advance (it's only 8-10s)
+- ❌ User interaction beyond waiting
+
+**Exit criteria:**
+- Build passes
+- Splash renders for 8-10 seconds and calls `onComplete`
+- Commit: `feat(estimator): add WrgOriginSplash fullscreen component`
+
+---
+
+### Phase 4.7 — HandoffBanner Component (30 min) 🆕
+
+**Goal:** Temporary banner that shows when a role hands off work to another role.
+
+**File:** `src/features/strata-estimator/HandoffBanner.tsx`
+
+**Props:**
+```typescript
+{
+    fromUser: ConnectedUser
+    message: string  // e.g. "sent you 1 item to verify"
+    duration?: number  // default 3000ms
+    onDismiss?: () => void
+}
+```
+
+**Structure:**
+- Sticky top banner below the Estimator navbar
+- Slide-in from top on mount
+- Fade out after `duration` ms
+- Content: avatar + name + message
+- Brand accent border-b
+- Class: `bg-brand-300/10 dark:bg-brand-500/5 border-b border-brand-400`
+
+**Must NOT include:**
+- ❌ Persistent notification (auto-dismiss only)
+- ❌ Multiple handoff banners stacked
+- ❌ Close button (auto-dismiss handles it)
+
+**Exit criteria:**
+- Build passes
+- Banner shows and auto-dismisses
+- Commit: `feat(estimator): add handoff banner component`
+
+---
+
+### Phase 4.8 — Rewire App.tsx + wrg-demo.ts (1.5 hours) 🆕
+
+**Goal:** Collapse the WRG demo routes into a single Shell. Reduce profile from 9 steps to 5.
+
+**Files to modify:**
+- `src/App.tsx` — all `wrg-*` routes render `<StrataEstimatorShell />` or `<WrgOriginSplash />`
+- `src/config/profiles/wrg-demo.ts` — reduce to 5 steps
+
+**App.tsx routing changes:**
+Replace all of these old cases:
+```tsx
+case 'wrg-labor': <><WrgLaborEstimation /><Transactions /></>
+case 'wrg-handoff': <><WrgHandoff /><Transactions /></>
+case 'wrg-designer': <><WrgDesigner /><Transactions /></>
+case 'wrg-intake': <WrgIntake />
+case 'wrg-intake-review': <Dashboard />
+case 'wrg-review': <Dashboard />
+```
+
+With:
+```tsx
+case 'wrg-origin':
+    return <WrgOriginSplash onComplete={() => nextStep()} />
+case 'wrg-estimator':
+    return <StrataEstimatorShell />
+```
+
+**CRITICAL:** Remove the `<Transactions>` and `<Dashboard>` overlays that currently render alongside WRG components. The Shell must be the ONLY visible UI.
+
+**wrg-demo.ts — new 5 steps:**
+```typescript
+export const WRG_DEMO_STEPS: DemoStep[] = [
+    {
+        id: 'w0.1',
+        groupId: 0,
+        groupTitle: 'Origin: The Old Way',
+        title: 'How WRG builds quotes today',
+        description: '4 disconnected tools, 8 hours of manual work, 85% without audit trail',
+        app: 'wrg-origin',
+        role: 'System',
+    },
+    {
+        id: 'w2.1',
+        groupId: 1,
+        groupTitle: 'Strata Estimator Flow',
+        title: 'Cost Estimation & Expert Review',
+        description: 'David runs the full estimation with live rates and operational constraints',
+        app: 'wrg-estimator',
+        role: 'Expert',
+    },
+    {
+        id: 'w2.2',
+        groupId: 1,
+        groupTitle: 'Strata Estimator Flow',
+        title: 'Designer Verification',
+        description: 'Alex verifies the custom OFS Serpentine item escalated by David',
+        app: 'wrg-estimator',
+        role: 'Designer',
+    },
+    {
+        id: 'w2.3',
+        groupId: 1,
+        groupTitle: 'Strata Estimator Flow',
+        title: 'Quote Assembly',
+        description: 'David assembles the final proposal — $287K list → $202K net with labor and freight',
+        app: 'wrg-estimator',
+        role: 'Expert',
+    },
+    {
+        id: 'w2.4',
+        groupId: 1,
+        groupTitle: 'Strata Estimator Flow',
+        title: 'Proposal Review & Release',
+        description: 'Sara reviews the $202K proposal, approves the 4-person chain, and releases to JPS',
+        app: 'wrg-estimator',
+        role: 'Dealer',
+    },
+]
+```
+
+**Remove from wrg-demo.ts:**
+- All w1.x entries (w1.1 → w1.5)
+- STEP_BEHAVIOR for w1.x
+- STEP_MESSAGES for w1.x
+- SELF_INDICATED entries for w1.x
+- STEP_TIMING for w1.x
+
+**Shell integration (update StrataEstimatorShell.tsx):**
+- Read `currentStep` from `useDemo()` context
+- Pass `connectedUser={getStepRole(currentStep.id)}` to the navbar
+- Use `getStepState(currentStep.id)` to determine Estimator visual state
+- Show HandoffBanner when step changes to a new role
+
+**Must NOT include:**
+- ❌ `<Transactions>` or `<Dashboard>` overlays alongside the Shell
+- ❌ The global app Navbar rendered on top of the Estimator
+- ❌ Breadcrumbs rendered inside the Shell
+- ❌ Sidebar rendered alongside the Shell
+- ❌ Any reference to w1.1–w1.5 steps
+
+**Exit criteria:**
+- Build passes
+- Demo profile WRG shows 5 steps (not 9)
+- Navigating w0.1 shows splash, then auto-advances to w2.1 which shows the Shell
+- Commit: `feat(wrg-demo): collapse flow 1 into splash + single shell route`
 
 ---
 
@@ -711,24 +971,12 @@ export function calculateInstall(
 
 ---
 
-### Phase 12 — Integration with WRG Demo Flow (1 hour)
+### Phase 12 — ❌ ELIMINATED (merged into Phase 4.8)
 
-**Goal:** Connect the Strata Estimator to the existing WRG demo steps w2.1-w2.3.
-
-**Files to modify:**
-- `src/config/profiles/wrg-demo.ts`
-- `src/App.tsx` (or demo context routing)
-
-**Tasks:**
-1. Update step descriptions in `wrg-demo.ts` for w2.1, w2.2, w2.3 to reference the new Estimator
-2. Change `app` field to `wrg-estimator` for w2.1-w2.3
-3. Add routing in App.tsx or demo context to render `StrataEstimatorShell` when `app === 'wrg-estimator'`
-4. Pre-fill customer data from w1 (JPS Health Network) when transitioning from w1.5 to w2.1
-
-**Exit criteria:**
-- Build passes
-- Demo flow navigates from w1 to Estimator on w2.1
-- Commit: `feat(wrg-demo): integrate estimator into flow 2`
+This phase was merged into **Phase 4.8** (Rewire App.tsx + wrg-demo.ts) when we
+adopted Opción F. All routing and integration work happens in 4.8 before Phase 5
+so that every subsequent phase (Hero, BoM, Constraints, etc.) is immediately
+visible in the demo as soon as it's implemented.
 
 ---
 
@@ -818,42 +1066,63 @@ export function calculateInstall(
 
 ---
 
-## Phase Dependency Graph
+## Phase Dependency Graph (updated for Opción F)
 
 ```
-Phase 0 (Scaffold)
+✅ Phase 0 (Scaffold)
     ↓
-Phase 1 (Types)
+✅ Phase 1 (Types + Mock Data)
     ↓
-Phase 2 (Calculations)
+✅ Phase 2 (Calculations)
     ↓
-Phase 3 (Shell + Navbar) ────────┐
-    ↓                            │
-Phase 4 (Dossier)                │
-    ↓                            │
-Phase 5 (Hero)                   │
-    ↓                            │
-Phase 6 (BoM Table)              │
-    ↓                            │
-Phase 7 (Constraints)            │
-    ↓                            │
-Phase 8 (Vision Modal)           │
-    ↓                            │
-Phase 9 (Wire Up) ◄──────────────┘  ← MVP CHECKPOINT
+✅ Phase 3 (Shell + Navbar)
     ↓
-Phase 10 (Projects) ─── can run parallel with Phase 11
-Phase 11 (Config)
+✅ Phase 4 (Dossier Card)
     ↓
-Phase 12 (WRG Flow Integration)
+🆕 Phase 4.5 (Roles + Step States)
     ↓
-Phase 13 (Waterfall)
+🆕 Phase 4.6 (WrgOriginSplash)
     ↓
-Phase 14 (Designer Overlay)
+🆕 Phase 4.7 (HandoffBanner)
     ↓
-Phase 15 (Polish)
+🆕 Phase 4.8 (Rewire App.tsx + wrg-demo.ts)  ← 🎬 DEMO NAVIGABLE
     ↓
-Phase 16 (Docs)
+Phase 5 (Financial Hero)
+    ↓
+Phase 6 (BoM Table)
+    ↓
+Phase 7 (Constraints)
+    ↓
+Phase 8 (Vision Modal)
+    ↓
+Phase 9 (Wire Up + Step State Awareness)  ← 🎯 MVP CHECKPOINT
+    ↓
+Phase 10 (Projects Tab) ─── can run parallel with Phase 11
+Phase 11 (Config Tab)
+    ↓
+❌ Phase 12 (ELIMINATED — merged into 4.8)
+    ↓
+Phase 13 (Pricing Waterfall — for w2.3)
+    ↓
+Phase 14 (Designer Verification State — for w2.2)
+    ↓
+Phase 15 (Polish + Dark Mode + Narrative)
+    ↓
+Phase 16 (Documentation + Final Commit)
 ```
+
+### Key checkpoints
+- **After Phase 4.8** → The demo is navigable end-to-end but with empty content inside the Shell. You can see the splash → Estimator with dossier.
+- **After Phase 9** → MVP complete. All 4 sections of ESTIMATOR tab are visible with real data and live calculations.
+- **After Phase 11** → All 3 Aries tabs (ESTIMATOR, PROJECTS, CONFIG) are functional.
+- **After Phase 14** → Role-aware state transitions (w2.1 → w2.4) fully working.
+
+### Progress summary
+
+**Completed (5 / 19):** 0, 1, 2, 3, 4
+**Next to execute:** 4.5 (Roles + Step States)
+**Remaining:** 4.5, 4.6, 4.7, 4.8, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16
+**Eliminated:** 12
 
 ---
 
