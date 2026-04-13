@@ -16,6 +16,7 @@ import StrataEstimatorNavbar from './StrataEstimatorNavbar'
 import EstimatorDossierCard from './EstimatorDossierCard'
 import FinancialSummaryHero from './FinancialSummaryHero'
 import BillOfMaterialsTable from './BillOfMaterialsTable'
+import OperationalConstraintsPanel from './OperationalConstraintsPanel'
 import HandoffBanner from './HandoffBanner'
 import { calculateInstall } from './calculations'
 import { getStepRole, getStepState, getStepTab } from './stepStates'
@@ -49,7 +50,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
     const [customer, setCustomer] = useState<Customer>(JPS_CUSTOMER)
     const [lineItems, setLineItems] = useState<LineItem[]>(JPS_LINE_ITEMS)
-    const [variables, _setVariables] = useState<OperationalVariables>(INITIAL_VARIABLES)
+    const [variables, setVariables] = useState<OperationalVariables>(INITIAL_VARIABLES)
     const [config, _setConfig] = useState<ConfigState>(INITIAL_CONFIG)
     const [isSearchingRates, setIsSearchingRates] = useState(false)
     const [hasLastFile, _setHasLastFile] = useState(false)
@@ -210,7 +211,12 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                             hasLastFile={hasLastFile}
                         />
 
-                        {/* Phase 7: Operational Constraints — coming next */}
+                        {/* Phase 7: Operational Constraints */}
+                        <OperationalConstraintsPanel
+                            variables={variables}
+                            onVariablesChange={setVariables}
+                            crewSize={estimate.crewSize}
+                        />
 
                         <p className="text-[10px] text-center text-muted-foreground/60 font-mono">
                             step {stepId ?? '—'} · state {stepState} · {variables.duration} day(s)
