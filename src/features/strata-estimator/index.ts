@@ -29,6 +29,7 @@ export { default as EstimatorDossierCard } from './EstimatorDossierCard'
 export { default as FinancialSummaryHero } from './FinancialSummaryHero'
 export { default as BillOfMaterialsTable } from './BillOfMaterialsTable'
 export { default as OperationalConstraintsPanel } from './OperationalConstraintsPanel'
+export { default as VisionEngineModal } from './VisionEngineModal'
 
 // WRG Demo v6 Origin Splash (Phase 4.6)
 export { default as WrgOriginSplash } from './WrgOriginSplash'

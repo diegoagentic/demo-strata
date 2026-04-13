@@ -17,6 +17,7 @@ import EstimatorDossierCard from './EstimatorDossierCard'
 import FinancialSummaryHero from './FinancialSummaryHero'
 import BillOfMaterialsTable from './BillOfMaterialsTable'
 import OperationalConstraintsPanel from './OperationalConstraintsPanel'
+import VisionEngineModal from './VisionEngineModal'
 import HandoffBanner from './HandoffBanner'
 import { calculateInstall } from './calculations'
 import { getStepRole, getStepState, getStepTab } from './stepStates'
@@ -53,7 +54,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [variables, setVariables] = useState<OperationalVariables>(INITIAL_VARIABLES)
     const [config, _setConfig] = useState<ConfigState>(INITIAL_CONFIG)
     const [isSearchingRates, setIsSearchingRates] = useState(false)
-    const [hasLastFile, _setHasLastFile] = useState(false)
+    const [lastFile, setLastFile] = useState<{ name: string } | null>(null)
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false)
 
     // ── Derived: financial estimate (pure calc) ──────────────────────────────
     const estimate = useMemo(
@@ -150,13 +152,17 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }
 
     const handleAiImport = () => {
-        // Phase 8: opens the Vision Engine modal
-        console.log('AI Import — Phase 8')
+        setLastFile(null) // force the initial "Select Spec Document" mode
+        setIsAiModalOpen(true)
     }
 
     const handleAiRefine = () => {
-        // Phase 8: re-runs the Vision Engine on the last imported file
-        console.log('AI Refine — Phase 8')
+        setIsAiModalOpen(true)
+    }
+
+    const handleItemsExtracted = (items: LineItem[], fileName: string) => {
+        setLineItems(items)
+        setLastFile({ name: fileName })
     }
 
     return (
@@ -208,7 +214,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                             onRemoveItem={handleRemoveItem}
                             onAiImport={handleAiImport}
                             onAiRefine={handleAiRefine}
-                            hasLastFile={hasLastFile}
+                            hasLastFile={!!lastFile}
                         />
 
                         {/* Phase 7: Operational Constraints */}
@@ -244,6 +250,14 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     </div>
                 )}
             </main>
+
+            {/* Phase 8: Vision Engine modal (AI Import / Refine) */}
+            <VisionEngineModal
+                isOpen={isAiModalOpen}
+                onClose={() => setIsAiModalOpen(false)}
+                onItemsExtracted={handleItemsExtracted}
+                lastFile={lastFile}
+            />
         </div>
     )
 }
