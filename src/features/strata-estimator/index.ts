@@ -27,6 +27,9 @@ export type { ConnectedUser } from './StrataEstimatorNavbar'
 // Estimator sections (Phase 4+)
 export { default as EstimatorDossierCard } from './EstimatorDossierCard'
 
+// WRG Demo v6 Origin Splash (Phase 4.6)
+export { default as WrgOriginSplash } from './WrgOriginSplash'
+
 // Role profiles + Step state mapping (Phase 4.5)
 export { ROLE_PROFILES, getRoleProfile } from './roles'
 export {
