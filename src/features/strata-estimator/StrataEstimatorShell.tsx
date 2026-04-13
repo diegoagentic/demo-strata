@@ -17,6 +17,7 @@ import EstimatorDossierCard from './EstimatorDossierCard'
 import FinancialSummaryHero from './FinancialSummaryHero'
 import BillOfMaterialsTable from './BillOfMaterialsTable'
 import OperationalConstraintsPanel from './OperationalConstraintsPanel'
+import ProjectsArchiveView from './ProjectsArchiveView'
 import VisionEngineModal from './VisionEngineModal'
 import HandoffBanner from './HandoffBanner'
 import { calculateInstall } from './calculations'
@@ -26,13 +27,16 @@ import {
     INITIAL_VARIABLES,
     JPS_CUSTOMER,
     JPS_LINE_ITEMS,
+    MOCK_SAVED_ESTIMATES,
 } from './mockData'
 import type {
     ConfigState,
     Customer,
+    EstimateStatus,
     EstimatorTab,
     LineItem,
     OperationalVariables,
+    SavedEstimate,
     SyncStatus,
 } from './types'
 
@@ -56,6 +60,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [isSearchingRates, setIsSearchingRates] = useState(false)
     const [lastFile, setLastFile] = useState<{ name: string } | null>(null)
     const [isAiModalOpen, setIsAiModalOpen] = useState(false)
+    const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>(MOCK_SAVED_ESTIMATES)
 
     // ── Derived: financial estimate (pure calc) ──────────────────────────────
     const estimate = useMemo(
@@ -165,6 +170,30 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setLastFile({ name: fileName })
     }
 
+    // ── Projects archive CRUD ────────────────────────────────────────────────
+    const handleLoadEstimate = (est: SavedEstimate) => {
+        setCustomer(est.customer)
+        setLineItems(est.lineItems)
+        setVariables(est.variables)
+        setActiveTab('ESTIMATOR')
+    }
+
+    const handleDeleteEstimate = (id: string) => {
+        setSavedEstimates((list) => list.filter((e) => e.id !== id))
+    }
+
+    const handleUpdateStatus = (id: string, status: EstimateStatus) => {
+        setSavedEstimates((list) =>
+            list.map((e) => (e.id === id ? { ...e, status } : e))
+        )
+    }
+
+    const handleUpdateActualCost = (id: string, actualCost: number) => {
+        setSavedEstimates((list) =>
+            list.map((e) => (e.id === id ? { ...e, actualCost } : e))
+        )
+    }
+
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Top navbar */}
@@ -231,13 +260,13 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 )}
 
                 {activeTab === 'PROJECTS' && (
-                    <div className="max-w-7xl mx-auto p-6">
-                        <div className="bg-card dark:bg-zinc-800 rounded-2xl border border-border shadow-sm p-12 text-center">
-                            <p className="text-sm text-muted-foreground">
-                                Projects archive — content will be added in Phase 10
-                            </p>
-                        </div>
-                    </div>
+                    <ProjectsArchiveView
+                        savedEstimates={savedEstimates}
+                        onLoadEstimate={handleLoadEstimate}
+                        onDeleteEstimate={handleDeleteEstimate}
+                        onUpdateStatus={handleUpdateStatus}
+                        onUpdateActualCost={handleUpdateActualCost}
+                    />
                 )}
 
                 {activeTab === 'CONFIG' && (

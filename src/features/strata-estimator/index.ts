@@ -30,6 +30,7 @@ export { default as FinancialSummaryHero } from './FinancialSummaryHero'
 export { default as BillOfMaterialsTable } from './BillOfMaterialsTable'
 export { default as OperationalConstraintsPanel } from './OperationalConstraintsPanel'
 export { default as VisionEngineModal } from './VisionEngineModal'
+export { default as ProjectsArchiveView } from './ProjectsArchiveView'
 
 // WRG Demo v6 Origin Splash (Phase 4.6)
 export { default as WrgOriginSplash } from './WrgOriginSplash'
