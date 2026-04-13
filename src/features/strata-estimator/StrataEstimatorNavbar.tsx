@@ -18,6 +18,12 @@ import {
 } from 'lucide-react'
 import type { EstimatorTab, SyncStatus } from './types'
 
+export interface ConnectedUser {
+    name: string
+    role: string
+    photo: string
+}
+
 interface StrataEstimatorNavbarProps {
     activeTab: EstimatorTab
     onTabChange: (tab: EstimatorTab) => void
@@ -25,6 +31,7 @@ interface StrataEstimatorNavbarProps {
     onSave: () => void
     onExportBackup?: () => void
     onImportBackup?: () => void
+    connectedUser?: ConnectedUser
 }
 
 const TABS: Array<{ id: EstimatorTab; label: string; icon: typeof LayoutDashboard }> = [
@@ -40,6 +47,7 @@ export default function StrataEstimatorNavbar({
     onSave,
     onExportBackup,
     onImportBackup,
+    connectedUser,
 }: StrataEstimatorNavbarProps) {
     return (
         <nav className="sticky top-0 z-30 bg-card dark:bg-zinc-900 border-b border-border shadow-sm">
@@ -134,6 +142,25 @@ export default function StrataEstimatorNavbar({
                         <Save className="h-4 w-4" />
                         Save Project
                     </button>
+
+                    {/* Connected user (role indicator for WRG demo) */}
+                    {connectedUser && (
+                        <div className="flex items-center gap-2 pl-3 border-l border-border">
+                            <img
+                                src={connectedUser.photo}
+                                alt={connectedUser.name}
+                                className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/30"
+                            />
+                            <div className="hidden sm:flex flex-col">
+                                <span className="text-xs font-semibold text-foreground leading-tight">
+                                    {connectedUser.name}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground leading-none">
+                                    {connectedUser.role}
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </nav>
