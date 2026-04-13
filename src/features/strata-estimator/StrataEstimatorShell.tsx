@@ -1,11 +1,21 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // Strata Estimator — Shell (main container)
-// Phase 3 of WRG Demo v6 implementation
+// Phase 3 + 4.8 of WRG Demo v6 implementation
+//
+// Shell is role-aware: when running inside the WRG demo, it reads the
+// currentStep from DemoContext to determine the connected user, the active
+// tab, and the visual state (idle / estimation-active / escalated / assembly
+// / proposal-review). A HandoffBanner is shown whenever the role changes
+// between steps so the narrative of work being passed between David, Alex
+// and Sara is visible inside the single collaborative Shell.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useDemo } from '../../context/DemoContext'
 import StrataEstimatorNavbar from './StrataEstimatorNavbar'
 import EstimatorDossierCard from './EstimatorDossierCard'
+import HandoffBanner from './HandoffBanner'
+import { getStepRole, getStepState, getStepTab } from './stepStates'
 import {
     INITIAL_CONFIG,
     INITIAL_VARIABLES,
@@ -26,14 +36,47 @@ interface StrataEstimatorShellProps {
 }
 
 export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimatorShellProps = {}) {
+    const { currentStep } = useDemo()
+    const stepId = currentStep?.id
+    const stepState = getStepState(stepId)
+    const connectedUser = getStepRole(stepId) ?? undefined
+
     // ── State ────────────────────────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState<EstimatorTab>('ESTIMATOR')
+    const [activeTab, setActiveTab] = useState<EstimatorTab>(getStepTab(stepId))
     const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced')
     const [customer, setCustomer] = useState<Customer>(JPS_CUSTOMER)
     const [lineItems, _setLineItems] = useState<LineItem[]>(JPS_LINE_ITEMS)
     const [variables, _setVariables] = useState<OperationalVariables>(INITIAL_VARIABLES)
     const [config, _setConfig] = useState<ConfigState>(INITIAL_CONFIG)
     const [isSearchingRates, setIsSearchingRates] = useState(false)
+
+    // ── Handoff banner (fires when step role changes) ────────────────────────
+    const prevStepIdRef = useRef<string | undefined>(undefined)
+    const [handoff, setHandoff] = useState<{
+        fromUser: NonNullable<typeof connectedUser>
+        message: string
+    } | null>(null)
+
+    useEffect(() => {
+        const prevId = prevStepIdRef.current
+        prevStepIdRef.current = stepId
+
+        // Only show handoff when moving from a previous estimator step to a new one
+        if (!prevId || prevId === stepId) return
+        const prevRole = getStepRole(prevId)
+        if (!prevRole) return
+        if (!connectedUser || prevRole.name === connectedUser.name) return
+
+        setHandoff({
+            fromUser: prevRole,
+            message: `Handed off to ${connectedUser.name} · ${currentStep?.title ?? ''}`,
+        })
+    }, [stepId, connectedUser, currentStep?.title])
+
+    // ── Sync active tab with the step's declared tab ─────────────────────────
+    useEffect(() => {
+        setActiveTab(getStepTab(stepId))
+    }, [stepId])
 
     // ── Handlers ─────────────────────────────────────────────────────────────
     const handleSave = () => {
@@ -42,18 +85,15 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }
 
     const handleExportBackup = () => {
-        // Phase 9: wire to actual export logic
         console.log('Export backup')
     }
 
     const handleImportBackup = () => {
-        // Phase 9: wire to actual import logic
         console.log('Import backup')
     }
 
     const handleRateLookup = () => {
         setIsSearchingRates(true)
-        // Simulate AI rate lookup (Phase 9 will wire to mock Gemini call)
         setTimeout(() => setIsSearchingRates(false), 1500)
     }
 
@@ -67,7 +107,17 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 onSave={handleSave}
                 onExportBackup={handleExportBackup}
                 onImportBackup={handleImportBackup}
+                connectedUser={connectedUser}
             />
+
+            {/* Handoff banner — dismisses automatically after 3s */}
+            {handoff && (
+                <HandoffBanner
+                    fromUser={handoff.fromUser}
+                    message={handoff.message}
+                    onDismiss={() => setHandoff(null)}
+                />
+            )}
 
             {/* Tab content */}
             <main className="flex-1 overflow-auto">
@@ -87,7 +137,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
                         <div className="bg-card dark:bg-zinc-800 rounded-2xl border border-border shadow-sm p-8 text-center">
                             <p className="text-xs text-muted-foreground">
-                                Phase 4 complete. Sections below will be added in Phases 5-7.
+                                Phase 4.8 · step <span className="font-mono font-semibold">{stepId ?? '—'}</span> · state <span className="font-mono font-semibold">{stepState}</span>
                                 {' · '}
                                 {lineItems.length} line items
                                 {' · '}

@@ -36,10 +36,8 @@ import ConversationalSurvey from "./components/simulations/ConversationalSurvey"
 import CRMSimulation from "./components/simulations/CRMSimulation"
 import DuplerPdfProcessor from "./components/simulations/DuplerPdfProcessor"
 import DuplerWarehouse from "./components/simulations/DuplerWarehouse"
-import WrgLaborEstimation from "./components/simulations/WrgLaborEstimation"
-import WrgIntake from "./components/simulations/WrgIntake"
-import WrgHandoff from "./components/simulations/WrgHandoff"
-import WrgDesigner from "./components/simulations/WrgDesigner"
+// WRG Demo v6 — Strata Estimator (Opción F: Collaborative Single-Shell)
+import { StrataEstimatorShell, WrgOriginSplash } from "./features/strata-estimator"
 // DuplerReporting now renders inside Dashboard.tsx (Follow Up notification + Metrics processing)
 
 import {
@@ -199,12 +197,9 @@ function App() {
       'dupler-pdf': 'transactions',
       'dupler-warehouse': 'inventory',
       'dupler-reporting': 'dashboard',
-      'wrg-labor': 'transactions',
-      'wrg-review': 'dashboard',
-      'wrg-intake': 'transactions',
-      'wrg-intake-review': 'dashboard',
-      'wrg-handoff': 'transactions',
-      'wrg-designer': 'transactions',
+      // WRG Demo v6: no global Navbar tab — Estimator owns its own tabs
+      'wrg-origin': 'dashboard',
+      'wrg-estimator': 'dashboard',
     };
     return appToTab[currentStep.app] || currentPage;
   };
@@ -277,42 +272,12 @@ function App() {
         return (
           <Dashboard onLogout={handleLogout} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         );
-      case 'wrg-intake':
-        return (
-          <>
-            <WrgIntake onNavigate={handleNavigate} />
-            <Transactions onLogout={handleLogout} onNavigateToDetail={(type) => setCurrentPage(type as any)} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
-          </>
-        );
-      case 'wrg-intake-review':
-        return (
-          <Dashboard onLogout={handleLogout} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
-        );
-      case 'wrg-labor':
-        return (
-          <>
-            <WrgLaborEstimation onNavigate={handleNavigate} />
-            <Transactions onLogout={handleLogout} onNavigateToDetail={(type) => setCurrentPage(type as any)} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
-          </>
-        );
-      case 'wrg-review':
-        return (
-          <Dashboard onLogout={handleLogout} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
-        );
-      case 'wrg-handoff':
-        return (
-          <>
-            <WrgHandoff onNavigate={handleNavigate} />
-            <Transactions onLogout={handleLogout} onNavigateToDetail={(type) => setCurrentPage(type as any)} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
-          </>
-        );
-      case 'wrg-designer':
-        return (
-          <>
-            <WrgDesigner onNavigate={handleNavigate} />
-            <Transactions onLogout={handleLogout} onNavigateToDetail={(type) => setCurrentPage(type as any)} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
-          </>
-        );
+      case 'wrg-origin':
+        // Fullscreen splash — Shell is NOT rendered yet
+        return <WrgOriginSplash onComplete={() => { /* auto-advances via step duration */ }} />;
+      case 'wrg-estimator':
+        // Single collaborative Shell — role + visual state driven by currentStep
+        return <StrataEstimatorShell />;
       default:
         return (
           <ExpertHubTransactions
@@ -366,9 +331,14 @@ function App() {
       <DemoProcessPanel onNavigate={handleNavigate} />
       <DemoStepBanner />
 
-      {/* FIXED NAVBAR (Unified) — hidden for email simulation & workspace/detail */}
+      {/* FIXED NAVBAR (Unified) — hidden for email simulation, WRG Estimator routes & workspace/detail */}
       {(isDemoActive
-        ? currentStep.app !== 'email-marketplace' && !['1.6', '2.1', '4.4'].includes(currentStep.id) && !(currentStep.id === '1.8' && currentStep.app !== 'crm') && !(currentStep.id === '3.5' && !isContinua)
+        ? currentStep.app !== 'email-marketplace'
+          && currentStep.app !== 'wrg-origin'
+          && currentStep.app !== 'wrg-estimator'
+          && !['1.6', '2.1', '4.4'].includes(currentStep.id)
+          && !(currentStep.id === '1.8' && currentStep.app !== 'crm')
+          && !(currentStep.id === '3.5' && !isContinua)
         : currentPage !== 'detail' && currentPage !== 'workspace'
       ) && (
         <div className="fixed top-0 left-0 right-0 z-[100]">
@@ -386,7 +356,7 @@ function App() {
       )}
 
       {/* MAIN CONTENT VIEWPORT */}
-      <main className={`transition-all duration-300 ${(isDemoActive ? currentStep.app !== 'email-marketplace' : currentPage !== 'detail' && currentPage !== 'workspace') ? 'pt-16' : ''} ${isDemoActive ? (isSidebarCollapsed ? 'pl-0' : 'pl-80') + ' animate-in fade-in duration-500' : ''} min-h-screen bg-background`}>
+      <main className={`transition-all duration-300 ${(isDemoActive ? currentStep.app !== 'email-marketplace' && currentStep.app !== 'wrg-origin' && currentStep.app !== 'wrg-estimator' : currentPage !== 'detail' && currentPage !== 'workspace') ? 'pt-16' : ''} ${isDemoActive ? (isSidebarCollapsed ? 'pl-0' : 'pl-80') + ' animate-in fade-in duration-500' : ''} min-h-screen bg-background`}>
         {isDemoActive && <DemoAIIndicator />}
         {isDemoActive ? renderSimulation() : renderCurrentPage()}
       </main>
