@@ -19,6 +19,9 @@ export type {
     SavedEstimate,
 } from './types'
 
+// Calculations (Phase 2)
+export { calculateInstall } from './calculations'
+
 // Mock data (Phase 1)
 export {
     INITIAL_CATEGORIES,
