@@ -99,7 +99,7 @@ export default function FinancialSummaryHero({
                 {/* Right: Generate Proposal CTA */}
                 <button
                     onClick={onGenerateProposal}
-                    className="shrink-0 flex items-center gap-2 bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:bg-brand-400 dark:hover:bg-brand-600 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                    className="shrink-0 flex items-center gap-2 bg-primary text-primary-foreground hover:opacity-90 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider transition-opacity shadow-sm"
                 >
                     <Receipt className="w-4 h-4" />
                     Generate Proposal

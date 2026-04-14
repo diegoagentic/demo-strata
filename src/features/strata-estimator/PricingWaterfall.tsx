@@ -105,7 +105,7 @@ export default function PricingWaterfall({
 
                             {/* Header */}
                             <div className="flex items-start gap-4 px-6 py-5 border-b border-border">
-                                <div className="p-3 rounded-xl bg-brand-300 dark:bg-brand-500 text-zinc-900 shrink-0">
+                                <div className="p-3 rounded-xl bg-primary text-primary-foreground shrink-0">
                                     <Receipt className="w-5 h-5" />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -181,7 +181,7 @@ export default function PricingWaterfall({
                                 </button>
                                 <button
                                     onClick={onSendForReview}
-                                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:bg-brand-400 dark:hover:bg-brand-600 transition-colors"
+                                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                                 >
                                     Select Dealer
                                     <ArrowRight className="w-3.5 h-3.5" />

@@ -53,7 +53,7 @@ import logoDarkBrand from './assets/logo-dark-brand.png'
 
 function App() {
   const { user, initialLoading, signOut, showSessionWarning, refreshSession } = useAuth()
-  const { isDemoActive, currentStep, isSidebarCollapsed } = useDemo()
+  const { isDemoActive, currentStep, isSidebarCollapsed, nextStep } = useDemo()
   const { activeProfile: demoProfile } = useDemoProfile()
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'ack-detail-ai' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('transactions')
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false)
@@ -274,7 +274,7 @@ function App() {
         );
       case 'wrg-origin':
         // Fullscreen splash — Shell is NOT rendered yet
-        return <WrgOriginSplash onComplete={() => { /* auto-advances via step duration */ }} />;
+        return <WrgOriginSplash onComplete={nextStep} />;
       case 'wrg-estimator':
         // Single collaborative Shell — role + visual state driven by currentStep
         return <StrataEstimatorShell />;

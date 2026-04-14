@@ -69,7 +69,7 @@ export default function ProjectsArchiveView({
     }, [savedEstimates, query])
 
     return (
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="pt-24 px-4 max-w-7xl mx-auto space-y-6">
 
             {/* Header */}
             <div className="flex items-center justify-between gap-4">
@@ -208,7 +208,7 @@ export default function ProjectsArchiveView({
                             <div className="flex items-center gap-2 pt-1">
                                 <button
                                     onClick={() => onLoadEstimate(est)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:bg-brand-400 dark:hover:bg-brand-600 transition-colors"
+                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                                 >
                                     <Upload className="w-3.5 h-3.5" />
                                     Load

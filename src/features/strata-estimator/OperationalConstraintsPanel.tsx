@@ -78,7 +78,7 @@ export default function OperationalConstraintsPanel({
                 {/* Left column: duration + toggles */}
                 <div className="space-y-4">
                     {/* Planned Install Days */}
-                    <div className="flex items-center justify-between p-4 rounded-xl border border-border">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/40">
                         <div className="flex items-center gap-3">
                             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <Calendar className="w-4 h-4 text-primary" />
@@ -117,10 +117,10 @@ export default function OperationalConstraintsPanel({
                                 <label
                                     key={t.key}
                                     className={clsx(
-                                        'flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors',
+                                        'flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors',
                                         active
-                                            ? 'border-primary bg-primary/5'
-                                            : 'border-border hover:border-primary/50'
+                                            ? 'bg-primary/10 ring-1 ring-primary/40'
+                                            : 'bg-muted/40 hover:bg-muted/60'
                                     )}
                                 >
                                     <div className="flex items-center gap-2.5 min-w-0">

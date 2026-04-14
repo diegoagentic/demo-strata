@@ -1,21 +1,31 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // Strata Estimator — Top Navbar
-// Phase 3 of WRG Demo v6 implementation
-// Custom top bar (not the global app Navbar) — based on Project Aries layout
+// Phase 3 + Phase 15 (visual alignment with main Strata Navbar)
+//
+// Floating pill navbar that mirrors `src/components/Navbar.tsx`:
+//  · Strata logo (light/dark) · DEALER EXPERIENCE / WRG label
+//  · Center: 3 tabs (ESTIMATOR / PROJECTS / CONFIG) with expand-on-hover
+//  · Right: sync status · backup icons · dark-mode toggle · connected user
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { clsx } from 'clsx'
 import {
-    Calculator,
-    CheckCircle2,
-    RefreshCw,
-    LayoutDashboard,
     Archive,
-    Settings,
+    CheckCircle2,
     Download,
-    UploadCloud,
+    LayoutDashboard,
+    MoonIcon,
+    RefreshCw,
     Save,
+    Settings,
+    SunIcon,
+    UploadCloud,
 } from 'lucide-react'
+// @ts-ignore — strata-design-system doesn't ship .d.ts; matches src/components/Navbar.tsx
+import { useTheme } from 'strata-design-system'
+import { useDemo } from '../../context/DemoContext'
+import logoLightBrand from '../../assets/logo-light-brand.png'
+import logoDarkBrand from '../../assets/logo-dark-brand.png'
 import type { EstimatorTab, SyncStatus } from './types'
 
 export interface ConnectedUser {
@@ -40,6 +50,41 @@ const TABS: Array<{ id: EstimatorTab; label: string; icon: typeof LayoutDashboar
     { id: 'CONFIG', label: 'Config', icon: Settings },
 ]
 
+// Expand-on-hover nav item (mirrors NavItem in src/components/Navbar.tsx)
+function NavItem({
+    icon,
+    label,
+    active,
+    onClick,
+}: {
+    icon: React.ReactNode
+    label: string
+    active: boolean
+    onClick: () => void
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={clsx(
+                'relative flex items-center justify-center h-9 px-2 rounded-full transition-all duration-300 group overflow-hidden',
+                active
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-muted text-muted-foreground'
+            )}
+        >
+            <span className="relative z-10">{icon}</span>
+            <span
+                className={clsx(
+                    'ml-2 text-sm font-medium whitespace-nowrap max-w-0 opacity-0 group-hover:max-w-xs group-hover:opacity-100 transition-all duration-300 ease-in-out',
+                    active && 'max-w-xs opacity-100'
+                )}
+            >
+                {label}
+            </span>
+        </button>
+    )
+}
+
 export default function StrataEstimatorNavbar({
     activeTab,
     onTabChange,
@@ -49,120 +94,150 @@ export default function StrataEstimatorNavbar({
     onImportBackup,
     connectedUser,
 }: StrataEstimatorNavbarProps) {
+    const { theme, toggleTheme } = useTheme()
+    const { isDemoActive, isSidebarCollapsed } = useDemo()
+    const sidebarExpanded = isDemoActive && !isSidebarCollapsed
+
     return (
-        <nav className="sticky top-0 z-30 bg-card dark:bg-zinc-900 border-b border-border shadow-sm">
-            <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+        <div
+            className={clsx(
+                'fixed top-6 z-50 flex justify-center px-4 transition-all duration-300',
+                sidebarExpanded ? 'left-80 right-0' : 'left-0 right-0'
+            )}
+        >
+            <div
+                className={clsx(
+                    'relative flex items-center lg:justify-between px-3 py-2 rounded-full gap-1 bg-card/80 backdrop-blur-xl border border-border shadow-lg dark:shadow-glow-md w-full transition-all duration-300',
+                    sidebarExpanded ? 'max-w-5xl' : 'max-w-7xl'
+                )}
+            >
 
-                {/* Left: Logo + Brand + Tabs */}
-                <div className="flex items-center gap-6">
-                    {/* Brand */}
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-xl bg-brand-300 dark:bg-brand-500 flex items-center justify-center shrink-0">
-                            <Calculator className="w-5 h-5 text-zinc-900" />
-                        </div>
-                        <div>
-                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
-                                Strata
-                            </div>
-                            <div className="text-sm font-bold text-foreground leading-tight">
-                                Estimator
-                            </div>
-                        </div>
-
-                        {/* Sync status — Aries parity: 2 states only (synced | saving) */}
-                        <div className="ml-2 hidden md:flex items-center gap-1.5">
-                            {syncStatus === 'synced' && (
-                                <>
-                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                                    <span className="text-[10px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
-                                        Recovery Active
-                                    </span>
-                                </>
-                            )}
-                            {syncStatus === 'saving' && (
-                                <>
-                                    <RefreshCw className="h-3 w-3 text-blue-500 animate-spin" />
-                                    <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                                        Auto-Saving
-                                    </span>
-                                </>
-                            )}
-                        </div>
+                {/* ── Left: Logo + DEALER EXPERIENCE / WRG ────────────────── */}
+                <div className="flex items-center gap-1">
+                    <div className="px-2 shrink-0">
+                        <img
+                            src={logoLightBrand}
+                            alt="Strata"
+                            className="h-8 w-20 object-contain block dark:hidden"
+                        />
+                        <img
+                            src={logoDarkBrand}
+                            alt="Strata"
+                            className="h-8 w-20 object-contain hidden dark:block"
+                        />
                     </div>
 
-                    {/* Tabs */}
-                    <div className="flex items-center gap-1 bg-muted p-1 rounded-xl">
-                        {TABS.map((tab) => {
-                            const Icon = tab.icon
-                            const isActive = activeTab === tab.id
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => onTabChange(tab.id)}
-                                    className={clsx(
-                                        'flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors',
-                                        isActive
-                                            ? 'bg-card dark:bg-zinc-800 text-primary shadow-sm'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    )}
-                                >
-                                    <Icon className="w-3.5 h-3.5" />
-                                    {tab.label}
-                                </button>
-                            )
-                        })}
+                    <div className="h-6 w-px bg-border mx-1 hidden lg:block" />
+
+                    <div className="hidden lg:flex flex-col items-start px-2 py-1.5">
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none">
+                            Dealer Experience
+                        </span>
+                        <span className="text-sm font-bold text-foreground leading-tight">
+                            WRG · Estimator
+                        </span>
                     </div>
                 </div>
 
-                {/* Right: Backup actions + Save CTA */}
-                <div className="flex items-center gap-3">
-                    {/* Backup icon buttons */}
-                    <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
-                        <button
-                            onClick={onExportBackup}
-                            title="Export Project Data"
-                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-card dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                        >
-                            <Download className="h-4 w-4" />
-                        </button>
-                        <button
-                            onClick={onImportBackup}
-                            title="Import Project Data"
-                            className="p-2 text-muted-foreground hover:text-foreground hover:bg-card dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                        >
-                            <UploadCloud className="h-4 w-4" />
-                        </button>
+                {/* ── Center: 3 tabs (expand on hover) ────────────────────── */}
+                <div className="hidden lg:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    {TABS.map((tab) => {
+                        const Icon = tab.icon
+                        return (
+                            <NavItem
+                                key={tab.id}
+                                icon={<Icon className="w-4 h-4" />}
+                                label={tab.label}
+                                active={activeTab === tab.id}
+                                onClick={() => onTabChange(tab.id)}
+                            />
+                        )
+                    })}
+                </div>
+
+                {/* ── Right: sync · backup · save · theme · user ──────────── */}
+                <div className="flex items-center gap-1">
+                    {/* Sync status (Aries parity: synced | saving) */}
+                    <div className="hidden md:flex items-center gap-1.5 px-2">
+                        {syncStatus === 'synced' ? (
+                            <>
+                                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                <span className="text-[10px] font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
+                                    Recovery Active
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <RefreshCw className="h-3 w-3 text-blue-500 animate-spin" />
+                                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                                    Auto-Saving
+                                </span>
+                            </>
+                        )}
                     </div>
 
-                    {/* Save Project CTA — brand CTA pattern */}
+                    <div className="h-4 w-px bg-border mx-1 hidden md:block" />
+
+                    {/* Backup icon buttons */}
+                    <button
+                        onClick={onExportBackup}
+                        title="Export Project Data"
+                        className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                        <Download className="h-4 w-4" />
+                    </button>
+                    <button
+                        onClick={onImportBackup}
+                        title="Import Project Data"
+                        className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                        <UploadCloud className="h-4 w-4" />
+                    </button>
+
+                    {/* Save Project CTA */}
                     <button
                         onClick={onSave}
-                        className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:bg-brand-400 dark:hover:bg-brand-600 rounded-xl shadow-sm transition-colors"
+                        className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                     >
-                        <Save className="h-4 w-4" />
-                        Save Project
+                        <Save className="h-3.5 w-3.5" />
+                        <span className="hidden xl:inline">Save</span>
+                    </button>
+
+                    <div className="h-4 w-px bg-border mx-1" />
+
+                    {/* Dark mode toggle */}
+                    <button
+                        onClick={toggleTheme}
+                        className="hidden lg:flex p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                        title="Toggle theme"
+                    >
+                        {theme === 'dark' ? (
+                            <SunIcon className="w-4 h-4" />
+                        ) : (
+                            <MoonIcon className="w-4 h-4" />
+                        )}
                     </button>
 
                     {/* Connected user (role indicator for WRG demo) */}
                     {connectedUser && (
-                        <div className="flex items-center gap-2 pl-3 border-l border-border">
+                        <button className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-muted transition-colors text-left outline-none">
                             <img
                                 src={connectedUser.photo}
                                 alt={connectedUser.name}
-                                className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/30"
+                                className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/40 shrink-0"
                             />
-                            <div className="hidden sm:flex flex-col">
-                                <span className="text-xs font-semibold text-foreground leading-tight">
+                            <div className="hidden sm:flex flex-col items-start max-w-[140px]">
+                                <span className="text-xs font-semibold text-foreground leading-tight truncate w-full">
                                     {connectedUser.name}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground leading-none">
                                     {connectedUser.role}
                                 </span>
                             </div>
-                        </div>
+                        </button>
                     )}
                 </div>
             </div>
-        </nav>
+        </div>
     )
 }

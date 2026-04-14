@@ -227,7 +227,7 @@ export default function VisionEngineModal({
                                 <button
                                     onClick={handleSubmit}
                                     disabled={!canSubmit}
-                                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:bg-brand-400 dark:hover:bg-brand-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                     <Sparkles className="w-3.5 h-3.5" />
                                     {isRefinement ? 'Refine' : 'Analyze'}

@@ -41,7 +41,7 @@ export default function EstimatorAdminView({
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
+        <div className="pt-24 px-4 max-w-7xl mx-auto space-y-6">
 
             {/* Header */}
             <div className="flex items-center gap-2">
@@ -263,7 +263,7 @@ function CategoryConfigCard({ category, onChange }: CategoryConfigCardProps) {
 
             <button
                 onClick={addSubcategory}
-                className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-dashed border-border transition-colors"
+                className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/60 transition-colors"
             >
                 <Plus className="w-3 h-3" />
                 Add Subcategory

@@ -69,7 +69,7 @@ export default function BillOfMaterialsTable({
 
                     <button
                         onClick={onAddItem}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:bg-brand-400 dark:hover:bg-brand-600 transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                     >
                         <Plus className="w-3.5 h-3.5" />
                         Add Line

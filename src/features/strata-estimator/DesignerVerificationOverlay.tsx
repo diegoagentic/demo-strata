@@ -125,7 +125,7 @@ export default function DesignerVerificationOverlay({
                 <button
                     onClick={onSendBack}
                     disabled={!allChecked}
-                    className={`w-full py-2.5 px-4 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors ${allChecked ? 'bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:bg-brand-400' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
+                    className={`w-full py-2.5 px-4 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-opacity ${allChecked ? 'bg-primary text-primary-foreground hover:opacity-90' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
                 >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />

@@ -210,8 +210,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-background text-foreground">
-            {/* Top navbar */}
+        <div className="min-h-screen bg-background text-foreground font-sans pb-10">
+            {/* Top navbar — floating pill, matches src/components/Navbar.tsx */}
             <StrataEstimatorNavbar
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
@@ -222,7 +222,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 connectedUser={connectedUser}
             />
 
-            {/* Handoff banner — dismisses automatically after 3s */}
+            {/* Handoff banner — sits below the floating pill, auto-dismisses */}
             {handoff && (
                 <HandoffBanner
                     fromUser={handoff.fromUser}
@@ -232,17 +232,17 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
             )}
 
             {/* Tab content */}
-            <main className="flex-1 overflow-auto">
+            <main>
                 {isInitialLoading ? (
-                    <div className="max-w-7xl mx-auto p-6 space-y-6 animate-pulse">
-                        <div className="h-32 bg-muted/30 dark:bg-muted/10 border border-border rounded-2xl"></div>
-                        <div className="h-64 bg-muted/20 dark:bg-muted/5 border border-border rounded-2xl"></div>
-                        <div className="h-96 bg-muted/10 dark:bg-muted/5 border border-border rounded-2xl"></div>
+                    <div className="pt-24 px-4 max-w-7xl mx-auto space-y-6 animate-pulse">
+                        <div className="h-32 bg-muted/40 rounded-2xl" />
+                        <div className="h-64 bg-muted/30 rounded-2xl" />
+                        <div className="h-96 bg-muted/20 rounded-2xl" />
                     </div>
                 ) : (
                     <>
                         {activeTab === 'ESTIMATOR' && (
-                            <div key="ESTIMATOR" className="max-w-7xl mx-auto p-6 space-y-6 animate-fade-in">
+                            <div key="ESTIMATOR" className="pt-24 px-4 max-w-7xl mx-auto space-y-6 animate-fade-in">
                                 {/* Phase 4: Project Dossier */}
                                 <EstimatorDossierCard
                                     customer={customer}
