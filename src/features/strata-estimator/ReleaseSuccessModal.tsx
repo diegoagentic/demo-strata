@@ -16,11 +16,14 @@
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
 import { Fragment, useEffect, useState } from 'react'
 import { ArrowRight, Download } from 'lucide-react'
+import AuditTrailPdfPreviewModal from './AuditTrailPdfPreviewModal'
+import type { AuditEvent } from './AuditTrailPanel'
 
 interface ReleaseSuccessModalProps {
     isOpen: boolean
     salesPrice: string
     clientName: string
+    auditLog: AuditEvent[]
     onDownloadPdf: () => void
     onContinueToDelivery: () => void
 }
@@ -41,11 +44,13 @@ export default function ReleaseSuccessModal({
     isOpen,
     salesPrice,
     clientName,
+    auditLog,
     onDownloadPdf,
     onContinueToDelivery,
 }: ReleaseSuccessModalProps) {
     const [visibleMetrics, setVisibleMetrics] = useState(0)
     const [checkDrawn, setCheckDrawn] = useState(false)
+    const [auditPdfOpen, setAuditPdfOpen] = useState(false)
 
     useEffect(() => {
         if (!isOpen) {
@@ -172,7 +177,7 @@ export default function ReleaseSuccessModal({
                             {/* Footer actions */}
                             <div className="flex items-center gap-2 px-6 py-4 border-t border-border bg-muted/20">
                                 <button
-                                    onClick={onDownloadPdf}
+                                    onClick={() => setAuditPdfOpen(true)}
                                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors mr-auto"
                                 >
                                     <Download className="w-3.5 h-3.5" />
@@ -190,6 +195,15 @@ export default function ReleaseSuccessModal({
                     </TransitionChild>
                 </div>
             </Dialog>
+
+            {/* Audit trail PDF preview — opened from the secondary footer button */}
+            <AuditTrailPdfPreviewModal
+                isOpen={auditPdfOpen}
+                events={auditLog}
+                clientName={clientName}
+                onClose={() => setAuditPdfOpen(false)}
+                onDownload={onDownloadPdf}
+            />
         </Transition>
     )
 }

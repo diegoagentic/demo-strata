@@ -945,6 +945,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     maximumFractionDigits: 0,
                 })}
                 clientName={customer.name}
+                auditLog={auditLog}
                 onDownloadPdf={handleReleaseDownloadPdf}
                 onContinueToDelivery={handleContinueToDelivery}
             />
