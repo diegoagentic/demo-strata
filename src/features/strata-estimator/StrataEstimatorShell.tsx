@@ -96,6 +96,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [isClarificationOpen, setIsClarificationOpen] = useState(false)
     const [isProposalPdfOpen, setIsProposalPdfOpen] = useState(false)
     const [davidApprovalActive, setDavidApprovalActive] = useState(false)
+    const [davidSigned, setDavidSigned] = useState(false)
     const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>(MOCK_SAVED_ESTIMATES)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
 
@@ -496,26 +497,45 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }
 
     const handleApproveRelease = () => {
-        // Step 1 — log Sara sending the proposal and redirect the Shell to
-        // David Park's view (navbar user swap + inline handoff banner).
-        logEvent('Sara Chen', 'Sent proposal to David Park for approval', 'approval')
-        setDavidApprovalActive(true)
-        setHandoff({
-            fromUser: ROLE_PROFILES.Dealer,
-            toUser: ROLE_PROFILES.Expert,
-            message: 'Approval request · JPS Health Network · $202,138 awaiting your sign-off',
-        })
+        // Phase 1 — Sara initiates the chain. Open the modal with nobody
+        // signed yet so the audience sees the empty chain for a beat.
+        logEvent('Sara Chen', 'Initiated approval chain', 'approval')
+        setDavidSigned(false)
+        setIsApprovalOpen(true)
 
-        // Step 2 — after David "reviews" in his own workspace, log his
-        // signature, clear the redirect, and open the chain modal (which
-        // now opens with David pre-approved).
+        // Phase 2 — after ~2 s, close the modal and redirect the Shell to
+        // David's real workspace so the audience watches the notification
+        // land in his Estimator view.
         setTimeout(() => {
-            logEvent('David Park', 'Approved proposal from his workspace', 'approval')
-            setDavidApprovalActive(false)
-            setHandoff(null)
-            logEvent('Sara Chen', 'Initiated approval chain', 'approval')
-            setIsApprovalOpen(true)
-        }, 3800)
+            setIsApprovalOpen(false)
+            logEvent(
+                'Sara Chen',
+                'Sent proposal to David Park for approval',
+                'approval'
+            )
+            setDavidApprovalActive(true)
+            setHandoff({
+                fromUser: ROLE_PROFILES.Dealer,
+                toUser: ROLE_PROFILES.Expert,
+                message:
+                    'Approval request · JPS Health Network · $202,138 awaiting your sign-off',
+            })
+
+            // Phase 3 — after David "reviews and approves" in his own
+            // workspace, clear the redirect, mark David signed, and re-open
+            // the chain modal to auto-advance Alex / Sara / Jordan.
+            setTimeout(() => {
+                logEvent(
+                    'David Park',
+                    'Approved proposal from his workspace',
+                    'approval'
+                )
+                setDavidApprovalActive(false)
+                setHandoff(null)
+                setDavidSigned(true)
+                setIsApprovalOpen(true)
+            }, 3800)
+        }, 2200)
     }
 
     const handleApprovalChainComplete = () => {
@@ -533,6 +553,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
             'release'
         )
         setIsApprovalOpen(false)
+        setDavidSigned(false) // reset the two-phase gate for next run
         setIsReleaseOpen(true)
     }
 
@@ -563,6 +584,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setIsApprovalOpen(false)
         setIsWaterfallOpen(false)
         setIsAiModalOpen(false)
+        setDavidApprovalActive(false)
+        setDavidSigned(false)
         setCustomer(JPS_CUSTOMER)
         setLineItems(JPS_LINE_ITEMS)
         setVariables(INITIAL_VARIABLES)
@@ -983,9 +1006,13 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 freight={JPS_FREIGHT}
             />
 
-            {/* Refinement Phase 1: w2.2 — Approval chain */}
+            {/* Refinement Phase 1: w2.2 — Approval chain.
+                Two-phase: first opens empty for ~2 s while the Shell
+                prepares the David redirect, then re-opens with David
+                pre-signed and auto-chains through the rest. */}
             <ApprovalChainModal
                 isOpen={isApprovalOpen}
+                davidSigned={davidSigned}
                 onClose={() => setIsApprovalOpen(false)}
                 onComplete={handleApprovalChainComplete}
             />

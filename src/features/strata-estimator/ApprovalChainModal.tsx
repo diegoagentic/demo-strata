@@ -1,8 +1,13 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // Strata Estimator — Approval Chain Modal
-// v7 · David Park pre-approves inside his own Estimator view, so the modal
-// opens with David already signed and auto-chains through Alex → Sara →
-// Jordan. The "redirect to David's workspace" happens in the Shell, not here.
+// v7 · Two-phase modal for the w2.2 approval flow:
+//
+//   1st open (davidSigned=false): renders the chain with everyone pending
+//     and DOES NOT auto-advance. The Shell keeps it open for ~2 s, then
+//     closes it to redirect the audience to David Park's real workspace.
+//
+//   2nd open (davidSigned=true): David is pre-checked and the modal
+//     auto-chains through Alex → Sara → Jordan → fires onComplete.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
@@ -43,43 +48,53 @@ const STEP_MS = 800
 
 interface ApprovalChainModalProps {
     isOpen: boolean
+    davidSigned: boolean
     onClose: () => void
     onComplete: () => void
 }
 
 export default function ApprovalChainModal({
     isOpen,
+    davidSigned,
     onClose,
     onComplete,
 }: ApprovalChainModalProps) {
     const [approvedCount, setApprovedCount] = useState(0)
 
-    // Reset + sequential auto-approval. David (index 0) is pre-approved on
-    // open because the Shell already played his workspace cutaway before the
-    // modal was allowed to mount.
+    // Phase-aware timeline.
+    //   · davidSigned=false → show all pending, do not advance. The Shell
+    //     will close this modal in a couple of seconds to redirect the
+    //     audience to David's workspace.
+    //   · davidSigned=true  → David auto-checks on open, then Alex / Sara /
+    //     Jordan auto-chain with the usual cadence and we fire onComplete.
     useEffect(() => {
         if (!isOpen) {
             setApprovedCount(0)
             return
         }
 
+        if (!davidSigned) {
+            setApprovedCount(0)
+            return
+        }
+
         const timers: ReturnType<typeof setTimeout>[] = []
-        // David is already signed when we land here.
-        timers.push(setTimeout(() => setApprovedCount(1), 350))
-        // Alex / Sara / Jordan chain with the usual cadence.
+        // David signs first (reflecting the workspace approval).
+        timers.push(setTimeout(() => setApprovedCount(1), 300))
+        // Alex / Sara / Jordan follow.
         for (let i = 1; i < CHAIN.length; i++) {
             timers.push(
                 setTimeout(
                     () => setApprovedCount(i + 1),
-                    350 + i * STEP_MS
+                    300 + i * STEP_MS
                 )
             )
         }
         timers.push(
-            setTimeout(onComplete, 350 + CHAIN.length * STEP_MS + 300)
+            setTimeout(onComplete, 300 + CHAIN.length * STEP_MS + 400)
         )
         return () => timers.forEach(clearTimeout)
-    }, [isOpen, onComplete])
+    }, [isOpen, davidSigned, onComplete])
 
     const progressPct = (approvedCount / CHAIN.length) * 100
     const done = approvedCount >= CHAIN.length
@@ -218,6 +233,11 @@ export default function ApprovalChainModal({
                                             Releasing proposal…
                                         </span>
                                     </div>
+                                ) : !davidSigned ? (
+                                    <p className="text-xs text-muted-foreground">
+                                        Strata is routing the proposal to David Park's
+                                        workspace for the first signature…
+                                    </p>
                                 ) : (
                                     <p className="text-xs text-muted-foreground">
                                         Strata is routing the proposal through the approval chain.
