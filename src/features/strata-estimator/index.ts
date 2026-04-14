@@ -40,6 +40,7 @@ export { default as ScopeBreachAlert } from './ScopeBreachAlert'
 export { default as FlaggedItemBanner } from './FlaggedItemBanner'
 export { default as AuditTrailPanel } from './AuditTrailPanel'
 export { default as RoleHandoffTransition } from './RoleHandoffTransition'
+export { default as VerificationLogCard } from './VerificationLogCard'
 export { default as DesignerVerificationOverlay } from './DesignerVerificationOverlay'
 
 // WRG Demo v6 Origin Splash (Phase 4.6)

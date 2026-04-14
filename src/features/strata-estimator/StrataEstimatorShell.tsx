@@ -32,6 +32,7 @@ import AuditTrailPanel from './AuditTrailPanel'
 import type { AuditCategory, AuditEvent } from './AuditTrailPanel'
 import RoleHandoffTransition from './RoleHandoffTransition'
 import type { HandoffPerson } from './RoleHandoffTransition'
+import VerificationLogCard from './VerificationLogCard'
 import { ROLE_PROFILES } from './roles'
 import { calculateInstall } from './calculations'
 import { getStepRole, getStepState, getStepTab } from './stepStates'
@@ -101,6 +102,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [scopeBreachActive, setScopeBreachActive] = useState(false)
     const [flaggedRowIds, setFlaggedRowIds] = useState<string[]>([])
     const [escalatedAt, setEscalatedAt] = useState<number | null>(null)
+    const [verifiedAt, setVerifiedAt] = useState<number | null>(null)
     const [mappingResolvedCount, setMappingResolvedCount] = useState<number>(Infinity)
     // Dual-engine calculation progress (0 → 1). Default 1 = show real values.
     const [calcProgress, setCalcProgress] = useState<number>(1)
@@ -184,6 +186,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setMappingResolvedCount(0) // all rows will first appear as chips
         setCalcProgress(0) // hero starts at $0 and counts up during the calc beat
         setEscalatedAt(null) // drop any stale escalation context
+        setVerifiedAt(null) // drop any stale verification context
         setAuditLog([])
         logEvent('System', 'Session opened · JPS Health Network', 'system')
 
@@ -326,12 +329,12 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     // ── w2.3 auto-open waterfall ─────────────────────────────────────────────
     // The Expert's role in w2.3 is supervisory — they watch the assembly run.
     // Instead of requiring a manual click on the Generate Proposal CTA, the
-    // Shell auto-opens the PricingWaterfall ~1.2 s after the handoff banner
-    // fires, giving the user a moment to read "Alex approved the verification"
-    // before the modal slides in.
+    // Shell auto-opens the PricingWaterfall ~2.6 s after entry, giving the
+    // user time to read the VerificationLogCard (Phase 7.5) that summarises
+    // what Alex just validated before the assembly animation plays.
     useEffect(() => {
         if (stepId !== 'w2.3') return
-        const timer = setTimeout(() => setIsWaterfallOpen(true), 1200)
+        const timer = setTimeout(() => setIsWaterfallOpen(true), 2600)
         return () => clearTimeout(timer)
     }, [stepId])
 
@@ -495,8 +498,9 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         }
         // Refinement Phase 7.3: dismiss any pending handoff transition
         setHandoff2(null)
-        // Refinement Phase 7.4: clear the escalation timestamp
+        // Refinement Phase 7.4 + 7.5: clear the escalation + verification timestamps
         setEscalatedAt(null)
+        setVerifiedAt(null)
         // Refinement Phase 6d: clear audit log so the new session starts fresh
         setAuditLog([])
         if (goToStep) goToStep(0)
@@ -640,6 +644,15 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
+                                {/* Refinement Phase 7.5: Verification log card (w2.3 preamble) */}
+                                {stepId === 'w2.3' && verifiedAt && (
+                                    <VerificationLogCard
+                                        verifiedByName={ROLE_PROFILES.Designer.name}
+                                        verifiedByPhoto={ROLE_PROFILES.Designer.photo}
+                                        verifiedAt={verifiedAt}
+                                    />
+                                )}
+
                                 {/* Phase 6: Bill of Materials */}
                                 <BillOfMaterialsTable
                                     lineItems={lineItems}
@@ -750,6 +763,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                         'Verified OFS Serpentine · 14 h install (modular assembly confirmed)',
                         'edit'
                     )
+                    setVerifiedAt(Date.now())
                     triggerHandoff(
                         ROLE_PROFILES.Designer,
                         ROLE_PROFILES.Expert,
