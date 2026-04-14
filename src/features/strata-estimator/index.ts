@@ -46,7 +46,6 @@ export { default as AgentRoutingToast } from './AgentRoutingToast'
 export { default as DesignerVerificationOverlay } from './DesignerVerificationOverlay'
 
 // WRG Demo v6 Origin Splash (Phase 4.6)
-export { default as WrgOriginSplash } from './WrgOriginSplash'
 
 // WRG Demo v6 Handoff Banner (Phase 4.7)
 export { default as HandoffBanner } from './HandoffBanner'

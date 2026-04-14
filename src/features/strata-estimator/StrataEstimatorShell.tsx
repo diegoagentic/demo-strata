@@ -90,7 +90,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>(MOCK_SAVED_ESTIMATES)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
 
-    // ── w2.1 beat timeline state (refinement Phase 2 + 7.1) ──────────────────
+    // ── w1.1 beat timeline state (refinement Phase 2 + 7.1) ──────────────────
     type W21Phase =
         | 'idle'
         | 'loading-dossier'
@@ -155,7 +155,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }, [lineItems])
 
     // Derived: sticky scope breach badge (shown after the transient alert
-    // fades so the state stays visible throughout w2.1-w2.4).
+    // fades so the state stays visible throughout w1.1-w2.2).
     const scopeBreachBadge = scopeBreachActive
         ? { category: SCOPE_LIMITS.KD_CHAIRS.category, count: 119, limit: SCOPE_LIMITS.KD_CHAIRS.limit }
         : null
@@ -171,12 +171,12 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         [lineItems, variables, config]
     )
 
-    // ── w2.1 beat timeline ───────────────────────────────────────────────────
-    // Runs every time the demo enters w2.1 (first entry + every restart). The
+    // ── w1.1 beat timeline ───────────────────────────────────────────────────
+    // Runs every time the demo enters w1.1 (first entry + every restart). The
     // Shell resets to an empty-ish state and then plays the narrative:
     //   loading-dossier → importing-bom (stagger) → scope-breach → flagged
     useEffect(() => {
-        if (stepId !== 'w2.1') return
+        if (stepId !== 'w1.1') return
 
         // Reset the Shell to the "just arrived from CORE" state
         setCustomer({ ...JPS_CUSTOMER, zipCode: '', address: '' })
@@ -336,32 +336,32 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         }
     }, [stepId])
 
-    // ── w2.3 auto-open waterfall ─────────────────────────────────────────────
-    // The Expert's role in w2.3 is supervisory — they watch the assembly run.
+    // ── w2.1 auto-open waterfall ─────────────────────────────────────────────
+    // The Expert's role in w2.1 is supervisory — they watch the assembly run.
     // Instead of requiring a manual click on the Generate Proposal CTA, the
     // Shell auto-opens the PricingWaterfall ~2.6 s after entry, giving the
     // user time to read the VerificationLogCard (Phase 7.5) that summarises
     // what Alex just validated before the assembly animation plays.
     useEffect(() => {
-        if (stepId !== 'w2.3') return
+        if (stepId !== 'w2.1') return
         const timer = setTimeout(() => setIsWaterfallOpen(true), 2600)
         return () => clearTimeout(timer)
     }, [stepId])
 
-    // ── w2.4 dealer arrival toast ────────────────────────────────────────────
-    // When Sara lands on w2.4, surface a small 'Your turn, Sara' cue right
+    // ── w2.2 dealer arrival toast ────────────────────────────────────────────
+    // When Sara lands on w2.2, surface a small 'Your turn, Sara' cue right
     // after the RoleHandoffTransition finishes. The toast handles its own
     // dismiss timer; this effect just opens it on step entry.
     useEffect(() => {
-        if (stepId !== 'w2.4') {
+        if (stepId !== 'w2.2') {
             setDealerToastOpen(false)
             return
         }
         setDealerToastOpen(true)
     }, [stepId])
 
-    // ── w2.2 scroll-into-view ────────────────────────────────────────────────
-    // When entering w2.2, scroll the BoM so the flagged OFS Serpentine row is
+    // ── w1.2 scroll-into-view ────────────────────────────────────────────────
+    // When entering w1.2, scroll the BoM so the flagged OFS Serpentine row is
     // centered — otherwise the designer overlay slides in and the user has
     // to scroll manually to see the focused row behind it.
     useEffect(() => {
@@ -428,7 +428,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
     const handleSendForReview = (dealerId: string) => {
         // Refinement Phase 3 + 7.3: closes the waterfall, plays a handoff
-        // transition, then advances to w2.4
+        // transition, then advances to w2.2
         const dealer = DEALERS.find((d) => d.id === dealerId)
         const formatted = Number(estimate.salesPrice).toLocaleString('en-US', {
             maximumFractionDigits: 0,
@@ -448,7 +448,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         )
     }
 
-    // ── w2.4 — Proposal review handlers ──────────────────────────────────────
+    // ── w2.2 — Proposal review handlers ──────────────────────────────────────
     const handleRequestClarification = () => {
         // Placeholder — Phase 1 of refinement only needs the approve flow wired
         console.log('Request clarification')
@@ -490,7 +490,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }
 
     const handleRestartDemo = () => {
-        // Reset every piece of Shell state and jump the demo profile back to w0.1
+        // Reset every piece of Shell state and jump the demo profile back to w1.1
         setIsReleaseOpen(false)
         setIsApprovalOpen(false)
         setIsWaterfallOpen(false)
@@ -502,17 +502,17 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setLastFile(null)
         setActiveTab('ESTIMATOR')
         setSavedEstimates(MOCK_SAVED_ESTIMATES)
-        // Refinement Phase 2: reset the w2.1 beat state so the restart replays it
+        // Refinement Phase 2: reset the w1.1 beat state so the restart replays it
         setW21Phase('idle')
         setImportStatus(null)
         setScopeBreachOpen(false)
         setScopeBreachActive(false)
         setFlaggedRowIds([])
         // Refinement Phase 7.1: restore mapping to "all resolved" for the
-        // next w2.1 entry (the beat effect re-sets it to 0 on its own).
+        // next w1.1 entry (the beat effect re-sets it to 0 on its own).
         setMappingResolvedCount(Infinity)
         // Refinement Phase 7.2: snap calc progress back to 1 so the hero
-        // shows real numbers between runs; the w2.1 beat will drop it to 0.
+        // shows real numbers between runs; the w1.1 beat will drop it to 0.
         setCalcProgress(1)
         if (calcRafRef.current !== null) {
             cancelAnimationFrame(calcRafRef.current)
@@ -660,7 +660,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                 />
 
                                 {/* Refinement Phase 2: Scope breach alert (transient) */}
-                                {stepId === 'w2.1' && (
+                                {stepId === 'w1.1' && (
                                     <ScopeBreachAlert
                                         isOpen={scopeBreachOpen}
                                         category="KD task chairs"
@@ -670,8 +670,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* Refinement Phase 7.5: Verification log card (w2.3 preamble) */}
-                                {stepId === 'w2.3' && verifiedAt && (
+                                {/* Refinement Phase 7.5: Verification log card (w2.1 preamble) */}
+                                {stepId === 'w2.1' && verifiedAt && (
                                     <VerificationLogCard
                                         verifiedByName={ROLE_PROFILES.Designer.name}
                                         verifiedByPhoto={ROLE_PROFILES.Designer.photo}
@@ -690,7 +690,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     onAiRefine={handleAiRefine}
                                     hasLastFile={!!lastFile}
                                     readOnly={isProposalReview}
-                                    staggerImport={stepId === 'w2.1' && (w21Phase === 'importing-bom' || w21Phase === 'mapping-bom' || w21Phase === 'scope-breach')}
+                                    staggerImport={stepId === 'w1.1' && (w21Phase === 'importing-bom' || w21Phase === 'mapping-bom' || w21Phase === 'scope-breach')}
                                     flaggedRowIds={flaggedRowIds}
                                     importStatus={importStatus}
                                     focusedRowId={stepState === 'estimation-escalated' ? 'li-19' : null}
@@ -700,7 +700,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                 />
 
                                 {/* Refinement Phase 2: Flagged item banner with Escalate CTA */}
-                                {stepId === 'w2.1' && (
+                                {stepId === 'w1.1' && (
                                     <FlaggedItemBanner
                                         isOpen={w21Phase === 'flagged'}
                                         count={1}
@@ -817,7 +817,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 }}
             />
 
-            {/* Refinement Phase 1: w2.4 — Proposal review action bar */}
+            {/* Refinement Phase 1: w2.2 — Proposal review action bar */}
             {isProposalReview && (
                 <ProposalActionBar
                     salesPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
@@ -829,14 +829,14 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 />
             )}
 
-            {/* Refinement Phase 1: w2.4 — Approval chain */}
+            {/* Refinement Phase 1: w2.2 — Approval chain */}
             <ApprovalChainModal
                 isOpen={isApprovalOpen}
                 onClose={() => setIsApprovalOpen(false)}
                 onComplete={handleApprovalChainComplete}
             />
 
-            {/* Refinement Phase 1: w2.4 — Release success + restart */}
+            {/* Refinement Phase 1: w2.2 — Release success + restart */}
             <ReleaseSuccessModal
                 isOpen={isReleaseOpen}
                 salesPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
@@ -848,7 +848,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 onRestart={handleRestartDemo}
             />
 
-            {/* Refinement Phase 6d: Audit trail panel — hidden during w2.2 where
+            {/* Refinement Phase 6d: Audit trail panel — hidden during w1.2 where
                 the Designer overlay owns the right side of the Shell */}
             <AuditTrailPanel
                 events={auditLog}
@@ -867,9 +867,9 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 />
             )}
 
-            {/* Refinement Phase 7.6: Dealer arrival toast (w2.4 preamble) */}
+            {/* Refinement Phase 7.6: Dealer arrival toast (w2.2 preamble) */}
             <DealerArrivalToast
-                isOpen={dealerToastOpen && stepId === 'w2.4'}
+                isOpen={dealerToastOpen && stepId === 'w2.2'}
                 dealerName={ROLE_PROFILES.Dealer.name}
                 dealerPhoto={ROLE_PROFILES.Dealer.photo}
                 salesPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
@@ -878,9 +878,9 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 onDismiss={() => setDealerToastOpen(false)}
             />
 
-            {/* Refinement Phase 7.7: Agent Step 1 routing toast (w2.1 preamble) */}
+            {/* Refinement Phase 7.7: Agent Step 1 routing toast (w1.1 preamble) */}
             <AgentRoutingToast
-                isOpen={agentRoutingOpen && stepId === 'w2.1'}
+                isOpen={agentRoutingOpen && stepId === 'w1.1'}
                 project="JPS Health Network"
                 assignee={ROLE_PROFILES.Expert.name}
                 office="Dallas office"

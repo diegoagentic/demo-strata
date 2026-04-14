@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // Strata Estimator — Role Profiles
 // Phase 4.5 of WRG Demo v6 implementation
-// Maps demo roles (Expert/Designer/Dealer) to ConnectedUser profiles
+// Maps demo roles (Expert/Designer/Dealer/Salesperson) to ConnectedUser profiles
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import type { ConnectedUser } from './StrataEstimatorNavbar'
@@ -21,6 +21,11 @@ export const ROLE_PROFILES: Record<string, ConnectedUser> = {
         name: 'Sara Chen',
         role: 'Account Manager',
         photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
+    },
+    'Sales Coordinator': {
+        name: 'Riley Morgan',
+        role: 'Sales Account Coordinator',
+        photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&h=80&fit=crop&crop=face',
     },
 }
 

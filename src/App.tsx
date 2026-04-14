@@ -37,7 +37,7 @@ import CRMSimulation from "./components/simulations/CRMSimulation"
 import DuplerPdfProcessor from "./components/simulations/DuplerPdfProcessor"
 import DuplerWarehouse from "./components/simulations/DuplerWarehouse"
 // WRG Demo v6 — Strata Estimator (Opción F: Collaborative Single-Shell)
-import { StrataEstimatorShell, WrgOriginSplash } from "./features/strata-estimator"
+import { StrataEstimatorShell } from "./features/strata-estimator"
 // DuplerReporting now renders inside Dashboard.tsx (Follow Up notification + Metrics processing)
 
 import {
@@ -53,7 +53,7 @@ import logoDarkBrand from './assets/logo-dark-brand.png'
 
 function App() {
   const { user, initialLoading, signOut, showSessionWarning, refreshSession } = useAuth()
-  const { isDemoActive, currentStep, isSidebarCollapsed, nextStep } = useDemo()
+  const { isDemoActive, currentStep, isSidebarCollapsed } = useDemo()
   const { activeProfile: demoProfile } = useDemoProfile()
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'ack-detail-ai' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('transactions')
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false)
@@ -198,7 +198,6 @@ function App() {
       'dupler-warehouse': 'inventory',
       'dupler-reporting': 'dashboard',
       // WRG Demo v6: no global Navbar tab — Estimator owns its own tabs
-      'wrg-origin': 'dashboard',
       'wrg-estimator': 'dashboard',
     };
     return appToTab[currentStep.app] || currentPage;
@@ -272,9 +271,6 @@ function App() {
         return (
           <Dashboard onLogout={handleLogout} onNavigateToDetail={() => setCurrentPage('detail')} onNavigateToWorkspace={() => setCurrentPage('workspace')} onNavigate={handleNavigate} />
         );
-      case 'wrg-origin':
-        // Fullscreen splash — Shell is NOT rendered yet
-        return <WrgOriginSplash onComplete={nextStep} />;
       case 'wrg-estimator':
         // Single collaborative Shell — role + visual state driven by currentStep
         return <StrataEstimatorShell />;
@@ -334,7 +330,6 @@ function App() {
       {/* FIXED NAVBAR (Unified) — hidden for email simulation, WRG Estimator routes & workspace/detail */}
       {(isDemoActive
         ? currentStep.app !== 'email-marketplace'
-          && currentStep.app !== 'wrg-origin'
           && currentStep.app !== 'wrg-estimator'
           && !['1.6', '2.1', '4.4'].includes(currentStep.id)
           && !(currentStep.id === '1.8' && currentStep.app !== 'crm')
@@ -356,7 +351,7 @@ function App() {
       )}
 
       {/* MAIN CONTENT VIEWPORT */}
-      <main className={`transition-all duration-300 ${(isDemoActive ? currentStep.app !== 'email-marketplace' && currentStep.app !== 'wrg-origin' && currentStep.app !== 'wrg-estimator' : currentPage !== 'detail' && currentPage !== 'workspace') ? 'pt-16' : ''} ${isDemoActive ? (isSidebarCollapsed ? 'pl-0' : 'pl-80') + ' animate-in fade-in duration-500' : ''} min-h-screen bg-background`}>
+      <main className={`transition-all duration-300 ${(isDemoActive ? currentStep.app !== 'email-marketplace' && currentStep.app !== 'wrg-estimator' : currentPage !== 'detail' && currentPage !== 'workspace') ? 'pt-16' : ''} ${isDemoActive ? (isSidebarCollapsed ? 'pl-0' : 'pl-80') + ' animate-in fade-in duration-500' : ''} min-h-screen bg-background`}>
         {isDemoActive && <DemoAIIndicator />}
         {isDemoActive ? renderSimulation() : renderCurrentPage()}
       </main>

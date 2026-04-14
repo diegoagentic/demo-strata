@@ -17,7 +17,7 @@ export type SimulationApp =
     | 'quote-detail' | 'transactions' | 'mac' | 'inventory'
     | 'crm'
     | 'dupler-pdf' | 'dupler-warehouse' | 'dupler-reporting'
-    | 'wrg-origin' | 'wrg-estimator';
+    | 'wrg-estimator';
 
 export interface DemoStep {
     id: string;
