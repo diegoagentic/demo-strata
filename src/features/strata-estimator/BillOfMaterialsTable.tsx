@@ -32,6 +32,7 @@ interface InlineListboxProps {
     options: InlineOption[]
     placeholder?: string
     valueClassName?: string
+    disabled?: boolean
 }
 
 function InlineListbox({
@@ -40,24 +41,29 @@ function InlineListbox({
     options,
     placeholder = '—',
     valueClassName = 'text-foreground font-medium',
+    disabled = false,
 }: InlineListboxProps) {
     const selected = options.find((o) => o.id === value)
     return (
-        <Listbox value={value} onChange={onChange}>
+        <Listbox value={value} onChange={onChange} disabled={disabled}>
             <div className="relative">
                 <ListboxButton
                     className={clsx(
-                        'group w-full flex items-center justify-between gap-1 px-1.5 py-1 rounded text-xs cursor-pointer hover:bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary',
+                        'group w-full flex items-center justify-between gap-1 px-1.5 py-1 rounded text-xs focus:outline-none focus:ring-1 focus:ring-primary',
+                        !disabled && 'cursor-pointer hover:bg-muted/50',
+                        disabled && 'cursor-default',
                         valueClassName
                     )}
                 >
                     <span className="block truncate text-left">
                         {selected ? selected.label : placeholder}
                     </span>
-                    <ChevronDown
-                        className="w-3 h-3 text-muted-foreground shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
-                        aria-hidden
-                    />
+                    {!disabled && (
+                        <ChevronDown
+                            className="w-3 h-3 text-muted-foreground shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
+                            aria-hidden
+                        />
+                    )}
                 </ListboxButton>
                 <Transition
                     as={Fragment}
@@ -111,6 +117,7 @@ interface BillOfMaterialsTableProps {
     onAiImport: () => void
     onAiRefine: () => void
     hasLastFile: boolean
+    readOnly?: boolean
 }
 
 export default function BillOfMaterialsTable({
@@ -122,6 +129,7 @@ export default function BillOfMaterialsTable({
     onAiImport,
     onAiRefine,
     hasLastFile,
+    readOnly = false,
 }: BillOfMaterialsTableProps) {
     const categories = Object.values(config.categories)
 
@@ -140,6 +148,7 @@ export default function BillOfMaterialsTable({
                     </span>
                 </div>
 
+                {!readOnly && (
                 <div className="flex items-center gap-2">
                     <button
                         onClick={onAiImport}
@@ -167,6 +176,7 @@ export default function BillOfMaterialsTable({
                         Add Line
                     </button>
                 </div>
+                )}
             </div>
 
             {/* Table */}
@@ -208,6 +218,7 @@ export default function BillOfMaterialsTable({
                                                 id: c.id,
                                                 label: c.label,
                                             }))}
+                                            disabled={readOnly}
                                         />
                                     </td>
 
@@ -227,6 +238,7 @@ export default function BillOfMaterialsTable({
                                                     label: s.label,
                                                 })),
                                             ]}
+                                            disabled={readOnly}
                                         />
                                     </td>
 
@@ -238,6 +250,7 @@ export default function BillOfMaterialsTable({
                                                 onUpdateItem(item.id, 'description', e.target.value)
                                             }
                                             rows={1}
+                                            readOnly={readOnly}
                                             className="w-full bg-transparent text-xs text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 py-0.5"
                                         />
                                     </td>
@@ -255,19 +268,22 @@ export default function BillOfMaterialsTable({
                                                     parseFloat(e.target.value) || 0
                                                 )
                                             }
+                                            readOnly={readOnly}
                                             className="w-16 bg-transparent text-xs text-foreground font-semibold text-right focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 py-0.5"
                                         />
                                     </td>
 
                                     {/* Actions */}
                                     <td className="px-6 py-3 text-right">
-                                        <button
-                                            onClick={() => onRemoveItem(item.id)}
-                                            className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-                                            title="Remove line"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
+                                        {!readOnly && (
+                                            <button
+                                                onClick={() => onRemoveItem(item.id)}
+                                                className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                                                title="Remove line"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             )

@@ -33,6 +33,9 @@ export { default as VisionEngineModal } from './VisionEngineModal'
 export { default as ProjectsArchiveView } from './ProjectsArchiveView'
 export { default as EstimatorAdminView } from './EstimatorAdminView'
 export { default as PricingWaterfall } from './PricingWaterfall'
+export { default as ProposalActionBar } from './ProposalActionBar'
+export { default as ApprovalChainModal } from './ApprovalChainModal'
+export { default as ReleaseSuccessModal } from './ReleaseSuccessModal'
 export { default as DesignerVerificationOverlay } from './DesignerVerificationOverlay'
 
 // WRG Demo v6 Origin Splash (Phase 4.6)

@@ -16,6 +16,7 @@ interface OperationalConstraintsPanelProps {
     variables: OperationalVariables
     onVariablesChange: (variables: OperationalVariables) => void
     crewSize: number
+    readOnly?: boolean
 }
 
 interface Toggle {
@@ -56,6 +57,7 @@ export default function OperationalConstraintsPanel({
     variables,
     onVariablesChange,
     crewSize,
+    readOnly = false,
 }: OperationalConstraintsPanelProps) {
     const setField = <K extends keyof OperationalVariables>(
         key: K,
@@ -100,6 +102,7 @@ export default function OperationalConstraintsPanel({
                                 onChange={(e) =>
                                     setField('duration', Math.max(1, parseFloat(e.target.value) || 1))
                                 }
+                                readOnly={readOnly}
                                 className="w-14 bg-transparent text-xl font-semibold text-foreground dark:text-primary text-right focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 py-0.5"
                             />
                             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -143,7 +146,8 @@ export default function OperationalConstraintsPanel({
                                         type="checkbox"
                                         checked={active}
                                         onChange={(e) => setField(t.key, e.target.checked)}
-                                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary shrink-0"
+                                        disabled={readOnly}
+                                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary shrink-0 disabled:opacity-60 disabled:cursor-default"
                                     />
                                 </label>
                             )

@@ -288,19 +288,35 @@ demo and picked up later.
 
 ---
 
-## 4 · Open questions
+## 4 · Decisions (2026-04-14)
 
-1. **Restart flow** — after w2.4.e, should the demo jump back to w0.1 or to a
-   neutral "pick a demo" landing? (Current demo profile has 5 steps total;
-   `goToStep(0)` would replay the splash.)
-2. **Scope limit breach narrative** — the JPS dataset has 119 KD chairs,
-   which breaches the 50-chair scope limit. Do we want to surface this as
-   a dedicated w2.1 sub-beat (Pain 6) or keep it as a P1 badge only?
-3. **Dealer selector options** — should Sara Chen be the only option, or do
-   we want 2-3 dealers with different badges to emphasize the "Strata is
-   multi-dealer" angle?
-4. **Confetti** — small CSS/canvas library or hand-rolled? Keep the bundle
-   small.
+1. **Restart flow** → `goToStep(0)`. The "Start new quote" button after the
+   release success replays the w0.1 origin splash. Shell state resets too.
+2. **Scope limit breach narrative** → dedicated beat in w2.1 (option **a**).
+   The 119 KD chairs vs the 50-chair limit becomes a visible sub-step where
+   the AI detects the breach and notes an override. This is the cleanest
+   visualization of Pain #6.
+3. **Dealer selector options** → multi. The w2.3 dealer picker shows 3
+   options (Sara Chen, Jordan Park, Michael Torres) with their roles, not
+   just Sara pre-selected.
+4. **Release animation** → sober, no confetti. A large SVG check that draws
+   itself + a single ring pulse + staggered metric cards. No particle
+   effects and no third-party lib.
+
+## 5 · Impact-ordered execution
+
+After the decisions above, the 8-phase sequence from §3 has been
+re-ordered by delivered value:
+
+| Order | Phase | Scope | Why this order |
+| --- | --- | --- | --- |
+| 🥇 **1** | **w2.4 closure + minimal plumbing** | Read-only mode in every section, `ProposalActionBar`, `ApprovalChainModal`, `ReleaseSuccessModal` (sober), restart to w0.1. Step-state reset hook. | Biggest gap: the demo currently has no ending. Completes the arc. |
+| 🥈 **2** | **w2.1 narrative** | Empty-state reset on entry, beat timeline (rate lookup → AI stagger import → scope breach beat → flag row 19 → escalate), `FlaggedItemBanner`, `ScopeBreachBanner`. | First impression after the splash. Activates Pain 3 + Pain 6. |
+| 🥉 **3** | **w2.3 closure** | Auto-open waterfall, live numbers from `estimate`, 3-option dealer selector, wire `nextStep`. | Closes the only remaining disconnected step. |
+| 4 | w2.2 focus mode | `focusedRowId` prop, row dimming, scroll-into-view, slide-out delay. | Polish — works today but visually thin. |
+| 5 | Splash continuity | Extra "Next: …" line + transition timing. | 20-min refinement. |
+| 6 | P1 add-ons | Dual-engine breakdown, audit panel, confidence chips. | After the 5 steps feel complete. |
+| 7 | P2 polish | Progress indicator, restart, sound off-by-default. | Final polish. |
 
 ---
 

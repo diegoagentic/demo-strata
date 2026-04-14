@@ -23,6 +23,9 @@ import PricingWaterfall from './PricingWaterfall'
 import VisionEngineModal from './VisionEngineModal'
 import HandoffBanner from './HandoffBanner'
 import DesignerVerificationOverlay from './DesignerVerificationOverlay'
+import ProposalActionBar from './ProposalActionBar'
+import ApprovalChainModal from './ApprovalChainModal'
+import ReleaseSuccessModal from './ReleaseSuccessModal'
 import { calculateInstall } from './calculations'
 import { getStepRole, getStepState, getStepTab } from './stepStates'
 import {
@@ -48,10 +51,11 @@ interface StrataEstimatorShellProps {
 }
 
 export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimatorShellProps = {}) {
-    const { currentStep, nextStep } = useDemo()
+    const { currentStep, nextStep, goToStep } = useDemo()
     const stepId = currentStep?.id
     const stepState = getStepState(stepId)
     const connectedUser = getStepRole(stepId) ?? undefined
+    const isProposalReview = stepState === 'proposal-review'
 
     // ── State ────────────────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState<EstimatorTab>(getStepTab(stepId))
@@ -64,6 +68,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [lastFile, setLastFile] = useState<{ name: string } | null>(null)
     const [isAiModalOpen, setIsAiModalOpen] = useState(false)
     const [isWaterfallOpen, setIsWaterfallOpen] = useState(false)
+    const [isApprovalOpen, setIsApprovalOpen] = useState(false)
+    const [isReleaseOpen, setIsReleaseOpen] = useState(false)
     const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>(MOCK_SAVED_ESTIMATES)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
 
@@ -133,6 +139,50 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         // Phase 14+: closes the waterfall and advances the demo to w2.4
         setIsWaterfallOpen(false)
         if (nextStep) nextStep()
+    }
+
+    // ── w2.4 — Proposal review handlers ──────────────────────────────────────
+    const handleRequestClarification = () => {
+        // Placeholder — Phase 1 of refinement only needs the approve flow wired
+        console.log('Request clarification')
+    }
+
+    const handlePreviewProposalPdf = () => {
+        console.log('Preview proposal PDF')
+    }
+
+    const handleApproveRelease = () => {
+        setIsApprovalOpen(true)
+    }
+
+    const handleApprovalChainComplete = () => {
+        // All 4 signatures collected → swap approval modal for the release modal
+        setIsApprovalOpen(false)
+        setIsReleaseOpen(true)
+    }
+
+    const handleReleaseDownloadPdf = () => {
+        console.log('Download JPS_proposal.pdf')
+    }
+
+    const handleReleaseSendEmail = () => {
+        console.log('Email proposal to JPS Health Network')
+    }
+
+    const handleRestartDemo = () => {
+        // Reset every piece of Shell state and jump the demo profile back to w0.1
+        setIsReleaseOpen(false)
+        setIsApprovalOpen(false)
+        setIsWaterfallOpen(false)
+        setIsAiModalOpen(false)
+        setCustomer(JPS_CUSTOMER)
+        setLineItems(JPS_LINE_ITEMS)
+        setVariables(INITIAL_VARIABLES)
+        setConfig(INITIAL_CONFIG)
+        setLastFile(null)
+        setActiveTab('ESTIMATOR')
+        setSavedEstimates(MOCK_SAVED_ESTIMATES)
+        if (goToStep) goToStep(0)
     }
 
     // ── Line item CRUD ───────────────────────────────────────────────────────
@@ -251,12 +301,14 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     isSearchingRates={isSearchingRates}
                                     presets={savedEstimates}
                                     onLoadPreset={handleLoadEstimate}
+                                    readOnly={isProposalReview}
                                 />
 
                                 {/* Phase 5: Financial Summary Hero */}
                                 <FinancialSummaryHero
                                     estimate={estimate}
                                     onGenerateProposal={handleGenerateProposal}
+                                    hideGenerateCTA={isProposalReview}
                                 />
 
                                 {/* Phase 6: Bill of Materials */}
@@ -269,6 +321,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     onAiImport={handleAiImport}
                                     onAiRefine={handleAiRefine}
                                     hasLastFile={!!lastFile}
+                                    readOnly={isProposalReview}
                                 />
 
                                 {/* Phase 7: Operational Constraints */}
@@ -276,6 +329,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     variables={variables}
                                     onVariablesChange={setVariables}
                                     crewSize={estimate.crewSize}
+                                    readOnly={isProposalReview}
                                 />
 
                                 <p className="text-[10px] text-center text-muted-foreground/60 font-mono">
@@ -330,6 +384,37 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     if (nextStep) nextStep()
                 }}
                 onPreviewPdf={() => console.log('Preview PDF')}
+            />
+
+            {/* Refinement Phase 1: w2.4 — Proposal review action bar */}
+            {isProposalReview && (
+                <ProposalActionBar
+                    salesPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
+                        maximumFractionDigits: 0,
+                    })}
+                    onRequestClarification={handleRequestClarification}
+                    onPreviewPdf={handlePreviewProposalPdf}
+                    onApproveRelease={handleApproveRelease}
+                />
+            )}
+
+            {/* Refinement Phase 1: w2.4 — Approval chain */}
+            <ApprovalChainModal
+                isOpen={isApprovalOpen}
+                onClose={() => setIsApprovalOpen(false)}
+                onComplete={handleApprovalChainComplete}
+            />
+
+            {/* Refinement Phase 1: w2.4 — Release success + restart */}
+            <ReleaseSuccessModal
+                isOpen={isReleaseOpen}
+                salesPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
+                    maximumFractionDigits: 0,
+                })}
+                clientName={customer.name}
+                onDownloadPdf={handleReleaseDownloadPdf}
+                onSendEmail={handleReleaseSendEmail}
+                onRestart={handleRestartDemo}
             />
         </div>
     )

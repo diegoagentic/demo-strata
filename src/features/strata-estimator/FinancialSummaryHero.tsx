@@ -13,6 +13,7 @@ import type { EstimateResult } from './types'
 interface FinancialSummaryHeroProps {
     estimate: EstimateResult
     onGenerateProposal: () => void
+    hideGenerateCTA?: boolean
 }
 
 function formatMoney(raw: string): string {
@@ -30,6 +31,7 @@ function formatHours(raw: string): string {
 export default function FinancialSummaryHero({
     estimate,
     onGenerateProposal,
+    hideGenerateCTA = false,
 }: FinancialSummaryHeroProps) {
     const salesPrice = formatMoney(estimate.salesPrice)
     const baseCost = formatMoney(estimate.totalCost)
@@ -96,15 +98,17 @@ export default function FinancialSummaryHero({
                     </div>
                 </div>
 
-                {/* Right: Generate Proposal CTA */}
-                <button
-                    onClick={onGenerateProposal}
-                    className="shrink-0 flex items-center gap-2 bg-primary text-primary-foreground hover:opacity-90 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider transition-opacity shadow-sm"
-                >
-                    <Receipt className="w-4 h-4" />
-                    Generate Proposal
-                    <ArrowRight className="w-4 h-4" />
-                </button>
+                {/* Right: Generate Proposal CTA (hidden in proposal-review mode) */}
+                {!hideGenerateCTA && (
+                    <button
+                        onClick={onGenerateProposal}
+                        className="shrink-0 flex items-center gap-2 bg-primary text-primary-foreground hover:opacity-90 rounded-xl px-6 py-3 text-xs font-bold uppercase tracking-wider transition-opacity shadow-sm"
+                    >
+                        <Receipt className="w-4 h-4" />
+                        Generate Proposal
+                        <ArrowRight className="w-4 h-4" />
+                    </button>
+                )}
             </div>
         </div>
     )

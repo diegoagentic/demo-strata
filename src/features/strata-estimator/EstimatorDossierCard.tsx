@@ -19,6 +19,7 @@ interface EstimatorDossierCardProps {
     isSearchingRates?: boolean
     presets?: SavedEstimate[]
     onLoadPreset?: (estimate: SavedEstimate) => void
+    readOnly?: boolean
 }
 
 type Field = 'client' | 'zip' | 'site'
@@ -34,6 +35,7 @@ interface FilterFieldProps {
     presets: SavedEstimate[]
     getOptionLabel: (e: SavedEstimate) => string
     getOptionSub: (e: SavedEstimate) => string
+    readOnly?: boolean
     valueClassName?: string
     inputClassName?: string
     width?: string
@@ -53,6 +55,7 @@ function FilterField({
     valueClassName,
     inputClassName,
     width = 'flex-1 min-w-[160px]',
+    readOnly = false,
 }: FilterFieldProps) {
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -83,34 +86,41 @@ function FilterField({
             <input
                 type="text"
                 value={value}
+                readOnly={readOnly}
                 onChange={(e) => {
+                    if (readOnly) return
                     onChange(e.target.value)
                     if (!isOpen) onOpenChange(true)
                 }}
-                onFocus={() => onOpenChange(true)}
+                onFocus={() => {
+                    if (!readOnly) onOpenChange(true)
+                }}
                 placeholder={placeholder}
                 className={clsx(
                     'flex-1 min-w-0 bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-primary rounded px-1',
                     valueClassName ?? 'font-semibold text-foreground',
-                    inputClassName
+                    inputClassName,
+                    readOnly && 'cursor-default'
                 )}
             />
-            <button
-                type="button"
-                onClick={() => onOpenChange(!isOpen)}
-                className="shrink-0 p-1 -ml-1 text-muted-foreground hover:text-foreground rounded transition-colors"
-                title={`Show all ${label.toLowerCase()} presets`}
-            >
-                <ChevronDown
-                    className={clsx(
-                        'w-3.5 h-3.5 transition-transform',
-                        isOpen && 'rotate-180'
-                    )}
-                />
-            </button>
+            {!readOnly && (
+                <button
+                    type="button"
+                    onClick={() => onOpenChange(!isOpen)}
+                    className="shrink-0 p-1 -ml-1 text-muted-foreground hover:text-foreground rounded transition-colors"
+                    title={`Show all ${label.toLowerCase()} presets`}
+                >
+                    <ChevronDown
+                        className={clsx(
+                            'w-3.5 h-3.5 transition-transform',
+                            isOpen && 'rotate-180'
+                        )}
+                    />
+                </button>
+            )}
 
             {/* Dropdown */}
-            {isOpen && (
+            {!readOnly && isOpen && (
                 <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-card dark:bg-zinc-800 rounded-xl border border-border shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
                     <div className="px-3 py-2 border-b border-border">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -156,6 +166,7 @@ export default function EstimatorDossierCard({
     isSearchingRates = false,
     presets = [],
     onLoadPreset,
+    readOnly = false,
 }: EstimatorDossierCardProps) {
     const [openField, setOpenField] = useState<Field | null>(null)
 
@@ -198,6 +209,7 @@ export default function EstimatorDossierCard({
                     getOptionSub={(e) =>
                         `${e.customer.zipCode} · ${e.customer.address}`
                     }
+                    readOnly={readOnly}
                 />
 
                 {/* ZIP filter */}
@@ -216,17 +228,20 @@ export default function EstimatorDossierCard({
                     getOptionSub={(e) => e.customer.name}
                     valueClassName="font-semibold text-foreground dark:text-primary"
                     width="w-[140px]"
+                    readOnly={readOnly}
                 />
 
-                {/* Rate lookup button */}
-                <button
-                    onClick={onRateLookup}
-                    disabled={isSearchingRates}
-                    className="shrink-0 p-1.5 -ml-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                    title="Lookup labor rates for this ZIP"
-                >
-                    <Search className="w-3.5 h-3.5" />
-                </button>
+                {/* Rate lookup button (hidden in read-only mode) */}
+                {!readOnly && (
+                    <button
+                        onClick={onRateLookup}
+                        disabled={isSearchingRates}
+                        className="shrink-0 p-1.5 -ml-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                        title="Lookup labor rates for this ZIP"
+                    >
+                        <Search className="w-3.5 h-3.5" />
+                    </button>
+                )}
 
                 {/* Site filter */}
                 <FilterField
@@ -244,6 +259,7 @@ export default function EstimatorDossierCard({
                     }
                     valueClassName="text-muted-foreground"
                     width="flex-1 min-w-[200px]"
+                    readOnly={readOnly}
                 />
             </div>
         </div>
