@@ -26,6 +26,8 @@ import DesignerVerificationOverlay from './DesignerVerificationOverlay'
 import ProposalActionBar from './ProposalActionBar'
 import ApprovalChainModal from './ApprovalChainModal'
 import ReleaseSuccessModal from './ReleaseSuccessModal'
+import ScopeBreachAlert from './ScopeBreachAlert'
+import FlaggedItemBanner from './FlaggedItemBanner'
 import { calculateInstall } from './calculations'
 import { getStepRole, getStepState, getStepTab } from './stepStates'
 import {
@@ -73,6 +75,18 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>(MOCK_SAVED_ESTIMATES)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
 
+    // ── w2.1 beat timeline state (refinement Phase 2) ────────────────────────
+    type W21Phase =
+        | 'idle'
+        | 'loading-dossier'
+        | 'importing-bom'
+        | 'scope-breach'
+        | 'flagged'
+    const [w21Phase, setW21Phase] = useState<W21Phase>('idle')
+    const [importStatus, setImportStatus] = useState<string | null>(null)
+    const [scopeBreachOpen, setScopeBreachOpen] = useState(false)
+    const [flaggedRowIds, setFlaggedRowIds] = useState<string[]>([])
+
     useEffect(() => {
         const timer = setTimeout(() => setIsInitialLoading(false), 800)
         return () => clearTimeout(timer)
@@ -83,6 +97,72 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         () => calculateInstall(lineItems, variables, config),
         [lineItems, variables, config]
     )
+
+    // ── w2.1 beat timeline ───────────────────────────────────────────────────
+    // Runs every time the demo enters w2.1 (first entry + every restart). The
+    // Shell resets to an empty-ish state and then plays the narrative:
+    //   loading-dossier → importing-bom (stagger) → scope-breach → flagged
+    useEffect(() => {
+        if (stepId !== 'w2.1') return
+
+        // Reset the Shell to the "just arrived from CORE" state
+        setCustomer({ ...JPS_CUSTOMER, zipCode: '', address: '' })
+        setLineItems([])
+        setVariables(INITIAL_VARIABLES)
+        setScopeBreachOpen(false)
+        setFlaggedRowIds([])
+        setImportStatus(null)
+        setW21Phase('loading-dossier')
+
+        const timers: ReturnType<typeof setTimeout>[] = []
+
+        // t=800ms  — dossier filled in (ZIP + address land)
+        timers.push(
+            setTimeout(() => {
+                setCustomer(JPS_CUSTOMER)
+            }, 800)
+        )
+
+        // t=1100ms — AI import indicator appears above the BoM header
+        timers.push(
+            setTimeout(() => {
+                setW21Phase('importing-bom')
+                setImportStatus('Importing 24 items from JPS_specs.pdf…')
+            }, 1100)
+        )
+
+        // t=1400ms — populate BoM, stagger animation plays
+        timers.push(
+            setTimeout(() => {
+                setLineItems(JPS_LINE_ITEMS)
+            }, 1400)
+        )
+
+        // t=3600ms — stagger finishes (24 × 80ms), hide the import status
+        timers.push(
+            setTimeout(() => {
+                setImportStatus(null)
+            }, 3600)
+        )
+
+        // t=3900ms — scope breach alert (Pain #6: 119 chairs > 50 limit)
+        timers.push(
+            setTimeout(() => {
+                setW21Phase('scope-breach')
+                setScopeBreachOpen(true)
+            }, 3900)
+        )
+
+        // t=6900ms — flag OFS Serpentine (row 19) + show Escalate banner
+        timers.push(
+            setTimeout(() => {
+                setW21Phase('flagged')
+                setFlaggedRowIds(['li-19'])
+            }, 6900)
+        )
+
+        return () => timers.forEach(clearTimeout)
+    }, [stepId])
 
     // ── Handoff banner (fires when step role changes) ────────────────────────
     const prevStepIdRef = useRef<string | undefined>(undefined)
@@ -182,6 +262,11 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setLastFile(null)
         setActiveTab('ESTIMATOR')
         setSavedEstimates(MOCK_SAVED_ESTIMATES)
+        // Refinement Phase 2: reset the w2.1 beat state so the restart replays it
+        setW21Phase('idle')
+        setImportStatus(null)
+        setScopeBreachOpen(false)
+        setFlaggedRowIds([])
         if (goToStep) goToStep(0)
     }
 
@@ -311,6 +396,17 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     hideGenerateCTA={isProposalReview}
                                 />
 
+                                {/* Refinement Phase 2: Scope breach alert (transient) */}
+                                {stepId === 'w2.1' && (
+                                    <ScopeBreachAlert
+                                        isOpen={scopeBreachOpen}
+                                        category="KD task chairs"
+                                        count={119}
+                                        limit={50}
+                                        onDismiss={() => setScopeBreachOpen(false)}
+                                    />
+                                )}
+
                                 {/* Phase 6: Bill of Materials */}
                                 <BillOfMaterialsTable
                                     lineItems={lineItems}
@@ -322,7 +418,23 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     onAiRefine={handleAiRefine}
                                     hasLastFile={!!lastFile}
                                     readOnly={isProposalReview}
+                                    staggerImport={stepId === 'w2.1' && (w21Phase === 'importing-bom' || w21Phase === 'scope-breach')}
+                                    flaggedRowIds={flaggedRowIds}
+                                    importStatus={importStatus}
                                 />
+
+                                {/* Refinement Phase 2: Flagged item banner with Escalate CTA */}
+                                {stepId === 'w2.1' && (
+                                    <FlaggedItemBanner
+                                        isOpen={w21Phase === 'flagged'}
+                                        count={1}
+                                        itemLabel="OFS Serpentine 12-seat curved lounge"
+                                        reason="Custom product · designer verification recommended"
+                                        onEscalate={() => {
+                                            if (nextStep) nextStep()
+                                        }}
+                                    />
+                                )}
 
                                 {/* Phase 7: Operational Constraints */}
                                 <OperationalConstraintsPanel

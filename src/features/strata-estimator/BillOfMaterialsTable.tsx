@@ -118,6 +118,12 @@ interface BillOfMaterialsTableProps {
     onAiRefine: () => void
     hasLastFile: boolean
     readOnly?: boolean
+    /** When true, new rows fade + slide in with a staggered delay — used by the w2.1 AI-import beat */
+    staggerImport?: boolean
+    /** Row ids that should render with an amber warning ring + badge */
+    flaggedRowIds?: string[]
+    /** Inline hint shown in the header while the AI is importing */
+    importStatus?: string | null
 }
 
 export default function BillOfMaterialsTable({
@@ -130,6 +136,9 @@ export default function BillOfMaterialsTable({
     onAiRefine,
     hasLastFile,
     readOnly = false,
+    staggerImport = false,
+    flaggedRowIds = [],
+    importStatus = null,
 }: BillOfMaterialsTableProps) {
     const categories = Object.values(config.categories)
 
@@ -138,14 +147,20 @@ export default function BillOfMaterialsTable({
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-                <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                    <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
+                <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <h3 className="text-sm font-bold text-foreground uppercase tracking-wider whitespace-nowrap">
                         Bill of Materials
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
                         · {lineItems.length} items
                     </span>
+                    {importStatus && (
+                        <span className="ml-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 truncate">
+                            <Sparkles className="w-3 h-3 animate-pulse shrink-0" />
+                            {importStatus}
+                        </span>
+                    )}
                 </div>
 
                 {!readOnly && (
@@ -199,14 +214,30 @@ export default function BillOfMaterialsTable({
                                 </td>
                             </tr>
                         )}
-                        {lineItems.map((item) => {
+                        {lineItems.map((item, index) => {
                             const category = config.categories[item.categoryId]
                             const subcategories = category
                                 ? Object.values(category.subcategories ?? {})
                                 : []
+                            const isFlagged = flaggedRowIds.includes(item.id)
+                            const staggerStyle = staggerImport
+                                ? {
+                                      animationDelay: `${index * 80}ms`,
+                                      animationFillMode: 'both' as const,
+                                  }
+                                : undefined
 
                             return (
-                                <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                                <tr
+                                    key={item.id}
+                                    className={clsx(
+                                        'transition-colors',
+                                        !isFlagged && 'hover:bg-muted/30',
+                                        isFlagged && 'bg-amber-500/5 dark:bg-amber-500/10 ring-1 ring-inset ring-amber-500/40',
+                                        staggerImport && 'animate-in fade-in slide-in-from-left-1 duration-300'
+                                    )}
+                                    style={staggerStyle}
+                                >
                                     {/* Group (category) */}
                                     <td className="px-6 py-3">
                                         <InlineListbox
