@@ -29,7 +29,7 @@ export default function FlaggedItemBanner({
 
     return (
         <div
-            className="flex items-center gap-4 rounded-2xl bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/30 px-5 py-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="flex items-center gap-4 rounded-2xl bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/30 px-5 py-4 animate-in fade-in slide-in-from-top-2 duration-300"
             role="status"
             aria-live="polite"
         >

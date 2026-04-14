@@ -717,27 +717,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* Phase 6: Bill of Materials */}
-                                <BillOfMaterialsTable
-                                    lineItems={lineItems}
-                                    config={config}
-                                    onUpdateItem={handleUpdateItem}
-                                    onAddItem={handleAddItem}
-                                    onRemoveItem={handleRemoveItem}
-                                    onAiImport={handleAiImport}
-                                    onAiRefine={handleAiRefine}
-                                    hasLastFile={!!lastFile}
-                                    readOnly={isProposalReview}
-                                    staggerImport={stepId === 'w1.1' && (w21Phase === 'importing-bom' || w21Phase === 'mapping-bom' || w21Phase === 'scope-breach')}
-                                    flaggedRowIds={flaggedRowIds}
-                                    importStatus={importStatus}
-                                    focusedRowId={stepState === 'estimation-escalated' ? 'li-19' : null}
-                                    confidenceMap={confidenceMap}
-                                    scopeBreachBadge={scopeBreachBadge}
-                                    mappingResolvedCount={mappingResolvedCount}
-                                />
-
-                                {/* Refinement Phase 2: Flagged item banner with Escalate CTA */}
+                                {/* Refinement Phase 2: Flagged item banner (above the BoM so the
+                                    Escalate CTA sits between the hero and the list, not after it) */}
                                 {stepId === 'w1.1' && (
                                     <FlaggedItemBanner
                                         isOpen={w21Phase === 'flagged'}
@@ -759,6 +740,26 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                         }}
                                     />
                                 )}
+
+                                {/* Phase 6: Bill of Materials */}
+                                <BillOfMaterialsTable
+                                    lineItems={lineItems}
+                                    config={config}
+                                    onUpdateItem={handleUpdateItem}
+                                    onAddItem={handleAddItem}
+                                    onRemoveItem={handleRemoveItem}
+                                    onAiImport={handleAiImport}
+                                    onAiRefine={handleAiRefine}
+                                    hasLastFile={!!lastFile}
+                                    readOnly={isProposalReview}
+                                    staggerImport={stepId === 'w1.1' && (w21Phase === 'importing-bom' || w21Phase === 'mapping-bom' || w21Phase === 'scope-breach')}
+                                    flaggedRowIds={flaggedRowIds}
+                                    importStatus={importStatus}
+                                    focusedRowId={stepState === 'estimation-escalated' ? 'li-19' : null}
+                                    confidenceMap={confidenceMap}
+                                    scopeBreachBadge={scopeBreachBadge}
+                                    mappingResolvedCount={mappingResolvedCount}
+                                />
 
                                 {/* Phase 7: Operational Constraints */}
                                 <OperationalConstraintsPanel
