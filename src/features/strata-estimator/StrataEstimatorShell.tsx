@@ -40,7 +40,10 @@ import {
     JPS_LINE_ITEMS,
     JPS_PRODUCT_LIST,
     MOCK_SAVED_ESTIMATES,
+    SCOPE_LIMITS,
+    getAiConfidence,
 } from './mockData'
+import type { AiConfidence } from './mockData'
 import type {
     ConfigState,
     Customer,
@@ -89,7 +92,22 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [w21Phase, setW21Phase] = useState<W21Phase>('idle')
     const [importStatus, setImportStatus] = useState<string | null>(null)
     const [scopeBreachOpen, setScopeBreachOpen] = useState(false)
+    const [scopeBreachActive, setScopeBreachActive] = useState(false)
     const [flaggedRowIds, setFlaggedRowIds] = useState<string[]>([])
+
+    // Derived: AI confidence map for every line item (mock — HIGH / LOW per
+    // the WRG assessment's 85/15 template-vs-fallback split).
+    const confidenceMap = useMemo<Record<string, AiConfidence>>(() => {
+        return Object.fromEntries(
+            lineItems.map((item) => [item.id, getAiConfidence(item.id)])
+        )
+    }, [lineItems])
+
+    // Derived: sticky scope breach badge (shown after the transient alert
+    // fades so the state stays visible throughout w2.1-w2.4).
+    const scopeBreachBadge = scopeBreachActive
+        ? { category: SCOPE_LIMITS.KD_CHAIRS.category, count: 119, limit: SCOPE_LIMITS.KD_CHAIRS.limit }
+        : null
 
     useEffect(() => {
         const timer = setTimeout(() => setIsInitialLoading(false), 800)
@@ -114,6 +132,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setLineItems([])
         setVariables(INITIAL_VARIABLES)
         setScopeBreachOpen(false)
+        setScopeBreachActive(false)
         setFlaggedRowIds([])
         setImportStatus(null)
         setW21Phase('loading-dossier')
@@ -154,6 +173,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
             setTimeout(() => {
                 setW21Phase('scope-breach')
                 setScopeBreachOpen(true)
+                setScopeBreachActive(true)
             }, 3900)
         )
 
@@ -298,6 +318,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setW21Phase('idle')
         setImportStatus(null)
         setScopeBreachOpen(false)
+        setScopeBreachActive(false)
         setFlaggedRowIds([])
         if (goToStep) goToStep(0)
     }
@@ -454,6 +475,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     flaggedRowIds={flaggedRowIds}
                                     importStatus={importStatus}
                                     focusedRowId={stepState === 'estimation-escalated' ? 'li-19' : null}
+                                    confidenceMap={confidenceMap}
+                                    scopeBreachBadge={scopeBreachBadge}
                                 />
 
                                 {/* Refinement Phase 2: Flagged item banner with Escalate CTA */}

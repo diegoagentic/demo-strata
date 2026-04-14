@@ -15,8 +15,18 @@ import {
     Transition,
 } from '@headlessui/react'
 import { Fragment } from 'react'
-import { Check, ChevronDown, FileText, Plus, Sparkles, Trash2, Wand2 } from 'lucide-react'
+import {
+    AlertTriangle,
+    Check,
+    ChevronDown,
+    FileText,
+    Plus,
+    Sparkles,
+    Trash2,
+    Wand2,
+} from 'lucide-react'
 import { clsx } from 'clsx'
+import type { AiConfidence } from './mockData'
 import type { ConfigState, LineItem } from './types'
 
 // ── Inline listbox: accessible select that lives inside a table cell ─────────
@@ -126,6 +136,10 @@ interface BillOfMaterialsTableProps {
     importStatus?: string | null
     /** When set, every other row is dimmed to draw attention to this one (used by w2.2) */
     focusedRowId?: string | null
+    /** Optional map of item id → AI confidence (HIGH / LOW) */
+    confidenceMap?: Record<string, AiConfidence>
+    /** Sticky scope-breach badge displayed in the header after the transient alert fades */
+    scopeBreachBadge?: { category: string; count: number; limit: number } | null
 }
 
 export default function BillOfMaterialsTable({
@@ -142,6 +156,8 @@ export default function BillOfMaterialsTable({
     flaggedRowIds = [],
     importStatus = null,
     focusedRowId = null,
+    confidenceMap,
+    scopeBreachBadge = null,
 }: BillOfMaterialsTableProps) {
     const categories = Object.values(config.categories)
 
@@ -158,6 +174,15 @@ export default function BillOfMaterialsTable({
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
                         · {lineItems.length} items
                     </span>
+                    {scopeBreachBadge && (
+                        <span
+                            className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider whitespace-nowrap"
+                            title={`Scope breach · ${scopeBreachBadge.count} ${scopeBreachBadge.category} exceeds the ${scopeBreachBadge.limit}-unit Delivery Pricer limit (override logged)`}
+                        >
+                            <AlertTriangle className="w-3 h-3 shrink-0" />
+                            {scopeBreachBadge.count} / {scopeBreachBadge.limit}
+                        </span>
+                    )}
                     {importStatus && (
                         <span className="ml-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 truncate">
                             <Sparkles className="w-3 h-3 animate-pulse shrink-0" />
@@ -283,15 +308,42 @@ export default function BillOfMaterialsTable({
 
                                     {/* Description */}
                                     <td className="px-4 py-3">
-                                        <textarea
-                                            value={item.description}
-                                            onChange={(e) =>
-                                                onUpdateItem(item.id, 'description', e.target.value)
-                                            }
-                                            rows={1}
-                                            readOnly={readOnly}
-                                            className="w-full bg-transparent text-xs text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 py-0.5"
-                                        />
+                                        <div className="flex items-start gap-2">
+                                            {confidenceMap?.[item.id] && (
+                                                <span
+                                                    className="shrink-0 mt-1.5 flex items-center gap-1"
+                                                    title={
+                                                        confidenceMap[item.id] === 'HIGH'
+                                                            ? 'High confidence — template-parsed'
+                                                            : 'Low confidence — LLM fallback, review recommended'
+                                                    }
+                                                >
+                                                    <span
+                                                        className={clsx(
+                                                            'block w-1.5 h-1.5 rounded-full',
+                                                            confidenceMap[item.id] === 'HIGH'
+                                                                ? 'bg-green-500'
+                                                                : 'bg-amber-500'
+                                                        )}
+                                                        aria-hidden
+                                                    />
+                                                    {confidenceMap[item.id] === 'LOW' && (
+                                                        <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                                                            Low
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            )}
+                                            <textarea
+                                                value={item.description}
+                                                onChange={(e) =>
+                                                    onUpdateItem(item.id, 'description', e.target.value)
+                                                }
+                                                rows={1}
+                                                readOnly={readOnly}
+                                                className="flex-1 min-w-0 bg-transparent text-xs text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 py-0.5"
+                                            />
+                                        </div>
                                     </td>
 
                                     {/* QTY */}

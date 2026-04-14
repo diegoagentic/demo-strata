@@ -169,6 +169,29 @@ export const JPS_PRODUCT_LIST = 287450
 export const JPS_CONTRACT_DISCOUNT = 0.38
 export const JPS_FREIGHT = 6234
 
+// ── AI confidence mapping (per WRG AI readiness assessment) ───────────────────
+// ~85% of BoM items are HIGH (template-parsed), ~15% are LOW (LLM fallback
+// routed to human review). For JPS we hand-label 3 of the 24 items as LOW —
+// the ones where the product code didn't match the template lookup cleanly.
+export type AiConfidence = 'HIGH' | 'LOW'
+const LOW_CONFIDENCE_ITEM_IDS = new Set(['li-06', 'li-15', 'li-19'])
+export function getAiConfidence(itemId: string): AiConfidence {
+    return LOW_CONFIDENCE_ITEM_IDS.has(itemId) ? 'LOW' : 'HIGH'
+}
+
+// ── Scope limits (Delivery Pricer 2026 · Sections F/G) ────────────────────────
+// Used to detect breaches like 119 KD chairs > 50 limit (Pain #6).
+export interface ScopeLimit {
+    category: string
+    limit: number
+}
+export const SCOPE_LIMITS: Record<string, ScopeLimit> = {
+    KD_CHAIRS: { category: 'KD task chairs', limit: 50 },
+    DESKS:     { category: 'Desk setups',    limit: 2 },
+    FILES:     { category: 'File cabinets',  limit: 20 },
+    HATS:      { category: 'HAT runs',       limit: 10 },
+}
+
 // ── Saved Estimates (archive mock) ────────────────────────────────────────────
 export const MOCK_SAVED_ESTIMATES: SavedEstimate[] = [
     {
