@@ -8,9 +8,18 @@
 // computes from (estimated − actual) / estimated.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
+import {
+    Listbox,
+    ListboxButton,
+    ListboxOption,
+    ListboxOptions,
+    Transition,
+} from '@headlessui/react'
 import { clsx } from 'clsx'
 import {
+    Check,
+    ChevronDown,
     FolderOpen,
     Search,
     Trash2,
@@ -129,22 +138,64 @@ export default function ProjectsArchiveView({
                                         {est.customer.zipCode} · {formatDate(est.timestamp)}
                                     </p>
                                 </div>
-                                <select
+                                <Listbox
                                     value={est.status}
-                                    onChange={(e) =>
-                                        onUpdateStatus(est.id, e.target.value as EstimateStatus)
-                                    }
-                                    className={clsx(
-                                        'text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary',
-                                        STATUS_STYLES[est.status]
-                                    )}
+                                    onChange={(s) => onUpdateStatus(est.id, s)}
                                 >
-                                    {STATUS_ORDER.map((s) => (
-                                        <option key={s} value={s}>
-                                            {s}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <div className="relative">
+                                        <ListboxButton
+                                            className={clsx(
+                                                'flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary transition-colors',
+                                                STATUS_STYLES[est.status]
+                                            )}
+                                        >
+                                            {est.status}
+                                            <ChevronDown className="w-3 h-3 opacity-70" aria-hidden />
+                                        </ListboxButton>
+                                        <Transition
+                                            as={Fragment}
+                                            enter="transition ease-out duration-150"
+                                            enterFrom="opacity-0 -translate-y-1"
+                                            enterTo="opacity-100 translate-y-0"
+                                            leave="transition ease-in duration-100"
+                                            leaveFrom="opacity-100"
+                                            leaveTo="opacity-0"
+                                        >
+                                            <ListboxOptions className="absolute right-0 z-30 mt-1 w-36 overflow-hidden rounded-xl bg-card dark:bg-zinc-800 border border-border shadow-xl py-1 focus:outline-none">
+                                                {STATUS_ORDER.map((s) => (
+                                                    <ListboxOption
+                                                        key={s}
+                                                        value={s}
+                                                        className={({ active }) =>
+                                                            clsx(
+                                                                'relative cursor-pointer select-none py-1.5 pl-8 pr-3 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                                                                active && 'bg-muted/60'
+                                                            )
+                                                        }
+                                                    >
+                                                        {({ selected }) => (
+                                                            <>
+                                                                <span
+                                                                    className={clsx(
+                                                                        'inline-block px-2 py-0.5 rounded-full border',
+                                                                        STATUS_STYLES[s]
+                                                                    )}
+                                                                >
+                                                                    {s}
+                                                                </span>
+                                                                {selected && (
+                                                                    <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-primary">
+                                                                        <Check className="h-3.5 w-3.5" aria-hidden />
+                                                                    </span>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </ListboxOption>
+                                                ))}
+                                            </ListboxOptions>
+                                        </Transition>
+                                    </div>
+                                </Listbox>
                             </div>
 
                             {/* Metrics */}
