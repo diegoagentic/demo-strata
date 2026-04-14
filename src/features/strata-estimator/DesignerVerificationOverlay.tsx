@@ -2,9 +2,12 @@
 // Strata Estimator — Designer Verification Overlay
 // Phase 14 + v7 · w1.2 side panel
 //
-// 5 verification modules, each with concrete data (not just a checkbox) and
-// an AI suggestion the designer can accept with one click. Send Back to
-// Expert stays gated until every module is approved.
+// 5 verification modules, mixed required / optional. Each module stays
+// collapsed until the designer ticks its checkbox. When activated it
+// expands to show concrete data + an AI suggestion. The designer can
+// accept the AI suggestion, pick one of the preset alternatives, or type
+// a custom value. Send Back to Expert is gated on all REQUIRED modules
+// being approved (optional modules can be ignored).
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { useEffect, useState } from 'react'
@@ -19,6 +22,7 @@ import {
     FileText,
     Package,
     Sparkles,
+    X,
 } from 'lucide-react'
 
 // ─── Module data model ──────────────────────────────────────────────────────
@@ -35,13 +39,21 @@ interface AiSuggestion {
     acceptLabel: string
 }
 
+interface ModifyOption {
+    value: string
+    label: string
+    hint?: string
+}
+
 interface VerificationModule {
     id: string
     icon: LucideIcon
     title: string
     subtitle: string
+    required: boolean
     data: DataRow[]
     ai: AiSuggestion
+    modifyOptions: ModifyOption[]
 }
 
 const MODULES: VerificationModule[] = [
@@ -50,6 +62,7 @@ const MODULES: VerificationModule[] = [
         icon: DollarSign,
         title: 'Cost Summary',
         subtitle: 'Base cost · margin · sales price',
+        required: true,
         data: [
             { label: 'Base cost', value: '$14,336' },
             { label: 'Margin (35%)', value: '$7,719', highlight: 'primary' },
@@ -58,15 +71,23 @@ const MODULES: VerificationModule[] = [
         ],
         ai: {
             summary: 'Margin aligned with JPS Master Services Agreement',
-            detail: '35% is the default tier for healthcare · no override required.',
-            acceptLabel: 'Accept margin',
+            detail: '35% is the default tier for healthcare — no override required.',
+            acceptLabel: 'Accept 35% margin',
         },
+        modifyOptions: [
+            { value: '25', label: '25% margin', hint: 'Thin · volume deal' },
+            { value: '30', label: '30% margin', hint: 'Discount tier' },
+            { value: '35', label: '35% margin', hint: 'AI suggestion · healthcare default' },
+            { value: '40', label: '40% margin', hint: 'Premium tier' },
+            { value: '45', label: '45% margin', hint: 'Custom / high risk' },
+        ],
     },
     {
         id: 'project-scope',
         icon: Calendar,
         title: 'Project Scope',
         subtitle: 'Operational constraints check',
+        required: false,
         data: [
             { label: 'Planned days', value: '4 days' },
             { label: 'Union force', value: 'Off' },
@@ -77,14 +98,21 @@ const MODULES: VerificationModule[] = [
         ai: {
             summary: 'Recommend enabling Site Protection + After Hours',
             detail: 'JPS is an active hospital — nights reduce floor disruption and protection prevents damage to installed flooring.',
-            acceptLabel: 'Apply recommendation',
+            acceptLabel: 'Apply both recommendations',
         },
+        modifyOptions: [
+            { value: 'both', label: 'Enable both', hint: 'AI suggestion' },
+            { value: 'protection', label: 'Enable Site Protection only', hint: 'Flooring risk only' },
+            { value: 'after-hours', label: 'Enable After Hours only', hint: 'Reduce hospital disruption' },
+            { value: 'none', label: 'Leave as-is', hint: 'Override — document reason' },
+        ],
     },
     {
         id: 'escalated-item',
         icon: Package,
         title: 'Escalated item',
         subtitle: 'OFS Serpentine 12-seat curved lounge',
+        required: true,
         data: [
             { label: 'Product code', value: 'OFS-SRP-12' },
             { label: 'Category', value: 'Ancillary / Lounge' },
@@ -97,12 +125,20 @@ const MODULES: VerificationModule[] = [
             detail: '12 seats × 1.0 h per module + 2.0 h alignment. Standard brackets compatible, modular assembly confirmed against vendor spec.',
             acceptLabel: 'Accept 14 h',
         },
+        modifyOptions: [
+            { value: '10', label: '10 hours', hint: 'Aggressive · skilled crew' },
+            { value: '12', label: '12 hours', hint: 'Standard gang rate' },
+            { value: '14', label: '14 hours', hint: 'AI suggestion' },
+            { value: '16', label: '16 hours', hint: 'Add buffer for alignment' },
+            { value: '20', label: '20 hours', hint: 'Custom fabric + site prep' },
+        ],
     },
     {
         id: 'assembly-verification',
         icon: ClipboardCheck,
         title: 'Assembly verification',
         subtitle: 'Components & hardware check',
+        required: false,
         data: [
             { label: 'Gang connectors', value: '11 included' },
             { label: 'Mounting brackets', value: 'Standard · compatible' },
@@ -111,15 +147,21 @@ const MODULES: VerificationModule[] = [
         ],
         ai: {
             summary: 'No missing parts detected',
-            detail: 'Bill of materials cross-checked against vendor spec sheet · all hardware accounted for · no site-sourced components needed.',
+            detail: 'Bill of materials cross-checked against vendor spec sheet — all hardware accounted for, no site-sourced components needed.',
             acceptLabel: 'Confirm no gaps',
         },
+        modifyOptions: [
+            { value: 'ok', label: 'Confirm no gaps', hint: 'AI suggestion' },
+            { value: 'site-sourced', label: 'Flag site-sourced parts', hint: 'Brackets sourced on site' },
+            { value: 'missing', label: 'Flag missing parts', hint: 'Requires expert review' },
+        ],
     },
     {
         id: 'applied-rate',
         icon: FileText,
         title: 'Applied rate',
         subtitle: 'Labor rate vs contract line',
+        required: true,
         data: [
             { label: 'Contract rate', value: '$57 / hr' },
             { label: 'Contract line', value: 'JPS MSA · healthcare' },
@@ -127,13 +169,19 @@ const MODULES: VerificationModule[] = [
         ],
         ai: {
             summary: 'Standard rate applies',
-            detail: 'JPS Master Services Agreement locks $57/hr for healthcare projects under 300 h. This estimate is 185.04 h — well below threshold.',
-            acceptLabel: 'Confirm standard rate',
+            detail: 'JPS MSA locks $57/hr for healthcare projects under 300 h. This estimate is 185.04 h — well below threshold.',
+            acceptLabel: 'Confirm $57/hr',
         },
+        modifyOptions: [
+            { value: '57', label: '$57 / hr', hint: 'AI suggestion · JPS standard' },
+            { value: '65', label: '$65 / hr', hint: 'Non-union premium tier' },
+            { value: '95', label: '$95 / hr', hint: 'Union labor' },
+            { value: '120', label: '$120 / hr', hint: 'Overtime surcharge' },
+        ],
     },
 ]
 
-// ─── Escalation context (unchanged) ─────────────────────────────────────────
+// ─── Escalation context ─────────────────────────────────────────────────────
 
 interface EscalationContext {
     fromName: string
@@ -159,12 +207,17 @@ function formatElapsed(ts: number): string {
     return `${minutes}m ago`
 }
 
-// ─── Highlight styles ───────────────────────────────────────────────────────
-
 const HIGHLIGHT_STYLES: Record<NonNullable<DataRow['highlight']>, string> = {
     primary: 'text-foreground dark:text-primary font-bold',
     amber:   'text-amber-700 dark:text-amber-400 font-semibold',
     green:   'text-green-700 dark:text-green-400 font-semibold',
+}
+
+type ModuleView = 'pending' | 'expanded' | 'modify' | 'approved'
+
+interface ModuleResult {
+    option: string        // option value OR 'ai' OR 'custom'
+    displayValue?: string // shown as the approved label
 }
 
 export default function DesignerVerificationOverlay({
@@ -174,14 +227,20 @@ export default function DesignerVerificationOverlay({
     escalationContext,
     onScrollToItem,
 }: DesignerVerificationOverlayProps) {
-    const [approved, setApproved] = useState<Record<string, boolean>>({})
+    const [checkedModules, setCheckedModules] = useState<Record<string, boolean>>({})
+    const [view, setView] = useState<Record<string, ModuleView>>({})
+    const [result, setResult] = useState<Record<string, ModuleResult>>({})
+    const [customValue, setCustomValue] = useState<Record<string, string>>({})
     const [leaving, setLeaving] = useState(false)
 
-    // Reset everything when the overlay opens fresh (new step entry)
+    // Reset when the overlay opens fresh
     useEffect(() => {
         if (!isOpen) return
         setLeaving(false)
-        setApproved({})
+        setCheckedModules({})
+        setView({})
+        setResult({})
+        setCustomValue({})
     }, [isOpen])
 
     const handleSendBackClick = () => {
@@ -189,14 +248,66 @@ export default function DesignerVerificationOverlay({
         setTimeout(onSendBack, 400)
     }
 
-    if (!isOpen) return null
-
-    const handleAccept = (id: string) => {
-        setApproved((prev) => ({ ...prev, [id]: true }))
+    const handleCheck = (id: string, checked: boolean) => {
+        setCheckedModules((prev) => ({ ...prev, [id]: checked }))
+        if (checked) {
+            setView((prev) => ({ ...prev, [id]: 'expanded' }))
+        } else {
+            setView((prev) => {
+                const next = { ...prev }
+                delete next[id]
+                return next
+            })
+            setResult((prev) => {
+                const next = { ...prev }
+                delete next[id]
+                return next
+            })
+        }
     }
 
-    const allApproved = MODULES.every((m) => approved[m.id])
-    const approvedCount = MODULES.filter((m) => approved[m.id]).length
+    const handleAccept = (module: VerificationModule) => {
+        setResult((prev) => ({
+            ...prev,
+            [module.id]: { option: 'ai', displayValue: module.ai.acceptLabel },
+        }))
+        setView((prev) => ({ ...prev, [module.id]: 'approved' }))
+    }
+
+    const handlePickOption = (module: VerificationModule, opt: ModifyOption) => {
+        setResult((prev) => ({
+            ...prev,
+            [module.id]: { option: opt.value, displayValue: opt.label },
+        }))
+        setView((prev) => ({ ...prev, [module.id]: 'approved' }))
+    }
+
+    const handleCustom = (module: VerificationModule) => {
+        const raw = customValue[module.id]?.trim()
+        if (!raw) return
+        setResult((prev) => ({
+            ...prev,
+            [module.id]: { option: 'custom', displayValue: raw },
+        }))
+        setView((prev) => ({ ...prev, [module.id]: 'approved' }))
+    }
+
+    const handleModify = (id: string) => {
+        setView((prev) => ({ ...prev, [id]: 'modify' }))
+    }
+
+    const handleCancelModify = (id: string) => {
+        setView((prev) => ({ ...prev, [id]: 'expanded' }))
+    }
+
+    if (!isOpen) return null
+
+    const requiredModules = MODULES.filter((m) => m.required)
+    const requiredApproved = requiredModules.filter(
+        (m) => view[m.id] === 'approved'
+    ).length
+    const allRequiredDone = requiredApproved === requiredModules.length
+    const totalApproved = MODULES.filter((m) => view[m.id] === 'approved').length
 
     return (
         <div
@@ -214,21 +325,29 @@ export default function DesignerVerificationOverlay({
                     Designer Verification
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                    Validate or override each AI suggestion before sending back.
+                    Tick each module you want to review. Required modules must be
+                    approved before sending back.
                 </p>
 
-                {/* Progress */}
+                {/* Required progress */}
                 <div className="mt-3 flex items-center gap-2">
                     <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
                         <div
                             className="h-full bg-primary transition-all duration-500"
-                            style={{ width: `${(approvedCount / MODULES.length) * 100}%` }}
+                            style={{
+                                width: `${(requiredApproved / requiredModules.length) * 100}%`,
+                            }}
                         />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider tabular-nums shrink-0">
-                        {approvedCount} / {MODULES.length}
+                        {requiredApproved} / {requiredModules.length} required
                     </span>
                 </div>
+                {totalApproved > requiredApproved && (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                        +{totalApproved - requiredApproved} optional approved
+                    </p>
+                )}
 
                 {/* Provenance */}
                 {escalationContext && (
@@ -273,11 +392,15 @@ export default function DesignerVerificationOverlay({
                 )}
             </div>
 
-            {/* Body — 5 data-rich modules */}
+            {/* Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-3 scrollbar-minimal">
                 {MODULES.map((module) => {
                     const Icon = module.icon
-                    const isApproved = !!approved[module.id]
+                    const isChecked = !!checkedModules[module.id]
+                    const currentView = view[module.id] ?? 'pending'
+                    const moduleResult = result[module.id]
+                    const isApproved = currentView === 'approved'
+
                     return (
                         <div
                             key={module.id}
@@ -285,11 +408,21 @@ export default function DesignerVerificationOverlay({
                                 'rounded-xl border overflow-hidden transition-all duration-300',
                                 isApproved
                                     ? 'bg-green-500/5 dark:bg-green-500/10 border-green-500/30'
-                                    : 'bg-card dark:bg-zinc-800 border-border'
+                                    : isChecked
+                                        ? 'bg-card dark:bg-zinc-800 border-primary/30'
+                                        : 'bg-card dark:bg-zinc-800 border-border'
                             )}
                         >
-                            {/* Module header */}
-                            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/60">
+                            {/* Module header — always visible */}
+                            <label
+                                className="flex items-center gap-3 px-4 py-3 cursor-pointer"
+                            >
+                                <input
+                                    type="checkbox"
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer shrink-0"
+                                    checked={isChecked}
+                                    onChange={(e) => handleCheck(module.id, e.target.checked)}
+                                />
                                 <span
                                     className={clsx(
                                         'w-7 h-7 rounded-lg flex items-center justify-center shrink-0',
@@ -305,102 +438,169 @@ export default function DesignerVerificationOverlay({
                                     )}
                                 </span>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-bold text-foreground leading-tight truncate">
-                                        {module.title}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground leading-tight truncate">
-                                        {module.subtitle}
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs font-bold text-foreground leading-tight truncate">
+                                            {module.title}
+                                        </p>
+                                        {module.required && (
+                                            <span className="shrink-0 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                                Required
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground leading-tight truncate mt-0.5">
+                                        {isApproved && moduleResult
+                                            ? `✓ ${moduleResult.displayValue}`
+                                            : module.subtitle}
                                     </p>
                                 </div>
-                                <span
-                                    className={clsx(
-                                        'text-[9px] font-bold uppercase tracking-wider shrink-0',
-                                        isApproved
-                                            ? 'text-green-700 dark:text-green-400'
-                                            : 'text-muted-foreground'
+                            </label>
+
+                            {/* Expanded body (only when checked) */}
+                            {isChecked && currentView !== 'approved' && (
+                                <div className="px-4 pb-3 border-t border-border/60 pt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    {/* Data grid */}
+                                    <dl className="space-y-1.5 mb-3">
+                                        {module.data.map((row) => (
+                                            <div
+                                                key={row.label}
+                                                className="flex items-baseline justify-between gap-3 text-[11px]"
+                                            >
+                                                <dt className="text-muted-foreground shrink-0">
+                                                    {row.label}
+                                                </dt>
+                                                <dd
+                                                    className={clsx(
+                                                        'text-right tabular-nums truncate',
+                                                        row.highlight
+                                                            ? HIGHLIGHT_STYLES[row.highlight]
+                                                            : 'text-foreground font-semibold'
+                                                    )}
+                                                >
+                                                    {row.value}
+                                                </dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+
+                                    {currentView === 'expanded' && (
+                                        <>
+                                            {/* AI suggestion */}
+                                            <div className="rounded-lg bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/20 px-3 py-2.5 mb-3">
+                                                <div className="flex items-start gap-2">
+                                                    <Sparkles className="w-3 h-3 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 leading-none">
+                                                            AI suggestion
+                                                        </p>
+                                                        <p className="text-[11px] text-foreground font-semibold leading-tight mt-1">
+                                                            {module.ai.summary}
+                                                        </p>
+                                                        <p className="text-[10px] text-muted-foreground leading-snug mt-1">
+                                                            {module.ai.detail}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Actions */}
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleAccept(module)}
+                                                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                                                >
+                                                    {module.ai.acceptLabel}
+                                                    <ArrowRight className="w-3 h-3" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleModify(module.id)}
+                                                    className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border"
+                                                >
+                                                    Modify
+                                                </button>
+                                            </div>
+                                        </>
                                     )}
-                                >
-                                    {isApproved ? 'Approved' : 'Pending'}
-                                </span>
-                            </div>
 
-                            {/* Data grid */}
-                            <dl className="px-4 py-3 space-y-1.5">
-                                {module.data.map((row) => (
-                                    <div
-                                        key={row.label}
-                                        className="flex items-baseline justify-between gap-3 text-[11px]"
-                                    >
-                                        <dt className="text-muted-foreground shrink-0">
-                                            {row.label}
-                                        </dt>
-                                        <dd
-                                            className={clsx(
-                                                'text-right tabular-nums truncate',
-                                                row.highlight
-                                                    ? HIGHLIGHT_STYLES[row.highlight]
-                                                    : 'text-foreground font-semibold'
-                                            )}
-                                        >
-                                            {row.value}
-                                        </dd>
-                                    </div>
-                                ))}
-                            </dl>
+                                    {currentView === 'modify' && (
+                                        <>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                    Pick an alternative
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCancelModify(module.id)}
+                                                    className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                                                    aria-label="Cancel modify"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
 
-                            {/* AI suggestion block */}
-                            <div className="mx-4 mb-3 rounded-lg bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/20 px-3 py-2.5">
-                                <div className="flex items-start gap-2">
-                                    <Sparkles className="w-3 h-3 text-indigo-600 dark:text-indigo-400 mt-0.5 shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 leading-none">
-                                            AI suggestion
-                                        </p>
-                                        <p className="text-[11px] text-foreground font-semibold leading-tight mt-1">
-                                            {module.ai.summary}
-                                        </p>
-                                        <p className="text-[10px] text-muted-foreground leading-snug mt-1">
-                                            {module.ai.detail}
-                                        </p>
-                                    </div>
+                                            {/* Preset options */}
+                                            <div className="space-y-1 mb-2">
+                                                {module.modifyOptions.map((opt) => (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        onClick={() => handlePickOption(module, opt)}
+                                                        className="w-full text-left px-3 py-2 rounded-lg bg-muted/40 hover:bg-muted transition-colors group"
+                                                    >
+                                                        <div className="flex items-baseline justify-between gap-2">
+                                                            <span className="text-[11px] font-semibold text-foreground truncate">
+                                                                {opt.label}
+                                                            </span>
+                                                            {opt.hint?.includes('AI') && (
+                                                                <span className="shrink-0 text-[8px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
+                                                                    <Sparkles className="w-2.5 h-2.5" />
+                                                                    AI
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {opt.hint && (
+                                                            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                                                {opt.hint}
+                                                            </p>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            {/* Manual custom input */}
+                                            <div className="rounded-lg bg-muted/30 border border-dashed border-border px-3 py-2">
+                                                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                                                    Manual override
+                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={customValue[module.id] ?? ''}
+                                                        onChange={(e) =>
+                                                            setCustomValue((prev) => ({
+                                                                ...prev,
+                                                                [module.id]: e.target.value,
+                                                            }))
+                                                        }
+                                                        placeholder="Type a custom value…"
+                                                        className="flex-1 min-w-0 bg-transparent text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary rounded px-1.5 py-1"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCustom(module)}
+                                                        disabled={!customValue[module.id]?.trim()}
+                                                        className="shrink-0 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >
+                                                        Apply
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
-                            </div>
-
-                            {/* Action row */}
-                            <div className="px-4 pb-3 flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => handleAccept(module.id)}
-                                    disabled={isApproved}
-                                    className={clsx(
-                                        'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-opacity',
-                                        isApproved
-                                            ? 'bg-green-500/20 text-green-700 dark:text-green-400 cursor-default'
-                                            : 'bg-primary text-primary-foreground hover:opacity-90'
-                                    )}
-                                >
-                                    {isApproved ? (
-                                        <>
-                                            <CheckCircle2 className="w-3 h-3" />
-                                            Approved
-                                        </>
-                                    ) : (
-                                        <>
-                                            {module.ai.acceptLabel}
-                                            <ArrowRight className="w-3 h-3" />
-                                        </>
-                                    )}
-                                </button>
-                                {!isApproved && (
-                                    <button
-                                        type="button"
-                                        className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                        title="Open manual override (not wired in the demo)"
-                                    >
-                                        Modify
-                                    </button>
-                                )}
-                            </div>
+                            )}
                         </div>
                     )
                 })}
@@ -417,10 +617,10 @@ export default function DesignerVerificationOverlay({
                 </button>
                 <button
                     onClick={handleSendBackClick}
-                    disabled={!allApproved || leaving}
+                    disabled={!allRequiredDone || leaving}
                     className={clsx(
                         'w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-lg flex items-center justify-center gap-2 transition-opacity',
-                        allApproved
+                        allRequiredDone
                             ? 'bg-primary text-primary-foreground hover:opacity-90'
                             : 'bg-muted text-muted-foreground cursor-not-allowed'
                     )}
