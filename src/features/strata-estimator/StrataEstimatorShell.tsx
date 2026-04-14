@@ -75,6 +75,10 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const stepState = getStepState(stepId)
     const connectedUser = getStepRole(stepId) ?? undefined
     const isProposalReview = stepState === 'proposal-review'
+    // During w2.2 "Approve & Release", the Shell temporarily redirects to
+    // David Park's workspace so the audience watches the notification land
+    // in his actual interface before the chain modal opens.
+    // See handleApproveRelease below.
 
     // ── State ────────────────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState<EstimatorTab>(getStepTab(stepId))
@@ -91,6 +95,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [isReleaseOpen, setIsReleaseOpen] = useState(false)
     const [isClarificationOpen, setIsClarificationOpen] = useState(false)
     const [isProposalPdfOpen, setIsProposalPdfOpen] = useState(false)
+    const [davidApprovalActive, setDavidApprovalActive] = useState(false)
     const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>(MOCK_SAVED_ESTIMATES)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
 
@@ -491,8 +496,26 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }
 
     const handleApproveRelease = () => {
-        logEvent('Sara Chen', 'Initiated approval chain', 'approval')
-        setIsApprovalOpen(true)
+        // Step 1 — log Sara sending the proposal and redirect the Shell to
+        // David Park's view (navbar user swap + inline handoff banner).
+        logEvent('Sara Chen', 'Sent proposal to David Park for approval', 'approval')
+        setDavidApprovalActive(true)
+        setHandoff({
+            fromUser: ROLE_PROFILES.Dealer,
+            toUser: ROLE_PROFILES.Expert,
+            message: 'Approval request · JPS Health Network · $202,138 awaiting your sign-off',
+        })
+
+        // Step 2 — after David "reviews" in his own workspace, log his
+        // signature, clear the redirect, and open the chain modal (which
+        // now opens with David pre-approved).
+        setTimeout(() => {
+            logEvent('David Park', 'Approved proposal from his workspace', 'approval')
+            setDavidApprovalActive(false)
+            setHandoff(null)
+            logEvent('Sara Chen', 'Initiated approval chain', 'approval')
+            setIsApprovalOpen(true)
+        }, 3800)
     }
 
     const handleApprovalChainComplete = () => {
@@ -652,6 +675,13 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         )
     }
 
+    // When redirected to David's workspace during the w2.2 approval, swap
+    // the navbar avatar to David so the audience knows whose view they are
+    // looking at. Everything else in the workspace keeps its existing props.
+    const effectiveConnectedUser = davidApprovalActive
+        ? ROLE_PROFILES.Expert
+        : connectedUser
+
     return (
         <div className="min-h-screen bg-background text-foreground font-sans pb-10">
             {/* Top navbar — floating pill, matches src/components/Navbar.tsx */}
@@ -662,7 +692,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 onSave={handleSave}
                 onExportBackup={handleExportBackup}
                 onImportBackup={handleImportBackup}
-                connectedUser={connectedUser}
+                connectedUser={effectiveConnectedUser}
             />
 
             {/* Tab content */}
@@ -922,8 +952,9 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 }}
             />
 
-            {/* Refinement Phase 1: w2.2 — Proposal review action bar */}
-            {isProposalReview && (
+            {/* Refinement Phase 1: w2.2 — Proposal review action bar
+                (hidden while the Shell is in David's workspace redirect) */}
+            {isProposalReview && !davidApprovalActive && (
                 <ProposalActionBar
                     salesPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
                         maximumFractionDigits: 0,
