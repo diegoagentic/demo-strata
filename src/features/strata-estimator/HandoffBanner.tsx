@@ -64,7 +64,7 @@ export default function HandoffBanner({
                     <span className="text-muted-foreground">·</span>
                     <span className="text-muted-foreground truncate">{message}</span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-primary shrink-0" />
+                <ArrowRight className="w-4 h-4 text-foreground dark:text-primary shrink-0" />
             </div>
         </div>
     )

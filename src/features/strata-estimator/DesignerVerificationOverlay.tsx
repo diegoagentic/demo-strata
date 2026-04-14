@@ -50,7 +50,7 @@ export default function DesignerVerificationOverlay({
             {/* Header */}
             <div className="p-6 border-b border-border bg-muted/20">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <span className="bg-brand-300/20 text-brand-500 p-1.5 rounded-lg">
+                    <span className="bg-primary/10 text-foreground dark:text-primary p-1.5 rounded-lg">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>

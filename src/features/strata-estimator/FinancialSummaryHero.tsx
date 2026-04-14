@@ -73,7 +73,7 @@ export default function FinancialSummaryHero({
                         <p className="text-xs text-muted-foreground mb-1">
                             Margin ({marginPct}%)
                         </p>
-                        <p className="text-lg font-semibold text-primary">
+                        <p className="text-lg font-semibold text-foreground dark:text-primary">
                             ${margin}
                         </p>
                     </div>

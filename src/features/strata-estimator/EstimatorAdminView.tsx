@@ -65,7 +65,7 @@ export default function EstimatorAdminView({
                                 Applied to cost → sales price
                             </p>
                         </div>
-                        <span className="text-3xl font-bold text-primary tabular-nums">
+                        <span className="text-3xl font-bold text-foreground dark:text-primary tabular-nums">
                             {marginPct}%
                         </span>
                     </div>
@@ -222,7 +222,7 @@ function CategoryConfigCard({ category, onChange }: CategoryConfigCardProps) {
                         min={0}
                         value={category.rate}
                         onChange={(e) => setBaseRate(parseFloat(e.target.value) || 0)}
-                        className="w-14 bg-transparent text-sm font-semibold text-primary text-right focus:outline-none focus:ring-1 focus:ring-primary rounded px-1"
+                        className="w-14 bg-transparent text-sm font-semibold text-foreground dark:text-primary text-right focus:outline-none focus:ring-1 focus:ring-primary rounded px-1"
                     />
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase">
                         hrs

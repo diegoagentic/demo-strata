@@ -184,7 +184,7 @@ export default function ProjectsArchiveView({
                                                                     {s}
                                                                 </span>
                                                                 {selected && (
-                                                                    <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-primary">
+                                                                    <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-foreground dark:text-primary">
                                                                         <Check className="h-3.5 w-3.5" aria-hidden />
                                                                     </span>
                                                                 )}

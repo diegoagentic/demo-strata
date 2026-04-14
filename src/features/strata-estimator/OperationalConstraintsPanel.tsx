@@ -81,7 +81,7 @@ export default function OperationalConstraintsPanel({
                     <div className="flex items-center justify-between p-4 rounded-xl bg-muted/40">
                         <div className="flex items-center gap-3">
                             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <Calendar className="w-4 h-4 text-primary" />
+                                <Calendar className="w-4 h-4 text-foreground dark:text-primary" />
                             </div>
                             <div>
                                 <p className="text-xs font-semibold text-foreground">
@@ -100,7 +100,7 @@ export default function OperationalConstraintsPanel({
                                 onChange={(e) =>
                                     setField('duration', Math.max(1, parseFloat(e.target.value) || 1))
                                 }
-                                className="w-14 bg-transparent text-xl font-semibold text-primary text-right focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 py-0.5"
+                                className="w-14 bg-transparent text-xl font-semibold text-foreground dark:text-primary text-right focus:outline-none focus:ring-1 focus:ring-primary rounded px-1 py-0.5"
                             />
                             <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                                 Days
@@ -127,7 +127,7 @@ export default function OperationalConstraintsPanel({
                                         <Icon
                                             className={clsx(
                                                 'w-4 h-4 shrink-0',
-                                                active ? 'text-primary' : 'text-muted-foreground'
+                                                active ? 'text-foreground dark:text-primary' : 'text-muted-foreground'
                                             )}
                                         />
                                         <div className="min-w-0">

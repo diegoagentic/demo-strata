@@ -214,7 +214,7 @@ export default function EstimatorDossierCard({
                     presets={presets}
                     getOptionLabel={(e) => e.customer.zipCode}
                     getOptionSub={(e) => e.customer.name}
-                    valueClassName="font-semibold text-primary"
+                    valueClassName="font-semibold text-foreground dark:text-primary"
                     width="w-[140px]"
                 />
 
