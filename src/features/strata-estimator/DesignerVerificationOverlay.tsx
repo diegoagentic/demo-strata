@@ -25,6 +25,9 @@ import {
     Sparkles,
     X,
 } from 'lucide-react'
+import VerificationPdfPreviewModal, {
+    type VerificationModuleSummary,
+} from './VerificationPdfPreviewModal'
 
 // ─── Module data model ──────────────────────────────────────────────────────
 
@@ -233,6 +236,7 @@ export default function DesignerVerificationOverlay({
     const [result, setResult] = useState<Record<string, ModuleResult>>({})
     const [customValue, setCustomValue] = useState<Record<string, string>>({})
     const [leaving, setLeaving] = useState(false)
+    const [pdfPreviewOpen, setPdfPreviewOpen] = useState(false)
 
     // Reset when the overlay opens fresh
     useEffect(() => {
@@ -242,6 +246,7 @@ export default function DesignerVerificationOverlay({
         setView({})
         setResult({})
         setCustomValue({})
+        setPdfPreviewOpen(false)
     }, [isOpen])
 
     const handleSendBackClick = () => {
@@ -310,7 +315,18 @@ export default function DesignerVerificationOverlay({
     const allRequiredDone = requiredApproved === requiredModules.length
     const totalApproved = MODULES.filter((m) => view[m.id] === 'approved').length
 
+    // Summaries for the PDF preview modal
+    const moduleSummaries: VerificationModuleSummary[] = MODULES.map((m) => ({
+        id: m.id,
+        title: m.title,
+        subtitle: m.subtitle,
+        required: m.required,
+        status: view[m.id] === 'approved' ? 'approved' : 'pending',
+        selectedLabel: result[m.id]?.displayValue,
+    }))
+
     return (
+        <>
         <div
             className={clsx(
                 'fixed inset-y-0 right-0 w-[28rem] bg-card dark:bg-zinc-900 border-l border-border shadow-2xl flex flex-col z-40 transition-all duration-300 ease-out',
@@ -613,7 +629,10 @@ export default function DesignerVerificationOverlay({
             {/* Footer */}
             <div className="p-5 border-t border-border bg-muted/20 space-y-2.5">
                 <button
-                    onClick={onPreviewPdf}
+                    onClick={() => {
+                        setPdfPreviewOpen(true)
+                        onPreviewPdf()
+                    }}
                     className="w-full py-2.5 px-4 text-xs font-semibold uppercase tracking-wider rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center gap-2"
                 >
                     <FileText className="w-3.5 h-3.5" />
@@ -634,5 +653,16 @@ export default function DesignerVerificationOverlay({
                 </button>
             </div>
         </div>
+
+        {/* Verification PDF preview modal (sibling of the side panel so it
+            overlays the whole viewport, not just the w-[28rem] panel) */}
+        <VerificationPdfPreviewModal
+            isOpen={pdfPreviewOpen}
+            modules={moduleSummaries}
+            designerName="Alex Rivera"
+            projectName="JPS Health Center for Women"
+            onClose={() => setPdfPreviewOpen(false)}
+        />
+        </>
     )
 }
