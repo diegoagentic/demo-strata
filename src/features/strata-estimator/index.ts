@@ -57,7 +57,6 @@ export {
     getStepState,
     getStepTab,
     getStepRole,
-    isOriginSplashStep,
 } from './stepStates'
 export type { EstimatorStepState } from './stepStates'
 
