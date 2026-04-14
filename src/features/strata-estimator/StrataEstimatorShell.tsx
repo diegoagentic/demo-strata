@@ -11,6 +11,8 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Check, MousePointer2, ShieldCheck } from 'lucide-react'
+import { clsx } from 'clsx'
 import { useDemo } from '../../context/DemoContext'
 import StrataEstimatorNavbar from './StrataEstimatorNavbar'
 import EstimatorDossierCard from './EstimatorDossierCard'
@@ -97,6 +99,9 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [isProposalPdfOpen, setIsProposalPdfOpen] = useState(false)
     const [davidApprovalActive, setDavidApprovalActive] = useState(false)
     const [davidSigned, setDavidSigned] = useState(false)
+    const [davidCardVisible, setDavidCardVisible] = useState(false)
+    const [davidCursorShown, setDavidCursorShown] = useState(false)
+    const [davidClicked, setDavidClicked] = useState(false)
     const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>(MOCK_SAVED_ESTIMATES)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
 
@@ -524,17 +529,28 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 // the audience can read it at a comfortable pace.
                 duration: 7500,
             })
+            // Scroll the workspace to the top so the banner + approval
+            // card are both on-screen when the detour lands.
+            if (typeof window !== 'undefined') {
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
 
-            // Phase 2b — halfway through the detour, log David "reviewing"
-            // the proposal so the audit trail reflects a real review beat
-            // instead of an instant approval.
+            // Approval card slides in ~1 s after the banner.
+            setTimeout(() => setDavidCardVisible(true), 1000)
+
+            // Halfway through, David "reviews" the line items and the
+            // simulated cursor appears over the Approve button.
             setTimeout(() => {
                 logEvent(
                     'David Park',
                     'Reviewing proposal line items · OFS Serpentine, Canvas workstations, freight',
                     'edit'
                 )
+                setDavidCursorShown(true)
             }, 2800)
+
+            // Cursor "clicks" — button flips to Approved with a ring pulse.
+            setTimeout(() => setDavidClicked(true), 4500)
 
             // Phase 3 — after David "reviews and approves" in his own
             // workspace, clear the redirect, mark David signed, and
@@ -548,6 +564,9 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 )
                 setDavidApprovalActive(false)
                 setHandoff(null)
+                setDavidCardVisible(false)
+                setDavidCursorShown(false)
+                setDavidClicked(false)
                 setDavidSigned(true)
                 setIsApprovalOpen(true)
             }, 7000)
@@ -786,6 +805,96 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                         duration={handoff.duration}
                                         onDismiss={() => setHandoff(null)}
                                     />
+                                )}
+
+                                {/* v7 · David's inline approval card — only while the
+                                    Shell is redirected to David's workspace during the
+                                    w2.2 Approve & Release flow. */}
+                                {davidApprovalActive && (
+                                    <div
+                                        className={clsx(
+                                            'transition-all duration-500',
+                                            davidCardVisible
+                                                ? 'opacity-100 translate-y-0 animate-in fade-in slide-in-from-top-2'
+                                                : 'opacity-0 -translate-y-2 pointer-events-none'
+                                        )}
+                                    >
+                                        <div className="bg-card dark:bg-zinc-800 rounded-2xl border border-border shadow-sm overflow-hidden">
+                                            <div className="flex items-start gap-4 px-5 py-4 bg-primary/5 dark:bg-primary/10 border-l-4 border-primary ring-1 ring-primary/20 rounded-r-2xl">
+                                                <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                                                    <ShieldCheck className="w-5 h-5 text-foreground dark:text-primary" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-bold text-foreground">
+                                                        Your approval required
+                                                    </p>
+                                                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                                                        Sara Chen sent the JPS Health Network proposal for your sign-off. Review the line items below and approve to move it into the 4-person chain.
+                                                    </p>
+                                                    <div className="flex items-center gap-4 mt-3">
+                                                        <div>
+                                                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+                                                                Total proposal
+                                                            </p>
+                                                            <p className="text-base font-black text-foreground tabular-nums">
+                                                                $202,138
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+                                                                Line items
+                                                            </p>
+                                                            <p className="text-base font-black text-foreground tabular-nums">
+                                                                24
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+                                                                Chain
+                                                            </p>
+                                                            <p className="text-base font-black text-foreground tabular-nums">
+                                                                4 signers
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="relative shrink-0 self-center">
+                                                    <button
+                                                        type="button"
+                                                        disabled
+                                                        className={clsx(
+                                                            'flex items-center gap-2 px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-2 ring-primary/40 transition-all duration-200',
+                                                            davidClicked &&
+                                                                'scale-95 ring-4 ring-primary/60 shadow-xl shadow-primary/50'
+                                                        )}
+                                                    >
+                                                        {davidClicked ? (
+                                                            <>
+                                                                <Check className="w-4 h-4" strokeWidth={3} />
+                                                                Approved
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <ShieldCheck className="w-4 h-4" />
+                                                                Approve proposal
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                    {davidCursorShown && (
+                                                        <MousePointer2
+                                                            className={clsx(
+                                                                'absolute -right-2 -bottom-3 w-5 h-5 text-foreground drop-shadow-lg pointer-events-none transition-all duration-300',
+                                                                davidClicked
+                                                                    ? 'translate-x-0 translate-y-0 scale-90'
+                                                                    : 'translate-x-1 translate-y-1 animate-bounce'
+                                                            )}
+                                                            aria-hidden
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
 
                                 {/* v7 · w1.2 · Dupler-style task notification (top of the page,
