@@ -100,6 +100,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [scopeBreachOpen, setScopeBreachOpen] = useState(false)
     const [scopeBreachActive, setScopeBreachActive] = useState(false)
     const [flaggedRowIds, setFlaggedRowIds] = useState<string[]>([])
+    const [escalatedAt, setEscalatedAt] = useState<number | null>(null)
     const [mappingResolvedCount, setMappingResolvedCount] = useState<number>(Infinity)
     // Dual-engine calculation progress (0 → 1). Default 1 = show real values.
     const [calcProgress, setCalcProgress] = useState<number>(1)
@@ -182,6 +183,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setW21Phase('loading-dossier')
         setMappingResolvedCount(0) // all rows will first appear as chips
         setCalcProgress(0) // hero starts at $0 and counts up during the calc beat
+        setEscalatedAt(null) // drop any stale escalation context
         setAuditLog([])
         logEvent('System', 'Session opened · JPS Health Network', 'system')
 
@@ -493,6 +495,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         }
         // Refinement Phase 7.3: dismiss any pending handoff transition
         setHandoff2(null)
+        // Refinement Phase 7.4: clear the escalation timestamp
+        setEscalatedAt(null)
         // Refinement Phase 6d: clear audit log so the new session starts fresh
         setAuditLog([])
         if (goToStep) goToStep(0)
@@ -669,6 +673,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                                 'Escalated OFS Serpentine to Alex Rivera',
                                                 'edit'
                                             )
+                                            setEscalatedAt(Date.now())
                                             triggerHandoff(
                                                 ROLE_PROFILES.Expert,
                                                 ROLE_PROFILES.Designer,
@@ -736,7 +741,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 dealers={DEALERS}
             />
 
-            {/* Phase 14: Designer Verification Overlay */}
+            {/* Phase 14 + Refinement 7.4: Designer Verification Overlay with provenance */}
             <DesignerVerificationOverlay
                 isOpen={stepState === 'estimation-escalated'}
                 onSendBack={() => {
@@ -752,6 +757,24 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     )
                 }}
                 onPreviewPdf={() => console.log('Preview PDF')}
+                escalationContext={
+                    escalatedAt
+                        ? {
+                              fromName: ROLE_PROFILES.Expert.name,
+                              fromRole: ROLE_PROFILES.Expert.role,
+                              fromPhoto: ROLE_PROFILES.Expert.photo,
+                              reason: 'Custom product · OFS Serpentine 12-seat curved lounge needs designer verification of connection hardware + assembly time',
+                              receivedAt: escalatedAt,
+                              itemRef: 'li-19',
+                          }
+                        : undefined
+                }
+                onScrollToItem={(rowId) => {
+                    const row = document.querySelector(`tr[data-row-id="${rowId}"]`)
+                    if (row) {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    }
+                }}
             />
 
             {/* Refinement Phase 1: w2.4 — Proposal review action bar */}

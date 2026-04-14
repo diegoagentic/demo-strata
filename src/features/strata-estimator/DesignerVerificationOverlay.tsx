@@ -15,16 +15,38 @@ const MODULES: CheckboxModule[] = [
     { id: '5', title: 'Applied Rate ($798)', description: 'Validate final labor rate.' },
 ]
 
+interface EscalationContext {
+    fromName: string
+    fromRole: string
+    fromPhoto: string
+    reason: string
+    receivedAt: number
+    itemRef?: string
+}
+
 interface DesignerVerificationOverlayProps {
     isOpen: boolean
     onSendBack: () => void
     onPreviewPdf: () => void
+    /** Provenance block: who sent this verification and why */
+    escalationContext?: EscalationContext
+    /** Scroll the named row into view (default: li-19) */
+    onScrollToItem?: (rowId: string) => void
+}
+
+function formatElapsed(ts: number): string {
+    const seconds = Math.max(0, Math.round((Date.now() - ts) / 1000))
+    if (seconds < 60) return `${seconds}s ago`
+    const minutes = Math.round(seconds / 60)
+    return `${minutes}m ago`
 }
 
 export default function DesignerVerificationOverlay({
     isOpen,
     onSendBack,
     onPreviewPdf,
+    escalationContext,
+    onScrollToItem,
 }: DesignerVerificationOverlayProps) {
     const [checkedModules, setCheckedModules] = useState<Record<string, boolean>>({})
     const [expandedModule, setExpandedModule] = useState<string | null>(null)
@@ -83,6 +105,48 @@ export default function DesignerVerificationOverlay({
                 <p className="text-sm text-muted-foreground mt-2">
                     Validate the 5 modules escalated by the Expert before returning the estimate.
                 </p>
+
+                {/* Provenance block — who sent this, when, and why */}
+                {escalationContext && (
+                    <div className="mt-4 p-3 rounded-xl bg-card dark:bg-zinc-800 border border-border">
+                        <div className="flex items-center gap-2.5">
+                            <img
+                                src={escalationContext.fromPhoto}
+                                alt={escalationContext.fromName}
+                                className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/40 shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
+                                    From
+                                </p>
+                                <p className="text-xs font-semibold text-foreground leading-tight truncate">
+                                    {escalationContext.fromName}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground leading-tight truncate">
+                                    {escalationContext.fromRole}
+                                </p>
+                            </div>
+                            <span className="text-[9px] text-muted-foreground font-mono shrink-0">
+                                {formatElapsed(escalationContext.receivedAt)}
+                            </span>
+                        </div>
+
+                        <p className="text-[11px] text-foreground mt-3 leading-snug">
+                            <span className="font-semibold">Reason:</span>{' '}
+                            {escalationContext.reason}
+                        </p>
+
+                        {onScrollToItem && escalationContext.itemRef && (
+                            <button
+                                type="button"
+                                onClick={() => onScrollToItem(escalationContext.itemRef!)}
+                                className="mt-2 text-[10px] font-semibold text-foreground dark:text-primary hover:underline uppercase tracking-wider"
+                            >
+                                See row in the BoM →
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Body */}
