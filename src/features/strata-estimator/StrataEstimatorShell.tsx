@@ -30,6 +30,9 @@ import ScopeBreachAlert from './ScopeBreachAlert'
 import FlaggedItemBanner from './FlaggedItemBanner'
 import AuditTrailPanel from './AuditTrailPanel'
 import type { AuditCategory, AuditEvent } from './AuditTrailPanel'
+import RoleHandoffTransition from './RoleHandoffTransition'
+import type { HandoffPerson } from './RoleHandoffTransition'
+import { ROLE_PROFILES } from './roles'
 import { calculateInstall } from './calculations'
 import { getStepRole, getStepState, getStepTab } from './stepStates'
 import {
@@ -101,6 +104,25 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     // Dual-engine calculation progress (0 → 1). Default 1 = show real values.
     const [calcProgress, setCalcProgress] = useState<number>(1)
     const calcRafRef = useRef<number | null>(null)
+
+    // ── Role handoff transition (Phase 7.3 — reusable for all 3 swaps) ──────
+    interface PendingHandoff {
+        from: HandoffPerson
+        to: HandoffPerson
+        message: string
+    }
+    const [handoff2, setHandoff2] = useState<PendingHandoff | null>(null)
+    const triggerHandoff = (
+        from: HandoffPerson,
+        to: HandoffPerson,
+        message: string
+    ) => {
+        setHandoff2({ from, to, message })
+    }
+    const handleHandoffComplete = () => {
+        setHandoff2(null)
+        if (nextStep) nextStep()
+    }
 
     // ── Audit trail (Pain #4 — structured data layer proof) ─────────────────
     const [auditLog, setAuditLog] = useState<AuditEvent[]>([])
@@ -378,17 +400,25 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }
 
     const handleSendForReview = (dealerId: string) => {
-        // Refinement Phase 3: closes the waterfall and advances to w2.4
+        // Refinement Phase 3 + 7.3: closes the waterfall, plays a handoff
+        // transition, then advances to w2.4
         const dealer = DEALERS.find((d) => d.id === dealerId)
+        const formatted = Number(estimate.salesPrice).toLocaleString('en-US', {
+            maximumFractionDigits: 0,
+        })
         logEvent(
             'David Park',
-            `Sent $${Number(estimate.salesPrice).toLocaleString('en-US', {
-                maximumFractionDigits: 0,
-            })} proposal to ${dealer?.name ?? 'dealer'} for review`,
+            `Sent $${formatted} proposal to ${dealer?.name ?? 'dealer'} for review`,
             'approval'
         )
         setIsWaterfallOpen(false)
-        if (nextStep) nextStep()
+        triggerHandoff(
+            ROLE_PROFILES.Expert,
+            dealer
+                ? { name: dealer.name, role: dealer.role, photo: dealer.photo }
+                : ROLE_PROFILES.Dealer,
+            `Sending $${formatted} proposal for review`
+        )
     }
 
     // ── w2.4 — Proposal review handlers ──────────────────────────────────────
@@ -461,6 +491,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
             cancelAnimationFrame(calcRafRef.current)
             calcRafRef.current = null
         }
+        // Refinement Phase 7.3: dismiss any pending handoff transition
+        setHandoff2(null)
         // Refinement Phase 6d: clear audit log so the new session starts fresh
         setAuditLog([])
         if (goToStep) goToStep(0)
@@ -637,7 +669,11 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                                 'Escalated OFS Serpentine to Alex Rivera',
                                                 'edit'
                                             )
-                                            if (nextStep) nextStep()
+                                            triggerHandoff(
+                                                ROLE_PROFILES.Expert,
+                                                ROLE_PROFILES.Designer,
+                                                'Escalating OFS Serpentine for verification'
+                                            )
                                         }}
                                     />
                                 )}
@@ -709,7 +745,11 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                         'Verified OFS Serpentine · 14 h install (modular assembly confirmed)',
                         'edit'
                     )
-                    if (nextStep) nextStep()
+                    triggerHandoff(
+                        ROLE_PROFILES.Designer,
+                        ROLE_PROFILES.Expert,
+                        'Returning verified module to Expert'
+                    )
                 }}
                 onPreviewPdf={() => console.log('Preview PDF')}
             />
@@ -751,6 +791,18 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 events={auditLog}
                 hidden={stepState === 'estimation-escalated'}
             />
+
+            {/* Refinement Phase 7.3: Role handoff transition — plays between
+                nextStep() calls on every role change */}
+            {handoff2 && (
+                <RoleHandoffTransition
+                    isOpen={!!handoff2}
+                    fromUser={handoff2.from}
+                    toUser={handoff2.to}
+                    message={handoff2.message}
+                    onComplete={handleHandoffComplete}
+                />
+            )}
         </div>
     )
 }
