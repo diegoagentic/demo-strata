@@ -408,6 +408,11 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         if (!prevRole) return
         if (!connectedUser || prevRole.name === connectedUser.name) return
 
+        // Skip the HandoffBanner for steps that already have their own
+        // inline arrival surface (DesignerTaskNotification on w1.2, etc.)
+        // so we don't duplicate the "role changed" cue.
+        if (stepId === 'w1.2') return
+
         setHandoff({
             fromUser: prevRole,
             message: `Handed off to ${connectedUser.name} · ${currentStep?.title ?? ''}`,
