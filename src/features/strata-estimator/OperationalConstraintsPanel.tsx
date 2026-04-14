@@ -170,7 +170,11 @@ export default function OperationalConstraintsPanel({
                             duration, and an 8-hour working day.
                         </p>
                     </div>
-                    <HardHat className="w-24 h-24 text-brand-500/15 shrink-0" />
+                    <HardHat
+                        className="w-24 h-24 text-white/5 shrink-0"
+                        strokeWidth={1.5}
+                        aria-hidden
+                    />
                 </div>
             </div>
         </div>
