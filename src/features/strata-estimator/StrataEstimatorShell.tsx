@@ -31,10 +31,14 @@ import FlaggedItemBanner from './FlaggedItemBanner'
 import { calculateInstall } from './calculations'
 import { getStepRole, getStepState, getStepTab } from './stepStates'
 import {
+    DEALERS,
     INITIAL_CONFIG,
     INITIAL_VARIABLES,
+    JPS_CONTRACT_DISCOUNT,
     JPS_CUSTOMER,
+    JPS_FREIGHT,
     JPS_LINE_ITEMS,
+    JPS_PRODUCT_LIST,
     MOCK_SAVED_ESTIMATES,
 } from './mockData'
 import type {
@@ -164,6 +168,18 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         return () => timers.forEach(clearTimeout)
     }, [stepId])
 
+    // ── w2.3 auto-open waterfall ─────────────────────────────────────────────
+    // The Expert's role in w2.3 is supervisory — they watch the assembly run.
+    // Instead of requiring a manual click on the Generate Proposal CTA, the
+    // Shell auto-opens the PricingWaterfall ~1.2 s after the handoff banner
+    // fires, giving the user a moment to read "Alex approved the verification"
+    // before the modal slides in.
+    useEffect(() => {
+        if (stepId !== 'w2.3') return
+        const timer = setTimeout(() => setIsWaterfallOpen(true), 1200)
+        return () => clearTimeout(timer)
+    }, [stepId])
+
     // ── Handoff banner (fires when step role changes) ────────────────────────
     const prevStepIdRef = useRef<string | undefined>(undefined)
     const [handoff, setHandoff] = useState<{
@@ -215,8 +231,9 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setIsWaterfallOpen(true)
     }
 
-    const handleSendForReview = () => {
-        // Phase 14+: closes the waterfall and advances the demo to w2.4
+    const handleSendForReview = (dealerId: string) => {
+        // Refinement Phase 3: closes the waterfall and advances to w2.4
+        console.log('Proposal sent for review to dealer:', dealerId)
         setIsWaterfallOpen(false)
         if (nextStep) nextStep()
     }
@@ -482,11 +499,16 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 lastFile={lastFile}
             />
 
-            {/* Phase 13: Pricing Waterfall (triggered by Generate Proposal) */}
+            {/* Phase 13 + Refinement Phase 3: Pricing Waterfall with live numbers */}
             <PricingWaterfall
                 isOpen={isWaterfallOpen}
                 onClose={() => setIsWaterfallOpen(false)}
                 onSendForReview={handleSendForReview}
+                productList={JPS_PRODUCT_LIST}
+                discount={JPS_CONTRACT_DISCOUNT}
+                labor={parseFloat(estimate.salesPrice) || 0}
+                freight={JPS_FREIGHT}
+                dealers={DEALERS}
             />
 
             {/* Phase 14: Designer Verification Overlay */}

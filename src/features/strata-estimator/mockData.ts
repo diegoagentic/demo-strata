@@ -130,6 +130,45 @@ export const JPS_LINE_ITEMS: LineItem[] = [
     { id: 'li-24', categoryId: 'ANCILLARY', subCategoryId: 'LOUNGE_CLUB', description: 'Herman Miller Goetz sofa — pediatric waiting', quantity: 2 },
 ]
 
+// ── Dealers (w2.3 dealer selector) ────────────────────────────────────────────
+export interface DealerOption {
+    id: string
+    name: string
+    role: string
+    photo: string
+    badge?: string
+}
+
+export const DEALERS: DealerOption[] = [
+    {
+        id: 'sara',
+        name: 'Sara Chen',
+        role: 'Account Manager',
+        photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
+        badge: 'Primary',
+    },
+    {
+        id: 'jordan',
+        name: 'Jordan Park',
+        role: 'VP Sales',
+        photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face',
+    },
+    {
+        id: 'michael',
+        name: 'Michael Torres',
+        role: 'Senior Dealer',
+        photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
+    },
+]
+
+// ── Quote assembly constants (w2.3 pricing waterfall) ─────────────────────────
+// MillerKnoll product list price for the JPS scenario. Kept as a constant
+// so the waterfall can show the real dealer-side number while labor stays
+// live from calculateInstall().
+export const JPS_PRODUCT_LIST = 287450
+export const JPS_CONTRACT_DISCOUNT = 0.38
+export const JPS_FREIGHT = 6234
+
 // ── Saved Estimates (archive mock) ────────────────────────────────────────────
 export const MOCK_SAVED_ESTIMATES: SavedEstimate[] = [
     {

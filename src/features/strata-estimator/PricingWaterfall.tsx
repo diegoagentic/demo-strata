@@ -1,48 +1,60 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // Strata Estimator — Pricing Waterfall
-// Phase 13 of WRG Demo v6 implementation
+// Phase 13 + Refinement Phase 3 of WRG Demo v6 implementation
 //
 // Modal that animates the final-proposal price breakdown one row at a time:
-//   Product List → JPS Contract -38% → Product Net → Labor → Freight → Total
-// When the animation lands on Total, a "Select Dealer" CTA appears so the
-// expert (w2.3) can send the proposal to Sara for review (w2.4).
+//   Product List → JPS Contract -x% → Product Net → Labor → Freight → Total
+// Numbers are derived from the live estimate + contract constants instead
+// of being hard-coded, so the user can see w2.1 edits ripple through.
+//
+// After the total lands, a dealer selector + 'Send for Review' CTA is
+// revealed. Picking a dealer and clicking Send calls onSendForReview(id).
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
+import {
+    Dialog,
+    DialogPanel,
+    DialogTitle,
+    Listbox,
+    ListboxButton,
+    ListboxOption,
+    ListboxOptions,
+    Transition,
+    TransitionChild,
+} from '@headlessui/react'
 import { Fragment, useEffect, useState } from 'react'
-import { ArrowRight, Receipt, X } from 'lucide-react'
+import { ArrowRight, Check, ChevronDown, Receipt, X } from 'lucide-react'
+import { clsx } from 'clsx'
+import type { DealerOption } from './mockData'
 
 interface PricingWaterfallProps {
     isOpen: boolean
     onClose: () => void
-    onSendForReview: () => void
+    onSendForReview: (dealerId: string) => void
+    productList: number
+    discount: number
+    labor: number
+    freight: number
+    dealers: DealerOption[]
 }
 
 type RowType = 'base' | 'discount' | 'subtotal' | 'addon' | 'total'
 
 interface WaterfallRow {
     label: string
-    value: string
+    value: number
+    display: string
     type: RowType
 }
-
-const ROWS: WaterfallRow[] = [
-    { label: 'Product List',        value: '$287,450', type: 'base' },
-    { label: 'JPS Contract -38%',   value: '-$109,231', type: 'discount' },
-    { label: 'Product Net',         value: '$178,219', type: 'subtotal' },
-    { label: 'Labor (15% margin)',  value: '$17,685',  type: 'addon' },
-    { label: 'Freight',             value: '$6,234',   type: 'addon' },
-    { label: 'Total Proposal',      value: '$202,138', type: 'total' },
-]
 
 const ROW_STEP_MS = 700
 
 const ROW_STYLES: Record<RowType, string> = {
-    base:     'bg-card border border-border',
-    discount: 'bg-green-50 dark:bg-green-500/5 border border-green-200 dark:border-green-500/20',
-    subtotal: 'bg-green-100 dark:bg-green-500/10 border border-green-300 dark:border-green-500/30',
-    addon:    'bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20',
-    total:    'bg-brand-50 dark:bg-brand-500/5 border-2 border-brand-400 dark:border-brand-500/40',
+    base:     'bg-muted/40',
+    discount: 'bg-green-500/5 dark:bg-green-500/10 border border-green-500/20',
+    subtotal: 'bg-green-500/10 dark:bg-green-500/15 border border-green-500/30',
+    addon:    'bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20',
+    total:    'bg-primary/5 dark:bg-primary/10 border-2 border-primary/40',
 }
 
 const TEXT_STYLES: Record<RowType, string> = {
@@ -53,28 +65,63 @@ const TEXT_STYLES: Record<RowType, string> = {
     total:    'text-foreground',
 }
 
+function formatMoney(n: number, { signed = false } = {}): string {
+    const abs = Math.abs(Math.round(n))
+    const body = abs.toLocaleString('en-US')
+    if (signed && n < 0) return `-$${body}`
+    if (signed && n > 0) return `+$${body}`
+    return `$${body}`
+}
+
 export default function PricingWaterfall({
     isOpen,
     onClose,
     onSendForReview,
+    productList,
+    discount,
+    labor,
+    freight,
+    dealers,
 }: PricingWaterfallProps) {
     const [visibleRows, setVisibleRows] = useState(0)
+    const [selectedDealerId, setSelectedDealerId] = useState<string>(
+        dealers[0]?.id ?? ''
+    )
+
+    // Derived waterfall rows (live from props)
+    const discountAmount = productList * discount
+    const productNet = productList - discountAmount
+    const total = productNet + labor + freight
+    const discountPct = Math.round(discount * 100)
+
+    const rows: WaterfallRow[] = [
+        { label: 'Product List',          value: productList,        display: formatMoney(productList),                       type: 'base' },
+        { label: `JPS Contract -${discountPct}%`, value: -discountAmount,    display: formatMoney(-discountAmount, { signed: true }), type: 'discount' },
+        { label: 'Product Net',           value: productNet,         display: formatMoney(productNet),                        type: 'subtotal' },
+        { label: 'Labor',                 value: labor,              display: formatMoney(labor, { signed: true }),           type: 'addon' },
+        { label: 'Freight',               value: freight,            display: formatMoney(freight, { signed: true }),         type: 'addon' },
+        { label: 'Total Proposal',        value: total,              display: formatMoney(total),                             type: 'total' },
+    ]
 
     // Replay the animation every time the modal opens
     useEffect(() => {
         if (!isOpen) {
             setVisibleRows(0)
+            setSelectedDealerId(dealers[0]?.id ?? '')
             return
         }
 
         const timers: ReturnType<typeof setTimeout>[] = []
-        for (let i = 0; i < ROWS.length; i++) {
+        for (let i = 0; i < rows.length; i++) {
             timers.push(setTimeout(() => setVisibleRows(i + 1), (i + 1) * ROW_STEP_MS))
         }
         return () => timers.forEach(clearTimeout)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
-    const done = visibleRows >= ROWS.length
+    const done = visibleRows >= rows.length
+    const selectedDealer =
+        dealers.find((d) => d.id === selectedDealerId) ?? dealers[0]
 
     return (
         <Transition show={isOpen} as={Fragment}>
@@ -113,7 +160,7 @@ export default function PricingWaterfall({
                                         Quote Assembly
                                     </DialogTitle>
                                     <p className="text-xs text-muted-foreground mt-0.5">
-                                        MillerKnoll product quote · JPS contract discount · labor · freight
+                                        MillerKnoll quote · JPS contract discount · labor · freight
                                     </p>
                                 </div>
                                 <button
@@ -126,64 +173,142 @@ export default function PricingWaterfall({
 
                             {/* Waterfall rows */}
                             <div className="p-6 space-y-2">
-                                {ROWS.map((row, i) => {
+                                {rows.map((row, i) => {
                                     const visible = i < visibleRows
                                     const isTotal = row.type === 'total'
                                     return (
                                         <div
                                             key={row.label}
-                                            className={[
+                                            className={clsx(
                                                 ROW_STYLES[row.type],
                                                 'flex items-center justify-between rounded-xl transition-all duration-500',
                                                 isTotal ? 'px-5 py-4 mt-3' : 'px-4 py-3',
                                                 visible
                                                     ? 'opacity-100 translate-y-0'
-                                                    : 'opacity-0 translate-y-2',
-                                            ].join(' ')}
+                                                    : 'opacity-0 translate-y-2'
+                                            )}
                                         >
                                             <span
-                                                className={[
+                                                className={clsx(
                                                     TEXT_STYLES[row.type],
                                                     isTotal
                                                         ? 'text-xs font-bold uppercase tracking-wider'
-                                                        : 'text-xs font-medium',
-                                                ].join(' ')}
+                                                        : 'text-xs font-medium'
+                                                )}
                                             >
                                                 {row.label}
                                             </span>
                                             <span
-                                                className={[
+                                                className={clsx(
                                                     TEXT_STYLES[row.type],
                                                     isTotal
                                                         ? 'text-2xl font-black tabular-nums'
-                                                        : 'text-sm font-bold tabular-nums',
-                                                ].join(' ')}
+                                                        : 'text-sm font-bold tabular-nums'
+                                                )}
                                             >
-                                                {row.value}
+                                                {row.display}
                                             </span>
                                         </div>
                                     )
                                 })}
                             </div>
 
-                            {/* Footer CTA (appears once the waterfall lands on Total) */}
+                            {/* Footer — dealer picker + Send CTA (revealed after the total lands) */}
                             <div
-                                className={[
-                                    'flex items-center justify-end gap-2 px-6 py-4 border-t border-border bg-muted/20 transition-opacity duration-500',
-                                    done ? 'opacity-100' : 'opacity-0 pointer-events-none',
-                                ].join(' ')}
+                                className={clsx(
+                                    'flex items-center gap-3 px-6 py-4 border-t border-border bg-muted/20 transition-all duration-500',
+                                    done
+                                        ? 'opacity-100 translate-y-0'
+                                        : 'opacity-0 translate-y-2 pointer-events-none'
+                                )}
                             >
-                                <button
-                                    onClick={onClose}
-                                    className="px-4 py-2 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                {/* Dealer picker */}
+                                <Listbox
+                                    value={selectedDealerId}
+                                    onChange={setSelectedDealerId}
+                                    disabled={!done}
                                 >
-                                    Cancel
-                                </button>
+                                    <div className="relative flex-1 min-w-0">
+                                        <ListboxButton className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-card dark:bg-zinc-900 border border-border hover:border-primary/60 transition-colors text-left focus:outline-none focus:ring-1 focus:ring-primary">
+                                            {selectedDealer && (
+                                                <>
+                                                    <img
+                                                        src={selectedDealer.photo}
+                                                        alt={selectedDealer.name}
+                                                        className="w-7 h-7 rounded-full object-cover shrink-0"
+                                                    />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-semibold text-foreground leading-tight truncate">
+                                                            {selectedDealer.name}
+                                                        </p>
+                                                        <p className="text-[10px] text-muted-foreground leading-tight truncate">
+                                                            {selectedDealer.role}
+                                                        </p>
+                                                    </div>
+                                                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden />
+                                                </>
+                                            )}
+                                        </ListboxButton>
+                                        <Transition
+                                            as={Fragment}
+                                            enter="transition ease-out duration-150"
+                                            enterFrom="opacity-0 -translate-y-1"
+                                            enterTo="opacity-100 translate-y-0"
+                                            leave="transition ease-in duration-100"
+                                            leaveFrom="opacity-100"
+                                            leaveTo="opacity-0"
+                                        >
+                                            <ListboxOptions className="absolute bottom-full left-0 right-0 mb-2 z-20 overflow-hidden rounded-xl bg-card dark:bg-zinc-800 border border-border shadow-xl py-1 focus:outline-none">
+                                                {dealers.map((dealer) => (
+                                                    <ListboxOption
+                                                        key={dealer.id}
+                                                        value={dealer.id}
+                                                        className={({ focus }) =>
+                                                            clsx(
+                                                                'relative cursor-pointer select-none px-3 py-2 transition-colors flex items-center gap-2',
+                                                                focus && 'bg-zinc-100 dark:bg-zinc-900'
+                                                            )
+                                                        }
+                                                    >
+                                                        {({ selected }) => (
+                                                            <>
+                                                                <img
+                                                                    src={dealer.photo}
+                                                                    alt={dealer.name}
+                                                                    className="w-7 h-7 rounded-full object-cover shrink-0"
+                                                                />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-xs font-semibold text-foreground leading-tight truncate">
+                                                                        {dealer.name}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-muted-foreground leading-tight truncate">
+                                                                        {dealer.role}
+                                                                    </p>
+                                                                </div>
+                                                                {dealer.badge && !selected && (
+                                                                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider shrink-0">
+                                                                        {dealer.badge}
+                                                                    </span>
+                                                                )}
+                                                                {selected && (
+                                                                    <Check className="w-3.5 h-3.5 text-foreground dark:text-primary shrink-0" aria-hidden />
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </ListboxOption>
+                                                ))}
+                                            </ListboxOptions>
+                                        </Transition>
+                                    </div>
+                                </Listbox>
+
+                                {/* Send CTA */}
                                 <button
-                                    onClick={onSendForReview}
-                                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                                    onClick={() => onSendForReview(selectedDealerId)}
+                                    disabled={!done || !selectedDealerId}
+                                    className="shrink-0 flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
-                                    Select Dealer
+                                    Send for Review
                                     <ArrowRight className="w-3.5 h-3.5" />
                                 </button>
                             </div>
