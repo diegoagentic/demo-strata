@@ -9,7 +9,7 @@
 // FLOW 2 — Proposal Generation (Expert + Dealer + Salesperson)
 //   w2.1: Quote assembly · David runs the pricing waterfall + picks the dealer
 //   w2.2: Dealer review & release · Sara approves the 4-person chain
-//   w2.3: Client delivery · Riley assembles the client-facing PDF + sends
+//   w2.3: Representative handoff · Riley assembles the PDF + sends to the client rep
 //
 // The origin splash (w0.1 "The Old Way") was removed in this version.
 // Demo now opens directly on Flow 1 w1.1.
@@ -76,8 +76,8 @@ export const WRG_DEMO_STEPS: DemoStep[] = [
         id: 'w2.3',
         groupId: 1,
         groupTitle: 'Flow 2: Proposal Generation',
-        title: 'Client delivery',
-        description: 'Riley (Sales Coordinator) picks up the approved proposal. A new email notification arrives from CORE with the full internal breakdown. Riley opens the client-facing PDF preview (JPS branding, no internal cost fields), reviews the cover letter + line-item summary + delivery schedule, and sends the proposal to JPS Health Network. Strata tracks the send status end-to-end.',
+        title: 'Representative handoff',
+        description: 'Riley (Sales Coordinator) picks up the approved proposal. A new email notification arrives from CORE with the full internal breakdown. Riley opens the representative-facing PDF preview (JPS branding, no internal cost fields), reviews the cover letter + line-item summary + delivery schedule, and sends the proposal to JPS Health Network\'s client representative. Strata tracks the handoff status end-to-end.',
         app: 'wrg-estimator',
         role: 'Sales Coordinator',
     },
@@ -90,7 +90,7 @@ export const WRG_DEMO_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     'w1.2': { mode: 'interactive', userAction: 'Validate the 5 verification modules and send the approved module back to the expert' },
     'w2.1': { mode: 'interactive', userAction: 'Watch the pricing waterfall, pick the dealer, and send the proposal for review' },
     'w2.2': { mode: 'interactive', userAction: 'Review the $202,138 proposal, approve the chain, and release it into Strata' },
-    'w2.3': { mode: 'interactive', userAction: 'Review the client-facing PDF and send the proposal to JPS Health Network' },
+    'w2.3': { mode: 'interactive', userAction: 'Review the representative-facing PDF and hand the proposal off to JPS\'s client representative' },
 };
 
 // ─── STEP MESSAGES (AI Agent Progress) ───────────────────────────────────────
@@ -121,13 +121,13 @@ export const WRG_DEMO_STEP_MESSAGES: Record<string, string[]> = {
     'w2.2': [
         'Full proposal loaded — $178K product + $17.7K labor + $6.2K freight',
         'Approval chain — David Park, Alex Rivera, Sara Chen, Jordan Park',
-        'Chain complete · proposal approved for client delivery',
+        'Chain complete · proposal approved for representative handoff',
     ],
     'w2.3': [
         'Approved proposal routed from CORE · notifying Sales',
-        'Generating client-facing PDF · JPS branding, cover letter, summary',
+        'Generating representative-facing PDF · JPS branding, cover letter, summary',
         'Preview ready · awaiting Sales Coordinator review',
-        'Proposal sent to JPS Health Network · delivery tracked',
+        'Proposal sent to JPS Health Network\'s representative · handoff tracked',
     ],
 };
 

@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// Strata Estimator — Client Proposal Delivery
-// v7 Flow 2 · w2.3 (Sales Coordinator takes the approved proposal to the client)
+// Strata Estimator — Client Representative Proposal Handoff
+// v7 Flow 2 · w2.3 (Sales Coordinator hands the approved proposal to the client representative)
 //
 // Replaces the normal ESTIMATOR tab content (Dossier → Hero → BoM → Constraints)
 // while the demo is on w2.3. Surfaces stages 15-17 of WRG's 18-stage AS-IS
@@ -8,7 +8,7 @@
 //
 //   | 15-16 | Salesperson | CORE emails Sales. Quote reviewed and accepted. |
 //   | 17    | SAC         | Combines labor + product quote, applies markup,
-//                           sends to client.                                |
+//                           sends to the client's representative.           |
 //
 // 4-phase beat timeline:
 //   email-received → reviewing-pdf → sending → delivered
@@ -18,18 +18,43 @@ import { useEffect, useState } from 'react'
 import { clsx } from 'clsx'
 import {
     ArrowRight,
+    Bell,
     Check,
     CheckCircle2,
     Clock,
     Download,
     FileText,
+    Inbox,
     Mail,
+    MousePointer2,
     RotateCcw,
     Send,
     Sparkles,
 } from 'lucide-react'
 
-type DeliveryPhase = 'email-received' | 'reviewing-pdf' | 'sending' | 'delivered'
+type DeliveryPhase =
+    | 'rep-preview'
+    | 'email-received'
+    | 'reviewing-pdf'
+    | 'sending'
+    | 'delivered'
+
+// Fake list of other vendor quotes the JPS procurement rep is tracking.
+// Only used for the w2.3 opening cutaway so the audience can see *where* the
+// proposal lands on the client side before we return to Riley's send flow.
+const EXISTING_VENDOR_QUOTES: {
+    id: string
+    vendor: string
+    project: string
+    amount: string
+    received: string
+    status: string
+}[] = [
+    { id: 'q1', vendor: 'Steelcase', project: 'Executive floor refresh',  amount: '$84,230', received: 'Apr 10', status: 'Awaiting review' },
+    { id: 'q2', vendor: 'Haworth',   project: 'Lobby redesign',           amount: '$52,140', received: 'Apr 8',  status: 'Approved' },
+    { id: 'q3', vendor: 'HON',       project: 'Staff chair replacement', amount: '$18,460', received: 'Apr 5',  status: 'Sent to finance' },
+    { id: 'q4', vendor: 'Knoll',     project: 'Exam room desks',          amount: '$31,980', received: 'Apr 2',  status: 'Under review' },
+]
 
 interface ClientProposalDeliveryProps {
     proposalPrice: string
@@ -76,8 +101,24 @@ export default function ClientProposalDelivery({
     onRestart,
     onSent,
 }: ClientProposalDeliveryProps) {
-    const [phase, setPhase] = useState<DeliveryPhase>('email-received')
+    const [phase, setPhase] = useState<DeliveryPhase>('rep-preview')
     const [sentAt, setSentAt] = useState<number | null>(null)
+
+    // Rep cutaway state
+    const [repNotifVisible, setRepNotifVisible] = useState(false)
+    const [repPointerShown, setRepPointerShown] = useState(false)
+    const [repNotifClicked, setRepNotifClicked] = useState(false)
+
+    // Beat timeline · rep-preview cutaway → email-received (auto)
+    useEffect(() => {
+        if (phase !== 'rep-preview') return
+        const timers: ReturnType<typeof setTimeout>[] = []
+        timers.push(setTimeout(() => setRepNotifVisible(true), 900))
+        timers.push(setTimeout(() => setRepPointerShown(true), 2000))
+        timers.push(setTimeout(() => setRepNotifClicked(true), 2700))
+        timers.push(setTimeout(() => setPhase('email-received'), 3600))
+        return () => timers.forEach(clearTimeout)
+    }, [phase])
 
     // Beat timeline · email-received → reviewing-pdf (auto)
     useEffect(() => {
@@ -100,6 +141,122 @@ export default function ClientProposalDelivery({
     const handleSendClick = () => {
         if (phase !== 'reviewing-pdf') return
         setPhase('sending')
+    }
+
+    // ─── Client representative cutaway (runs first, before Riley's flow) ───
+    if (phase === 'rep-preview') {
+        return (
+            <div className="space-y-4 animate-in fade-in duration-300">
+                {/* Role strip */}
+                <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-zinc-950 text-white border border-border">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 text-red-300 text-[9px] font-bold uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                        Client representative view
+                    </span>
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-wider hidden sm:block">
+                        Switching to
+                    </p>
+                    <div className="flex items-center gap-2 ml-auto">
+                        <img
+                            src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face"
+                            alt="Lauren Kim"
+                            className="w-7 h-7 rounded-full object-cover ring-2 ring-primary"
+                        />
+                        <div>
+                            <p className="text-xs font-bold text-white leading-tight">
+                                Lauren Kim
+                            </p>
+                            <p className="text-[10px] text-zinc-400 leading-tight">
+                                JPS Health Network · Procurement lead
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Fake vendor-quotes app frame */}
+                <div className="relative bg-card dark:bg-zinc-800 rounded-2xl border border-border overflow-hidden">
+                    <div className="px-6 py-4 border-b border-border flex items-center gap-2">
+                        <Inbox className="w-4 h-4 text-muted-foreground" />
+                        <p className="text-sm font-bold text-foreground">
+                            My vendor quotes
+                        </p>
+                        <span className="ml-auto text-[10px] text-muted-foreground font-mono">
+                            JPS procurement portal
+                        </span>
+                    </div>
+
+                    {/* Notification toast (slides in from the right) */}
+                    <div
+                        className={clsx(
+                            'absolute top-20 right-4 w-80 bg-card dark:bg-zinc-900 rounded-xl border border-primary/40 shadow-xl p-4 transition-all duration-500 z-10',
+                            repNotifVisible
+                                ? 'opacity-100 translate-x-0'
+                                : 'opacity-0 translate-x-6 pointer-events-none',
+                            repNotifClicked &&
+                                'ring-4 ring-primary/50 shadow-lg shadow-primary/40 scale-[0.98]'
+                        )}
+                    >
+                        <div className="flex items-start gap-3">
+                            <div className="shrink-0 w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                                <Bell className="w-4 h-4 text-foreground dark:text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
+                                    New vendor proposal
+                                </p>
+                                <p className="text-xs font-bold text-foreground leading-tight mt-1">
+                                    WRG Texas · Health Center for Women
+                                </p>
+                                <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                                    ${proposalPrice} · just arrived · tap to review
+                                </p>
+                            </div>
+                        </div>
+                        {repPointerShown && (
+                            <MousePointer2
+                                className={clsx(
+                                    'absolute -right-1 -bottom-2 w-5 h-5 text-foreground drop-shadow-lg pointer-events-none transition-all duration-300',
+                                    repNotifClicked
+                                        ? 'translate-x-0 translate-y-0 scale-90'
+                                        : 'translate-x-1 translate-y-1 animate-bounce'
+                                )}
+                                aria-hidden
+                            />
+                        )}
+                    </div>
+
+                    {/* Existing vendor quotes list */}
+                    <ul className="divide-y divide-border">
+                        {EXISTING_VENDOR_QUOTES.map((q) => (
+                            <li
+                                key={q.id}
+                                className="flex items-center gap-3 px-6 py-3 hover:bg-muted/20"
+                            >
+                                <div className="shrink-0 w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center">
+                                    <FileText className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-foreground leading-tight truncate">
+                                        {q.vendor} · {q.project}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground leading-tight">
+                                        Received {q.received} · {q.status}
+                                    </p>
+                                </div>
+                                <span className="shrink-0 text-xs font-bold text-foreground tabular-nums">
+                                    {q.amount}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+
+                    <p className="text-[10px] text-muted-foreground italic p-4 text-center border-t border-border">
+                        Strata notifies JPS's procurement lead the moment the
+                        approved proposal leaves WRG Texas.
+                    </p>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -150,12 +307,12 @@ export default function ClientProposalDelivery({
                 <div className="px-5 py-3 bg-muted/30 border-t border-border text-[11px] text-muted-foreground italic">
                     Hi Riley, the JPS Health Network proposal just cleared the
                     4-person approval chain. Full line-item breakdown is attached
-                    as an internal audit trail PDF. Please prepare the
-                    client-facing package and send when ready.
+                    as an internal audit trail PDF. Please prepare the package
+                    for JPS's client representative and send when ready.
                 </div>
             </div>
 
-            {/* ═══ CLIENT-FACING PDF PREVIEW ════════════════════════════════════ */}
+            {/* ═══ REPRESENTATIVE-FACING PDF PREVIEW ════════════════════════════ */}
             {(phase === 'reviewing-pdf' ||
                 phase === 'sending' ||
                 phase === 'delivered') && (
@@ -174,7 +331,7 @@ export default function ClientProposalDelivery({
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
-                                Client-facing PDF · Preview
+                                Representative PDF · Preview
                             </p>
                             <p className="text-sm font-bold text-foreground leading-tight mt-0.5">
                                 JPS_Proposal_${proposalPrice}.pdf
@@ -194,7 +351,7 @@ export default function ClientProposalDelivery({
                                 Cover letter
                             </p>
                             <p className="text-[11px] text-foreground leading-relaxed">
-                                Dear JPS Health Network team,
+                                Dear JPS Health Network representative,
                             </p>
                             <p className="text-[11px] text-muted-foreground leading-relaxed mt-2">
                                 Thank you for choosing WRG Texas as your
@@ -306,7 +463,7 @@ export default function ClientProposalDelivery({
                                 className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                             >
                                 <Send className="w-3.5 h-3.5" />
-                                Send to {clientName.split(' ')[0]}
+                                Send to {clientName.split(' ')[0]} representative
                                 <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                         </div>
@@ -319,7 +476,7 @@ export default function ClientProposalDelivery({
                                 <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             </span>
                             <p className="text-xs font-semibold text-foreground">
-                                Sending proposal to {clientName}…
+                                Sending proposal to {clientName.split(' ')[0]} representative…
                             </p>
                         </div>
                     )}
@@ -337,10 +494,10 @@ export default function ClientProposalDelivery({
                             />
                         </div>
                         <h2 className="text-xl font-bold text-foreground mt-4">
-                            Proposal delivered
+                            Handed off to representative
                         </h2>
                         <p className="text-sm text-muted-foreground mt-1">
-                            ${proposalPrice} quote sent to {clientName}
+                            ${proposalPrice} quote sent to {clientName}'s representative
                         </p>
                         {sentAt && (
                             <p className="text-[10px] text-muted-foreground/80 mt-1 font-mono">

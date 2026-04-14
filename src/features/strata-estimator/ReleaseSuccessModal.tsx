@@ -8,8 +8,8 @@
 //   · A single ring pulse (no confetti)
 //   · Three metrics fade in staggered (8 hrs → 12 min, 4 tools → 1 app,
 //     100 % audit trail)
-//   · Primary CTA: "Continue to client delivery" → advances the demo
-//     profile from w2.2 into w2.3 (Flow 2 · Client Delivery)
+//   · Primary CTA: "Hand off to client representative" → advances the demo
+//     profile from w2.2 into w2.3 (Flow 2 · Representative handoff)
 //   · Secondary: Download PDF (internal audit trail)
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -137,7 +137,7 @@ export default function ReleaseSuccessModal({
                                     Quote released
                                 </h2>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    ${salesPrice} proposal sent to {clientName}
+                                    ${salesPrice} proposal ready for {clientName}'s representative
                                 </p>
                                 <p className="text-[11px] text-muted-foreground/80 mt-1 font-mono">
                                     JPS_proposal.pdf · full audit trail preserved
@@ -187,7 +187,7 @@ export default function ReleaseSuccessModal({
                                     onClick={onContinueToDelivery}
                                     className="flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
                                 >
-                                    Continue to client delivery
+                                    Hand off to client representative
                                     <ArrowRight className="w-3.5 h-3.5" />
                                 </button>
                             </div>

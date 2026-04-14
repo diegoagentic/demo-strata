@@ -23,7 +23,7 @@ import {
     TransitionChild,
 } from '@headlessui/react'
 import { Fragment, useEffect, useState } from 'react'
-import { ArrowRight, Check, ChevronDown, Receipt, X } from 'lucide-react'
+import { ArrowRight, Check, ChevronDown, ChevronRight, Receipt, X } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { DealerOption } from './mockData'
 
@@ -45,6 +45,13 @@ interface WaterfallRow {
     value: number
     display: string
     type: RowType
+}
+
+interface BreakdownLine {
+    label: string
+    detail?: string
+    display: string
+    emphasis?: boolean
 }
 
 const ROW_STEP_MS = 700
@@ -84,9 +91,19 @@ export default function PricingWaterfall({
     dealers,
 }: PricingWaterfallProps) {
     const [visibleRows, setVisibleRows] = useState(0)
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
     const [selectedDealerId, setSelectedDealerId] = useState<string>(
         dealers[0]?.id ?? ''
     )
+
+    const toggleRow = (label: string) => {
+        setExpandedRows((prev) => {
+            const next = new Set(prev)
+            if (next.has(label)) next.delete(label)
+            else next.add(label)
+            return next
+        })
+    }
 
     // Derived waterfall rows (live from props)
     const discountAmount = productList * discount
@@ -103,10 +120,66 @@ export default function PricingWaterfall({
         { label: 'Total Proposal',        value: total,              display: formatMoney(total),                             type: 'total' },
     ]
 
+    // Breakdown details for each waterfall row. Numbers derived from props
+    // (proportional splits) so the sub-totals always reconcile to the row value.
+    const getBreakdown = (row: WaterfallRow): BreakdownLine[] | null => {
+        if (row.type === 'base') {
+            return [
+                { label: 'MillerKnoll Canvas workstations', detail: '38 seats · private offices + open plan', display: formatMoney(productList * 0.495) },
+                { label: 'OFS Serpentine 12-seat lounge',  detail: 'Family waiting · custom configuration',     display: formatMoney(productList * 0.135) },
+                { label: 'HON Ignition 2.0 task chairs',   detail: '119 KD chairs · nursing + staff stations',  display: formatMoney(productList * 0.189) },
+                { label: 'Steelcase conference tables',    detail: '4 rooms · height-adjustable',                display: formatMoney(productList * 0.097) },
+                { label: 'Accessories + storage',          detail: 'Filing, mobile pedestals, task lighting',    display: formatMoney(productList * 0.084) },
+                { label: 'MillerKnoll list total',         display: formatMoney(productList), emphasis: true },
+            ]
+        }
+        if (row.type === 'discount') {
+            return [
+                { label: 'JPS Master Services Agreement', detail: 'Contract signed Oct 2023 · 38 % standing' },
+                { label: 'Applied to MillerKnoll list',    detail: `${formatMoney(productList)} × ${discountPct} %`, display: formatMoney(-discountAmount, { signed: true }) },
+                { label: 'Contract discount total',        display: formatMoney(-discountAmount, { signed: true }), emphasis: true },
+            ] as BreakdownLine[]
+        }
+        if (row.type === 'subtotal') {
+            return [
+                { label: 'List price',          display: formatMoney(productList) },
+                { label: 'Contract discount',   display: formatMoney(-discountAmount, { signed: true }) },
+                { label: 'Net to client',       display: formatMoney(productNet), emphasis: true },
+            ]
+        }
+        if (row.type === 'addon' && row.label === 'Labor') {
+            return [
+                { label: 'Installation crew',  detail: '150 h × $95/h · 3 installers over 10 days', display: formatMoney(labor * 0.646) },
+                { label: 'Project manager',    detail: '20 h × $160/h · on-site coordination + QA', display: formatMoney(labor * 0.145) },
+                { label: 'Site survey',        detail: '8 h × $125/h · pre-install measurements',   display: formatMoney(labor * 0.045) },
+                { label: 'Equipment + tools',  detail: 'Dollies, lifts, PPE, consumables',           display: formatMoney(labor * 0.164) },
+                { label: 'Labor total',        display: formatMoney(labor, { signed: true }), emphasis: true },
+            ]
+        }
+        if (row.type === 'addon' && row.label === 'Freight') {
+            return [
+                { label: 'MillerKnoll · Michigan → Texas', detail: 'Full truckload · 2 days transit',    display: formatMoney(freight * 0.553) },
+                { label: 'OFS · Indiana → Texas',           detail: 'LTL · Serpentine lounge',            display: formatMoney(freight * 0.269) },
+                { label: 'HON + Steelcase + misc',         detail: 'Consolidated LTL · 1 day transit',   display: formatMoney(freight * 0.178) },
+                { label: 'Freight total',                  display: formatMoney(freight, { signed: true }), emphasis: true },
+            ]
+        }
+        if (row.type === 'total') {
+            return [
+                { label: 'Product net',  display: formatMoney(productNet) },
+                { label: 'Labor',        display: formatMoney(labor, { signed: true }) },
+                { label: 'Freight',      display: formatMoney(freight, { signed: true }) },
+                { label: 'Total proposal', display: formatMoney(total), emphasis: true },
+            ]
+        }
+        return null
+    }
+
     // Replay the animation every time the modal opens
     useEffect(() => {
         if (!isOpen) {
             setVisibleRows(0)
+            setExpandedRows(new Set())
             setSelectedDealerId(dealers[0]?.id ?? '')
             return
         }
@@ -172,42 +245,116 @@ export default function PricingWaterfall({
                             </div>
 
                             {/* Waterfall rows */}
-                            <div className="p-6 space-y-2">
+                            <div className="p-6 space-y-2 max-h-[55vh] overflow-y-auto scrollbar-minimal">
                                 {rows.map((row, i) => {
                                     const visible = i < visibleRows
                                     const isTotal = row.type === 'total'
+                                    const expanded = expandedRows.has(row.label)
+                                    const breakdown = getBreakdown(row)
                                     return (
                                         <div
                                             key={row.label}
                                             className={clsx(
-                                                ROW_STYLES[row.type],
-                                                'flex items-center justify-between rounded-xl transition-all duration-500',
-                                                isTotal ? 'px-5 py-4 mt-3' : 'px-4 py-3',
+                                                'transition-all duration-500',
                                                 visible
                                                     ? 'opacity-100 translate-y-0'
                                                     : 'opacity-0 translate-y-2'
                                             )}
                                         >
-                                            <span
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleRow(row.label)}
+                                                disabled={!breakdown || !visible}
                                                 className={clsx(
-                                                    TEXT_STYLES[row.type],
-                                                    isTotal
-                                                        ? 'text-xs font-bold uppercase tracking-wider'
-                                                        : 'text-xs font-medium'
+                                                    ROW_STYLES[row.type],
+                                                    'w-full flex items-center justify-between rounded-xl text-left transition-colors',
+                                                    isTotal ? 'px-5 py-4 mt-3' : 'px-4 py-3',
+                                                    breakdown && visible
+                                                        ? 'hover:brightness-110 cursor-pointer'
+                                                        : 'cursor-default',
                                                 )}
+                                                aria-expanded={expanded}
                                             >
-                                                {row.label}
-                                            </span>
-                                            <span
-                                                className={clsx(
-                                                    TEXT_STYLES[row.type],
-                                                    isTotal
-                                                        ? 'text-2xl font-black tabular-nums'
-                                                        : 'text-sm font-bold tabular-nums'
-                                                )}
-                                            >
-                                                {row.display}
-                                            </span>
+                                                <span className="flex items-center gap-2 min-w-0">
+                                                    {breakdown && (
+                                                        <ChevronRight
+                                                            className={clsx(
+                                                                'w-3.5 h-3.5 shrink-0 transition-transform duration-200',
+                                                                TEXT_STYLES[row.type],
+                                                                expanded && 'rotate-90'
+                                                            )}
+                                                            aria-hidden
+                                                        />
+                                                    )}
+                                                    <span
+                                                        className={clsx(
+                                                            TEXT_STYLES[row.type],
+                                                            isTotal
+                                                                ? 'text-xs font-bold uppercase tracking-wider'
+                                                                : 'text-xs font-medium'
+                                                        )}
+                                                    >
+                                                        {row.label}
+                                                    </span>
+                                                </span>
+                                                <span
+                                                    className={clsx(
+                                                        TEXT_STYLES[row.type],
+                                                        isTotal
+                                                            ? 'text-2xl font-black tabular-nums'
+                                                            : 'text-sm font-bold tabular-nums'
+                                                    )}
+                                                >
+                                                    {row.display}
+                                                </span>
+                                            </button>
+
+                                            {/* Expanded breakdown */}
+                                            {breakdown && expanded && (
+                                                <div className="mt-1.5 ml-4 pl-4 border-l-2 border-border space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    {breakdown.map((line, li) => (
+                                                        <div
+                                                            key={`${row.label}-${li}-${line.label}`}
+                                                            className={clsx(
+                                                                'flex items-baseline justify-between gap-3 rounded-md px-3 py-1.5',
+                                                                line.emphasis
+                                                                    ? 'bg-muted/40 border-t border-border mt-1'
+                                                                    : 'bg-transparent'
+                                                            )}
+                                                        >
+                                                            <div className="min-w-0 flex-1">
+                                                                <p
+                                                                    className={clsx(
+                                                                        'text-[11px] leading-tight truncate',
+                                                                        line.emphasis
+                                                                            ? 'font-bold text-foreground'
+                                                                            : 'font-semibold text-foreground'
+                                                                    )}
+                                                                >
+                                                                    {line.label}
+                                                                </p>
+                                                                {line.detail && (
+                                                                    <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 truncate">
+                                                                        {line.detail}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            {line.display && (
+                                                                <span
+                                                                    className={clsx(
+                                                                        'shrink-0 text-[11px] tabular-nums',
+                                                                        line.emphasis
+                                                                            ? 'font-black text-foreground'
+                                                                            : 'font-semibold text-muted-foreground'
+                                                                    )}
+                                                                >
+                                                                    {line.display}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     )
                                 })}

@@ -11,7 +11,16 @@
 
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
 import { Fragment, useEffect, useState } from 'react'
-import { Check, CheckCircle2, ShieldCheck, X } from 'lucide-react'
+import {
+    Bell,
+    Check,
+    CheckCircle2,
+    FileText,
+    MousePointer2,
+    ShieldCheck,
+    Sparkles,
+    X,
+} from 'lucide-react'
 import { clsx } from 'clsx'
 
 interface ApprovalRole {
@@ -45,6 +54,17 @@ const CHAIN: ApprovalRole[] = [
 
 const STEP_MS = 800
 
+// David cutaway beat timeline (ms from modal open)
+const CUTAWAY_START    = 500     // enter David's view
+const CUTAWAY_NOTIF    = 1000    // notification toast slides in
+const CUTAWAY_OPEN_DOC = 1900    // notification acknowledged → proposal card reveal
+const CUTAWAY_POINTER  = 2800    // pointer hovers Approve
+const CUTAWAY_CLICK    = 3500    // Approve click (scale + ring pulse)
+const CUTAWAY_EXIT     = 4200    // return to chain modal
+const CHAIN_RESUME     = 4600    // chain continues (David already = 1)
+
+type Phase = 'intro' | 'cutaway' | 'chaining'
+
 interface ApprovalChainModalProps {
     isOpen: boolean
     onClose: () => void
@@ -57,21 +77,52 @@ export default function ApprovalChainModal({
     onComplete,
 }: ApprovalChainModalProps) {
     const [approvedCount, setApprovedCount] = useState(0)
+    const [phase, setPhase] = useState<Phase>('intro')
+    const [cutawayNotifVisible, setCutawayNotifVisible] = useState(false)
+    const [cutawayCardVisible, setCutawayCardVisible] = useState(false)
+    const [cutawayPointerShown, setCutawayPointerShown] = useState(false)
+    const [cutawayClicked, setCutawayClicked] = useState(false)
 
-    // Reset + sequential auto-approval when the modal opens
+    // Reset + timeline: intro → David cutaway → chain continues
     useEffect(() => {
         if (!isOpen) {
             setApprovedCount(0)
+            setPhase('intro')
+            setCutawayNotifVisible(false)
+            setCutawayCardVisible(false)
+            setCutawayPointerShown(false)
+            setCutawayClicked(false)
             return
         }
 
         const timers: ReturnType<typeof setTimeout>[] = []
-        for (let i = 0; i < CHAIN.length; i++) {
-            timers.push(setTimeout(() => setApprovedCount(i + 1), (i + 1) * STEP_MS))
+
+        // ─── Cutaway beats ──────────────────────────────────────────────
+        timers.push(setTimeout(() => setPhase('cutaway'), CUTAWAY_START))
+        timers.push(setTimeout(() => setCutawayNotifVisible(true), CUTAWAY_NOTIF))
+        timers.push(setTimeout(() => setCutawayCardVisible(true), CUTAWAY_OPEN_DOC))
+        timers.push(setTimeout(() => setCutawayPointerShown(true), CUTAWAY_POINTER))
+        timers.push(setTimeout(() => {
+            setCutawayClicked(true)
+            setApprovedCount(1) // David signs inside the cutaway
+        }, CUTAWAY_CLICK))
+        timers.push(setTimeout(() => setPhase('chaining'), CUTAWAY_EXIT))
+
+        // ─── Chain continues for Alex / Sara / Jordan ─────────────────────
+        for (let i = 1; i < CHAIN.length; i++) {
+            timers.push(
+                setTimeout(
+                    () => setApprovedCount(i + 1),
+                    CHAIN_RESUME + (i - 1) * STEP_MS
+                )
+            )
         }
         // After the last signature, give the user 600 ms to read, then advance.
         timers.push(
-            setTimeout(onComplete, CHAIN.length * STEP_MS + 600)
+            setTimeout(
+                onComplete,
+                CHAIN_RESUME + (CHAIN.length - 1) * STEP_MS + 600
+            )
         )
         return () => timers.forEach(clearTimeout)
     }, [isOpen, onComplete])
@@ -99,6 +150,164 @@ export default function ApprovalChainModal({
                 </TransitionChild>
 
                 <div className="fixed inset-0 flex items-center justify-center p-4">
+                    {/* David Park cutaway — "Regional Sales Manager view" */}
+                    {phase === 'cutaway' && (
+                        <div className="w-full max-w-3xl bg-card dark:bg-zinc-900 rounded-2xl border border-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+                            {/* Role strip */}
+                            <div className="flex items-center gap-3 px-5 py-3 border-b border-border bg-zinc-950 text-white">
+                                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 text-red-300 text-[9px] font-bold uppercase tracking-wider">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                                    Live role view
+                                </span>
+                                <p className="text-[10px] text-zinc-400 uppercase tracking-wider">
+                                    Switching to
+                                </p>
+                                <div className="flex items-center gap-2 ml-auto">
+                                    <img
+                                        src={CHAIN[0].photo}
+                                        alt={CHAIN[0].name}
+                                        className="w-7 h-7 rounded-full object-cover ring-2 ring-primary"
+                                    />
+                                    <div>
+                                        <p className="text-xs font-bold text-white leading-tight">
+                                            {CHAIN[0].name}
+                                        </p>
+                                        <p className="text-[10px] text-zinc-400 leading-tight">
+                                            {CHAIN[0].role}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Fake Strata app frame · David's inbox */}
+                            <div className="relative px-6 py-6 bg-zinc-50 dark:bg-zinc-800 min-h-[420px]">
+                                {/* Notification toast */}
+                                <div
+                                    className={clsx(
+                                        'absolute top-4 right-4 w-80 bg-card dark:bg-zinc-900 rounded-xl border border-primary/40 shadow-xl p-4 transition-all duration-500',
+                                        cutawayNotifVisible
+                                            ? 'opacity-100 translate-x-0'
+                                            : 'opacity-0 translate-x-6 pointer-events-none'
+                                    )}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className="shrink-0 w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                                            <Bell className="w-4 h-4 text-foreground dark:text-primary" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
+                                                Strata · New approval
+                                            </p>
+                                            <p className="text-xs font-bold text-foreground leading-tight mt-1">
+                                                JPS Health Network · $202,138
+                                            </p>
+                                            <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                                                Sent by Sara Chen · awaiting your sign-off
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Proposal approval card */}
+                                <div
+                                    className={clsx(
+                                        'max-w-xl transition-all duration-500',
+                                        cutawayCardVisible
+                                            ? 'opacity-100 translate-y-0'
+                                            : 'opacity-0 translate-y-4 pointer-events-none'
+                                    )}
+                                >
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                                        David's queue · 1 item awaiting approval
+                                    </p>
+                                    <div className="bg-card dark:bg-zinc-900 rounded-xl border border-border shadow-sm overflow-hidden">
+                                        {/* Card header */}
+                                        <div className="flex items-start gap-3 px-5 py-4 border-b border-border">
+                                            <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                                <FileText className="w-5 h-5 text-foreground dark:text-primary" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-foreground leading-tight">
+                                                    JPS Health Network — proposal
+                                                </p>
+                                                <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                                                    24 line items · 4-person chain · routed by Sara Chen
+                                                </p>
+                                            </div>
+                                            <span className="shrink-0 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                                                <Sparkles className="w-3 h-3" />
+                                                Priority
+                                            </span>
+                                        </div>
+                                        {/* Breakdown */}
+                                        <div className="grid grid-cols-3 gap-3 px-5 py-4 bg-muted/20">
+                                            <div>
+                                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Product net</p>
+                                                <p className="text-sm font-black text-foreground tabular-nums">$178,219</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Labor + freight</p>
+                                                <p className="text-sm font-black text-foreground tabular-nums">$23,919</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Total</p>
+                                                <p className="text-sm font-black text-foreground tabular-nums">$202,138</p>
+                                            </div>
+                                        </div>
+                                        {/* Actions */}
+                                        <div className="flex items-center gap-2 px-5 py-3 border-t border-border bg-muted/10">
+                                            <button
+                                                type="button"
+                                                disabled
+                                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                                            >
+                                                Request changes
+                                            </button>
+                                            <div className="relative ml-auto">
+                                                <button
+                                                    type="button"
+                                                    disabled
+                                                    className={clsx(
+                                                        'flex items-center gap-1.5 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground transition-all duration-200',
+                                                        cutawayClicked &&
+                                                            'scale-95 ring-4 ring-primary/50 shadow-lg shadow-primary/40'
+                                                    )}
+                                                >
+                                                    {cutawayClicked ? (
+                                                        <>
+                                                            <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                                                            Approved
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ShieldCheck className="w-3.5 h-3.5" />
+                                                            Approve proposal
+                                                        </>
+                                                    )}
+                                                </button>
+                                                {/* Simulated cursor */}
+                                                {cutawayPointerShown && (
+                                                    <MousePointer2
+                                                        className={clsx(
+                                                            'absolute -right-1 -bottom-2 w-5 h-5 text-foreground drop-shadow-lg pointer-events-none transition-all duration-300',
+                                                            cutawayClicked
+                                                                ? 'translate-x-0 translate-y-0 scale-90'
+                                                                : 'translate-x-1 translate-y-1 animate-bounce'
+                                                        )}
+                                                        aria-hidden
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground italic mt-3 text-center">
+                                        Strata auto-stamps David's signature into the approval chain.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <TransitionChild
                         as={Fragment}
                         enter="ease-out duration-200"
@@ -108,7 +317,10 @@ export default function ApprovalChainModal({
                         leaveFrom="opacity-100 scale-100"
                         leaveTo="opacity-0 scale-95"
                     >
-                        <DialogPanel className="w-full max-w-lg bg-card dark:bg-zinc-800 rounded-2xl border border-border shadow-2xl overflow-hidden">
+                        <DialogPanel className={clsx(
+                            'w-full max-w-lg bg-card dark:bg-zinc-800 rounded-2xl border border-border shadow-2xl overflow-hidden',
+                            phase === 'cutaway' && 'hidden'
+                        )}>
 
                             {/* Header */}
                             <div className="flex items-start gap-4 px-6 py-5 border-b border-border">

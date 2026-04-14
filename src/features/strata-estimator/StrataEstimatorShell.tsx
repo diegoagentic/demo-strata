@@ -26,6 +26,8 @@ import DesignerVerificationOverlay from './DesignerVerificationOverlay'
 import ProposalActionBar from './ProposalActionBar'
 import ApprovalChainModal from './ApprovalChainModal'
 import ReleaseSuccessModal from './ReleaseSuccessModal'
+import RequestClarificationModal from './RequestClarificationModal'
+import ProposalPdfPreviewModal from './ProposalPdfPreviewModal'
 import ScopeBreachAlert from './ScopeBreachAlert'
 import FlaggedItemBanner from './FlaggedItemBanner'
 import AuditTrailPanel from './AuditTrailPanel'
@@ -33,8 +35,6 @@ import type { AuditCategory, AuditEvent } from './AuditTrailPanel'
 import RoleHandoffTransition from './RoleHandoffTransition'
 import type { HandoffPerson } from './RoleHandoffTransition'
 import VerificationLogCard from './VerificationLogCard'
-import DealerArrivalToast from './DealerArrivalToast'
-import AgentRoutingToast from './AgentRoutingToast'
 import ClientProposalDelivery from './ClientProposalDelivery'
 import DesignerTaskNotification from './DesignerTaskNotification'
 import { ROLE_PROFILES } from './roles'
@@ -89,6 +89,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [isWaterfallOpen, setIsWaterfallOpen] = useState(false)
     const [isApprovalOpen, setIsApprovalOpen] = useState(false)
     const [isReleaseOpen, setIsReleaseOpen] = useState(false)
+    const [isClarificationOpen, setIsClarificationOpen] = useState(false)
+    const [isProposalPdfOpen, setIsProposalPdfOpen] = useState(false)
     const [savedEstimates, setSavedEstimates] = useState<SavedEstimate[]>(MOCK_SAVED_ESTIMATES)
     const [isInitialLoading, setIsInitialLoading] = useState(true)
 
@@ -108,8 +110,6 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [escalatedAt, setEscalatedAt] = useState<number | null>(null)
     const [verifiedAt, setVerifiedAt] = useState<number | null>(null)
     const [approvedAt, setApprovedAt] = useState<number | null>(null)
-    const [dealerToastOpen, setDealerToastOpen] = useState(false)
-    const [agentRoutingOpen, setAgentRoutingOpen] = useState(false)
     const [designerTaskOpened, setDesignerTaskOpened] = useState(false)
     const [generateCtaPressed, setGenerateCtaPressed] = useState(false)
     const [mappingResolvedCount, setMappingResolvedCount] = useState<number>(Infinity)
@@ -197,7 +197,6 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setEscalatedAt(null) // drop any stale escalation context
         setVerifiedAt(null) // drop any stale verification context
         setApprovedAt(null) // drop any stale approval context
-        setAgentRoutingOpen(true) // Agent Step 1 trigger toast (Phase 7.7)
         setAuditLog([])
         logEvent(
             'AI Agent',
@@ -366,18 +365,6 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         }
     }, [stepId])
 
-    // ── w2.2 dealer arrival toast ────────────────────────────────────────────
-    // When Sara lands on w2.2, surface a small 'Your turn, Sara' cue right
-    // after the RoleHandoffTransition finishes. The toast handles its own
-    // dismiss timer; this effect just opens it on step entry.
-    useEffect(() => {
-        if (stepId !== 'w2.2') {
-            setDealerToastOpen(false)
-            return
-        }
-        setDealerToastOpen(true)
-    }, [stepId])
-
     // ── w1.2 designer task notification ──────────────────────────────────────
     // When the demo enters w1.2, show a centred task notification on a
     // dimmed backdrop BEFORE the DesignerVerificationOverlay slides in. The
@@ -408,6 +395,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const prevStepIdRef = useRef<string | undefined>(undefined)
     const [handoff, setHandoff] = useState<{
         fromUser: NonNullable<typeof connectedUser>
+        toUser: NonNullable<typeof connectedUser>
         message: string
     } | null>(null)
 
@@ -428,6 +416,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
         setHandoff({
             fromUser: prevRole,
+            toUser: connectedUser,
             message: `Handed off to ${connectedUser.name} · ${currentStep?.title ?? ''}`,
         })
     }, [stepId, connectedUser, currentStep?.title])
@@ -484,12 +473,21 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
     // ── w2.2 — Proposal review handlers ──────────────────────────────────────
     const handleRequestClarification = () => {
-        // Placeholder — Phase 1 of refinement only needs the approve flow wired
-        console.log('Request clarification')
+        logEvent('Sara Chen', 'Opened Request Clarification form', 'edit')
+        setIsClarificationOpen(true)
+    }
+
+    const handleClarificationSent = (topic: string, _message: string) => {
+        logEvent(
+            'Sara Chen',
+            `Clarification request sent to David Park · ${topic}`,
+            'edit'
+        )
     }
 
     const handlePreviewProposalPdf = () => {
-        console.log('Preview proposal PDF')
+        logEvent('Sara Chen', 'Previewed proposal PDF before release', 'edit')
+        setIsProposalPdfOpen(true)
     }
 
     const handleApproveRelease = () => {
@@ -526,13 +524,13 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setApprovedAt(Date.now())
         logEvent(
             'System',
-            'Proposal routed to Sales Coordinator for client delivery',
+            'Proposal routed to Sales Coordinator for client representative handoff',
             'ai'
         )
         triggerHandoff(
             ROLE_PROFILES.Dealer,
             ROLE_PROFILES['Sales Coordinator'],
-            'Routing approved proposal to Sales Coordinator'
+            'Routing approved proposal to Sales Coordinator for representative handoff'
         )
     }
 
@@ -571,10 +569,6 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setEscalatedAt(null)
         setVerifiedAt(null)
         setApprovedAt(null)
-        // Refinement Phase 7.6: dismiss any lingering dealer toast
-        setDealerToastOpen(false)
-        // Refinement Phase 7.7: dismiss any lingering agent routing toast
-        setAgentRoutingOpen(false)
         // v7 · reset the designer task notification gate
         setDesignerTaskOpened(false)
         // v7 · clear any lingering Generate Proposal press animation
@@ -671,15 +665,6 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 connectedUser={connectedUser}
             />
 
-            {/* Handoff banner — sits below the floating pill, auto-dismisses */}
-            {handoff && (
-                <HandoffBanner
-                    fromUser={handoff.fromUser}
-                    message={handoff.message}
-                    onDismiss={() => setHandoff(null)}
-                />
-            )}
-
             {/* Tab content */}
             <main>
                 {isInitialLoading ? (
@@ -691,7 +676,15 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 ) : (
                     <>
                         {activeTab === 'ESTIMATOR' && stepState === 'client-delivery' && (
-                            <div key="CLIENT-DELIVERY" className="pt-24 px-6 lg:px-10 max-w-7xl mx-auto animate-fade-in">
+                            <div key="CLIENT-DELIVERY" className="pt-24 px-6 lg:px-10 max-w-7xl mx-auto space-y-6 animate-fade-in">
+                                {handoff && (
+                                    <HandoffBanner
+                                        fromUser={handoff.fromUser}
+                                        toUser={handoff.toUser}
+                                        message={handoff.message}
+                                        onDismiss={() => setHandoff(null)}
+                                    />
+                                )}
                                 <ClientProposalDelivery
                                     proposalPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
                                         maximumFractionDigits: 0,
@@ -703,7 +696,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     onSent={() => {
                                         logEvent(
                                             ROLE_PROFILES['Sales Coordinator'].name,
-                                            'Client-facing PDF sent to JPS Health Network',
+                                            'Representative-facing PDF sent to JPS Health Network rep',
                                             'edit'
                                         )
                                     }}
@@ -713,6 +706,16 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
                         {activeTab === 'ESTIMATOR' && stepState !== 'client-delivery' && (
                             <div key="ESTIMATOR" className="pt-24 px-6 lg:px-10 max-w-7xl mx-auto space-y-6 animate-fade-in">
+
+                                {/* v7 · inline handoff banner (replaces the former fixed toast) */}
+                                {handoff && (
+                                    <HandoffBanner
+                                        fromUser={handoff.fromUser}
+                                        toUser={handoff.toUser}
+                                        message={handoff.message}
+                                        onDismiss={() => setHandoff(null)}
+                                    />
+                                )}
 
                                 {/* v7 · w1.2 · Dupler-style task notification (top of the page,
                                     mutually exclusive with the DesignerVerificationOverlay) */}
@@ -931,6 +934,24 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 />
             )}
 
+            {/* v7 · w2.2 — Request Clarification modal (Sara → David) */}
+            <RequestClarificationModal
+                isOpen={isClarificationOpen}
+                onClose={() => setIsClarificationOpen(false)}
+                onSent={handleClarificationSent}
+            />
+
+            {/* v7 · w2.2 — Proposal PDF preview (reused by the Preview PDF CTA) */}
+            <ProposalPdfPreviewModal
+                isOpen={isProposalPdfOpen}
+                onClose={() => setIsProposalPdfOpen(false)}
+                clientName={customer.name}
+                productList={JPS_PRODUCT_LIST}
+                discount={JPS_CONTRACT_DISCOUNT}
+                labor={Number(estimate.totalCost)}
+                freight={JPS_FREIGHT}
+            />
+
             {/* Refinement Phase 1: w2.2 — Approval chain */}
             <ApprovalChainModal
                 isOpen={isApprovalOpen}
@@ -965,25 +986,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 />
             )}
 
-            {/* Refinement Phase 7.6: Dealer arrival toast (w2.2 preamble) */}
-            <DealerArrivalToast
-                isOpen={dealerToastOpen && stepId === 'w2.2'}
-                dealerName={ROLE_PROFILES.Dealer.name}
-                dealerPhoto={ROLE_PROFILES.Dealer.photo}
-                salesPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
-                    maximumFractionDigits: 0,
-                })}
-                onDismiss={() => setDealerToastOpen(false)}
-            />
-
-            {/* Refinement Phase 7.7: Agent Step 1 routing toast (w1.1 preamble) */}
-            <AgentRoutingToast
-                isOpen={agentRoutingOpen && stepId === 'w1.1'}
-                project="JPS Health Network"
-                assignee={ROLE_PROFILES.Expert.name}
-                office="Dallas office"
-                onDismiss={() => setAgentRoutingOpen(false)}
-            />
+            {/* v7 · legacy DealerArrivalToast + AgentRoutingToast were removed —
+                HandoffBanner (inline) now covers every role transition on its own. */}
         </div>
     )
 }
