@@ -1538,14 +1538,18 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 onSendBack={() => {
                     logEvent(
                         'Alex Rivera',
-                        'Verified OFS Serpentine · 14 h install (modular assembly confirmed)',
+                        'Verified OFS Serpentine · 14 h install (modular assembly confirmed) · sent for approval',
                         'edit'
                     )
                     setVerifiedAt(Date.now())
+                    // v8 · w1.2 → w2.1 · designer sends the verified module
+                    // to Sara (Salesperson) who reviews before forwarding
+                    // to the SAC. Previously this routed back to the
+                    // Expert which was a legacy v7 leftover.
                     triggerHandoff(
                         ROLE_PROFILES.Designer,
-                        ROLE_PROFILES.Expert,
-                        'Returning verified module to Expert'
+                        ROLE_PROFILES.Dealer,
+                        'Sending verified module to Sara for approval'
                     )
                 }}
                 onPreviewPdf={() => console.log('Preview PDF')}

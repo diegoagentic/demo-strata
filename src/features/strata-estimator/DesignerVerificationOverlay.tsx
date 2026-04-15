@@ -648,7 +648,7 @@ export default function DesignerVerificationOverlay({
                             : 'bg-muted text-muted-foreground cursor-not-allowed'
                     )}
                 >
-                    Send Back to Expert
+                    Send for Approval
                     <ArrowRight className="w-3.5 h-3.5" />
                 </button>
             </div>
