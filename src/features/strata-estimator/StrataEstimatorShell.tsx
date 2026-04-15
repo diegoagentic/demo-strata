@@ -1204,8 +1204,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                 )}
 
                                 {/* Refinement Phase 7.5: Verification log card (w2.1 preamble)
-                                    — lives ABOVE the hero so it frames the Generate Proposal CTA
-                                    the designer just approved. */}
+                                    — frames the forward-to-SAC CTA with what the
+                                    designer just approved. */}
                                 {stepId === 'w2.1' && verifiedAt && (
                                     <VerificationLogCard
                                         verifiedByName={ROLE_PROFILES.Designer.name}
@@ -1214,36 +1214,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* v8 Paso D · Dual-engine calculation. Shown once the
-                                    BoM mapping beat finishes so the audience sees the
-                                    two private Excel engines before the final hero. */}
-                                {(stepId === 'w2.1' ||
-                                    (stepId === 'w1.1' &&
-                                        (w21Phase === 'scope-breach' ||
-                                            w21Phase === 'flagged'))) && (
-                                    <DualEngineCalculation
-                                        progress={stepId === 'w1.1' ? calcProgress : 1}
-                                    />
-                                )}
-
-                                {/* Phase 5 + Refinement 7.2 + v8: Financial Summary Hero.
-                                    CTA label changes per step: w1.1 "Generate Proposal"
-                                    (David runs calc), w2.1 "Forward to SAC" (Sara forwards
-                                    the labor estimate to Riley). */}
-                                <FinancialSummaryHero
-                                    estimate={estimate}
-                                    onGenerateProposal={handleGenerateProposal}
-                                    hideGenerateCTA={isProposalReview}
-                                    calculationProgress={calcProgress}
-                                    pulseGenerateCTA={generateCtaPressed}
-                                    ctaLabel={
-                                        stepId === 'w2.1'
-                                            ? 'Forward to SAC'
-                                            : 'Generate Proposal'
-                                    }
-                                />
-
-                                {/* Refinement Phase 2: Scope breach alert (transient) */}
+                                {/* v8 polish · Transient scope/mismatch alerts surface
+                                    directly above the BoM they reference. */}
                                 {stepId === 'w1.1' && (
                                     <ScopeBreachAlert
                                         isOpen={scopeBreachOpen}
@@ -1254,8 +1226,6 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* Refinement Phase 2: Flagged item banner (above the BoM so the
-                                    Escalate CTA sits between the hero and the list, not after it) */}
                                 {stepId === 'w1.1' && (
                                     <FlaggedItemBanner
                                         isOpen={w21Phase === 'flagged'}
@@ -1278,7 +1248,10 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* Phase 6: Bill of Materials */}
+                                {/* v8 polish · Critical manipulable surfaces promoted
+                                    above the calculation outputs. BoM + Operational
+                                    Constraints are the INPUT editors the estimator
+                                    touches directly during the demo. */}
                                 <BillOfMaterialsTable
                                     lineItems={lineItems}
                                     config={config}
@@ -1298,12 +1271,38 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     mappingResolvedCount={mappingResolvedCount}
                                 />
 
-                                {/* Phase 7: Operational Constraints */}
                                 <OperationalConstraintsPanel
                                     variables={variables}
                                     onVariablesChange={setVariables}
                                     crewSize={estimate.crewSize}
                                     readOnly={isProposalReview}
+                                />
+
+                                {/* v8 Paso D · Dual-engine calculation (OUTPUT).
+                                    Moved below the BoM/constraints so the inputs
+                                    read as causes and the calc reads as effect. */}
+                                {(stepId === 'w2.1' ||
+                                    (stepId === 'w1.1' &&
+                                        (w21Phase === 'scope-breach' ||
+                                            w21Phase === 'flagged'))) && (
+                                    <DualEngineCalculation
+                                        progress={stepId === 'w1.1' ? calcProgress : 1}
+                                    />
+                                )}
+
+                                {/* Phase 5 + Refinement 7.2 + v8: Financial Summary Hero
+                                    (OUTPUT). Final number + step CTA. */}
+                                <FinancialSummaryHero
+                                    estimate={estimate}
+                                    onGenerateProposal={handleGenerateProposal}
+                                    hideGenerateCTA={isProposalReview}
+                                    calculationProgress={calcProgress}
+                                    pulseGenerateCTA={generateCtaPressed}
+                                    ctaLabel={
+                                        stepId === 'w2.1'
+                                            ? 'Forward to SAC'
+                                            : 'Generate Proposal'
+                                    }
                                 />
 
                                 <p className="text-[10px] text-center text-muted-foreground/60 font-mono">
