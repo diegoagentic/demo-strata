@@ -30,6 +30,7 @@ import VisionEngineModal from './VisionEngineModal'
 import HandoffBanner from './HandoffBanner'
 import DesignerVerificationOverlay from './DesignerVerificationOverlay'
 import ProposalActionBar from './ProposalActionBar'
+import type { ProposalActionTarget } from './ProposalActionBar'
 import SalespersonActionBar from './SalespersonActionBar'
 import ApprovalChainModal from './ApprovalChainModal'
 import ReleaseSuccessModal from './ReleaseSuccessModal'
@@ -103,6 +104,11 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     const [isClarificationOpen, setIsClarificationOpen] = useState(false)
     const [isProposalPdfOpen, setIsProposalPdfOpen] = useState(false)
     const [approveReleasePulsed, setApproveReleasePulsed] = useState(false)
+    // v8 · w2.2 Riley scripted action bar state
+    const [rileyCursorTarget, setRileyCursorTarget] = useState<ProposalActionTarget>(null)
+    const [rileyCursorClicked, setRileyCursorClicked] = useState(false)
+    const [rileyPulseAssemble, setRileyPulseAssemble] = useState(false)
+    const [rileyPulsePreview, setRileyPulsePreview] = useState(false)
     // v8 · w2.1 scripted action bar + David reply card state
     type SalespersonCursor = 'request-clarification' | 'forward' | null
     const [saraCursorTarget, setSaraCursorTarget] = useState<SalespersonCursor>(null)
@@ -673,43 +679,97 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepId])
 
-    // v8 · w2.2 (Riley/SAC) scripted beat — Riley actually interacts now.
-    //   1400  pricing waterfall auto-opens (quote assembly math)
-    //   5200  pricing waterfall closes (Riley "confirmed" the math)
-    //   5700  auto-preview the client PDF
-    //   8200  PDF preview closes
-    //   8900  Approve & Release CTA pulses on the action bar
-    //   9700  handleApproveRelease fires (release checklist + David detour)
+    // v8 · w2.2 (Riley/SAC) fully scripted paced flow. Each action is
+    // visibly triggered from the ProposalActionBar with a simulated
+    // cursor click before the next modal opens — same pattern as Sara's
+    // w2.1 flow.
+    //
+    // Timeline (all ms from step entry):
+    //    0   handoff banner Sara → Riley visible
+    //  1500  cursor lands on "Assemble quote" button (pulse starts)
+    //  2300  cursor click simulated
+    //  2500  PricingWaterfall opens (quote assembly math)
+    //  7500  waterfall closes (Riley "confirmed" the math)
+    //  8000  cursor lands on "Preview PDF" button (pulse starts)
+    //  8800  cursor click simulated
+    //  9000  ProposalPdfPreviewModal opens
+    // 12000  PDF modal closes
+    // 12500  cursor lands on "Approve & Release" button (pulse starts)
+    // 13300  cursor click simulated
+    // 13500  handleApproveRelease fires (release checklist + David detour)
+    // 14000  clear all cursor/pulse state
     useEffect(() => {
         if (stepId !== 'w2.2') {
             setApproveReleasePulsed(false)
+            setRileyCursorTarget(null)
+            setRileyCursorClicked(false)
+            setRileyPulseAssemble(false)
+            setRileyPulsePreview(false)
             return
         }
-        const openWaterfall = setTimeout(() => setIsWaterfallOpen(true), 1400)
-        const closeWaterfall = setTimeout(() => {
+
+        const timers: ReturnType<typeof setTimeout>[] = []
+
+        // Beat 1 · Assemble quote
+        timers.push(setTimeout(() => {
+            setRileyCursorTarget('assemble')
+            setRileyPulseAssemble(true)
+        }, 1500))
+        timers.push(setTimeout(() => setRileyCursorClicked(true), 2300))
+        timers.push(setTimeout(() => {
             logEvent(
                 'Riley Morgan',
-                'Confirmed quote assembly math · MillerKnoll + discount + markup',
+                'Opened quote assembly · MillerKnoll + discount + markup',
+                'edit'
+            )
+            setIsWaterfallOpen(true)
+            setRileyCursorTarget(null)
+            setRileyCursorClicked(false)
+            setRileyPulseAssemble(false)
+        }, 2500))
+
+        // Waterfall auto-closes after ~5 s
+        timers.push(setTimeout(() => {
+            logEvent(
+                'Riley Morgan',
+                'Confirmed quote assembly math · net + labor + freight + markup',
                 'edit'
             )
             setIsWaterfallOpen(false)
-        }, 5200)
-        const openPdf = setTimeout(() => {
-            logEvent('Riley Morgan', 'Previewed client PDF before release', 'edit')
+        }, 7500))
+
+        // Beat 2 · Preview PDF
+        timers.push(setTimeout(() => {
+            setRileyCursorTarget('preview')
+            setRileyPulsePreview(true)
+        }, 8000))
+        timers.push(setTimeout(() => setRileyCursorClicked(true), 8800))
+        timers.push(setTimeout(() => {
+            logEvent('Riley Morgan', 'Previewed the release document', 'edit')
             setIsProposalPdfOpen(true)
-        }, 5700)
-        const closePdf = setTimeout(() => setIsProposalPdfOpen(false), 8200)
-        const pulseApprove = setTimeout(() => setApproveReleasePulsed(true), 8900)
-        const fireApprove = setTimeout(() => handleApproveRelease(), 9700)
-        const clearPulse = setTimeout(() => setApproveReleasePulsed(false), 10200)
+            setRileyCursorTarget(null)
+            setRileyCursorClicked(false)
+            setRileyPulsePreview(false)
+        }, 9000))
+
+        // PDF modal closes
+        timers.push(setTimeout(() => setIsProposalPdfOpen(false), 12000))
+
+        // Beat 3 · Approve & Release
+        timers.push(setTimeout(() => {
+            setRileyCursorTarget('approve')
+            setApproveReleasePulsed(true)
+        }, 12500))
+        timers.push(setTimeout(() => setRileyCursorClicked(true), 13300))
+        timers.push(setTimeout(() => handleApproveRelease(), 13500))
+        timers.push(setTimeout(() => {
+            setRileyCursorTarget(null)
+            setRileyCursorClicked(false)
+            setApproveReleasePulsed(false)
+        }, 14000))
+
         return () => {
-            clearTimeout(openWaterfall)
-            clearTimeout(closeWaterfall)
-            clearTimeout(openPdf)
-            clearTimeout(closePdf)
-            clearTimeout(pulseApprove)
-            clearTimeout(fireApprove)
-            clearTimeout(clearPulse)
+            timers.forEach(clearTimeout)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stepId])
@@ -909,8 +969,18 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     }
 
     const handlePreviewProposalPdf = () => {
-        logEvent('Sara Chen', 'Previewed proposal PDF before release', 'edit')
+        const sender = stepId === 'w2.1' ? 'Sara Chen' : 'Riley Morgan'
+        logEvent(sender, 'Previewed proposal PDF before release', 'edit')
         setIsProposalPdfOpen(true)
+    }
+
+    const handleAssembleQuote = () => {
+        logEvent(
+            'Riley Morgan',
+            'Opened quote assembly · MillerKnoll + discount + markup',
+            'edit'
+        )
+        setIsWaterfallOpen(true)
     }
 
     const handleApproveRelease = () => {
@@ -1688,17 +1758,25 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 }}
             />
 
-            {/* Refinement Phase 1: w2.2 — Proposal review action bar
-                (hidden while the Shell is in David's workspace redirect) */}
+            {/* Refinement Phase 1 + v8 scripted w2.2 · Proposal review
+                action bar with 4 CTAs (Assemble / Clarify / Preview /
+                Approve). Hidden while the Shell is in David's workspace
+                redirect. Every CTA is driven by Riley's scripted cursor
+                + pulse state so the audience sees each click. */}
             {isProposalReview && !davidApprovalActive && (
                 <ProposalActionBar
                     salesPrice={Number(estimate.salesPrice).toLocaleString('en-US', {
                         maximumFractionDigits: 0,
                     })}
+                    onAssemble={handleAssembleQuote}
                     onRequestClarification={handleRequestClarification}
                     onPreviewPdf={handlePreviewProposalPdf}
                     onApproveRelease={handleApproveRelease}
+                    pulseAssemble={rileyPulseAssemble}
+                    pulsePreview={rileyPulsePreview}
                     pulseApprove={approveReleasePulsed}
+                    cursorTarget={rileyCursorTarget}
+                    cursorClicked={rileyCursorClicked}
                 />
             )}
 
