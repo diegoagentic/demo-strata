@@ -42,6 +42,7 @@ interface StrataEstimatorNavbarProps {
     onExportBackup?: () => void
     onImportBackup?: () => void
     connectedUser?: ConnectedUser
+    highlightImport?: boolean
 }
 
 const TABS: Array<{ id: EstimatorTab; label: string; icon: typeof LayoutDashboard }> = [
@@ -93,6 +94,7 @@ export default function StrataEstimatorNavbar({
     onExportBackup,
     onImportBackup,
     connectedUser,
+    highlightImport = false,
 }: StrataEstimatorNavbarProps) {
     const { theme, toggleTheme } = useTheme()
     const { isDemoActive, isSidebarCollapsed } = useDemo()
@@ -196,7 +198,12 @@ export default function StrataEstimatorNavbar({
                     <button
                         onClick={onImportBackup}
                         title="Import Project Data"
-                        className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        className={clsx(
+                            'p-2 rounded-full transition-all duration-300',
+                            highlightImport
+                                ? 'bg-primary text-primary-foreground ring-4 ring-primary/40 shadow-lg shadow-primary/30 scale-110 animate-pulse'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        )}
                     >
                         <UploadCloud className="h-4 w-4" />
                     </button>

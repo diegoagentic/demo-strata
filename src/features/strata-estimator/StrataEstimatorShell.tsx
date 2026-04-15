@@ -14,6 +14,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, MousePointer2, ShieldCheck } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useDemo } from '../../context/DemoContext'
+import FileImportModal from './FileImportModal'
+import type { ImportPhase } from './FileImportModal'
 import StrataEstimatorNavbar from './StrataEstimatorNavbar'
 import EstimatorDossierCard from './EstimatorDossierCard'
 import FinancialSummaryHero from './FinancialSummaryHero'
@@ -108,12 +110,18 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     // ── w1.1 beat timeline state (refinement Phase 2 + 7.1) ──────────────────
     type W21Phase =
         | 'idle'
+        | 'importing-files'
         | 'loading-dossier'
         | 'importing-bom'
         | 'mapping-bom'
         | 'scope-breach'
         | 'flagged'
     const [w21Phase, setW21Phase] = useState<W21Phase>('idle')
+    // w1.1 pre-phase · file import modal + navbar highlight
+    const [importModalOpen, setImportModalOpen] = useState(false)
+    const [importModalPhase, setImportModalPhase] = useState<ImportPhase>('uploading')
+    const [importModalProgress, setImportModalProgress] = useState(0)
+    const [highlightImportButton, setHighlightImportButton] = useState(false)
     const [importStatus, setImportStatus] = useState<string | null>(null)
     const [scopeBreachOpen, setScopeBreachOpen] = useState(false)
     const [scopeBreachActive, setScopeBreachActive] = useState(false)
@@ -190,7 +198,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     // ── w1.1 beat timeline ───────────────────────────────────────────────────
     // Runs every time the demo enters w1.1 (first entry + every restart). The
     // Shell resets to an empty-ish state and then plays the narrative:
-    //   loading-dossier → importing-bom (stagger) → scope-breach → flagged
+    //   importing-files → loading-dossier → importing-bom (stagger) →
+    //   scope-breach → flagged
     useEffect(() => {
         if (stepId !== 'w1.1') return
 
@@ -202,7 +211,11 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setScopeBreachActive(false)
         setFlaggedRowIds([])
         setImportStatus(null)
-        setW21Phase('loading-dossier')
+        setW21Phase('importing-files')
+        setHighlightImportButton(true)
+        setImportModalOpen(false)
+        setImportModalPhase('uploading')
+        setImportModalProgress(0)
         setMappingResolvedCount(0) // all rows will first appear as chips
         setCalcProgress(0) // hero starts at $0 and counts up during the calc beat
         setEscalatedAt(null) // drop any stale escalation context
@@ -218,12 +231,79 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
         const timers: ReturnType<typeof setTimeout>[] = []
 
-        // t=800ms  — dossier filled in (ZIP + address land)
+        // ─── Pre-phase · file import simulation ──────────────────────────
+        // Navbar Import button pulses, modal opens with the CORE files,
+        // 4-phase progress animation, then closes and the real narrative
+        // begins. Existing timers below are offset by IMPORT_OFFSET so the
+        // rest of w1.1 plays unchanged.
+        const IMPORT_OFFSET = 5000 // ms
+
+        // t=600ms  — "click" the Import button · modal opens
+        timers.push(
+            setTimeout(() => {
+                setHighlightImportButton(false)
+                setImportModalOpen(true)
+                setImportModalPhase('uploading')
+                setImportModalProgress(8)
+                logEvent('David Park', 'Opened Import Project Files dialog', 'edit')
+            }, 600)
+        )
+
+        // t=1400ms — upload finishes
+        timers.push(
+            setTimeout(() => {
+                setImportModalProgress(35)
+                logEvent(
+                    'System',
+                    'Uploaded JPS_specs.pdf, JPS_floor_plan.pdf, JPS_contract.pdf',
+                    'system'
+                )
+            }, 1400)
+        )
+
+        // t=2100ms — parsing
+        timers.push(
+            setTimeout(() => {
+                setImportModalPhase('parsing')
+                setImportModalProgress(60)
+            }, 2100)
+        )
+
+        // t=3000ms — extracting line items
+        timers.push(
+            setTimeout(() => {
+                setImportModalPhase('extracting')
+                setImportModalProgress(85)
+                logEvent(
+                    'AI Agent',
+                    'Extracting 24 line items from the uploaded PDFs…',
+                    'ai'
+                )
+            }, 3000)
+        )
+
+        // t=4000ms — done
+        timers.push(
+            setTimeout(() => {
+                setImportModalPhase('done')
+                setImportModalProgress(100)
+            }, 4000)
+        )
+
+        // t=4700ms — close modal and hand off to the existing narrative
+        timers.push(
+            setTimeout(() => {
+                setImportModalOpen(false)
+                setW21Phase('loading-dossier')
+            }, 4700)
+        )
+
+        // t=800ms  — dossier filled in (ZIP + address land) [offset]
         timers.push(
             setTimeout(() => {
                 setCustomer(JPS_CUSTOMER)
                 logEvent('AI Agent', 'Loaded CORE export · ZIP 76104 / Fort Worth', 'ai')
-            }, 800)
+            }, IMPORT_OFFSET + 800)
         )
 
         // t=1100ms — AI import indicator appears above the BoM header
@@ -231,7 +311,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
             setTimeout(() => {
                 setW21Phase('importing-bom')
                 setImportStatus('Importing 24 items from JPS_specs.pdf…')
-            }, 1100)
+            }, IMPORT_OFFSET + 1100)
         )
 
         // t=1400ms — populate BoM, stagger animation plays
@@ -243,7 +323,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     'Imported 24 line items from JPS_specs.pdf (85% template, 15% fallback)',
                     'ai'
                 )
-            }, 1400)
+            }, IMPORT_OFFSET + 1400)
         )
 
         // t=3600ms — stagger finishes (24 × 80ms), enter the mapping beat.
@@ -258,14 +338,17 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     'Mapping products to labor categories',
                     'ai'
                 )
-            }, 3600)
+            }, IMPORT_OFFSET + 3600)
         )
 
         // t=3700 → 3700 + 24×40 = 4660ms — chips resolve one by one
         const itemCount = JPS_LINE_ITEMS.length
         for (let i = 0; i < itemCount; i++) {
             timers.push(
-                setTimeout(() => setMappingResolvedCount(i + 1), 3700 + i * 40)
+                setTimeout(
+                    () => setMappingResolvedCount(i + 1),
+                    IMPORT_OFFSET + 3700 + i * 40
+                )
             )
         }
 
@@ -278,7 +361,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     'Mapped 24 items · 21 template, 3 fallback',
                     'ai'
                 )
-            }, 4700)
+            }, IMPORT_OFFSET + 4700)
         )
 
         // t=4900ms — scope breach alert (Pain #6: 119 chairs > 50 limit)
@@ -294,7 +377,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     'Scope override · 119 KD chairs > 50 (Delivery Pricer limit)',
                     'ai'
                 )
-            }, 4900)
+            }, IMPORT_OFFSET + 4900)
         )
 
         // t=5100 → 6700ms — dual-engine calculation beat (Agent Step 4)
@@ -327,7 +410,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     }
                 }
                 calcRafRef.current = requestAnimationFrame(tick)
-            }, 5100)
+            }, IMPORT_OFFSET + 5100)
         )
 
         // t=6900ms — flag OFS Serpentine (row 19) + show Escalate banner
@@ -340,7 +423,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     'Flagged OFS Serpentine 12-seat lounge for designer review',
                     'ai'
                 )
-            }, 6900)
+            }, IMPORT_OFFSET + 6900)
         )
 
         return () => {
@@ -621,6 +704,10 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setIsAiModalOpen(false)
         setDavidApprovalActive(false)
         setDavidSigned(false)
+        setImportModalOpen(false)
+        setImportModalPhase('uploading')
+        setImportModalProgress(0)
+        setHighlightImportButton(false)
         setCustomer(JPS_CUSTOMER)
         setLineItems(JPS_LINE_ITEMS)
         setVariables(INITIAL_VARIABLES)
@@ -751,6 +838,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 onExportBackup={handleExportBackup}
                 onImportBackup={handleImportBackup}
                 connectedUser={effectiveConnectedUser}
+                highlightImport={highlightImportButton}
             />
 
             {/* Tab content */}
@@ -1170,6 +1258,13 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                     onComplete={handleHandoffComplete}
                 />
             )}
+
+            {/* v7 · w1.1 opening · file import simulation modal */}
+            <FileImportModal
+                isOpen={importModalOpen}
+                phase={importModalPhase}
+                progress={importModalProgress}
+            />
 
             {/* v7 · legacy DealerArrivalToast + AgentRoutingToast were removed —
                 HandoffBanner (inline) now covers every role transition on its own. */}
