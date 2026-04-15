@@ -751,6 +751,29 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setActiveTab(getStepTab(stepId))
     }, [stepId])
 
+    // ── Close all modals on step change ──────────────────────────────────────
+    // When the user navigates via the demo sidebar (Back/Next) or a step
+    // completion auto-advances, any modal opened by the previous step must
+    // close so processes don't repeat or leak into the new step. The
+    // step-specific effects below will re-open the ones they need after
+    // their own scripted delays, so clearing all of them here is safe.
+    useEffect(() => {
+        setIsReleaseOpen(false)
+        setIsClarificationOpen(false)
+        setIsProposalPdfOpen(false)
+        setIsApprovalOpen(false)
+        setIsWaterfallOpen(false)
+        setIsAiModalOpen(false)
+        setImportModalOpen(false)
+        // The David approval detour is coupled to the w2.2 flow — reset it
+        // so jumping to another step doesn't keep the navbar avatar
+        // stuck on David.
+        setDavidApprovalActive(false)
+        // davidSigned persists intentionally so the chain modal re-opens
+        // with David pre-approved if the user comes back to w2.2 mid-run;
+        // the release complete / restart handlers clear it properly.
+    }, [stepId])
+
     // ── Handlers ─────────────────────────────────────────────────────────────
     const handleSave = () => {
         setSyncStatus('saving')
