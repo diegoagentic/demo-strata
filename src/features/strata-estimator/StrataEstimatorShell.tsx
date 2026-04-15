@@ -1070,46 +1070,11 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* v8 · Project Dossier always first on every page */}
-                                <EstimatorDossierCard
-                                    customer={customer}
-                                    onCustomerChange={setCustomer}
-                                    onRateLookup={handleRateLookup}
-                                    isSearchingRates={isSearchingRates}
-                                    presets={savedEstimates}
-                                    onLoadPreset={handleLoadEstimate}
-                                    readOnly={isProposalReview}
-                                    rightSlot={
-                                        <AuditTrailPanel
-                                            events={auditLog}
-                                            hidden={stepState === 'estimation-escalated'}
-                                        />
-                                    }
-                                />
+                                {/* v8 polish · All transient notifications live at
+                                    the top of the page, above the persistent content.
+                                    Each is gated by its own step/state condition. */}
 
-                                {/* v8 Paso B · Project Context Panel — hidden only
-                                    during the w1.1 CORE ingestion modal pre-phase. */}
-                                {w21Phase !== 'importing-files' && (
-                                    <ProjectContextPanel
-                                        defaultCollapsed={stepState === 'estimation-escalated'}
-                                    />
-                                )}
-
-                                {/* v8 polish · Operational Constraints sits directly
-                                    below Project Context so the estimator-manipulable
-                                    inputs stack as one block at the top of the page. */}
-                                {w21Phase !== 'importing-files' && (
-                                    <OperationalConstraintsPanel
-                                        variables={variables}
-                                        onVariablesChange={setVariables}
-                                        crewSize={estimate.crewSize}
-                                        readOnly={isProposalReview}
-                                    />
-                                )}
-
-                                {/* v7 · David's inline approval card — only while the
-                                    Shell is redirected to David's workspace during the
-                                    w2.2 Approve & Release flow. */}
+                                {/* w2.2 · David's inline approval card (detour) */}
                                 {davidApprovalActive && (
                                     <div
                                         className={clsx(
@@ -1197,8 +1162,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     </div>
                                 )}
 
-                                {/* v7 · w1.2 · Dupler-style task notification (top of the page,
-                                    mutually exclusive with the DesignerVerificationOverlay) */}
+                                {/* w1.2 · Designer task notification */}
                                 {stepId === 'w1.2' && !designerTaskOpened && (
                                     <DesignerTaskNotification
                                         fromUser={ROLE_PROFILES.Expert}
@@ -1215,9 +1179,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* Refinement Phase 7.5: Verification log card (w2.1 preamble)
-                                    — frames the forward-to-SAC CTA with what the
-                                    designer just approved. */}
+                                {/* w2.1 · Verification log card preamble */}
                                 {stepId === 'w2.1' && verifiedAt && (
                                     <VerificationLogCard
                                         verifiedByName={ROLE_PROFILES.Designer.name}
@@ -1226,8 +1188,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* v8 polish · Transient scope/mismatch alerts surface
-                                    directly above the BoM they reference. */}
+                                {/* w1.1 · Scope breach alert (transient) */}
                                 {stepId === 'w1.1' && (
                                     <ScopeBreachAlert
                                         isOpen={scopeBreachOpen}
@@ -1238,6 +1199,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
+                                {/* w1.1 · Flagged item banner · Escalate CTA */}
                                 {stepId === 'w1.1' && (
                                     <FlaggedItemBanner
                                         isOpen={w21Phase === 'flagged'}
@@ -1260,10 +1222,46 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                                     />
                                 )}
 
-                                {/* v8 polish · Critical manipulable surfaces promoted
-                                    above the calculation outputs. BoM + Operational
-                                    Constraints are the INPUT editors the estimator
-                                    touches directly during the demo. */}
+                                {/* v8 · Project Dossier always first on every page */}
+                                <EstimatorDossierCard
+                                    customer={customer}
+                                    onCustomerChange={setCustomer}
+                                    onRateLookup={handleRateLookup}
+                                    isSearchingRates={isSearchingRates}
+                                    presets={savedEstimates}
+                                    onLoadPreset={handleLoadEstimate}
+                                    readOnly={isProposalReview}
+                                    rightSlot={
+                                        <AuditTrailPanel
+                                            events={auditLog}
+                                            hidden={stepState === 'estimation-escalated'}
+                                        />
+                                    }
+                                />
+
+                                {/* v8 Paso B · Project Context Panel — hidden only
+                                    during the w1.1 CORE ingestion modal pre-phase. */}
+                                {w21Phase !== 'importing-files' && (
+                                    <ProjectContextPanel
+                                        defaultCollapsed={stepState === 'estimation-escalated'}
+                                    />
+                                )}
+
+                                {/* v8 polish · Operational Constraints sits directly
+                                    below Project Context so the estimator-manipulable
+                                    inputs stack as one block at the top of the page. */}
+                                {w21Phase !== 'importing-files' && (
+                                    <OperationalConstraintsPanel
+                                        variables={variables}
+                                        onVariablesChange={setVariables}
+                                        crewSize={estimate.crewSize}
+                                        readOnly={isProposalReview}
+                                    />
+                                )}
+
+                                {/* v8 polish · BoM is the main manipulable input. All
+                                    notifications above it have been hoisted to the top
+                                    of the page (just below the HandoffBanner). */}
                                 <BillOfMaterialsTable
                                     lineItems={lineItems}
                                     config={config}
