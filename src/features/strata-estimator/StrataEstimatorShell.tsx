@@ -684,6 +684,16 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
         // Only show handoff when moving from a previous estimator step to a new one
         if (!prevId || prevId === stepId) return
+
+        // v8 · w1.1 is the flow's starting point — never fire a handoff
+        // banner on arrival, even if the user navigated back from a later
+        // step. The w1.1 entry effect also clears any existing banner as a
+        // belt-and-suspenders guard.
+        if (stepId === 'w1.1') {
+            setHandoff(null)
+            return
+        }
+
         const prevRole = getStepRole(prevId)
         if (!prevRole) return
         if (!connectedUser || prevRole.name === connectedUser.name) return
