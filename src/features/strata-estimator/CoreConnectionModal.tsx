@@ -307,7 +307,7 @@ function SourcePicker({
 }) {
     const coreActive = cursorTarget === 'connect-core'
     return (
-        <div className="p-8 bg-zinc-50 dark:bg-zinc-900 min-h-[420px]">
+        <div className="p-8 bg-zinc-50 dark:bg-muted/10 dark:bg-zinc-900 min-h-[420px]">
             <p className="text-xs text-muted-foreground text-center mb-6">
                 Strata can pull the estimating request directly from CORE, or you
                 can upload the PDFs manually.
@@ -380,15 +380,15 @@ function CoreLogin({
 }) {
     const authActive = cursorTarget === 'core-authenticate'
     return (
-        <div className="p-8 bg-zinc-900 min-h-[420px] flex items-center justify-center">
+        <div className="p-8 bg-muted/10 dark:bg-zinc-900 min-h-[420px] flex items-center justify-center">
             {/* Embedded CORE login card */}
-            <div className="w-full max-w-sm rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden">
+            <div className="w-full max-w-sm rounded-2xl bg-card dark:bg-zinc-950 border border-border dark:border-zinc-800 shadow-2xl overflow-hidden">
                 <div className="px-6 pt-6 pb-4 text-center border-b border-zinc-800">
                     <div className="inline-flex items-center gap-2 mb-2">
                         <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                             <Lock className="w-4 h-4 text-blue-400" />
                         </div>
-                        <span className="text-base font-black text-white tracking-tight">
+                        <span className="text-base font-black text-foreground dark:text-white tracking-tight">
                             CORE
                         </span>
                     </div>
@@ -401,9 +401,9 @@ function CoreLogin({
                         <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
                             Email
                         </label>
-                        <div className="mt-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800">
+                        <div className="mt-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 dark:bg-zinc-900 border border-border dark:border-zinc-800">
                             <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                            <span className="text-xs text-white font-mono truncate">
+                            <span className="text-xs text-foreground dark:text-white font-mono truncate">
                                 dpark@wrgtexas.com
                             </span>
                         </div>
@@ -412,9 +412,9 @@ function CoreLogin({
                         <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
                             Password
                         </label>
-                        <div className="mt-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800">
+                        <div className="mt-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 dark:bg-zinc-900 border border-border dark:border-zinc-800">
                             <KeyRound className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                            <span className="text-xs text-white font-mono tracking-[0.2em]">
+                            <span className="text-xs text-foreground dark:text-white font-mono tracking-[0.2em]">
                                 ••••••••••
                             </span>
                         </div>
@@ -424,7 +424,7 @@ function CoreLogin({
                             type="button"
                             disabled
                             className={clsx(
-                                'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-600 text-white shadow-lg transition-all duration-200 mt-2',
+                                'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-600 text-foreground dark:text-white shadow-lg transition-all duration-200 mt-2',
                                 authActive && cursorClicked && 'scale-95 ring-4 ring-blue-400/50'
                             )}
                         >
@@ -452,13 +452,13 @@ function CoreLogin({
 
 function CoreConnecting() {
     return (
-        <div className="p-10 bg-zinc-900 min-h-[420px] flex flex-col items-center justify-center gap-4">
+        <div className="p-10 bg-muted/10 dark:bg-zinc-900 min-h-[420px] flex flex-col items-center justify-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-blue-500/15 flex items-center justify-center ring-4 ring-blue-500/20">
                 <Shield className="w-7 h-7 text-blue-400 animate-pulse" />
             </div>
             <div className="flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-foreground dark:text-white">
                     Establishing secure session with CORE…
                 </p>
             </div>
@@ -480,14 +480,14 @@ function CoreDashboard({
 }) {
     const jpsActive = cursorTarget === 'project-jps'
     return (
-        <div className="bg-zinc-900 min-h-[420px]">
+        <div className="bg-muted/10 dark:bg-zinc-900 min-h-[420px]">
             {/* Fake CORE navbar */}
-            <div className="flex items-center gap-3 px-5 py-3 bg-zinc-950 border-b border-zinc-800">
+            <div className="flex items-center gap-3 px-5 py-3 bg-card dark:bg-zinc-950 border-b border-border dark:border-zinc-800">
                 <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-md bg-blue-500/20 flex items-center justify-center">
                         <Lock className="w-3 h-3 text-blue-400" />
                     </div>
-                    <span className="text-sm font-black text-white tracking-tight">
+                    <span className="text-sm font-black text-foreground dark:text-white tracking-tight">
                         CORE
                     </span>
                 </div>
@@ -496,7 +496,7 @@ function CoreDashboard({
                     <Folder className="w-3 h-3" />
                     <span>Projects</span>
                     <ChevronRight className="w-3 h-3" />
-                    <span className="text-white">Estimating queue</span>
+                    <span className="text-foreground dark:text-white">Estimating queue</span>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-800 text-[10px] text-zinc-400">
@@ -508,10 +508,10 @@ function CoreDashboard({
                         <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
                     </div>
                     <div className="flex items-center gap-1.5 pl-2 border-l border-zinc-800">
-                        <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center text-[9px] font-bold text-white">
+                        <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center text-[9px] font-bold text-foreground dark:text-white">
                             DP
                         </div>
-                        <span className="text-[10px] text-white">David Park</span>
+                        <span className="text-[10px] text-foreground dark:text-white">David Park</span>
                     </div>
                 </div>
             </div>
@@ -519,14 +519,14 @@ function CoreDashboard({
             {/* Queue table */}
             <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-bold text-white uppercase tracking-wider">
+                    <p className="text-xs font-bold text-foreground dark:text-white uppercase tracking-wider">
                         My estimating queue
                     </p>
                     <p className="text-[10px] text-zinc-500">
                         5 pending · sorted by priority
                     </p>
                 </div>
-                <div className="rounded-lg bg-zinc-950 border border-zinc-800 overflow-hidden">
+                <div className="rounded-lg bg-card dark:bg-zinc-950 border border-border dark:border-zinc-800 overflow-hidden">
                     {/* Column headers */}
                     <div className="grid grid-cols-[1.8fr_1fr_0.5fr_0.8fr_0.7fr_0.8fr] gap-2 px-4 py-2 bg-zinc-900 border-b border-zinc-800 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
                         <span>Customer</span>
@@ -558,7 +558,7 @@ function CoreDashboard({
                                     ) : (
                                         <Building2 className="w-3 h-3 text-zinc-500 shrink-0" />
                                     )}
-                                    <span className="text-white font-semibold truncate">
+                                    <span className="text-foreground dark:text-white font-semibold truncate">
                                         {project.customer}
                                     </span>
                                     {project.status === 'New' && (
@@ -614,15 +614,15 @@ function CoreProjectDetail({
 }) {
     const pullActive = cursorTarget === 'pull-project'
     return (
-        <div className="bg-zinc-900 min-h-[420px]">
+        <div className="bg-muted/10 dark:bg-zinc-900 min-h-[420px]">
             {/* CORE breadcrumb bar */}
-            <div className="flex items-center gap-2 px-5 py-2.5 bg-zinc-950 border-b border-zinc-800 text-[10px] text-zinc-500">
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-card dark:bg-zinc-950 border-b border-border dark:border-zinc-800 text-[10px] text-zinc-500">
                 <Folder className="w-3 h-3" />
                 <span>Projects</span>
                 <ChevronRight className="w-3 h-3" />
                 <span>Estimating queue</span>
                 <ChevronRight className="w-3 h-3" />
-                <span className="text-white font-semibold">JPS Health Network</span>
+                <span className="text-foreground dark:text-white font-semibold">JPS Health Network</span>
                 <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 font-bold uppercase tracking-wider">
                     New · assigned to you
                 </span>
@@ -631,14 +631,14 @@ function CoreProjectDetail({
             <div className="p-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Left · Customer + attached files */}
                 <div className="space-y-3">
-                    <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4">
+                    <div className="rounded-xl bg-card dark:bg-zinc-950 border border-border dark:border-zinc-800 p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <Stethoscope className="w-4 h-4 text-blue-400" />
                             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
                                 Customer
                             </span>
                         </div>
-                        <p className="text-sm font-bold text-white">
+                        <p className="text-sm font-bold text-foreground dark:text-white">
                             JPS Health Network
                         </p>
                         <p className="text-[10px] text-zinc-400">
@@ -649,7 +649,7 @@ function CoreProjectDetail({
                         </p>
                     </div>
 
-                    <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4">
+                    <div className="rounded-xl bg-card dark:bg-zinc-950 border border-border dark:border-zinc-800 p-4">
                         <div className="flex items-center gap-2 mb-3">
                             <FileText className="w-4 h-4 text-blue-400" />
                             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
@@ -664,7 +664,7 @@ function CoreProjectDetail({
                                 >
                                     <FileText className="w-3 h-3 text-zinc-500 shrink-0" />
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[10px] text-white font-semibold truncate">
+                                        <p className="text-[10px] text-foreground dark:text-white font-semibold truncate">
                                             {file.name}
                                         </p>
                                         <p className="text-[9px] text-zinc-500 truncate">
@@ -682,7 +682,7 @@ function CoreProjectDetail({
 
                 {/* Right · Site constraints + pull CTA */}
                 <div className="flex flex-col gap-3">
-                    <div className="rounded-xl bg-zinc-950 border border-zinc-800 p-4 flex-1">
+                    <div className="rounded-xl bg-card dark:bg-zinc-950 border border-border dark:border-zinc-800 p-4 flex-1">
                         <div className="flex items-center gap-2 mb-3">
                             <Activity className="w-4 h-4 text-blue-400" />
                             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
@@ -699,7 +699,7 @@ function CoreProjectDetail({
                                     <span
                                         className={clsx(
                                             'font-semibold truncate flex items-center gap-1',
-                                            row.flagged ? 'text-amber-400' : 'text-white'
+                                            row.flagged ? 'text-amber-400' : 'text-foreground dark:text-white'
                                         )}
                                     >
                                         {row.flagged && <Sparkles className="w-2.5 h-2.5" />}
@@ -746,7 +746,7 @@ function ExtractingPhase({
     const clamped = Math.min(100, Math.max(0, progress))
     const isDone = phase === 'extracting-done'
     return (
-        <div className="p-8 bg-zinc-50 dark:bg-zinc-900 min-h-[420px] flex flex-col items-center justify-center">
+        <div className="p-8 bg-zinc-50 dark:bg-muted/10 dark:bg-zinc-900 min-h-[420px] flex flex-col items-center justify-center">
             <div
                 className={clsx(
                     'w-16 h-16 rounded-2xl flex items-center justify-center ring-4 transition-all duration-300',

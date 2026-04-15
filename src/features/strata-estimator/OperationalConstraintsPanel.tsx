@@ -155,27 +155,30 @@ export default function OperationalConstraintsPanel({
                     </div>
                 </div>
 
-                {/* Right column: crew capacity card */}
-                <div className="bg-zinc-900 dark:bg-zinc-950 rounded-2xl p-6 text-white flex items-start justify-between overflow-hidden relative">
+                {/* Right column: crew capacity card · follows the button brand
+                    treatment (bg-brand-300 + dark text in light mode, dark card
+                    with primary text in dark mode) so contrast matches the
+                    Estimator CTA. */}
+                <div className="bg-brand-300 dark:bg-zinc-950 rounded-2xl p-6 flex items-start justify-between overflow-hidden relative">
                     <div className="relative z-10">
-                        <p className="text-[10px] font-bold text-brand-400 uppercase tracking-widest mb-2">
+                        <p className="text-[10px] font-bold text-zinc-900 dark:text-brand-400 uppercase tracking-widest mb-2">
                             Target Crew Capacity
                         </p>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-5xl font-bold tracking-tight text-white">
+                            <span className="text-5xl font-bold tracking-tight text-zinc-900 dark:text-white">
                                 {crewSize}
                             </span>
-                            <span className="text-sm font-medium text-zinc-400">
+                            <span className="text-sm font-medium text-zinc-900/70 dark:text-zinc-400">
                                 installers
                             </span>
                         </div>
-                        <p className="text-[11px] text-zinc-500 mt-3 max-w-[16rem] leading-relaxed">
+                        <p className="text-[11px] text-zinc-900/70 dark:text-zinc-500 mt-3 max-w-[16rem] leading-relaxed">
                             Based on total adjusted hours, the selected install
                             duration, and an 8-hour working day.
                         </p>
                     </div>
                     <HardHat
-                        className="w-24 h-24 text-zinc-700 dark:text-primary shrink-0"
+                        className="w-24 h-24 text-zinc-800 dark:text-primary shrink-0"
                         strokeWidth={1.5}
                         aria-hidden
                     />
