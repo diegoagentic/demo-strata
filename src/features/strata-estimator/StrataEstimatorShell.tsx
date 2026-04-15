@@ -14,8 +14,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, MousePointer2, ShieldCheck } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useDemo } from '../../context/DemoContext'
-import FileImportModal from './FileImportModal'
-import type { ImportPhase } from './FileImportModal'
+import CoreConnectionModal from './CoreConnectionModal'
+import type { CorePhase, CursorTarget } from './CoreConnectionModal'
 import StrataEstimatorNavbar from './StrataEstimatorNavbar'
 import EstimatorDossierCard from './EstimatorDossierCard'
 import FinancialSummaryHero from './FinancialSummaryHero'
@@ -117,10 +117,12 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         | 'scope-breach'
         | 'flagged'
     const [w21Phase, setW21Phase] = useState<W21Phase>('idle')
-    // w1.1 pre-phase · file import modal + navbar highlight
+    // w1.1 pre-phase · CORE connection modal + navbar highlight
     const [importModalOpen, setImportModalOpen] = useState(false)
-    const [importModalPhase, setImportModalPhase] = useState<ImportPhase>('uploading')
+    const [importModalPhase, setImportModalPhase] = useState<CorePhase>('source-picker')
     const [importModalProgress, setImportModalProgress] = useState(0)
+    const [importCursorTarget, setImportCursorTarget] = useState<CursorTarget>(null)
+    const [importCursorClicked, setImportCursorClicked] = useState(false)
     const [highlightImportButton, setHighlightImportButton] = useState(false)
     const [importStatus, setImportStatus] = useState<string | null>(null)
     const [scopeBreachOpen, setScopeBreachOpen] = useState(false)
@@ -214,8 +216,10 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setW21Phase('importing-files')
         setHighlightImportButton(true)
         setImportModalOpen(false)
-        setImportModalPhase('uploading')
+        setImportModalPhase('source-picker')
         setImportModalProgress(0)
+        setImportCursorTarget(null)
+        setImportCursorClicked(false)
         setMappingResolvedCount(0) // all rows will first appear as chips
         setCalcProgress(0) // hero starts at $0 and counts up during the calc beat
         setEscalatedAt(null) // drop any stale escalation context
@@ -231,71 +235,139 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
         const timers: ReturnType<typeof setTimeout>[] = []
 
-        // ─── Pre-phase · file import simulation ──────────────────────────
-        // Navbar Import button pulses, modal opens with the CORE files,
-        // 4-phase progress animation, then closes and the real narrative
-        // begins. Existing timers below are offset by IMPORT_OFFSET so the
-        // rest of w1.1 plays unchanged.
-        const IMPORT_OFFSET = 5000 // ms
+        // ─── Pre-phase · CORE connection simulation (v8 Paso A) ──────────
+        // Navbar Import button pulses → CoreConnectionModal opens with 9
+        // phases: source picker → CORE login → connecting → dashboard →
+        // project detail → uploading → parsing → extracting → done. All
+        // existing w1.1 timers below are offset by IMPORT_OFFSET so the
+        // rest of the narrative plays unchanged.
+        const IMPORT_OFFSET = 9400 // ms (longer than v7 due to CORE phases)
 
-        // t=600ms  — "click" the Import button · modal opens
+        // t=500ms — "click" navbar Import button · modal opens on source picker
         timers.push(
             setTimeout(() => {
                 setHighlightImportButton(false)
                 setImportModalOpen(true)
-                setImportModalPhase('uploading')
-                setImportModalProgress(8)
-                logEvent('David Park', 'Opened Import Project Files dialog', 'edit')
-            }, 600)
+                setImportModalPhase('source-picker')
+                logEvent('David Park', 'Opened new project ingestion dialog', 'edit')
+            }, 500)
         )
 
-        // t=1400ms — upload finishes
+        // t=900ms — cursor lands on "Connect to CORE" card
+        timers.push(setTimeout(() => setImportCursorTarget('connect-core'), 900))
+        // t=1500ms — "click" the card
+        timers.push(setTimeout(() => setImportCursorClicked(true), 1500))
+
+        // t=2000ms — transition to CORE login, reset cursor
         timers.push(
             setTimeout(() => {
-                setImportModalProgress(35)
+                setImportModalPhase('core-login')
+                setImportCursorTarget(null)
+                setImportCursorClicked(false)
+            }, 2000)
+        )
+
+        // t=2500ms — cursor lands on Authenticate button
+        timers.push(setTimeout(() => setImportCursorTarget('core-authenticate'), 2500))
+        // t=3100ms — "click" authenticate
+        timers.push(setTimeout(() => setImportCursorClicked(true), 3100))
+
+        // t=3500ms — transition to connecting spinner
+        timers.push(
+            setTimeout(() => {
+                setImportModalPhase('core-connecting')
+                setImportCursorTarget(null)
+                setImportCursorClicked(false)
+                logEvent('System', 'CORE · secure session established', 'system')
+            }, 3500)
+        )
+
+        // t=4500ms — transition to CORE dashboard (estimating queue)
+        timers.push(
+            setTimeout(() => {
+                setImportModalPhase('core-dashboard')
+                logEvent(
+                    'David Park',
+                    'Browsing CORE estimating queue · 5 projects pending',
+                    'edit'
+                )
+            }, 4500)
+        )
+
+        // t=5100ms — cursor lands on JPS row
+        timers.push(setTimeout(() => setImportCursorTarget('project-jps'), 5100))
+        // t=5700ms — "click" JPS
+        timers.push(setTimeout(() => setImportCursorClicked(true), 5700))
+
+        // t=6100ms — transition to project detail
+        timers.push(
+            setTimeout(() => {
+                setImportModalPhase('core-project-detail')
+                setImportCursorTarget(null)
+                setImportCursorClicked(false)
+                logEvent(
+                    'David Park',
+                    'Opened JPS Health Network project · 24 items · 3 attachments',
+                    'edit'
+                )
+            }, 6100)
+        )
+
+        // t=6700ms — cursor lands on "Pull into Strata"
+        timers.push(setTimeout(() => setImportCursorTarget('pull-project'), 6700))
+        // t=7200ms — "click" pull
+        timers.push(setTimeout(() => setImportCursorClicked(true), 7200))
+
+        // t=7500ms — transition to extracting · uploading
+        timers.push(
+            setTimeout(() => {
+                setImportModalPhase('extracting-uploading')
+                setImportModalProgress(15)
+                setImportCursorTarget(null)
+                setImportCursorClicked(false)
                 logEvent(
                     'System',
-                    'Uploaded JPS_specs.pdf, JPS_floor_plan.pdf, JPS_contract.pdf',
+                    'CORE · downloading JPS_PSS_ANCILLARY.pdf, JPS_Spec_Sheet.pdf, JPS_Contract.pdf',
                     'system'
                 )
-            }, 1400)
+            }, 7500)
         )
 
-        // t=2100ms — parsing
+        // t=8000ms — parsing
         timers.push(
             setTimeout(() => {
-                setImportModalPhase('parsing')
-                setImportModalProgress(60)
-            }, 2100)
+                setImportModalPhase('extracting-parsing')
+                setImportModalProgress(50)
+            }, 8000)
         )
 
-        // t=3000ms — extracting line items
+        // t=8500ms — extracting
         timers.push(
             setTimeout(() => {
-                setImportModalPhase('extracting')
-                setImportModalProgress(85)
+                setImportModalPhase('extracting-extracting')
+                setImportModalProgress(80)
                 logEvent(
                     'AI Agent',
-                    'Extracting 24 line items from the uploaded PDFs…',
+                    'Extracting 24 line items from the CORE attachments…',
                     'ai'
                 )
-            }, 3000)
+            }, 8500)
         )
 
-        // t=4000ms — done
+        // t=9000ms — done
         timers.push(
             setTimeout(() => {
-                setImportModalPhase('done')
+                setImportModalPhase('extracting-done')
                 setImportModalProgress(100)
-            }, 4000)
+            }, 9000)
         )
 
-        // t=4700ms — close modal and hand off to the existing narrative
+        // t=9400ms — close modal and hand off to the existing narrative
         timers.push(
             setTimeout(() => {
                 setImportModalOpen(false)
                 setW21Phase('loading-dossier')
-            }, 4700)
+            }, 9400)
         )
 
         // t=800ms  — dossier filled in (ZIP + address land) [offset]
@@ -733,8 +805,10 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setDavidApprovalActive(false)
         setDavidSigned(false)
         setImportModalOpen(false)
-        setImportModalPhase('uploading')
+        setImportModalPhase('source-picker')
         setImportModalProgress(0)
+        setImportCursorTarget(null)
+        setImportCursorClicked(false)
         setHighlightImportButton(false)
         setCustomer(JPS_CUSTOMER)
         setLineItems(JPS_LINE_ITEMS)
@@ -1295,11 +1369,13 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 />
             )}
 
-            {/* v7 · w1.1 opening · file import simulation modal */}
-            <FileImportModal
+            {/* v8 Paso A · w1.1 opening · CORE connection simulation */}
+            <CoreConnectionModal
                 isOpen={importModalOpen}
                 phase={importModalPhase}
                 progress={importModalProgress}
+                cursorTarget={importCursorTarget}
+                cursorClicked={importCursorClicked}
             />
 
             {/* v7 · legacy DealerArrivalToast + AgentRoutingToast were removed —
