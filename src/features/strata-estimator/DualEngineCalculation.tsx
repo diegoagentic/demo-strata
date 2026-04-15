@@ -14,11 +14,13 @@
 import { clsx } from 'clsx'
 import {
     ArrowRight,
+    Brain,
     Clock,
     DollarSign,
     FileSpreadsheet,
     Hammer,
     Lock,
+    MapPin,
     Sparkles,
     Truck,
     Zap,
@@ -67,6 +69,23 @@ const LABOR_HOURS = 185.04
 const LABOR_TOTAL = LABOR_HOURS * LABOR_RATE
 
 const COMBINED_TOTAL = DELIVERY_TOTAL + LABOR_TOTAL
+
+// v8 Paso E · Gap E · Totals by area or floor (BPMN stage 14)
+// Split of the 185.04 labor hrs across the JPS Health Center for
+// Women zones, matching the real architectural layout.
+interface AreaTotal {
+    name: string
+    hours: number
+    headline: string
+}
+const AREA_TOTALS: AreaTotal[] = [
+    { name: 'Nursing stations',     hours: 48.00, headline: '119 KD task chairs · staff seating' },
+    { name: 'Family waiting area',  hours: 32.00, headline: 'OFS Serpentine + 17 lounge chairs' },
+    { name: 'Exam rooms',           hours: 28.00, headline: '48 rooms · guest chairs + side tables' },
+    { name: 'Common / corridor',    hours: 30.00, headline: 'Glassboards + pre-install walk' },
+    { name: 'Staff break room',     hours: 18.00, headline: 'Café tables + stools' },
+    { name: 'Admin offices',        hours: 29.04, headline: 'Conference tables + recliners' },
+]
 
 function formatMoney(n: number): string {
     return `$${Math.round(n).toLocaleString('en-US')}`
@@ -224,7 +243,7 @@ export default function DualEngineCalculation({
 
                 {/* ═══ LABOR WORKSHEET ════════════════════════════════════ */}
                 <div className="rounded-2xl bg-card dark:bg-zinc-800 border border-border overflow-hidden">
-                    <div className="flex items-center gap-2 px-4 py-3 bg-muted/30 border-b border-border">
+                    <div className="flex items-center gap-2 px-4 py-3 bg-muted/30 border-b border-border flex-wrap">
                         <div className="w-8 h-8 rounded-lg bg-green-500/15 flex items-center justify-center">
                             <Hammer className="w-4 h-4 text-green-600 dark:text-green-400" />
                         </div>
@@ -240,9 +259,31 @@ export default function DualEngineCalculation({
                             <Lock className="w-2.5 h-2.5" />
                             Private Excel
                         </span>
+                        <span className="shrink-0 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-400 px-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/30">
+                            <Brain className="w-2.5 h-2.5" />
+                            Tribal knowledge
+                        </span>
                     </div>
 
                     <div className="p-4 space-y-2.5">
+                        {/* v8 Paso E · Gap C · TK annotation row */}
+                        <div
+                            className={clsx(
+                                'flex items-start gap-2 px-2.5 py-2 rounded-lg bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 transition-opacity duration-300',
+                                engineReveal > 0.1 ? 'opacity-100' : 'opacity-0'
+                            )}
+                        >
+                            <Brain className="shrink-0 w-3 h-3 text-purple-700 dark:text-purple-400 mt-0.5" />
+                            <p className="text-[10px] leading-snug text-muted-foreground">
+                                <span className="font-bold text-purple-700 dark:text-purple-400">
+                                    From memory today:
+                                </span>{' '}
+                                Mark Williams · "Nothing documented · all based on my
+                                100 years of experience." Strata now captures every
+                                rate as structured data.
+                            </p>
+                        </div>
+
                         {/* Line items */}
                         <div className="space-y-1">
                             {LABOR_LINES.map((line, i) => {
@@ -388,6 +429,59 @@ export default function DualEngineCalculation({
                     </div>
                 </div>
             </div>
+
+            {/* v8 Paso E · Gap E · Totals by area or floor (BPMN stage 14) */}
+            {showCombined && (
+                <div className="rounded-2xl bg-card dark:bg-zinc-800 border border-border overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex items-center gap-2 px-5 py-3 bg-muted/30 border-b border-border">
+                        <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-foreground dark:text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
+                                Totals by area
+                            </p>
+                            <p className="text-xs font-bold text-foreground leading-tight mt-0.5">
+                                JPS Health Center for Women · 6 zones · 185.04 hrs
+                            </p>
+                        </div>
+                        <span className="shrink-0 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-foreground dark:text-primary px-2 py-1 rounded-full bg-primary/10 border border-primary/30">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            AI drilled
+                        </span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-border">
+                        {AREA_TOTALS.map((area) => (
+                            <div
+                                key={area.name}
+                                className="bg-card dark:bg-zinc-800 px-4 py-3"
+                            >
+                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider leading-none">
+                                    {area.name}
+                                </p>
+                                <div className="flex items-baseline gap-1.5 mt-1">
+                                    <span className="text-base font-black text-foreground tabular-nums">
+                                        {area.hours.toFixed(1)}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground">hrs</span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground tabular-nums">
+                                    {formatMoney(area.hours * LABOR_RATE)}
+                                </p>
+                                <p className="text-[9px] text-muted-foreground leading-tight mt-1 truncate">
+                                    {area.headline}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="px-5 py-2.5 border-t border-border bg-muted/20 text-[10px] text-muted-foreground italic">
+                        BPMN stage 14 · WRG's legacy workflow ends with "totals by
+                        area or floor" written by hand into the labor worksheet.
+                        Strata generates this drill-down automatically from the
+                        architectural layout.
+                    </div>
+                </div>
+            )}
 
             {/* Calculating status */}
             {isRunning && (
