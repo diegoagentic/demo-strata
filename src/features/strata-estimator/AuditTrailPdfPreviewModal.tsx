@@ -19,6 +19,7 @@ import {
     X,
 } from 'lucide-react'
 import type { AuditCategory, AuditEvent } from './AuditTrailPanel'
+import { useDemo } from '../../context/DemoContext'
 
 interface AuditTrailPdfPreviewModalProps {
     isOpen: boolean
@@ -74,6 +75,10 @@ export default function AuditTrailPdfPreviewModal({
     onClose,
     onDownload,
 }: AuditTrailPdfPreviewModalProps) {
+    const { isDemoActive, isSidebarCollapsed } = useDemo()
+    const sidebarExpanded = isDemoActive && !isSidebarCollapsed
+    const offsetClass = sidebarExpanded ? 'lg:left-80' : ''
+
     useEffect(() => {
         if (!isOpen) return
         const handleKey = (e: KeyboardEvent) => {
@@ -99,7 +104,10 @@ export default function AuditTrailPdfPreviewModal({
 
     return (
         <div
-            className="fixed inset-0 z-[220] flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm animate-in fade-in duration-200 p-4"
+            className={clsx(
+                'fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm animate-in fade-in duration-200 p-4',
+                offsetClass
+            )}
             onClick={onClose}
             role="dialog"
             aria-modal="true"

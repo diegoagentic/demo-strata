@@ -12,6 +12,8 @@
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Loader2, Sparkles, Upload, X } from 'lucide-react'
+import { clsx } from 'clsx'
+import { useDemo } from '../../context/DemoContext'
 import type { LineItem } from './types'
 
 interface VisionEngineModalProps {
@@ -104,9 +106,13 @@ export default function VisionEngineModal({
 
     const subtitle = isRefinement ? 'Refinement Mode' : 'Deep Spec Scan'
 
+    const { isDemoActive, isSidebarCollapsed } = useDemo()
+    const sidebarExpanded = isDemoActive && !isSidebarCollapsed
+    const offsetClass = sidebarExpanded ? 'lg:left-80' : ''
+
     return (
         <Transition show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-[200]" onClose={state === 'analyzing' ? () => {} : onClose}>
+            <Dialog as="div" className="relative z-[100]" onClose={state === 'analyzing' ? () => {} : onClose}>
                 {/* Backdrop */}
                 <TransitionChild
                     as={Fragment}
@@ -117,11 +123,11 @@ export default function VisionEngineModal({
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-zinc-950/70 backdrop-blur-sm" />
+                    <div className={clsx('fixed inset-0 bg-zinc-950/70 backdrop-blur-sm', offsetClass)} />
                 </TransitionChild>
 
                 {/* Panel container */}
-                <div className="fixed inset-0 flex items-center justify-center p-4">
+                <div className={clsx('fixed inset-0 flex items-center justify-center p-4', offsetClass)}>
                     <TransitionChild
                         as={Fragment}
                         enter="ease-out duration-200"

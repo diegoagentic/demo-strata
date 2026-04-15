@@ -735,9 +735,12 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         if (!connectedUser || prevRole.name === connectedUser.name) return
 
         // Skip the HandoffBanner for steps that already have their own
-        // inline arrival surface (DesignerTaskNotification on w1.2, etc.)
-        // so we don't duplicate the "role changed" cue.
-        if (stepId === 'w1.2') return
+        // inline arrival surface so we don't duplicate the "role changed"
+        // cue:
+        //   · w1.2 owns the DesignerTaskNotification
+        //   · w2.1 owns the CoreOutlookCard variant="outgoing"
+        //   · w2.3 owns the CORE email card inside PMExecutionHandoff
+        if (stepId === 'w1.2' || stepId === 'w2.1' || stepId === 'w2.3') return
 
         setHandoff({
             fromUser: prevRole,

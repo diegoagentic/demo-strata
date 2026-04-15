@@ -12,6 +12,7 @@
 import { useEffect } from 'react'
 import { clsx } from 'clsx'
 import { CheckCircle2, Clock, Download, X } from 'lucide-react'
+import { useDemo } from '../../context/DemoContext'
 
 export interface VerificationModuleSummary {
     id: string
@@ -39,6 +40,10 @@ export default function VerificationPdfPreviewModal({
     onClose,
     onDownload,
 }: VerificationPdfPreviewModalProps) {
+    const { isDemoActive, isSidebarCollapsed } = useDemo()
+    const sidebarExpanded = isDemoActive && !isSidebarCollapsed
+    const offsetClass = sidebarExpanded ? 'lg:left-80' : ''
+
     // Close on Escape
     useEffect(() => {
         if (!isOpen) return
@@ -60,7 +65,10 @@ export default function VerificationPdfPreviewModal({
 
     return (
         <div
-            className="fixed inset-0 z-[210] flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm animate-in fade-in duration-200 p-4"
+            className={clsx(
+                'fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/70 backdrop-blur-sm animate-in fade-in duration-200 p-4',
+                offsetClass
+            )}
             onClick={onClose}
             role="dialog"
             aria-modal="true"
