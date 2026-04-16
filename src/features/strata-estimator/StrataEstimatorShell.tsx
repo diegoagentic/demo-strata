@@ -16,6 +16,8 @@ import { clsx } from 'clsx'
 import { useDemo } from '../../context/DemoContext'
 import CoreConnectionModal from './CoreConnectionModal'
 import type { CorePhase, CursorTarget } from './CoreConnectionModal'
+import SifExportModal from './SifExportModal'
+import SifPreviewModal from './SifPreviewModal'
 import ProjectContextPanel from './ProjectContextPanel'
 import DualEngineCalculation from './DualEngineCalculation'
 import CoreOutlookCard from './CoreOutlookCard'
@@ -891,8 +893,13 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setTimeout(() => setSyncStatus('synced'), 1500)
     }
 
+    // ── SIF Export state ───────────────────────────────────────────────────
+    const [sifExportOpen, setSifExportOpen] = useState(false)
+    const [sifPreviewOpen, setSifPreviewOpen] = useState(false)
+
     const handleExportBackup = () => {
-        console.log('Export backup')
+        logEvent('System', 'SIF export initiated · converting project to Strata Interchange Format', 'system')
+        setSifExportOpen(true)
     }
 
     const handleImportBackup = () => {
@@ -1864,6 +1871,41 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 progress={importModalProgress}
                 cursorTarget={importCursorTarget}
                 cursorClicked={importCursorClicked}
+            />
+
+            {/* v8 · SIF Export modal + preview */}
+            <SifExportModal
+                isOpen={sifExportOpen}
+                projectName={customer.name ? `${customer.name} · Health Center for Women` : 'JPS Health Network'}
+                itemCount={lineItems.length || 24}
+                onClose={() => {
+                    setSifExportOpen(false)
+                    logEvent(
+                        'System',
+                        `SIF export complete · ${customer.name || 'JPS'}_Health_Center.sif downloaded`,
+                        'system'
+                    )
+                }}
+                onPreview={() => {
+                    setSifExportOpen(false)
+                    setSifPreviewOpen(true)
+                }}
+            />
+            <SifPreviewModal
+                isOpen={sifPreviewOpen}
+                projectName={customer.name ? `${customer.name} Health Center for Women` : 'JPS Health Network'}
+                customerName={customer.name || 'JPS Health Network'}
+                totalAmount={Number(estimate.salesPrice).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                itemCount={lineItems.length || 24}
+                onClose={() => setSifPreviewOpen(false)}
+                onDownload={() => {
+                    logEvent(
+                        'System',
+                        `SIF file downloaded · ${customer.name || 'JPS'}_Health_Center.sif`,
+                        'system'
+                    )
+                    setSifPreviewOpen(false)
+                }}
             />
 
             {/* v7 · legacy DealerArrivalToast + AgentRoutingToast were removed —
