@@ -342,6 +342,22 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
         };
     }, []);
 
+    // runChain: sorts events by absolute time and chains them one by one so that
+    // pause correctly halts the entire sequence, not just the current callback.
+    const runChain = useCallback((
+        events: Array<[number, () => void]>,
+        timers: ReturnType<typeof setTimeout>[]
+    ) => {
+        const sorted = [...events].sort((a, b) => a[0] - b[0]);
+        const step = (i: number) => {
+            if (i >= sorted.length) return;
+            const prevTime = i === 0 ? 0 : sorted[i - 1][0];
+            const delay = Math.max(1, sorted[i][0] - prevTime);
+            timers.push(setTimeout(pauseAware(() => { sorted[i][1](); step(i + 1); }), delay));
+        };
+        step(0);
+    }, [pauseAware]);
+
     const tp = (id: string): WrgStepTiming => WRG_STEP_TIMING[id] || WRG_STEP_TIMING['w2.1'];
 
     // ── Phase state (shared by w2.1 and w2.2) ─────────────────────────────
@@ -420,7 +436,7 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
             setShowPdfPreview(false);
             setAgents(DESIGNER_VERIFY_AGENTS.map(a => ({ ...a, visible: false, done: false })));
 
-            const timer = setTimeout(pauseAware(() => setPhase('notification')), 1000);
+            const timer = setTimeout(pauseAware(() => setPhase('notification')), 1750);
             return () => clearTimeout(timer);
         }
 
@@ -440,12 +456,12 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
         if (phase !== 'notification') return;
         if (stepId === 'w2.1') return; // w2.1 waits for button click
         if (stepId === 'w2.2') {
-            const timer = setTimeout(pauseAware(() => setPhase('processing')), 3000);
+            const timer = setTimeout(pauseAware(() => setPhase('processing')), 5100);
             return () => clearTimeout(timer);
         }
     }, [phase, stepId, pauseAware]);
 
-    // ── Processing: agent pipeline ────────────────────────────────────────
+    // ── Processing: agent pipeline (chained for correct pause behavior) ───────
     useEffect(() => {
         if (phase !== 'processing') return;
         const timers: ReturnType<typeof setTimeout>[] = [];
@@ -454,57 +470,60 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
             setAgents(prev => prev.map(a => ({ ...a, visible: false, done: false })));
             setProgress(0);
             const totalAgents = COST_AGENTS.length;
-            const stagger = 900;
-            const doneDelay = 600;
+            const stagger = 1500;
+            const doneDelay = 1000;
+            const dualStart = stagger * totalAgents;
+            const totalTime = stagger * totalAgents + doneDelay + 3800;
+
+            const events: Array<[number, () => void]> = [];
             for (let i = 0; i < totalAgents; i++) {
-                timers.push(setTimeout(pauseAware(() => {
-                    setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a));
-                }), stagger * i));
-                timers.push(setTimeout(pauseAware(() => {
-                    setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a));
-                }), stagger * i + doneDelay));
+                const idx = i;
+                events.push([stagger * idx, () => setAgents(prev => prev.map((a, j) => j === idx ? { ...a, visible: true } : a))]);
+                events.push([stagger * idx + doneDelay, () => setAgents(prev => prev.map((a, j) => j === idx ? { ...a, done: true } : a))]);
             }
-            timers.push(setTimeout(pauseAware(() => setShowScopeAlert(true)), stagger * 2));
-            const dualStart = stagger * 4;
+            events.push([stagger * 2, () => setShowScopeAlert(true)]);
             for (let i = 1; i <= 20; i++) {
-                timers.push(setTimeout(pauseAware(() => setDeliveryProgress(i * 5)), dualStart + 100 * i));
-                timers.push(setTimeout(pauseAware(() => setInstallProgress(i * 5)), dualStart + 100 * i + 200));
+                const dp = i * 5, ip = i * 5;
+                events.push([dualStart + 170 * i, () => setDeliveryProgress(dp)]);
+                events.push([dualStart + 170 * i + 340, () => setInstallProgress(ip)]);
             }
-            const totalTime = stagger * totalAgents + doneDelay + 2200;
             for (let i = 1; i <= 20; i++) {
-                timers.push(setTimeout(pauseAware(() => setProgress(i * 5)), (totalTime / 20) * i));
+                const pct = i * 5;
+                events.push([(totalTime / 20) * i, () => setProgress(pct)]);
             }
-            timers.push(setTimeout(pauseAware(() => setPhase('breathing')), totalTime + 200));
+            events.push([totalTime + 200, () => setPhase('breathing')]);
+            runChain(events, timers);
         }
 
         if (stepId === 'w2.2') {
             setAgents(prev => prev.map(a => ({ ...a, visible: false, done: false })));
             setProgress(0);
             const totalAgents = DESIGNER_VERIFY_AGENTS.length;
-            const stagger = 1000;
-            const doneDelay = 700;
-            for (let i = 0; i < totalAgents; i++) {
-                timers.push(setTimeout(pauseAware(() => {
-                    setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a));
-                }), stagger * i));
-                timers.push(setTimeout(pauseAware(() => {
-                    setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a));
-                }), stagger * i + doneDelay));
-            }
+            const stagger = 1700;
+            const doneDelay = 1200;
             const totalTime = stagger * totalAgents + doneDelay;
-            for (let i = 1; i <= 20; i++) {
-                timers.push(setTimeout(pauseAware(() => setProgress(i * 5)), (totalTime / 20) * i));
+
+            const events: Array<[number, () => void]> = [];
+            for (let i = 0; i < totalAgents; i++) {
+                const idx = i;
+                events.push([stagger * idx, () => setAgents(prev => prev.map((a, j) => j === idx ? { ...a, visible: true } : a))]);
+                events.push([stagger * idx + doneDelay, () => setAgents(prev => prev.map((a, j) => j === idx ? { ...a, done: true } : a))]);
             }
-            timers.push(setTimeout(pauseAware(() => setPhase('breathing')), totalTime + 200));
+            for (let i = 1; i <= 20; i++) {
+                const pct = i * 5;
+                events.push([(totalTime / 20) * i, () => setProgress(pct)]);
+            }
+            events.push([totalTime + 200, () => setPhase('breathing')]);
+            runChain(events, timers);
         }
 
         return () => timers.forEach(clearTimeout);
-    }, [phase, stepId, pauseAware]);
+    }, [phase, stepId, pauseAware, runChain]);
 
     // ── Breathing → revealed ─────────────────────────────────────────────────
     useEffect(() => {
         if (phase !== 'breathing') return;
-        const breathing = stepId === 'w2.2' ? 800 : tp(stepId).breathing;
+        const breathing = stepId === 'w2.2' ? 1400 : tp(stepId).breathing;
         const timer = setTimeout(pauseAware(() => setPhase('revealed')), breathing);
         return () => clearTimeout(timer);
     }, [phase, stepId, pauseAware]);
@@ -517,18 +536,25 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
         setSubAgents(agentList.map(a => ({ ...a, visible: false, done: false })));
         setSubProgress(0);
         const timers: ReturnType<typeof setTimeout>[] = [];
-        const stagger = 800;
-        const doneDelay = 500;
-        for (let i = 0; i < agentList.length; i++) {
-            timers.push(setTimeout(pauseAware(() => setSubAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a))), stagger * i));
-            timers.push(setTimeout(pauseAware(() => setSubAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a))), stagger * i + doneDelay));
-        }
+        const stagger = 1400;
+        const doneDelay = 900;
         const totalTime = stagger * agentList.length + doneDelay;
-        for (let i = 1; i <= 20; i++) timers.push(setTimeout(pauseAware(() => setSubProgress(i * 5)), (totalTime / 20) * i));
         const nextPhase: ConfirmSubPhase = subPhase === 'staging-pipeline' ? 'staging-revealed' : 'markup-revealed';
-        timers.push(setTimeout(pauseAware(() => setSubPhase(nextPhase)), totalTime + 800));
+
+        const events: Array<[number, () => void]> = [];
+        for (let i = 0; i < agentList.length; i++) {
+            const idx = i;
+            events.push([stagger * idx, () => setSubAgents(prev => prev.map((a, j) => j === idx ? { ...a, visible: true } : a))]);
+            events.push([stagger * idx + doneDelay, () => setSubAgents(prev => prev.map((a, j) => j === idx ? { ...a, done: true } : a))]);
+        }
+        for (let i = 1; i <= 20; i++) {
+            const pct = i * 5;
+            events.push([(totalTime / 20) * i, () => setSubProgress(pct)]);
+        }
+        events.push([totalTime + 1400, () => setSubPhase(nextPhase)]);
+        runChain(events, timers);
         return () => timers.forEach(clearTimeout);
-    }, [stepId, subPhase, pauseAware]);
+    }, [stepId, subPhase, pauseAware, runChain]);
 
     // ── Render helper: agent pipeline ────────────────────────────────────────
     const renderAgentPipeline = (agts: AgentVis[], prog: number, label: string) => (
@@ -2131,7 +2157,7 @@ export default function WrgLaborEstimation({ onNavigate }: { onNavigate: (page: 
                                             if (!selectedDealer) return;
                                             setSendingToDealer(true);
                                             setShowDealerPicker(false);
-                                            setTimeout(pauseAware(() => nextStep()), 1500);
+                                            setTimeout(pauseAware(() => nextStep()), 2500);
                                         }}
                                         disabled={!selectedDealer}
                                         className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${selectedDealer ? 'bg-brand-400 text-zinc-900 hover:bg-brand-300' : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
@@ -2286,6 +2312,20 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
         };
     }, []);
 
+    const runChain = useCallback((
+        events: Array<[number, () => void]>,
+        timers: ReturnType<typeof setTimeout>[]
+    ) => {
+        const sorted = [...events].sort((a, b) => a[0] - b[0]);
+        const step = (i: number) => {
+            if (i >= sorted.length) return;
+            const prevTime = i === 0 ? 0 : sorted[i - 1][0];
+            const delay = Math.max(1, sorted[i][0] - prevTime);
+            timers.push(setTimeout(pauseAware(() => { sorted[i][1](); step(i + 1); }), delay));
+        };
+        step(0);
+    }, [pauseAware]);
+
     const [reviewPhase, setReviewPhase] = useState<ReviewPhase>('notification');
     const [showApprovalChain, setShowApprovalChain] = useState(false);
     const [dealerModuleComments, setDealerModuleComments] = useState<Record<string, string>>({});
@@ -2304,15 +2344,21 @@ export function WrgEstimatorReview({ onNavigate }: { onNavigate: (page: string) 
         setReleaseAgents(RELEASE_AGENTS.map(a => ({ ...a, visible: false, done: false })));
         setReleaseProgress(0);
         const timers: ReturnType<typeof setTimeout>[] = [];
+        const events: Array<[number, () => void]> = [];
         for (let i = 0; i < RELEASE_AGENTS.length; i++) {
-            timers.push(setTimeout(pauseAware(() => setReleaseAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a))), 800 * i));
-            timers.push(setTimeout(pauseAware(() => setReleaseAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a))), 800 * i + 500));
+            const idx = i;
+            events.push([1400 * idx, () => setReleaseAgents(prev => prev.map((a, j) => j === idx ? { ...a, visible: true } : a))]);
+            events.push([1400 * idx + 900, () => setReleaseAgents(prev => prev.map((a, j) => j === idx ? { ...a, done: true } : a))]);
         }
-        for (let i = 1; i <= 20; i++) timers.push(setTimeout(pauseAware(() => setReleaseProgress(i * 5)), 150 * i));
-        timers.push(setTimeout(pauseAware(() => { setReviewPhase('done'); setShowToast(true); }), 3000));
-        timers.push(setTimeout(pauseAware(() => setShowToast(false)), 9000));
+        for (let i = 1; i <= 20; i++) {
+            const pct = i * 5;
+            events.push([250 * i, () => setReleaseProgress(pct)]);
+        }
+        events.push([5100, () => { setReviewPhase('done'); setShowToast(true); }]);
+        events.push([15200, () => setShowToast(false)]);
+        runChain(events, timers);
         return () => timers.forEach(clearTimeout);
-    }, [reviewPhase, pauseAware]);
+    }, [reviewPhase, pauseAware, runChain]);
 
     return (
         <div className="space-y-4">

@@ -130,8 +130,8 @@ export default function WrgIntake({ onNavigate }: { onNavigate?: (page: string) 
     const handleSendToUser = (userName: string) => {
         setSelectedUser(userName);
         setSendingToast(true);
-        const t1 = setTimeout(pauseAware(() => setToastDone(true)), 1500);
-        const t2 = setTimeout(pauseAware(() => nextStep()), 3000);
+        const t1 = setTimeout(pauseAware(() => setToastDone(true)), 2500);
+        const t2 = setTimeout(pauseAware(() => nextStep()), 5100);
         return () => { clearTimeout(t1); clearTimeout(t2); };
     };
 
@@ -368,7 +368,7 @@ export function WrgIntakeReview({ onNavigate }: { onNavigate?: (page: string) =>
         setReviewingRecord(null);
         setConfirmSending(false);
         setConfirmDone(false);
-        const timer = setTimeout(pauseAware(() => setReviewPhase('notification')), 2000);
+        const timer = setTimeout(pauseAware(() => setReviewPhase('notification')), 3400);
         return () => clearTimeout(timer);
     }, [pauseAware]);
 
@@ -378,7 +378,7 @@ export function WrgIntakeReview({ onNavigate }: { onNavigate?: (page: string) =>
 
     const handleSendReturn = () => {
         setReturnSent(true);
-        setTimeout(pauseAware(() => setShowReturnRequest(false)), 2500);
+        setTimeout(pauseAware(() => setShowReturnRequest(false)), 4300);
     };
 
     // ─── Expandable scope sections data ──────────────────────────────────────
@@ -689,8 +689,8 @@ export function WrgIntakeReview({ onNavigate }: { onNavigate?: (page: string) =>
                             <button
                                 onClick={() => {
                                     setConfirmSending(true);
-                                    setTimeout(pauseAware(() => setConfirmDone(true)), 1500);
-                                    setTimeout(pauseAware(() => nextStep()), 3000);
+                                    setTimeout(pauseAware(() => setConfirmDone(true)), 2500);
+                                    setTimeout(pauseAware(() => nextStep()), 5100);
                                 }}
                                 className="flex-1 py-3 rounded-xl text-xs font-bold bg-brand-400 text-zinc-900 hover:bg-brand-300 shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center gap-2"
                             >

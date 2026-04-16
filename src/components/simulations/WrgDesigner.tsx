@@ -100,7 +100,7 @@ export default function WrgDesigner({ onNavigate }: { onNavigate?: (page: string
             flagged: 'Item flagged for further review',
         };
         setActionToast(labels[res]);
-        setTimeout(() => setActionToast(null), 2500);
+        setTimeout(pauseAware(() => setActionToast(null)), 3100);
     };
 
     // ═════════════════════════════════════════════════════════════════════════

@@ -80,7 +80,7 @@ interface StrataEstimatorShellProps {
 }
 
 export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimatorShellProps = {}) {
-    const { currentStep, nextStep, goToStep } = useDemo()
+    const { currentStep, nextStep, goToStep, isPaused } = useDemo()
     const stepId = currentStep?.id
     const stepState = getStepState(stepId)
     const connectedUser = getStepRole(stepId) ?? undefined
@@ -89,6 +89,30 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     // David Park's workspace so the audience watches the notification land
     // in his actual interface before the chain modal opens.
     // See handleApproveRelease below.
+
+    // ── Pause support ─────────────────────────────────────────────────────────
+    const isPausedRef = useRef(isPaused)
+    useEffect(() => { isPausedRef.current = isPaused }, [isPaused])
+    const pauseAware = (fn: () => void) => () => {
+        if (!isPausedRef.current) { fn(); return }
+        const poll = setInterval(() => {
+            if (!isPausedRef.current) { clearInterval(poll); fn() }
+        }, 200)
+    }
+
+    const runChain = (
+        events: Array<[number, () => void]>,
+        timers: ReturnType<typeof setTimeout>[]
+    ) => {
+        const sorted = [...events].sort((a, b) => a[0] - b[0])
+        const step = (i: number) => {
+            if (i >= sorted.length) return
+            const prevTime = i === 0 ? 0 : sorted[i - 1][0]
+            const delay = Math.max(1, sorted[i][0] - prevTime)
+            timers.push(setTimeout(pauseAware(() => { sorted[i][1](); step(i + 1) }), delay))
+        }
+        step(0)
+    }
 
     // ── State ────────────────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState<EstimatorTab>(getStepTab(stepId))
@@ -265,18 +289,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
         const timers: ReturnType<typeof setTimeout>[] = []
 
-        // ─── Pre-phase · CORE ↔ Outlook + connection flow ────────────────
-        // v8 Paso E · Gap F adds a 1.8 s beat at t=0 where the CORE →
-        // Outlook incoming card explains why David is opening CORE. After
-        // that, the original Paso A flow runs unchanged (navbar Import
-        // button pulse → CoreConnectionModal with 9 phases). All
-        // subsequent w1.1 timers are offset by IMPORT_OFFSET so the rest
-        // of the narrative plays with the extra 1.8 s shift.
+        // Constants (same as before — only the scheduling changes)
         const OUTLOOK_LEAD = 1800 // ms · outlook card + import pulse overlap
-        // v8 · slower pacing · each CORE phase gets more breathing room and
-        // the workspace starts with an explicit empty beat before filling.
-        //   modal runtime  ≈ 14.8 s (was 9.4 s)
-        //   empty pause    ≈ 1.8 s after modal closes before dossier fills
         const IMPORT_OFFSET = 16600 // ms (= 14800 modal + 1800 outlook lead)
 
         // t=0 — outlook card is already visible (set above)
@@ -286,173 +300,79 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
             'system'
         )
 
-        // t=1500ms — navbar Import button starts pulsing (outlook card
-        // still visible for the last 300 ms)
-        timers.push(
-            setTimeout(() => setHighlightImportButton(true), 1500)
-        )
-
-        // t=1800ms — outlook card auto-dismisses
-        timers.push(
-            setTimeout(() => setOutlookIncomingVisible(false), OUTLOOK_LEAD)
-        )
-
-        // t=2300ms — "click" navbar Import button · modal opens on source picker
-        timers.push(
-            setTimeout(() => {
+        // Build flat events array — runChain converts to a pause-aware chain
+        // so only ONE timer is active at any time (no cascade on resume).
+        const events: Array<[number, () => void]> = [
+            [1500, () => setHighlightImportButton(true)],
+            [OUTLOOK_LEAD, () => setOutlookIncomingVisible(false)],
+            [OUTLOOK_LEAD + 500, () => {
                 setHighlightImportButton(false)
                 setImportModalOpen(true)
                 setImportModalPhase('source-picker')
                 logEvent('David Park', 'Opened new project ingestion dialog', 'edit')
-            }, OUTLOOK_LEAD + 500)
-        )
-
-        // Cursor lands on "Connect to CORE" card (slower: was +900)
-        timers.push(setTimeout(() => setImportCursorTarget('connect-core'), OUTLOOK_LEAD + 1500))
-        // "Click" the card (was +1500)
-        timers.push(setTimeout(() => setImportCursorClicked(true), OUTLOOK_LEAD + 2500))
-
-        // Transition to CORE login, reset cursor (was +2000)
-        timers.push(
-            setTimeout(() => {
+            }],
+            [OUTLOOK_LEAD + 1500, () => setImportCursorTarget('connect-core')],
+            [OUTLOOK_LEAD + 2500, () => setImportCursorClicked(true)],
+            [OUTLOOK_LEAD + 3200, () => {
                 setImportModalPhase('core-login')
                 setImportCursorTarget(null)
                 setImportCursorClicked(false)
-            }, OUTLOOK_LEAD + 3200)
-        )
-
-        // Cursor lands on Authenticate button (was +2500)
-        timers.push(setTimeout(() => setImportCursorTarget('core-authenticate'), OUTLOOK_LEAD + 4200))
-        // "Click" authenticate (was +3100)
-        timers.push(setTimeout(() => setImportCursorClicked(true), OUTLOOK_LEAD + 5000))
-
-        // Transition to connecting spinner (was +3500)
-        timers.push(
-            setTimeout(() => {
+            }],
+            [OUTLOOK_LEAD + 4200, () => setImportCursorTarget('core-authenticate')],
+            [OUTLOOK_LEAD + 5000, () => setImportCursorClicked(true)],
+            [OUTLOOK_LEAD + 5700, () => {
                 setImportModalPhase('core-connecting')
                 setImportCursorTarget(null)
                 setImportCursorClicked(false)
                 logEvent('System', 'CORE · secure session established', 'system')
-            }, OUTLOOK_LEAD + 5700)
-        )
-
-        // Transition to CORE dashboard (estimating queue) (was +4500)
-        timers.push(
-            setTimeout(() => {
+            }],
+            [OUTLOOK_LEAD + 7500, () => {
                 setImportModalPhase('core-dashboard')
-                logEvent(
-                    'David Park',
-                    'Browsing CORE estimating queue · 5 projects pending',
-                    'edit'
-                )
-            }, OUTLOOK_LEAD + 7500)
-        )
-
-        // Cursor lands on JPS row (was +5100)
-        timers.push(setTimeout(() => setImportCursorTarget('project-jps'), OUTLOOK_LEAD + 8500))
-        // "Click" JPS (was +5700)
-        timers.push(setTimeout(() => setImportCursorClicked(true), OUTLOOK_LEAD + 9500))
-
-        // Transition to project detail (was +6100)
-        timers.push(
-            setTimeout(() => {
+                logEvent('David Park', 'Browsing CORE estimating queue · 5 projects pending', 'edit')
+            }],
+            [OUTLOOK_LEAD + 8500, () => setImportCursorTarget('project-jps')],
+            [OUTLOOK_LEAD + 9500, () => setImportCursorClicked(true)],
+            [OUTLOOK_LEAD + 10200, () => {
                 setImportModalPhase('core-project-detail')
                 setImportCursorTarget(null)
                 setImportCursorClicked(false)
-                logEvent(
-                    'David Park',
-                    'Opened JPS Health Network project · 24 items · 3 attachments',
-                    'edit'
-                )
-            }, OUTLOOK_LEAD + 10200)
-        )
-
-        // Cursor lands on "Pull into Strata" (was +6700)
-        timers.push(setTimeout(() => setImportCursorTarget('pull-project'), OUTLOOK_LEAD + 11500))
-        // "Click" pull (was +7200)
-        timers.push(setTimeout(() => setImportCursorClicked(true), OUTLOOK_LEAD + 12300))
-
-        // Transition to extracting · uploading (was +7500)
-        timers.push(
-            setTimeout(() => {
+                logEvent('David Park', 'Opened JPS Health Network project · 24 items · 3 attachments', 'edit')
+            }],
+            [OUTLOOK_LEAD + 11500, () => setImportCursorTarget('pull-project')],
+            [OUTLOOK_LEAD + 12300, () => setImportCursorClicked(true)],
+            [OUTLOOK_LEAD + 12800, () => {
                 setImportModalPhase('extracting-uploading')
                 setImportModalProgress(15)
                 setImportCursorTarget(null)
                 setImportCursorClicked(false)
-                logEvent(
-                    'System',
-                    'CORE · downloading JPS_PSS_ANCILLARY.pdf, JPS_Spec_Sheet.pdf, JPS_Contract.pdf',
-                    'system'
-                )
-            }, OUTLOOK_LEAD + 12800)
-        )
-
-        // Parsing (was +8000)
-        timers.push(
-            setTimeout(() => {
+                logEvent('System', 'CORE · downloading JPS_PSS_ANCILLARY.pdf, JPS_Spec_Sheet.pdf, JPS_Contract.pdf', 'system')
+            }],
+            [OUTLOOK_LEAD + 13500, () => {
                 setImportModalPhase('extracting-parsing')
                 setImportModalProgress(50)
-            }, OUTLOOK_LEAD + 13500)
-        )
-
-        // Extracting (was +8500)
-        timers.push(
-            setTimeout(() => {
+            }],
+            [OUTLOOK_LEAD + 14000, () => {
                 setImportModalPhase('extracting-extracting')
                 setImportModalProgress(80)
-                logEvent(
-                    'AI Agent',
-                    'Extracting 24 line items from the CORE attachments…',
-                    'ai'
-                )
-            }, OUTLOOK_LEAD + 14000)
-        )
-
-        // Done (was +9000)
-        timers.push(
-            setTimeout(() => {
+                logEvent('AI Agent', 'Extracting 24 line items from the CORE attachments…', 'ai')
+            }],
+            [OUTLOOK_LEAD + 14500, () => {
                 setImportModalPhase('extracting-done')
                 setImportModalProgress(100)
-            }, OUTLOOK_LEAD + 14500)
-        )
-
-        // Close modal and hand off to the existing narrative (was +9400)
-        timers.push(
-            setTimeout(() => {
+            }],
+            [OUTLOOK_LEAD + 14800, () => {
                 setImportModalOpen(false)
                 setW21Phase('loading-dossier')
-                logEvent(
-                    'System',
-                    'Strata workspace ready · waiting for data to populate',
-                    'system'
-                )
-                // Snap viewport to the top so the audience sees the empty
-                // workspace (dossier, context, constraints, BoM) before
-                // the fill animation starts.
+                logEvent('System', 'Strata workspace ready · waiting for data to populate', 'system')
                 if (typeof window !== 'undefined') {
                     window.scrollTo({ top: 0, behavior: 'smooth' })
                 }
-            }, OUTLOOK_LEAD + 14800)
-        )
-
-        // ─── Empty workspace beat ────────────────────────────────────────
-        // The workspace is visible but empty for ~1.8 s after the modal
-        // closes so the audience sees the before-state (empty dossier,
-        // empty BoM, empty context) and then watches the data stream in.
-
-        // t=1800ms — dossier fills in (ZIP + address land) [was +800]
-        timers.push(
-            setTimeout(() => {
+            }],
+            [IMPORT_OFFSET + 1800, () => {
                 setCustomer(JPS_CUSTOMER)
                 logEvent('AI Agent', 'Loaded CORE export · ZIP 76104 / Fort Worth', 'ai')
-            }, IMPORT_OFFSET + 1800)
-        )
-
-        // t=2800ms — AI import indicator appears above the BoM header [was +1100]
-        // Also smooth-scroll the viewport to the BoM so the audience
-        // follows the data streaming in.
-        timers.push(
-            setTimeout(() => {
+            }],
+            [IMPORT_OFFSET + 2800, () => {
                 setW21Phase('importing-bom')
                 setImportStatus('Importing 24 items from JPS_specs.pdf…')
                 if (typeof window !== 'undefined') {
@@ -460,82 +380,38 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                         .getElementById('wrg-section-bom')
                         ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }
-            }, IMPORT_OFFSET + 2800)
-        )
-
-        // t=3400ms — populate BoM, stagger animation plays [was +1400]
-        timers.push(
-            setTimeout(() => {
+            }],
+            [IMPORT_OFFSET + 3400, () => {
                 setLineItems(JPS_LINE_ITEMS)
-                logEvent(
-                    'AI Agent',
-                    'Imported 24 line items from JPS_specs.pdf (85% template, 15% fallback)',
-                    'ai'
-                )
-            }, IMPORT_OFFSET + 3400)
-        )
-
-        // t=6200ms — stagger finishes, enter the mapping beat [was +3600]
-        timers.push(
-            setTimeout(() => {
+                logEvent('AI Agent', 'Imported 24 line items from JPS_specs.pdf (85% template, 15% fallback)', 'ai')
+            }],
+            [IMPORT_OFFSET + 6200, () => {
                 setW21Phase('mapping-bom')
                 setImportStatus('Mapping products to labor categories…')
-                logEvent(
-                    'AI Agent',
-                    'Mapping products to labor categories',
-                    'ai'
-                )
-            }, IMPORT_OFFSET + 6200)
-        )
+                logEvent('AI Agent', 'Mapping products to labor categories', 'ai')
+            }],
+        ]
 
-        // Mapping chips resolve one by one [was +3700 + i*40 → +6400 + i*70]
-        // Slower stagger so each chip resolution is readable
+        // Mapping chips — one event per item, 70 ms apart
         const itemCount = JPS_LINE_ITEMS.length
         for (let i = 0; i < itemCount; i++) {
-            timers.push(
-                setTimeout(
-                    () => setMappingResolvedCount(i + 1),
-                    IMPORT_OFFSET + 6400 + i * 70
-                )
-            )
+            const idx = i
+            events.push([IMPORT_OFFSET + 6400 + idx * 70, () => setMappingResolvedCount(idx + 1)])
         }
 
-        // t=8200ms — mapping complete, drop the import status [was +4700]
-        timers.push(
-            setTimeout(() => {
+        events.push(
+            [IMPORT_OFFSET + 8200, () => {
                 setImportStatus(null)
-                logEvent(
-                    'AI Agent',
-                    'Mapped 24 items · 21 template, 3 fallback',
-                    'ai'
-                )
-            }, IMPORT_OFFSET + 8200)
-        )
-
-        // t=8700ms — scope breach alert [was +4900]
-        timers.push(
-            setTimeout(() => {
+                logEvent('AI Agent', 'Mapped 24 items · 21 template, 3 fallback', 'ai')
+            }],
+            [IMPORT_OFFSET + 8700, () => {
                 setW21Phase('scope-breach')
                 setScopeBreachOpen(true)
                 setScopeBreachActive(true)
-                logEvent(
-                    'AI Agent',
-                    'Scope override · 119 KD chairs > 50 (Delivery Pricer limit)',
-                    'ai'
-                )
-            }, IMPORT_OFFSET + 8700)
-        )
-
-        // t=9100ms — dual-engine calculation beat (slower: 2200 ms) [was +5100]
-        // Scroll to the dual-engine section so the audience sees the two
-        // engines revealing and merging in view.
-        timers.push(
-            setTimeout(() => {
-                logEvent(
-                    'AI Agent',
-                    'Running dual-engine calculation · installation + delivery',
-                    'ai'
-                )
+                logEvent('AI Agent', 'Scope override · 119 KD chairs > 50 (Delivery Pricer limit)', 'ai')
+            }],
+            [IMPORT_OFFSET + 9100, () => {
+                logEvent('AI Agent', 'Running dual-engine calculation · installation + delivery', 'ai')
                 if (typeof window !== 'undefined') {
                     document
                         .getElementById('wrg-section-dual-engine')
@@ -546,43 +422,30 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 const tick = (now: number) => {
                     const elapsed = now - start
                     const p = Math.min(1, elapsed / duration)
-                    // easeOutCubic
                     const eased = 1 - Math.pow(1 - p, 3)
                     setCalcProgress(eased)
                     if (p < 1) {
                         calcRafRef.current = requestAnimationFrame(tick)
                     } else {
                         calcRafRef.current = null
-                        logEvent(
-                            'AI Agent',
-                            'Draft produced · line items + margin + crew',
-                            'ai'
-                        )
+                        logEvent('AI Agent', 'Draft produced · line items + margin + crew', 'ai')
                     }
                 }
                 calcRafRef.current = requestAnimationFrame(tick)
-            }, IMPORT_OFFSET + 9100)
-        )
-
-        // t=11800ms — flag OFS Serpentine (row 19) + show Escalate banner [was +6900]
-        // Scroll to the hero so the final labor summary + Generate
-        // Proposal CTA is visible when the flagged item reveal fires.
-        timers.push(
-            setTimeout(() => {
+            }],
+            [IMPORT_OFFSET + 11800, () => {
                 setW21Phase('flagged')
                 setFlaggedRowIds(['li-19'])
-                logEvent(
-                    'AI Agent',
-                    'Flagged OFS Serpentine 12-seat lounge for designer review',
-                    'ai'
-                )
+                logEvent('AI Agent', 'Flagged OFS Serpentine 12-seat lounge for designer review', 'ai')
                 if (typeof window !== 'undefined') {
                     document
                         .getElementById('wrg-section-hero')
                         ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                 }
-            }, IMPORT_OFFSET + 11800)
+            }],
         )
+
+        runChain(events, timers)
 
         return () => {
             timers.forEach(clearTimeout)
@@ -619,61 +482,43 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
         const timers: ReturnType<typeof setTimeout>[] = []
 
-        // outlook card dismisses
-        timers.push(setTimeout(() => setOutlookOutgoingVisible(false), OUTGOING_LEAD))
+        const events: Array<[number, () => void]> = [
+            [OUTGOING_LEAD, () => setOutlookOutgoingVisible(false)],
+            [3800, () => {
+                setSaraCursorTarget('request-clarification')
+                setSaraPulseClarify(true)
+            }],
+            [4500, () => setSaraCursorClicked(true)],
+            [4700, () => {
+                logEvent('Sara Chen', 'Opened Request Clarification form · OFS Serpentine assembly', 'edit')
+                setIsClarificationOpen(true)
+                setSaraCursorTarget(null)
+                setSaraCursorClicked(false)
+                setSaraPulseClarify(false)
+            }],
+            [8600, () => {
+                setDavidReplyVisible(true)
+                logEvent('David Park', 'Replied to clarification · OFS Serpentine 14 h confirmed · +2 h buffer for alignment', 'edit')
+            }],
+            [11700, () => setDavidReplyAccepted(true)],
+            [11900, () => {
+                logEvent('Sara Chen', "Accepted David's clarification · estimate confirmed", 'edit')
+            }],
+            [13000, () => setDavidReplyVisible(false)],
+            [13500, () => {
+                setSaraCursorTarget('forward')
+                setSaraPulseForward(true)
+            }],
+            [14200, () => setSaraCursorClicked(true)],
+            [14400, () => handleForwardToSAC()],
+            [14700, () => {
+                setSaraCursorTarget(null)
+                setSaraCursorClicked(false)
+                setSaraPulseForward(false)
+            }],
+        ]
 
-        // cursor + pulse on Request Clarification button
-        timers.push(setTimeout(() => {
-            setSaraCursorTarget('request-clarification')
-            setSaraPulseClarify(true)
-        }, 3800))
-        timers.push(setTimeout(() => setSaraCursorClicked(true), 4500))
-        timers.push(setTimeout(() => {
-            logEvent(
-                'Sara Chen',
-                'Opened Request Clarification form · OFS Serpentine assembly',
-                'edit'
-            )
-            setIsClarificationOpen(true)
-            setSaraCursorTarget(null)
-            setSaraCursorClicked(false)
-            setSaraPulseClarify(false)
-        }, 4700))
-
-        // David's reply slides in after modal closes (compose 2000 +
-        // sending 1100 + sent 600 ≈ 3700 ms after open = ~8400 ms)
-        timers.push(setTimeout(() => {
-            setDavidReplyVisible(true)
-            logEvent(
-                'David Park',
-                'Replied to clarification · OFS Serpentine 14 h confirmed · +2 h buffer for alignment',
-                'edit'
-            )
-        }, 8600))
-
-        // Sara accepts David's reply
-        timers.push(setTimeout(() => setDavidReplyAccepted(true), 11700))
-        timers.push(setTimeout(() => {
-            logEvent(
-                'Sara Chen',
-                "Accepted David's clarification · estimate confirmed",
-                'edit'
-            )
-        }, 11900))
-
-        // dismiss reply card, then cursor + pulse on Forward to SAC
-        timers.push(setTimeout(() => setDavidReplyVisible(false), 13000))
-        timers.push(setTimeout(() => {
-            setSaraCursorTarget('forward')
-            setSaraPulseForward(true)
-        }, 13500))
-        timers.push(setTimeout(() => setSaraCursorClicked(true), 14200))
-        timers.push(setTimeout(() => handleForwardToSAC(), 14400))
-        timers.push(setTimeout(() => {
-            setSaraCursorTarget(null)
-            setSaraCursorClicked(false)
-            setSaraPulseForward(false)
-        }, 14700))
+        runChain(events, timers)
 
         return () => {
             timers.forEach(clearTimeout)
@@ -712,63 +557,50 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
         const timers: ReturnType<typeof setTimeout>[] = []
 
-        // Beat 1 · Assemble quote
-        timers.push(setTimeout(() => {
-            setRileyCursorTarget('assemble')
-            setRileyPulseAssemble(true)
-        }, 1500))
-        timers.push(setTimeout(() => setRileyCursorClicked(true), 2300))
-        timers.push(setTimeout(() => {
-            logEvent(
-                'Riley Morgan',
-                'Opened quote assembly · MillerKnoll + discount + markup',
-                'edit'
-            )
-            setIsWaterfallOpen(true)
-            setRileyCursorTarget(null)
-            setRileyCursorClicked(false)
-            setRileyPulseAssemble(false)
-        }, 2500))
+        const events: Array<[number, () => void]> = [
+            [1500, () => {
+                setRileyCursorTarget('assemble')
+                setRileyPulseAssemble(true)
+            }],
+            [2300, () => setRileyCursorClicked(true)],
+            [2500, () => {
+                logEvent('Riley Morgan', 'Opened quote assembly · MillerKnoll + discount + markup', 'edit')
+                setIsWaterfallOpen(true)
+                setRileyCursorTarget(null)
+                setRileyCursorClicked(false)
+                setRileyPulseAssemble(false)
+            }],
+            [7500, () => {
+                logEvent('Riley Morgan', 'Confirmed quote assembly math · net + labor + freight + markup', 'edit')
+                setIsWaterfallOpen(false)
+            }],
+            [8000, () => {
+                setRileyCursorTarget('preview')
+                setRileyPulsePreview(true)
+            }],
+            [8800, () => setRileyCursorClicked(true)],
+            [9000, () => {
+                logEvent('Riley Morgan', 'Previewed the release document', 'edit')
+                setIsProposalPdfOpen(true)
+                setRileyCursorTarget(null)
+                setRileyCursorClicked(false)
+                setRileyPulsePreview(false)
+            }],
+            [12000, () => setIsProposalPdfOpen(false)],
+            [12500, () => {
+                setRileyCursorTarget('approve')
+                setApproveReleasePulsed(true)
+            }],
+            [13300, () => setRileyCursorClicked(true)],
+            [13500, () => handleApproveRelease()],
+            [14000, () => {
+                setRileyCursorTarget(null)
+                setRileyCursorClicked(false)
+                setApproveReleasePulsed(false)
+            }],
+        ]
 
-        // Waterfall auto-closes after ~5 s
-        timers.push(setTimeout(() => {
-            logEvent(
-                'Riley Morgan',
-                'Confirmed quote assembly math · net + labor + freight + markup',
-                'edit'
-            )
-            setIsWaterfallOpen(false)
-        }, 7500))
-
-        // Beat 2 · Preview PDF
-        timers.push(setTimeout(() => {
-            setRileyCursorTarget('preview')
-            setRileyPulsePreview(true)
-        }, 8000))
-        timers.push(setTimeout(() => setRileyCursorClicked(true), 8800))
-        timers.push(setTimeout(() => {
-            logEvent('Riley Morgan', 'Previewed the release document', 'edit')
-            setIsProposalPdfOpen(true)
-            setRileyCursorTarget(null)
-            setRileyCursorClicked(false)
-            setRileyPulsePreview(false)
-        }, 9000))
-
-        // PDF modal closes
-        timers.push(setTimeout(() => setIsProposalPdfOpen(false), 12000))
-
-        // Beat 3 · Approve & Release
-        timers.push(setTimeout(() => {
-            setRileyCursorTarget('approve')
-            setApproveReleasePulsed(true)
-        }, 12500))
-        timers.push(setTimeout(() => setRileyCursorClicked(true), 13300))
-        timers.push(setTimeout(() => handleApproveRelease(), 13500))
-        timers.push(setTimeout(() => {
-            setRileyCursorTarget(null)
-            setRileyCursorClicked(false)
-            setApproveReleasePulsed(false)
-        }, 14000))
+        runChain(events, timers)
 
         return () => {
             timers.forEach(clearTimeout)
@@ -890,7 +722,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
     // ── Handlers ─────────────────────────────────────────────────────────────
     const handleSave = () => {
         setSyncStatus('saving')
-        setTimeout(() => setSyncStatus('synced'), 1500)
+        setTimeout(pauseAware(() => setSyncStatus('synced')), 1500)
     }
 
     // ── SIF Export state ───────────────────────────────────────────────────
@@ -913,7 +745,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         setSifExportOpen(false)
         setSifPreviewOpen(false)
         setSifDownloadToast(true)
-        setTimeout(() => setSifDownloadToast(false), 4000)
+        setTimeout(pauseAware(() => setSifDownloadToast(false)), 4000)
     }
 
     const handleImportBackup = () => {
@@ -922,7 +754,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
 
     const handleRateLookup = () => {
         setIsSearchingRates(true)
-        setTimeout(() => setIsSearchingRates(false), 1500)
+        setTimeout(pauseAware(() => setIsSearchingRates(false)), 1500)
     }
 
     const handleGenerateProposal = () => {
@@ -1018,7 +850,7 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
         // carries the handoff direction chips inline, so we no longer
         // fire a separate HandoffBanner — one unified card instead of
         // two stacked notifications.
-        setTimeout(() => {
+        setTimeout(pauseAware(() => {
             setIsApprovalOpen(false)
             logEvent(
                 'Sara Chen',
@@ -1036,27 +868,27 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
             }
 
             // Approval card slides in ~1 s after the banner.
-            setTimeout(() => setDavidCardVisible(true), 1000)
+            setTimeout(pauseAware(() => setDavidCardVisible(true)), 1000)
 
             // Halfway through, David "reviews" the line items and the
             // simulated cursor appears over the Approve button.
-            setTimeout(() => {
+            setTimeout(pauseAware(() => {
                 logEvent(
                     'David Park',
                     'Reviewing proposal line items · OFS Serpentine, Canvas workstations, freight',
                     'edit'
                 )
                 setDavidCursorShown(true)
-            }, 2800)
+            }), 2800)
 
             // Cursor "clicks" — button flips to Approved with a ring pulse.
-            setTimeout(() => setDavidClicked(true), 4500)
+            setTimeout(pauseAware(() => setDavidClicked(true)), 4500)
 
             // Phase 3 — after David "reviews and approves" in his own
             // workspace, clear the redirect, mark David signed, and
             // re-open the chain modal to auto-advance Alex / Sara /
             // Jordan.
-            setTimeout(() => {
+            setTimeout(pauseAware(() => {
                 logEvent(
                     'David Park',
                     'Approved proposal from his workspace',
@@ -1069,8 +901,8 @@ export default function StrataEstimatorShell({ onExit: _onExit }: StrataEstimato
                 setDavidClicked(false)
                 setDavidSigned(true)
                 setIsApprovalOpen(true)
-            }, 7000)
-        }, 2500)
+            }), 7000)
+        }), 2500)
     }
 
     const handleApprovalChainComplete = () => {

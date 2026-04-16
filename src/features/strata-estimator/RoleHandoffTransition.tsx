@@ -15,8 +15,9 @@
 // demo profile. Fades out on the way out.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
+import { useDemo } from '../../context/DemoContext'
 
 export interface HandoffPerson {
     name: string
@@ -38,11 +39,14 @@ export default function RoleHandoffTransition({
     fromUser,
     toUser,
     message,
-    duration = 1800,
+    duration = 3000,
     onComplete,
 }: RoleHandoffTransitionProps) {
     const [progress, setProgress] = useState(0)
     const [leaving, setLeaving] = useState(false)
+    const { isPaused } = useDemo()
+    const isPausedRef = useRef(isPaused)
+    useEffect(() => { isPausedRef.current = isPaused }, [isPaused])
 
     useEffect(() => {
         if (!isOpen) {
@@ -54,11 +58,19 @@ export default function RoleHandoffTransition({
         // Next frame: kick the CSS transition from 0 → 100
         const rafStart = requestAnimationFrame(() => setProgress(100))
 
-        // After duration: start leave animation
-        const leaveTimer = setTimeout(() => setLeaving(true), duration)
+        // Pause-aware wrapper: if paused when timer fires, polls until unpaused
+        const pauseAware = (fn: () => void) => () => {
+            if (!isPausedRef.current) { fn(); return }
+            const poll = setInterval(() => {
+                if (!isPausedRef.current) { clearInterval(poll); fn() }
+            }, 200)
+        }
 
-        // After duration + leave buffer: fire onComplete
-        const completeTimer = setTimeout(() => onComplete(), duration + 250)
+        // After duration: start leave animation (respects pause)
+        const leaveTimer = setTimeout(pauseAware(() => setLeaving(true)), duration)
+
+        // After duration + leave buffer: fire onComplete (respects pause)
+        const completeTimer = setTimeout(pauseAware(() => onComplete()), duration + 400)
 
         return () => {
             cancelAnimationFrame(rafStart)

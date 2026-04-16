@@ -154,9 +154,9 @@ export interface WrgStepTiming {
 }
 
 export const WRG_STEP_TIMING: Record<string, WrgStepTiming> = {
-    'w1.1': { notifDelay: 2000, notifDuration: 7000, agentStagger: 1500, agentDone: 800, breathing: 2500, resultsDur: 0 },
-    'w1.2': { notifDelay: 1500, notifDuration: 6000, agentStagger: 1500, agentDone: 800, breathing: 2000, resultsDur: 0 },
-    'w2.1': { notifDelay: 1500, notifDuration: 6000, agentStagger: 1500, agentDone: 800, breathing: 2500, resultsDur: 0 },
-    'w2.2': { notifDelay: 2000, notifDuration: 8000, agentStagger: 0,    agentDone: 0,   breathing: 0,    resultsDur: 0 },
-    'w2.3': { notifDelay: 1500, notifDuration: 6000, agentStagger: 0,    agentDone: 0,   breathing: 2000, resultsDur: 0 },
+    'w1.1': { notifDelay: 3400, notifDuration: 11900, agentStagger: 2500, agentDone: 1400, breathing: 4300, resultsDur: 0 },
+    'w1.2': { notifDelay: 2500, notifDuration: 10100, agentStagger: 2500, agentDone: 1400, breathing: 3400, resultsDur: 0 },
+    'w2.1': { notifDelay: 2500, notifDuration: 10100, agentStagger: 2500, agentDone: 1400, breathing: 4300, resultsDur: 0 },
+    'w2.2': { notifDelay: 3400, notifDuration: 13500, agentStagger: 0,    agentDone: 0,   breathing: 0,    resultsDur: 0 },
+    'w2.3': { notifDelay: 2500, notifDuration: 10100, agentStagger: 0,    agentDone: 0,   breathing: 3400, resultsDur: 0 },
 };

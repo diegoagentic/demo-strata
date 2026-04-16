@@ -197,7 +197,7 @@ export default function DemoSidebar() {
 
     if (isSidebarCollapsed) {
         return (
-            <div className="fixed left-0 top-32 z-[110]">
+            <div className="fixed left-0 top-32 z-[300]">
                 <button
                     onClick={() => setIsSidebarCollapsed(false)}
                     className={`flex flex-col items-center justify-center gap-2 py-4 px-2 rounded-r-xl border border-l-0 shadow-2xl transition-all group w-12 ${c.collapsedBg} ${c.collapsedText} ${c.collapsedBorder} hover:opacity-80`}
@@ -210,7 +210,7 @@ export default function DemoSidebar() {
     }
 
     return (
-        <div className={`fixed left-0 top-0 h-full w-80 ${c.bg} border-r ${c.borderSubtle} z-[110] flex flex-col shadow-2xl transition-all duration-300`}>
+        <div className={`fixed left-0 top-0 h-full w-80 ${c.bg} border-r ${c.borderSubtle} z-[300] flex flex-col shadow-2xl transition-all duration-300`}>
             {/* Header */}
             <div className={`p-6 border-b ${c.border} ${c.bgHeader}`}>
                 <div className="flex items-center justify-between mb-1">

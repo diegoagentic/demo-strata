@@ -89,6 +89,22 @@ export default function WrgHandoff({ onNavigate }: { onNavigate?: (page: string)
         };
     }, []);
 
+    // runChain: builds a sorted event list and chains them one by one so that
+    // pause correctly halts the entire sequence, not just the current callback.
+    const runChain = useCallback((
+        events: Array<[number, () => void]>,
+        timers: ReturnType<typeof setTimeout>[]
+    ) => {
+        const sorted = [...events].sort((a, b) => a[0] - b[0]);
+        const step = (i: number) => {
+            if (i >= sorted.length) return;
+            const prevTime = i === 0 ? 0 : sorted[i - 1][0];
+            const delay = Math.max(1, sorted[i][0] - prevTime);
+            timers.push(setTimeout(pauseAware(() => { sorted[i][1](); step(i + 1); }), delay));
+        };
+        step(0);
+    }, [pauseAware]);
+
     const tp = (id: string): WrgStepTiming => WRG_STEP_TIMING[id] || WRG_STEP_TIMING['w1.2'];
 
     // ── Phase state ──────────────────────────────────────────────────────────
@@ -138,23 +154,25 @@ export default function WrgHandoff({ onNavigate }: { onNavigate?: (page: string)
         setProgress(0);
 
         const totalAgents = agents.length || 4;
-        for (let i = 0; i < totalAgents; i++) {
-            timers.push(setTimeout(pauseAware(() => {
-                setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, visible: true } : a));
-            }), t.agentStagger * i));
-            timers.push(setTimeout(pauseAware(() => {
-                setAgents(prev => prev.map((a, idx) => idx === i ? { ...a, done: true } : a));
-            }), t.agentStagger * i + t.agentDone));
-        }
-
         const totalTime = t.agentStagger * totalAgents + t.agentDone;
-        for (let i = 1; i <= 20; i++) {
-            timers.push(setTimeout(pauseAware(() => setProgress(i * 5)), (totalTime / 20) * i));
+
+        // Build sorted event list and chain — each event schedules the next,
+        // so pausing correctly halts the entire sequence (not just one callback).
+        const events: Array<[number, () => void]> = [];
+        for (let i = 0; i < totalAgents; i++) {
+            const idx = i;
+            events.push([t.agentStagger * idx, () => setAgents(prev => prev.map((a, j) => j === idx ? { ...a, visible: true } : a))]);
+            events.push([t.agentStagger * idx + t.agentDone, () => setAgents(prev => prev.map((a, j) => j === idx ? { ...a, done: true } : a))]);
         }
-        timers.push(setTimeout(pauseAware(() => setPhase('breathing')), totalTime + 200));
+        for (let i = 1; i <= 20; i++) {
+            const pct = i * 5;
+            events.push([(totalTime / 20) * i, () => setProgress(pct)]);
+        }
+        events.push([totalTime + 200, () => setPhase('breathing')]);
+        runChain(events, timers);
 
         return () => timers.forEach(clearTimeout);
-    }, [phase, stepId, pauseAware]);
+    }, [phase, stepId, pauseAware, runChain]);
 
     // ── Breathing → revealed ─────────────────────────────────────────────────
     useEffect(() => {
@@ -168,11 +186,13 @@ export default function WrgHandoff({ onNavigate }: { onNavigate?: (page: string)
         if (phase !== 'revealed') return;
         const timers: ReturnType<typeof setTimeout>[] = [];
 
-        // w1.2: stagger comparison table rows
+        // w1.2: stagger comparison table rows (chained for correct pause behavior)
         if (stepId === 'w1.2') {
-            for (let i = 0; i < COMPARISON_ITEMS.length; i++) {
-                timers.push(setTimeout(pauseAware(() => setRowsRevealed(i + 1)), 100 * i));
-            }
+            const run = (i: number) => {
+                if (i >= COMPARISON_ITEMS.length) return;
+                timers.push(setTimeout(pauseAware(() => { setRowsRevealed(i + 1); run(i + 1); }), 125));
+            };
+            run(0);
         }
 
         return () => timers.forEach(clearTimeout);
