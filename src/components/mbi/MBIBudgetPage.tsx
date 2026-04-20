@@ -22,6 +22,8 @@ import BudgetWizardShell from './BudgetWizardShell'
 import BudgetIntakeStep, { INITIAL_QUICK_FORM, type QuickFormState } from './BudgetIntakeStep'
 import SIFParserPreview from './SIFParserPreview'
 import PreflightScanChain from './PreflightScanChain'
+import ScenariosStep from './ScenariosStep'
+import type { ScenarioTier } from '../../config/profiles/mbi-data'
 import { useDemo } from '../../context/DemoContext'
 import {
     MBI_BUDGET_REQUESTS,
@@ -50,6 +52,12 @@ export default function MBIBudgetPage() {
     const [path] = useState<BudgetPath>('design-assisted')
     const [quickForm, setQuickForm] = useState<QuickFormState>(INITIAL_QUICK_FORM)
 
+    // Scenario selection state (shared across m1.2 parsing → m1.3 validation → m1.4 output)
+    const [selectedTier, setSelectedTier] = useState<ScenarioTier | null>('better')
+    const [markupOverrides, setMarkupOverrides] = useState<Partial<Record<ScenarioTier, number>>>({})
+    const handleMarkupChange = (tier: ScenarioTier, v: number) =>
+        setMarkupOverrides(prev => ({ ...prev, [tier]: v }))
+
     return (
         <MBIPageShell
             title="Budget Builder"
@@ -68,7 +76,14 @@ export default function MBIBudgetPage() {
                             lockedToDemoPath
                         />
                     )}
-                    {stepId === 'm1.2' && <ParsingView />}
+                    {stepId === 'm1.2' && (
+                        <ParsingView
+                            selectedTier={selectedTier}
+                            onSelectTier={setSelectedTier}
+                            markupOverrides={markupOverrides}
+                            onMarkupChange={handleMarkupChange}
+                        />
+                    )}
                     {stepId === 'm1.3' && <ValidationView />}
                     {stepId === 'm1.4' && <OutputView />}
                 </BudgetWizardShell>
@@ -152,7 +167,14 @@ function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value
 // IntakeView replaced by BudgetIntakeStep component (Phase 2.2 refactor).
 
 // ─── Step m1.2 — Parsing (animated SIF extraction + 5-check pre-flight) ───
-function ParsingView() {
+interface ParsingViewProps {
+    selectedTier: ScenarioTier | null
+    onSelectTier: (tier: ScenarioTier) => void
+    markupOverrides: Partial<Record<ScenarioTier, number>>
+    onMarkupChange: (tier: ScenarioTier, v: number) => void
+}
+
+function ParsingView({ selectedTier, onSelectTier, markupOverrides, onMarkupChange }: ParsingViewProps) {
     const sif = getSIFSample('SIF-ENTERPRISE-001')
     const [scenariosRevealed, setScenariosRevealed] = useState(false)
     if (!sif) return null
@@ -172,30 +194,22 @@ function ParsingView() {
                 onComplete={() => setScenariosRevealed(true)}
             />
 
-            {/* Scenarios teaser — reveals after pre-flight completes */}
+            {/* Scenarios full interactive view — reveals after pre-flight completes */}
             {scenariosRevealed && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-border">
                         <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
                             <Sparkles className="h-3.5 w-3.5" />
-                            <span>Scenarios generated</span>
+                            <span>Scenarios generated — select one to continue</span>
                         </div>
-                        <div className="text-[10px] text-muted-foreground">Full controls in step 3 of the wizard</div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {HERO_SCENARIOS.map(s => (
-                            <div key={s.tier} className={`bg-card border rounded-xl p-4 ${s.tier === 'better' ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${s.tier === 'good' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' : s.tier === 'better' ? 'bg-primary/20 text-primary' : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'}`}>
-                                        {s.label}
-                                    </span>
-                                    {s.tier === 'better' && <span className="text-[9px] font-bold text-primary uppercase">⭐</span>}
-                                </div>
-                                <div className="text-xl font-bold text-foreground tabular-nums">${(s.total / 1000).toFixed(0)}K</div>
-                                <div className="text-[10px] text-muted-foreground mt-0.5">{s.lineItemCount} items · {Math.round(s.markup * 100)}% markup</div>
-                            </div>
-                        ))}
-                    </div>
+                    <ScenariosStep
+                        scenarios={HERO_SCENARIOS}
+                        selectedTier={selectedTier}
+                        onSelectTier={onSelectTier}
+                        markupOverrides={markupOverrides}
+                        onMarkupChange={onMarkupChange}
+                    />
                 </div>
             )}
         </>
