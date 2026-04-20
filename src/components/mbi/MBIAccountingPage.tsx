@@ -8,15 +8,21 @@
  */
 
 import { useState } from 'react'
-import { Receipt, Heart, Sparkles } from 'lucide-react'
+import { Receipt, Heart, Sparkles, GitCompare, DollarSign } from 'lucide-react'
 import MBIPageShell from './MBIPageShell'
 import InvoiceQueueTable from './InvoiceQueueTable'
 import InvoiceDetailPanel from './InvoiceDetailPanel'
+import NonEDIReconciliationPanel from './NonEDIReconciliationPanel'
+import FreightTariffPanel from './FreightTariffPanel'
+import InstallerPanel from './InstallerPanel'
+import ARStatusBoard from './ARStatusBoard'
+import EscalationRuleBuilder from './EscalationRuleBuilder'
+import LiveBillingForecast from './LiveBillingForecast'
+import AIEmailDraftsPanel from './AIEmailDraftsPanel'
 import { useDemo } from '../../context/DemoContext'
 import {
     MBI_INVOICES,
     MBI_AR_RECORDS,
-    FORECAST_ACCURACY,
 } from '../../config/profiles/mbi-data'
 
 export default function MBIAccountingPage() {
@@ -80,19 +86,43 @@ export default function MBIAccountingPage() {
                 </section>
             )}
 
-            {/* Placeholder sections for Phase 3.B / 3.C / 3.D (coming next) */}
-            {stepId === 'm2.2' && (
-                <section className="mt-2">
+            {/* Phase 3.B — Reconciliation Agents (m2.2) */}
+            {(stepId === 'm2.2' || !stepId) && (
+                <section className="space-y-3 mt-6">
                     <SectionHeader
-                        icon={<Sparkles className="h-3.5 w-3.5" />}
-                        label="Non-EDI reconciliation + AR aging"
-                        hint="Phase 3.B + 3.C · next phase"
-                        accent="ai"
+                        icon={<GitCompare className="h-3.5 w-3.5" />}
+                        label="Reconciliation agents"
+                        hint="Non-EDI · Freight & Tariff · Installer — routes exceptions to Kathy only"
+                        accent="primary"
                     />
-                    <div className="bg-card border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground">
-                        Phase 3.B (Reconciliation agents) + Phase 3.C (AR Management + Live Billing Forecast) ship next.
-                        <div className="mt-2 text-xs">
-                            Forecast accuracy target: {FORECAST_ACCURACY.legacy} → {FORECAST_ACCURACY.strata}
+
+                    <div className="grid grid-cols-1 gap-4">
+                        <NonEDIReconciliationPanel invoices={MBI_INVOICES} />
+                        <FreightTariffPanel />
+                        <InstallerPanel />
+                    </div>
+                </section>
+            )}
+
+            {/* Phase 3.C — AR Management + Billing Forecast (m2.2 + default) */}
+            {(stepId === 'm2.2' || !stepId) && (
+                <section className="space-y-3 mt-6">
+                    <SectionHeader
+                        icon={<DollarSign className="h-3.5 w-3.5" />}
+                        label="AR Management + Live Forecast"
+                        hint="Structured taxonomy · escalation rules · real-time forecast · AI email drafts"
+                        accent="primary"
+                    />
+
+                    <ARStatusBoard records={MBI_AR_RECORDS} />
+                    <EscalationRuleBuilder />
+
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                        <div className="lg:col-span-3">
+                            <LiveBillingForecast />
+                        </div>
+                        <div className="lg:col-span-2">
+                            <AIEmailDraftsPanel />
                         </div>
                     </div>
                 </section>
