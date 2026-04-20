@@ -14,9 +14,12 @@
  * STATUS: Phase 0.D step-aware skeleton. Full wizard in Phase 2 (sub-phases 2.1-2.7).
  */
 
-import { Calculator, Upload, Sparkles, AlertTriangle, FileCheck2, CheckCircle2, ArrowRight, Plus, Clock, DollarSign, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import { Calculator, Sparkles, AlertTriangle, FileCheck2, CheckCircle2, ArrowRight, Plus, Clock, DollarSign, TrendingUp } from 'lucide-react'
 import MBIPageShell from './MBIPageShell'
 import BudgetQueueKanban from './BudgetQueueKanban'
+import BudgetWizardShell from './BudgetWizardShell'
+import BudgetIntakeStep, { INITIAL_QUICK_FORM, type QuickFormState } from './BudgetIntakeStep'
 import { useDemo } from '../../context/DemoContext'
 import {
     MBI_BUDGET_REQUESTS,
@@ -25,10 +28,25 @@ import {
     HERO_SCENARIOS,
     getSIFSample,
 } from '../../config/profiles/mbi-data'
+import type { BudgetPath } from '../../config/profiles/mbi-data'
+
+// Map demo tour step id → wizard step index (0-based)
+const STEP_TO_WIZARD_INDEX: Record<string, number> = {
+    'm1.1': 0,  // Intake
+    'm1.2': 1,  // Parsing (also covers step 2 scenarios = wizard idx 2 collapses into parsing step)
+    'm1.3': 3,  // Validation
+    'm1.4': 5,  // Output (skips step 4 review in the demo tour)
+}
 
 export default function MBIBudgetPage() {
     const { currentStep, isDemoActive } = useDemo()
     const stepId = isDemoActive ? currentStep?.id : null
+    const isInWizard = stepId !== null && stepId in STEP_TO_WIZARD_INDEX
+    const wizardStepIdx = stepId ? STEP_TO_WIZARD_INDEX[stepId] ?? 0 : 0
+
+    // Wizard state — locked to Design-Assisted + Enterprise scenario in demo tour
+    const [path] = useState<BudgetPath>('design-assisted')
+    const [quickForm, setQuickForm] = useState<QuickFormState>(INITIAL_QUICK_FORM)
 
     return (
         <MBIPageShell
@@ -37,11 +55,24 @@ export default function MBIBudgetPage() {
             icon={<Calculator className="h-5 w-5" />}
             activeApp="mbi-budget"
         >
-            {stepId === 'm1.1' && <IntakeView />}
-            {stepId === 'm1.2' && <ParsingView />}
-            {stepId === 'm1.3' && <ValidationView />}
-            {stepId === 'm1.4' && <OutputView />}
-            {!['m1.1', 'm1.2', 'm1.3', 'm1.4'].includes(stepId ?? '') && <QueueView />}
+            {isInWizard ? (
+                <BudgetWizardShell activeStep={wizardStepIdx}>
+                    {stepId === 'm1.1' && (
+                        <BudgetIntakeStep
+                            path={path}
+                            onPathChange={() => { /* demo locks path */ }}
+                            quickForm={quickForm}
+                            onQuickFormChange={setQuickForm}
+                            lockedToDemoPath
+                        />
+                    )}
+                    {stepId === 'm1.2' && <ParsingView />}
+                    {stepId === 'm1.3' && <ValidationView />}
+                    {stepId === 'm1.4' && <OutputView />}
+                </BudgetWizardShell>
+            ) : (
+                <QueueView />
+            )}
         </MBIPageShell>
     )
 }
@@ -116,42 +147,7 @@ function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value
     )
 }
 
-// ─── Step m1.1 — Intake ───────────────────────────────────────────────────
-function IntakeView() {
-    const hero = getHeroBudget()
-    return (
-        <>
-            <StepHeader id="m1.1" title="Intake — Design-Assisted path" icon={<Upload className="h-4 w-4" />} />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-card border-2 border-primary ring-2 ring-primary/20 rounded-2xl p-6 space-y-3">
-                    <div className="text-xs font-bold text-primary uppercase tracking-wider">✓ Selected</div>
-                    <h3 className="text-base font-bold text-foreground">Design-Assisted</h3>
-                    <p className="text-xs text-muted-foreground">Upload CET SIF export + CAP worksheet. Strata auto-parses structured data.</p>
-                    <ul className="text-xs text-muted-foreground space-y-1 pt-2 border-t border-border">
-                        <li>📎 EnterpriseHoldings_HQF12_SIF_v5.xml</li>
-                        <li>📎 EnterpriseHoldings_CAP.xlsx</li>
-                    </ul>
-                </div>
-                <div className="bg-card border border-border rounded-2xl p-6 space-y-3 opacity-50">
-                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Quick Budget</div>
-                    <h3 className="text-base font-bold text-foreground">Salesperson-only path</h3>
-                    <p className="text-xs text-muted-foreground">Manual form — space type, scope, contract, budget ceiling. No CET required.</p>
-                </div>
-            </div>
-
-            <div className="bg-muted/30 border border-border rounded-2xl p-4 mt-4">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Intake summary</div>
-                <dl className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                    <div><dt className="text-muted-foreground">Client</dt><dd className="font-bold text-foreground">{hero.client.name}</dd></div>
-                    <div><dt className="text-muted-foreground">Project</dt><dd className="font-bold text-foreground">{hero.client.project}</dd></div>
-                    <div><dt className="text-muted-foreground">Contract</dt><dd className="font-bold text-foreground">HNI Corporate · 55%</dd></div>
-                    <div><dt className="text-muted-foreground">Budget ceiling</dt><dd className="font-bold text-foreground">${hero.budgetCeiling?.toLocaleString()}</dd></div>
-                </dl>
-            </div>
-        </>
-    )
-}
+// IntakeView replaced by BudgetIntakeStep component (Phase 2.2 refactor).
 
 // ─── Step m1.2 — Parsing + Scenarios ──────────────────────────────────────
 function ParsingView() {
