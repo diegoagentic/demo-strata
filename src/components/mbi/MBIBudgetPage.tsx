@@ -20,6 +20,8 @@ import MBIPageShell from './MBIPageShell'
 import BudgetQueueKanban from './BudgetQueueKanban'
 import BudgetWizardShell from './BudgetWizardShell'
 import BudgetIntakeStep, { INITIAL_QUICK_FORM, type QuickFormState } from './BudgetIntakeStep'
+import SIFParserPreview from './SIFParserPreview'
+import PreflightScanChain from './PreflightScanChain'
 import { useDemo } from '../../context/DemoContext'
 import {
     MBI_BUDGET_REQUESTS,
@@ -149,49 +151,53 @@ function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value
 
 // IntakeView replaced by BudgetIntakeStep component (Phase 2.2 refactor).
 
-// ─── Step m1.2 — Parsing + Scenarios ──────────────────────────────────────
+// ─── Step m1.2 — Parsing (animated SIF extraction + 5-check pre-flight) ───
 function ParsingView() {
     const sif = getSIFSample('SIF-ENTERPRISE-001')
+    const [scenariosRevealed, setScenariosRevealed] = useState(false)
+    if (!sif) return null
+
+    const parserStagger = 140
+    const preflightStartDelay = 1800
+
     return (
         <>
             <StepHeader id="m1.2" title="AI parsing + scenario generation" icon={<Sparkles className="h-4 w-4" />} />
 
-            <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">SIF parsed</div>
-                <div className="flex items-center justify-between text-sm">
-                    <span className="text-foreground font-medium">{sif?.fileName}</span>
-                    <span className="text-xs text-muted-foreground">{sif?.fieldCount} fields · {sif?.lineItems.length} line items</span>
-                </div>
-            </div>
+            <SIFParserPreview sif={sif} stagger={parserStagger} />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                {HERO_SCENARIOS.map(s => (
-                    <div key={s.tier} className={`bg-card border rounded-2xl p-5 space-y-3 ${s.tier === 'better' ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
-                        <div className="flex items-center justify-between">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${s.tier === 'good' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' : s.tier === 'better' ? 'bg-primary/20 text-primary' : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'}`}>
-                                {s.label}
-                            </span>
-                            {s.tier === 'better' && <span className="text-[10px] font-bold text-primary uppercase">⭐ Recommended</span>}
+            <PreflightScanChain
+                startDelay={preflightStartDelay}
+                perCheckDuration={1100}
+                onComplete={() => setScenariosRevealed(true)}
+            />
+
+            {/* Scenarios teaser — reveals after pre-flight completes */}
+            {scenariosRevealed && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            <span>Scenarios generated</span>
                         </div>
-                        <div className="text-2xl font-bold text-foreground">${s.total.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">{s.lineItemCount} items · markup {Math.round(s.markup * 100)}%</div>
-                        {s.swaps.length > 0 && s.swaps[0].delta !== 0 && (
-                            <div className="pt-2 border-t border-border space-y-1">
-                                {s.swaps.slice(0, 2).map((swap, i) => (
-                                    <div key={i} className="text-[11px] text-muted-foreground">
-                                        <span>{swap.from}</span>
-                                        <ArrowRight className="inline h-3 w-3 mx-1" />
-                                        <span>{swap.to}</span>
-                                        <span className={`ml-1 font-bold ${swap.delta < 0 ? 'text-green-600 dark:text-green-400' : 'text-amber-600'}`}>
-                                            {swap.delta > 0 ? '+' : ''}${swap.delta.toLocaleString()}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <div className="text-[10px] text-muted-foreground">Full controls in step 3 of the wizard</div>
                     </div>
-                ))}
-            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {HERO_SCENARIOS.map(s => (
+                            <div key={s.tier} className={`bg-card border rounded-xl p-4 ${s.tier === 'better' ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${s.tier === 'good' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' : s.tier === 'better' ? 'bg-primary/20 text-primary' : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'}`}>
+                                        {s.label}
+                                    </span>
+                                    {s.tier === 'better' && <span className="text-[9px] font-bold text-primary uppercase">⭐</span>}
+                                </div>
+                                <div className="text-xl font-bold text-foreground tabular-nums">${(s.total / 1000).toFixed(0)}K</div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">{s.lineItemCount} items · {Math.round(s.markup * 100)}% markup</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </>
     )
 }
