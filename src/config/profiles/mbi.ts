@@ -47,7 +47,7 @@ export const MBI_STEPS: DemoStep[] = [
         groupTitle: 'Flow 1: Budget Builder Prototype',
         title: 'Intake — Design-Assisted path',
         description: 'Amanda, account manager at MBI, receives a new opportunity from Enterprise Holdings for a corporate HQ floor renovation. She uploads the SIF export from CET and the CAP worksheet from the design team. Strata detects the path automatically and routes to the parser.',
-        app: 'transactions',
+        app: 'mbi-budget',
         role: 'Dealer',
     },
     {
@@ -56,7 +56,7 @@ export const MBI_STEPS: DemoStep[] = [
         groupTitle: 'Flow 1: Budget Builder Prototype',
         title: 'AI parsing + scenario generation',
         description: 'Strata parses 24 fields from the SIF, applies the HNI contract discount, calculates freight and install, and generates three scenarios — Good, Better, Best — with product swaps and clear pricing deltas. What used to take Amanda a week is ready in under two minutes.',
-        app: 'transactions',
+        app: 'mbi-budget',
         role: 'Dealer',
     },
     {
@@ -65,7 +65,7 @@ export const MBI_STEPS: DemoStep[] = [
         groupTitle: 'Flow 1: Budget Builder Prototype',
         title: 'AI validation — $18K catch',
         description: 'Before Amanda sends the budget, Strata flags a critical issue: the Allsteel Further worksurface size in the SIF is incompatible with the panel system. Confidence 94%. Estimated impact: $18,240 — exactly the class of error that cost MBI a real deal last quarter. Amanda accepts the swap suggestion.',
-        app: 'transactions',
+        app: 'mbi-budget',
         role: 'Dealer',
     },
     {
@@ -74,7 +74,7 @@ export const MBI_STEPS: DemoStep[] = [
         groupTitle: 'Flow 1: Budget Builder Prototype',
         title: 'Review + client delivery',
         description: 'Amanda reviews the Better scenario, tunes the markup to 33%, and approves. Strata generates both the Excel breakdown and a branded MBI client summary PDF. She sends it to Enterprise Holdings with one click. Total time: 4 minutes, down from 1 week.',
-        app: 'transactions',
+        app: 'mbi-budget',
         role: 'Dealer',
     },
 
@@ -88,7 +88,7 @@ export const MBI_STEPS: DemoStep[] = [
         groupTitle: 'Flow 2: Accounting AI',
         title: 'AP invoice ingestion with HealthTrust logic',
         description: 'Kathy, MBI controller, opens her morning queue. Strata has already read 12 vendor invoices overnight — extracted fields, pre-populated CORE vouchers. Healthcare invoices trigger HealthTrust contract logic automatically and flag the 3% royalty line. Kathy reviews exceptions, not every invoice.',
-        app: 'transactions',
+        app: 'mbi-accounting',
         role: 'Dealer',
     },
     {
@@ -97,7 +97,7 @@ export const MBI_STEPS: DemoStep[] = [
         groupTitle: 'Flow 2: Accounting AI',
         title: 'Non-EDI reconciliation + AR aging',
         description: 'For non-EDI manufacturers, Strata compares PO to invoice line-by-line and routes clean matches automatically. Kathy sees only the flagged exceptions. The live billing forecast replaces the bi-weekly Excel — leadership now has real-time visibility.',
-        app: 'transactions',
+        app: 'mbi-accounting',
         role: 'Dealer',
     },
 
@@ -111,7 +111,7 @@ export const MBI_STEPS: DemoStep[] = [
         groupTitle: 'Flow 3: Quotes AI',
         title: 'SIF → CORE auto-import',
         description: 'The approved budget flows downstream. Instead of a PC manually re-entering the SIF into CORE — the largest bottleneck at MBI — Strata auto-imports the structured data and builds the proposal draft. The PC team shifts from builders to reviewers. Three audit loops collapse into one AI validation plus one human check.',
-        app: 'transactions',
+        app: 'mbi-quotes',
         role: 'Project Manager',
     },
 
@@ -125,7 +125,7 @@ export const MBI_STEPS: DemoStep[] = [
         groupTitle: 'Flow 4: Design AI',
         title: 'Spec check engine (pilot with Beth)',
         description: 'Beth, an early adopter on the design team, runs Strata Spec Check on her Mercy Hospital ICU project. The engine scans the CET BOM in under 5 minutes, flagging a finish inconsistency — "everything is blue, this one chair is green." Caught before the client sees it. This is the story that will unlock adoption for the rest of the design team.',
-        app: 'transactions',
+        app: 'mbi-design',
         role: 'Designer',
     },
 ];

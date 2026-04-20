@@ -18,7 +18,8 @@ export type SimulationApp =
     | 'quote-detail' | 'transactions' | 'mac' | 'inventory'
     | 'crm'
     | 'dupler-pdf' | 'dupler-warehouse' | 'dupler-reporting'
-    | 'wrg-estimator';
+    | 'wrg-estimator'
+    | 'mbi-overview' | 'mbi-budget' | 'mbi-accounting' | 'mbi-quotes' | 'mbi-design';
 
 export interface DemoStep {
     id: string;

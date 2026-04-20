@@ -40,6 +40,13 @@ import DuplerWarehouse from "./components/simulations/DuplerWarehouse"
 import { StrataEstimatorShell } from "./features/strata-estimator"
 // DuplerReporting now renders inside Dashboard.tsx (Follow Up notification + Metrics processing)
 
+// MBI Demo — 5 page stubs (Phase 0.D · expanded in Phases 1-5)
+import MBIOverviewPage from "./components/mbi/MBIOverviewPage"
+import MBIBudgetPage from "./components/mbi/MBIBudgetPage"
+import MBIAccountingPage from "./components/mbi/MBIAccountingPage"
+import MBIQuotesPage from "./components/mbi/MBIQuotesPage"
+import MBIDesignPage from "./components/mbi/MBIDesignPage"
+
 import {
   HomeIcon,
   BanknotesIcon,
@@ -199,6 +206,12 @@ function App() {
       'dupler-reporting': 'dashboard',
       // WRG Demo v6: no global Navbar tab — Estimator owns its own tabs
       'wrg-estimator': 'dashboard',
+      // MBI Demo: each module owns its own tab — Navbar tab kept on transactions for context
+      'mbi-overview': 'dashboard',
+      'mbi-budget': 'transactions',
+      'mbi-accounting': 'transactions',
+      'mbi-quotes': 'transactions',
+      'mbi-design': 'transactions',
     };
     return appToTab[currentStep.app] || currentPage;
   };
@@ -274,6 +287,16 @@ function App() {
       case 'wrg-estimator':
         // Single collaborative Shell — role + visual state driven by currentStep
         return <StrataEstimatorShell />;
+      case 'mbi-overview':
+        return <MBIOverviewPage />;
+      case 'mbi-budget':
+        return <MBIBudgetPage />;
+      case 'mbi-accounting':
+        return <MBIAccountingPage />;
+      case 'mbi-quotes':
+        return <MBIQuotesPage />;
+      case 'mbi-design':
+        return <MBIDesignPage />;
       default:
         return (
           <ExpertHubTransactions
