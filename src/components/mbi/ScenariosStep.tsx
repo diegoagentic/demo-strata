@@ -1,11 +1,9 @@
 /**
  * COMPONENT: ScenariosStep
- * PURPOSE: Full interactive view for wizard step 3 (Scenarios). Composes
- *          ScenarioComparisonCards + MarkupSlider + live PricingBreakdown.
- *
- *          When the user selects a scenario + tweaks markup, the pricing
- *          breakdown (subtotal/freight/install/contingency/total) recomputes
- *          in real time.
+ * PURPOSE: Wizard step 3 (Scenarios) — focused on the selection decision.
+ *          Hero: 3 comparison cards. Below: markup slider with the live total
+ *          shown inline. The full pricing breakdown moves to a DetailSheet so
+ *          the surface stays focused on the choice.
  *
  * PROPS:
  *   - scenarios: Scenario[]
@@ -14,17 +12,16 @@
  *   - markupOverrides: Record<ScenarioTier, number>
  *   - onMarkupChange: (tier, v) => void
  *
- * STATES: controlled
+ * DS TOKENS: bg-card · border-border · rounded-2xl · primary
  *
- * DS TOKENS: bg-card · border-border · rounded-2xl
- *
- * USED BY: MBIBudgetPage (standalone for wizard step 2, or embedded after
- *          ParsingView completes in m1.2).
+ * USED BY: MBIBudgetPage (wizard index 2)
  */
 
-import { DollarSign } from 'lucide-react'
+import { useState } from 'react'
+import { DollarSign, ChevronRight } from 'lucide-react'
 import ScenarioComparisonCards from './ScenarioComparisonCards'
 import MarkupSlider from './MarkupSlider'
+import MBIDetailSheet from './MBIDetailSheet'
 import type { Scenario, ScenarioTier } from '../../config/profiles/mbi-data'
 
 interface ScenariosStepProps {
@@ -44,18 +41,13 @@ export default function ScenariosStep({
 }: ScenariosStepProps) {
     const selected = scenarios.find(s => s.tier === selectedTier) ?? null
     const markupValue = selected ? markupOverrides[selected.tier] ?? selected.markup : 0.35
+    const [breakdownOpen, setBreakdownOpen] = useState(false)
+
+    const totals = selected ? computeTotals(selected, markupValue) : null
 
     return (
-        <div className="space-y-5">
-            {/* Intro */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-ai/5 border border-ai/10 rounded-xl p-3">
-                <div className="text-ai">🤖</div>
-                <span>
-                    Strata generated 3 scenarios automatically from the parsed SIF. Select one and fine-tune the markup before handing off.
-                </span>
-            </div>
-
-            {/* 3-card comparison */}
+        <div className="space-y-4">
+            {/* 3-card comparison — primary action */}
             <ScenarioComparisonCards
                 scenarios={scenarios}
                 selected={selectedTier}
@@ -63,77 +55,89 @@ export default function ScenariosStep({
                 markupAdjustment={markupOverrides}
             />
 
-            {/* Markup + breakdown (visible when a scenario is selected) */}
-            {selected && (
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-400">
-                    <div className="lg:col-span-2">
+            {/* Markup + total + breakdown trigger */}
+            {selected && totals && (
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="lg:col-span-3">
                         <MarkupSlider
                             value={markupValue}
                             onChange={v => onMarkupChange(selected.tier, v)}
                         />
                     </div>
-                    <div className="lg:col-span-3">
-                        <PricingBreakdown scenario={selected} markup={markupValue} />
-                    </div>
+                    <button
+                        onClick={() => setBreakdownOpen(true)}
+                        className="lg:col-span-2 bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4 text-left hover:border-primary/40 transition-colors"
+                    >
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
+                                    <DollarSign className="h-3.5 w-3.5" />
+                                </div>
+                                <div>
+                                    <div className="text-xs font-bold text-foreground">{selected.label} total</div>
+                                    <div className="text-[10px] text-muted-foreground">Live · markup {Math.round(markupValue * 100)}%</div>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="text-3xl font-bold text-foreground tabular-nums leading-none">
+                            ${totals.total.toLocaleString()}
+                        </div>
+                        <div className="text-[10px] text-zinc-900 dark:text-primary font-bold uppercase tracking-wider mt-2">
+                            View breakdown
+                        </div>
+                    </button>
                 </div>
+            )}
+
+            {/* ─── Floating breakdown ──────────────────────────────────── */}
+            {selected && totals && (
+                <MBIDetailSheet
+                    isOpen={breakdownOpen}
+                    onClose={() => setBreakdownOpen(false)}
+                    title={`Pricing breakdown — ${selected.label}`}
+                    subtitle={`Markup ${Math.round(markupValue * 100)}% · ${selected.lineItemCount} items · budget-grade`}
+                    icon={<DollarSign className="h-4 w-4" />}
+                    width="md"
+                >
+                    <dl className="space-y-2">
+                        <Row label="Subtotal (incl. markup)" value={totals.subtotal} />
+                        <Row label="Freight (10% of net)" value={totals.freight} muted />
+                        <Row label="Install (12% non-union)" value={totals.install} muted />
+                        <Row label="Contingency buffer" value={totals.contingency} muted />
+                        <div className="pt-3 mt-3 border-t border-border">
+                            <div className="flex items-baseline justify-between">
+                                <span className="text-sm font-bold text-foreground uppercase tracking-wider">Total</span>
+                                <span className="text-3xl font-bold text-foreground tabular-nums">
+                                    ${totals.total.toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    </dl>
+
+                    <div className="mt-5 text-xs text-muted-foreground bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-xl p-3">
+                        Numbers recompute live as you tune the markup slider. This view is budget-grade — final figures are signed off in the Review step.
+                    </div>
+                </MBIDetailSheet>
             )}
         </div>
     )
 }
 
-// ─── Internal: Pricing Breakdown ──────────────────────────────────────────
-function PricingBreakdown({ scenario, markup }: { scenario: Scenario; markup: number }) {
-    // Proportional recalc: scale total by markup ratio
-    const markupFactor = (1 + markup) / (1 + scenario.markup)
-    const subtotal = Math.round(scenario.subtotal * markupFactor)
-    const freight = Math.round(scenario.freight * markupFactor)
-    const install = Math.round(scenario.install * markupFactor)
-    const contingency = Math.round(scenario.contingency * markupFactor)
-    const total = subtotal + freight + install + contingency
-
-    return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-3 pb-3 border-b border-border">
-                <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
-                        <DollarSign className="h-3.5 w-3.5" />
-                    </div>
-                    <div>
-                        <div className="text-xs font-bold text-foreground">
-                            Pricing breakdown — {scenario.label}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                            Live · updates as you tune markup
-                        </div>
-                    </div>
-                </div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Budget-grade
-                </span>
-            </div>
-
-            <dl className="space-y-1.5 text-sm">
-                <Row label="Subtotal (incl. markup)" value={subtotal} />
-                <Row label="Freight (10% of net)" value={freight} muted />
-                <Row label="Install (12% non-union)" value={install} muted />
-                <Row label="Contingency buffer" value={contingency} muted />
-                <div className="pt-2 mt-2 border-t border-border">
-                    <div className="flex items-baseline justify-between">
-                        <span className="text-xs font-bold text-foreground uppercase tracking-wider">Total</span>
-                        <span className="text-2xl font-bold text-foreground tabular-nums">
-                            ${total.toLocaleString()}
-                        </span>
-                    </div>
-                </div>
-            </dl>
-        </div>
-    )
+// ─── Helpers ──────────────────────────────────────────────────────────────
+function computeTotals(scenario: Scenario, markup: number) {
+    const factor = (1 + markup) / (1 + scenario.markup)
+    const subtotal = Math.round(scenario.subtotal * factor)
+    const freight = Math.round(scenario.freight * factor)
+    const install = Math.round(scenario.install * factor)
+    const contingency = Math.round(scenario.contingency * factor)
+    return { subtotal, freight, install, contingency, total: subtotal + freight + install + contingency }
 }
 
 function Row({ label, value, muted }: { label: string; value: number; muted?: boolean }) {
     return (
         <div className="flex items-center justify-between">
-            <dt className={`text-xs ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>{label}</dt>
+            <dt className={`text-sm ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>{label}</dt>
             <dd className={`text-sm font-semibold tabular-nums ${muted ? 'text-muted-foreground' : 'text-foreground'}`}>
                 ${value.toLocaleString()}
             </dd>

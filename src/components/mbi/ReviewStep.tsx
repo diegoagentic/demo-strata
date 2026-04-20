@@ -29,7 +29,9 @@
  * USED BY: MBIBudgetPage (m1.4 first half)
  */
 
-import { Briefcase, FileCheck2, ShieldCheck, Check, AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
+import { Briefcase, FileCheck2, ShieldCheck, Check, AlertTriangle, ChevronRight, ListChecks } from 'lucide-react'
+import MBIDetailSheet from './MBIDetailSheet'
 import type { Scenario, LineItem, Vertical } from '../../config/profiles/mbi-data'
 
 interface ReviewStepProps {
@@ -58,23 +60,14 @@ export default function ReviewStep({
     const allValidationsResolved = validationsResolved === validationsTotal
     const markupFactor = (1 + markup) / (1 + scenario.markup)
     const adjustedTotal = Math.round(scenario.total * markupFactor)
+    const [itemsOpen, setItemsOpen] = useState(false)
 
     return (
         <div className="space-y-4">
-            {/* Intro banner */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-ai/5 border border-ai/10 rounded-xl p-3">
-                <FileCheck2 className="h-4 w-4 text-ai shrink-0" />
-                <span>
-                    Final review before client delivery. All scenario choices and validation
-                    decisions are captured here. Approving locks the budget and triggers
-                    artifact generation.
-                </span>
-            </div>
-
-            {/* Three-column summary */}
+            {/* Three-column summary — primary surface */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Client card */}
-                <div className="bg-muted/20 border border-border rounded-2xl p-4">
+                <div className="bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                             <Briefcase className="h-3.5 w-3.5" />
@@ -87,7 +80,7 @@ export default function ReviewStep({
                 </div>
 
                 {/* Scenario card */}
-                <div className="bg-muted/20 border border-primary/30 ring-2 ring-primary/10 rounded-2xl p-4">
+                <div className="bg-muted/30 dark:bg-zinc-800/40 border border-primary/30 ring-2 ring-primary/10 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                             <FileCheck2 className="h-3.5 w-3.5" />
@@ -102,7 +95,7 @@ export default function ReviewStep({
                 </div>
 
                 {/* Validations card */}
-                <div className={`bg-muted/20 border rounded-2xl p-4 ${allValidationsResolved ? 'border-success/30' : 'border-amber-300 dark:border-amber-500/30'}`}>
+                <div className={`bg-muted/30 dark:bg-zinc-800/40 border rounded-2xl p-4 ${allValidationsResolved ? 'border-success/30' : 'border-amber-300 dark:border-amber-500/30'}`}>
                     <div className="flex items-center gap-2 mb-3">
                         <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${allValidationsResolved ? 'bg-success/10 text-success' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'}`}>
                             <ShieldCheck className="h-3.5 w-3.5" />
@@ -123,36 +116,26 @@ export default function ReviewStep({
                 </div>
             </div>
 
-            {/* Line items table */}
-            <div className="bg-muted/20 border border-border rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                    <div>
-                        <div className="text-xs font-bold text-foreground">Line items</div>
-                        <div className="text-[10px] text-muted-foreground">
-                            From SIF · {sifLineItems.length} items · post-validation
-                        </div>
-                    </div>
+            {/* Line items quick link → DetailSheet */}
+            <button
+                onClick={() => setItemsOpen(true)}
+                className="w-full flex items-center gap-3 bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-2xl px-4 py-3 hover:border-primary/40 transition-colors text-left"
+            >
+                <div className="h-9 w-9 rounded-xl bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
+                    <ListChecks className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-foreground">Line items ({sifLineItems.length})</div>
                     <div className="text-[10px] text-muted-foreground">
-                        {sifLineItems.filter(li => li.quantity > 0).length} active
+                        From SIF · {sifLineItems.filter(li => li.quantity > 0).length} active · post-validation
                     </div>
                 </div>
-                <div className="divide-y divide-border max-h-64 overflow-y-auto">
-                    {sifLineItems.map((li, i) => (
-                        <div key={i} className="px-4 py-2 flex items-center gap-3 text-xs">
-                            <div className="font-mono text-muted-foreground w-24 shrink-0 truncate">{li.sku}</div>
-                            <div className="flex-1 min-w-0">
-                                <div className="text-foreground truncate">{li.description}</div>
-                                <div className="text-[10px] text-muted-foreground">{li.manufacturer} · {li.finish}</div>
-                            </div>
-                            <div className="text-muted-foreground tabular-nums shrink-0 w-12 text-right">×{li.quantity}</div>
-                            <div className="font-bold text-foreground tabular-nums shrink-0 w-20 text-right">${li.total.toLocaleString()}</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
+                <span className="text-[10px] font-bold text-zinc-900 dark:text-primary uppercase tracking-wider">View</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
 
             {/* Approve CTA */}
-            <div className="bg-muted/20 border border-border rounded-2xl p-4 flex items-center justify-between gap-4">
+            <div className="bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-2xl p-4 flex items-center justify-between gap-4">
                 <div>
                     <div className="text-sm font-bold text-foreground">Ready to approve?</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
@@ -181,6 +164,38 @@ export default function ReviewStep({
                     </div>
                 )}
             </div>
+
+            {/* ─── Line items floating sheet ───────────────────────────── */}
+            <MBIDetailSheet
+                isOpen={itemsOpen}
+                onClose={() => setItemsOpen(false)}
+                title="Line items — post-validation"
+                subtitle={`${sifLineItems.length} items from SIF · ${client.name} · ${client.project}`}
+                icon={<ListChecks className="h-4 w-4" />}
+                width="lg"
+            >
+                <div className="border border-border rounded-xl overflow-hidden">
+                    <div className="px-3 py-2 bg-muted/30 dark:bg-zinc-800/40 border-b border-border grid grid-cols-[6rem_1fr_3rem_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        <div>SKU</div>
+                        <div>Description</div>
+                        <div className="text-right">Qty</div>
+                        <div className="text-right">Total</div>
+                    </div>
+                    <div className="divide-y divide-border">
+                        {sifLineItems.map((li, i) => (
+                            <div key={i} className="px-3 py-2 grid grid-cols-[6rem_1fr_3rem_5rem] gap-3 items-center text-xs hover:bg-muted/30 dark:hover:bg-zinc-800/30">
+                                <div className="font-mono text-muted-foreground truncate">{li.sku}</div>
+                                <div className="min-w-0">
+                                    <div className="text-foreground truncate">{li.description}</div>
+                                    <div className="text-[10px] text-muted-foreground truncate">{li.manufacturer} · {li.finish}</div>
+                                </div>
+                                <div className="text-muted-foreground tabular-nums text-right">×{li.quantity}</div>
+                                <div className="font-bold text-foreground tabular-nums text-right">${li.total.toLocaleString()}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </MBIDetailSheet>
         </div>
     )
 }

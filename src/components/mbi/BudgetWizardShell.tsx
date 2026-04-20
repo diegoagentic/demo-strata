@@ -48,6 +48,7 @@ interface BudgetWizardShellProps {
     activeStep: number
     onPrev?: () => void
     onNext?: () => void
+    onStepClick?: (idx: number) => void
     canAdvance?: boolean
     children: ReactNode
 }
@@ -56,25 +57,30 @@ export default function BudgetWizardShell({
     activeStep,
     onPrev,
     onNext,
+    onStepClick,
     canAdvance = true,
     children,
 }: BudgetWizardShellProps) {
     return (
         <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
-            {/* 6-step indicator */}
-            <div className="px-4 py-3 border-b border-border bg-muted/20">
+            {/* 6-step indicator — sticky for long-scrolling step content */}
+            <div className="sticky top-20 z-20 px-4 py-3 border-b border-border bg-card/95 dark:bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 dark:supports-[backdrop-filter]:bg-zinc-900/80">
                 <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
                     {WIZARD_STEPS.map((step, i) => {
                         const isActive = i === activeStep
                         const isCompleted = i < activeStep
+                        const clickable = !!onStepClick
+                        const Comp: React.ElementType = clickable ? 'button' : 'div'
                         return (
                             <div key={step.id} className="flex items-center gap-1 shrink-0">
-                                <div
+                                <Comp
+                                    onClick={clickable ? () => onStepClick!(i) : undefined}
                                     className={`
-                                        flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors
-                                        ${isActive ? 'bg-primary/10 text-zinc-900 dark:text-primary border-primary/30' : ''}
+                                        flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all
+                                        ${isActive ? 'bg-primary/10 text-zinc-900 dark:text-primary border-primary/40 shadow-sm' : ''}
                                         ${isCompleted ? 'text-success border-success/30 bg-success/5' : ''}
                                         ${!isActive && !isCompleted ? 'text-muted-foreground border-border' : ''}
+                                        ${clickable ? 'hover:border-primary/40 hover:text-foreground cursor-pointer' : ''}
                                     `}
                                 >
                                     <div
@@ -88,9 +94,9 @@ export default function BudgetWizardShell({
                                         {isCompleted ? <Check className="h-3 w-3" /> : i + 1}
                                     </div>
                                     <span className="whitespace-nowrap">{step.label}</span>
-                                </div>
+                                </Comp>
                                 {i < WIZARD_STEPS.length - 1 && (
-                                    <div className="h-px w-3 bg-border shrink-0" />
+                                    <div className={`h-px w-3 shrink-0 ${i < activeStep ? 'bg-success/50' : 'bg-border'}`} />
                                 )}
                             </div>
                         )
