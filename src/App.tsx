@@ -46,7 +46,7 @@ import MBIBudgetPage from "./components/mbi/MBIBudgetPage"
 import MBIAccountingPage from "./components/mbi/MBIAccountingPage"
 import MBIQuotesPage from "./components/mbi/MBIQuotesPage"
 import MBIDesignPage from "./components/mbi/MBIDesignPage"
-import { Network as NetworkIcon, Calculator as CalculatorIcon, Receipt as ReceiptIcon, FileSearch as FileSearchIcon, Palette as PaletteIcon } from 'lucide-react'
+import { Calculator as CalculatorIcon, Receipt as ReceiptIcon, FileSearch as FileSearchIcon, Palette as PaletteIcon } from 'lucide-react'
 
 import {
   HomeIcon,
@@ -183,9 +183,9 @@ function App() {
     // WRG profile: no center nav (demo auto-drives all steps)
     const wrgNav: { name: string; page: string; icon: any; badge?: string }[] = [];
 
-    // MBI profile: 5-tab primary nav matching MBI_Strata_Prototype_Flow.html reference
+    // MBI profile: 4-tab primary nav (E2E Flow removed per user feedback —
+    // overview still accessible via mbi-overview app if needed later)
     const mbiNav = [
-      { name: 'E2E Flow', page: 'mbi-overview', icon: NetworkIcon },
       { name: 'Budget Builder', page: 'mbi-budget', icon: CalculatorIcon },
       { name: 'Accounting AI', page: 'mbi-accounting', icon: ReceiptIcon },
       { name: 'Quotes AI', page: 'mbi-quotes', icon: FileSearchIcon },

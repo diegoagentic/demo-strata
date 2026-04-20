@@ -14,8 +14,9 @@
  * STATUS: Phase 0.D step-aware skeleton. Full wizard in Phase 2 (sub-phases 2.1-2.7).
  */
 
-import { Calculator, Upload, Sparkles, AlertTriangle, FileCheck2, CheckCircle2, ArrowRight } from 'lucide-react'
+import { Calculator, Upload, Sparkles, AlertTriangle, FileCheck2, CheckCircle2, ArrowRight, Plus, Clock, DollarSign, TrendingUp } from 'lucide-react'
 import MBIPageShell from './MBIPageShell'
+import BudgetQueueKanban from './BudgetQueueKanban'
 import { useDemo } from '../../context/DemoContext'
 import {
     MBI_BUDGET_REQUESTS,
@@ -47,31 +48,71 @@ export default function MBIBudgetPage() {
 
 // ─── Queue (default view) ─────────────────────────────────────────────────
 function QueueView() {
+    const approvedCount = MBI_BUDGET_REQUESTS.filter(b => b.status === 'approved').length
+    const inFlightCount = MBI_BUDGET_REQUESTS.filter(b => b.status !== 'approved').length
+    const totalValue = MBI_BUDGET_REQUESTS.reduce((sum, b) => sum + (b.total ?? b.budgetCeiling ?? 0), 0)
+    const heroImpact = HERO_VALIDATION.estimatedImpact ?? 0
+
     return (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {MBI_BUDGET_REQUESTS.map(b => (
-                    <div key={b.id} className={`bg-card border rounded-2xl p-4 space-y-2 ${b.isHero ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{b.id}</span>
-                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{b.status}</span>
-                        </div>
-                        <h3 className="text-sm font-bold text-foreground">{b.client.name}</h3>
-                        <p className="text-xs text-muted-foreground">{b.client.project}</p>
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground capitalize">{b.path}</span>
-                            <span className="font-bold text-foreground">${(b.total ?? b.budgetCeiling ?? 0).toLocaleString()}</span>
-                        </div>
-                        {b.isHero && (
-                            <div className="mt-2 text-[10px] font-bold text-primary uppercase tracking-wider">⭐ Hero scenario</div>
-                        )}
-                    </div>
-                ))}
+            {/* Stats strip */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <StatCard
+                    icon={<Clock className="h-4 w-4" />}
+                    value={`${inFlightCount}`}
+                    label="In flight"
+                    accent="text-primary"
+                />
+                <StatCard
+                    icon={<CheckCircle2 className="h-4 w-4" />}
+                    value={`${approvedCount}`}
+                    label="Approved"
+                    accent="text-success"
+                />
+                <StatCard
+                    icon={<DollarSign className="h-4 w-4" />}
+                    value={`$${(totalValue / 1_000_000).toFixed(2)}M`}
+                    label="Total pipeline"
+                    accent="text-foreground"
+                />
+                <StatCard
+                    icon={<TrendingUp className="h-4 w-4" />}
+                    value={`$${(heroImpact / 1000).toFixed(1)}K`}
+                    label="Last error prevented"
+                    accent="text-ai"
+                />
             </div>
-            <p className="text-xs text-muted-foreground italic text-center mt-6">
-                Phase 0.D placeholder · Queue view. Launch the MBI demo tour to step through Amanda's Budget Builder flow.
+
+            {/* Toolbar */}
+            <div className="flex items-center justify-between mt-2">
+                <div className="text-xs text-muted-foreground">
+                    Pipeline stages · Intake → AI Parsing → Validation → Review → Approved
+                </div>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-300 dark:bg-brand-500 text-zinc-900 rounded-lg text-xs font-bold hover:opacity-90 transition-opacity">
+                    <Plus className="h-3.5 w-3.5" />
+                    New Budget
+                </button>
+            </div>
+
+            {/* Kanban */}
+            <BudgetQueueKanban />
+
+            <p className="text-xs text-muted-foreground italic text-center mt-4">
+                Phase 2.1 · Queue complete. Launch the MBI demo tour to step through Amanda's 4-step Budget Builder flow.
             </p>
         </>
+    )
+}
+
+function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value: string; label: string; accent: string }) {
+    return (
+        <div className="bg-card border border-border rounded-2xl p-4">
+            <div className={`flex items-center gap-2 ${accent}`}>
+                {icon}
+                <span className="text-2xl font-bold leading-none">{value}</span>
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-2">{label}</div>
+        </div>
     )
 }
 
