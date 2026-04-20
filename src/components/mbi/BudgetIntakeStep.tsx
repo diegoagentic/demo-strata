@@ -23,9 +23,10 @@
  * USED BY: MBIBudgetPage (Step 1 view)
  */
 
-import { Upload, FileSpreadsheet, FileCode2, ClipboardList, Briefcase, Building2, GraduationCap, Landmark, Heart, CheckCircle2 } from 'lucide-react'
-import type { ChangeEvent } from 'react'
-import type { SIFSample, BudgetPath, Vertical, ContractType } from '../../config/profiles/mbi-data'
+import { useEffect, useRef, useState } from 'react'
+import { Upload, FileSpreadsheet, FileCode2, ClipboardList, Briefcase, Building2, GraduationCap, Landmark, Heart, CheckCircle2, Eye, RefreshCw, Trash2, Loader2, Plus, ShieldCheck, FileText } from 'lucide-react'
+import MBIDetailSheet from './MBIDetailSheet'
+import type { BudgetPath, Vertical, ContractType } from '../../config/profiles/mbi-data'
 import { MBI_CONTRACTS, getSIFSample } from '../../config/profiles/mbi-data'
 
 export interface QuickFormState {
@@ -58,6 +59,8 @@ interface BudgetIntakeStepProps {
     quickForm: QuickFormState
     onQuickFormChange: (f: QuickFormState) => void
     lockedToDemoPath?: boolean           // when true, path switch disabled (demo tour mode)
+    intakeApproved?: boolean             // gates the wizard Next button via parent
+    onIntakeApprove?: () => void
 }
 
 export default function BudgetIntakeStep({
@@ -66,6 +69,8 @@ export default function BudgetIntakeStep({
     quickForm,
     onQuickFormChange,
     lockedToDemoPath = false,
+    intakeApproved = false,
+    onIntakeApprove,
 }: BudgetIntakeStepProps) {
     // If no path selected yet, show the path selector
     if (!path) {
@@ -100,7 +105,14 @@ export default function BudgetIntakeStep({
     }
 
     if (path === 'design-assisted') {
-        return <DesignAssistedIntake locked={lockedToDemoPath} onBack={() => !lockedToDemoPath && onPathChange('quick-budget' as BudgetPath)} />
+        return (
+            <DesignAssistedIntake
+                locked={lockedToDemoPath}
+                onBack={() => !lockedToDemoPath && onPathChange('quick-budget' as BudgetPath)}
+                approved={intakeApproved}
+                onApprove={onIntakeApprove}
+            />
+        )
     }
 
     return (
@@ -161,9 +173,129 @@ function PathCard({
     )
 }
 
-// ─── Design-Assisted intake (files uploaded) ─────────────────────────────────
-function DesignAssistedIntake({ locked, onBack }: { locked: boolean; onBack: () => void }) {
+// ─── Design-Assisted intake (files uploaded with processing) ─────────────────
+type FileStatus = 'processing' | 'ready' | 'error'
+
+interface IntakeFile {
+    id: string
+    name: string
+    kind: 'sif' | 'cap' | 'other'
+    icon: React.ReactNode
+    statusLabel: string
+    description: string
+    /** Base seconds for the simulated processing pass. */
+    processingMs: number
+}
+
+const INITIAL_FILES: IntakeFile[] = [
+    {
+        id: 'sif',
+        name: 'EnterpriseHoldings_HQF12_SIF_v5.xml',
+        kind: 'sif',
+        icon: <FileCode2 className="h-5 w-5" />,
+        statusLabel: 'CET export',
+        description: '24 fields · 7 line items · CET v16.5.2',
+        processingMs: 2200,
+    },
+    {
+        id: 'cap',
+        name: 'EnterpriseHoldings_CAP.xlsx',
+        kind: 'cap',
+        icon: <FileSpreadsheet className="h-5 w-5" />,
+        statusLabel: 'Pricing worksheet',
+        description: '7 discount overrides · 3 custom-pricing lines',
+        processingMs: 1700,
+    },
+]
+
+function DesignAssistedIntake({
+    locked,
+    onBack,
+    approved,
+    onApprove,
+}: {
+    locked: boolean
+    onBack: () => void
+    approved: boolean
+    onApprove?: () => void
+}) {
     const sif = getSIFSample('SIF-ENTERPRISE-001')!
+    const [files, setFiles] = useState<IntakeFile[]>(INITIAL_FILES)
+    const [status, setStatus] = useState<Record<string, FileStatus>>(() =>
+        Object.fromEntries(INITIAL_FILES.map(f => [f.id, 'processing' as FileStatus])),
+    )
+    const [progress, setProgress] = useState<Record<string, number>>(() =>
+        Object.fromEntries(INITIAL_FILES.map(f => [f.id, 0])),
+    )
+    const [previewId, setPreviewId] = useState<string | null>(null)
+    const replaceInputRef = useRef<HTMLInputElement>(null)
+    const addInputRef = useRef<HTMLInputElement>(null)
+    const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null)
+
+    // Drive the per-file processing animation
+    useEffect(() => {
+        const intervals = files.map(f => {
+            if (status[f.id] !== 'processing') return null
+            const stepMs = 80
+            const totalSteps = Math.max(8, Math.round(f.processingMs / stepMs))
+            let i = 0
+            return setInterval(() => {
+                i++
+                const pct = Math.min(100, Math.round((i / totalSteps) * 100))
+                setProgress(prev => ({ ...prev, [f.id]: pct }))
+                if (pct >= 100) {
+                    setStatus(prev => ({ ...prev, [f.id]: 'ready' }))
+                }
+            }, stepMs)
+        })
+        return () => intervals.forEach(t => t && clearInterval(t))
+    }, [files, status])
+
+    const allReady = files.every(f => status[f.id] === 'ready')
+    const processingCount = files.filter(f => status[f.id] === 'processing').length
+
+    const triggerReplace = (id: string) => {
+        setReplaceTargetId(id)
+        replaceInputRef.current?.click()
+    }
+
+    const handleReplace = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !replaceTargetId) return
+        setFiles(prev => prev.map(f => f.id === replaceTargetId ? { ...f, name: file.name } : f))
+        setStatus(prev => ({ ...prev, [replaceTargetId]: 'processing' }))
+        setProgress(prev => ({ ...prev, [replaceTargetId]: 0 }))
+        setReplaceTargetId(null)
+        e.target.value = ''
+    }
+
+    const handleRemove = (id: string) => {
+        setFiles(prev => prev.filter(f => f.id !== id))
+        setStatus(prev => { const { [id]: _, ...rest } = prev; return rest })
+        setProgress(prev => { const { [id]: _, ...rest } = prev; return rest })
+    }
+
+    const handleAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        const id = `extra-${Date.now()}`
+        const newFile: IntakeFile = {
+            id,
+            name: file.name,
+            kind: 'other',
+            icon: <FileText className="h-5 w-5" />,
+            statusLabel: 'Supplemental document',
+            description: `${(file.size / 1024).toFixed(1)} KB · uploaded just now`,
+            processingMs: 1400,
+        }
+        setFiles(prev => [...prev, newFile])
+        setStatus(prev => ({ ...prev, [id]: 'processing' }))
+        setProgress(prev => ({ ...prev, [id]: 0 }))
+        e.target.value = ''
+    }
+
+    const previewFile = previewId ? files.find(f => f.id === previewId) : null
+
     return (
         <div className="space-y-4">
             {/* Header with path badge */}
@@ -174,7 +306,7 @@ function DesignAssistedIntake({ locked, onBack }: { locked: boolean; onBack: () 
                     </div>
                     <div>
                         <div className="text-xs font-bold text-foreground">Design-Assisted path</div>
-                        <div className="text-[10px] text-muted-foreground">Upload CET exports · Strata parses automatically</div>
+                        <div className="text-[10px] text-muted-foreground">Upload CET exports · Strata processes each file before approval</div>
                     </div>
                 </div>
                 {!locked && (
@@ -184,58 +316,276 @@ function DesignAssistedIntake({ locked, onBack }: { locked: boolean; onBack: () 
                 )}
             </div>
 
-            {/* SIF file — uploaded state */}
-            <div className="bg-muted/30 border border-border rounded-xl p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
-                    <FileCode2 className="h-5 w-5" />
+            {/* File rows */}
+            <div className="space-y-2">
+                {files.map(f => (
+                    <FileRow
+                        key={f.id}
+                        file={f}
+                        status={status[f.id]}
+                        progress={progress[f.id]}
+                        onPreview={() => setPreviewId(f.id)}
+                        onReplace={() => triggerReplace(f.id)}
+                        onRemove={f.kind === 'other' ? () => handleRemove(f.id) : undefined}
+                    />
+                ))}
+
+                {/* Add another document */}
+                <button
+                    onClick={() => addInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-border rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-muted/20 transition-colors"
+                >
+                    <Plus className="h-4 w-4" />
+                    Add another document (PDF, image, spec sheet)
+                </button>
+                <input ref={addInputRef} type="file" className="hidden" onChange={handleAdd} />
+                <input ref={replaceInputRef} type="file" className="hidden" onChange={handleReplace} />
+            </div>
+
+            {/* Intake summary — only after files ready */}
+            {allReady && (
+                <div className="bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Intake summary — detected by AI</h4>
+                    <dl className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div><dt className="text-muted-foreground">Client</dt><dd className="font-bold text-foreground mt-0.5">Enterprise Holdings</dd></div>
+                        <div><dt className="text-muted-foreground">Project</dt><dd className="font-bold text-foreground mt-0.5">New HQ Floor 12</dd></div>
+                        <div><dt className="text-muted-foreground">Contract</dt><dd className="font-bold text-foreground mt-0.5">HNI Corporate · 55%</dd></div>
+                        <div><dt className="text-muted-foreground">Budget ceiling</dt><dd className="font-bold text-foreground mt-0.5">$385,000</dd></div>
+                    </dl>
+                </div>
+            )}
+
+            {/* Approve CTA — gates the wizard's Next button */}
+            <div
+                className={`
+                    rounded-xl border p-4 flex items-center justify-between gap-4
+                    ${approved
+                        ? 'bg-success/10 border-success/30'
+                        : allReady
+                            ? 'bg-primary/5 dark:bg-primary/10 border-primary/30'
+                            : 'bg-muted/30 dark:bg-zinc-800/40 border-border'
+                    }
+                `}
+            >
+                <div className="min-w-0">
+                    <div className={`text-sm font-bold ${approved ? 'text-success' : 'text-foreground'}`}>
+                        {approved
+                            ? 'Documents approved'
+                            : allReady
+                                ? 'Ready to approve documents'
+                                : `Processing ${processingCount} document${processingCount > 1 ? 's' : ''}…`}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                        {approved
+                            ? 'Strata will parse the SIF + CAP and generate scenarios in the next step.'
+                            : allReady
+                                ? 'Approving locks the inputs and unlocks AI Parsing.'
+                                : 'You can preview, replace, or add files at any time during processing.'}
+                    </div>
+                </div>
+                {!approved ? (
+                    <button
+                        onClick={onApprove}
+                        disabled={!allReady || !onApprove}
+                        className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                    >
+                        <ShieldCheck className="h-4 w-4" />
+                        Approve documents
+                    </button>
+                ) : (
+                    <div className="shrink-0 flex items-center gap-2 text-sm font-bold text-success px-4 py-2.5 bg-success/15 rounded-xl border border-success/30">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Approved
+                    </div>
+                )}
+            </div>
+
+            {/* Preview sheet */}
+            {previewFile && (
+                <MBIDetailSheet
+                    isOpen={!!previewId}
+                    onClose={() => setPreviewId(null)}
+                    title={previewFile.name}
+                    subtitle={`${previewFile.statusLabel} · ${previewFile.description}`}
+                    icon={previewFile.icon}
+                    width={previewFile.kind === 'cap' ? 'lg' : 'md'}
+                >
+                    {previewFile.kind === 'sif' ? (
+                        <pre className="font-mono text-[11px] text-foreground bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-xl p-4 overflow-x-auto leading-relaxed">
+{`<sif-export>
+  <header>
+    <cet-version>${sif.cetVersion}</cet-version>
+    <field-count>${sif.fieldCount}</field-count>
+    <client>Enterprise Holdings</client>
+    <project>New HQ Floor 12</project>
+  </header>
+  <line-items>
+${sif.lineItems.map(i => `    <item sku="${i.sku}" qty="${i.quantity}" desc="${i.description}" unit="${i.unitPrice}" total="${i.total}" />`).join('\n')}
+  </line-items>
+</sif-export>`}
+                        </pre>
+                    ) : previewFile.kind === 'cap' ? (
+                        <CapPreviewTable />
+                    ) : (
+                        <div className="bg-muted/30 dark:bg-zinc-800/60 border border-dashed border-border rounded-xl p-8 text-center">
+                            <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                            <div className="text-sm font-bold text-foreground">{previewFile.name}</div>
+                            <div className="text-xs text-muted-foreground mt-1">Inline preview not available · processed and indexed by Strata</div>
+                        </div>
+                    )}
+                </MBIDetailSheet>
+            )}
+        </div>
+    )
+}
+
+function FileRow({
+    file,
+    status,
+    progress,
+    onPreview,
+    onReplace,
+    onRemove,
+}: {
+    file: IntakeFile
+    status: FileStatus
+    progress: number
+    onPreview: () => void
+    onReplace: () => void
+    onRemove?: () => void
+}) {
+    const isProcessing = status === 'processing'
+    const isReady = status === 'ready'
+
+    return (
+        <div
+            className={`
+                rounded-xl border p-3 transition-colors
+                ${isReady ? 'bg-zinc-50/60 dark:bg-zinc-800/50 border-border' : ''}
+                ${isProcessing ? 'bg-ai/5 dark:bg-ai/10 border-ai/30' : ''}
+            `}
+        >
+            <div className="flex items-center gap-3">
+                <div
+                    className={`
+                        h-10 w-10 rounded-lg flex items-center justify-center shrink-0
+                        ${isReady ? 'bg-primary/10 text-zinc-900 dark:text-primary' : 'bg-ai/15 text-ai'}
+                    `}
+                >
+                    {file.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-foreground truncate">{sif.fileName}</span>
-                        <span className="text-[10px] font-bold text-success uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-success/10">
-                            Uploaded
-                        </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-foreground truncate">{file.name}</span>
+                        {isReady && (
+                            <span className="text-[10px] font-bold text-success uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-success/10 inline-flex items-center gap-1">
+                                <CheckCircle2 className="h-2.5 w-2.5" />
+                                Ready
+                            </span>
+                        )}
+                        {isProcessing && (
+                            <span className="text-[10px] font-bold text-ai uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-ai/10 inline-flex items-center gap-1">
+                                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                Processing
+                            </span>
+                        )}
                     </div>
-                    <div className="text-[11px] text-muted-foreground">
-                        {sif.fieldCount} fields · {sif.lineItems.length} line items · CET v{sif.cetVersion} · exported {new Date(sif.exportedAt).toLocaleString()}
-                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate">{file.statusLabel} · {file.description}</div>
                 </div>
-                <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
+
+                {isReady && (
+                    <div className="flex items-center gap-1 shrink-0">
+                        <RowAction icon={<Eye className="h-3.5 w-3.5" />} label="Preview" onClick={onPreview} />
+                        <RowAction icon={<RefreshCw className="h-3.5 w-3.5" />} label="Replace" onClick={onReplace} />
+                        {onRemove && (
+                            <RowAction
+                                icon={<Trash2 className="h-3.5 w-3.5" />}
+                                label="Remove"
+                                onClick={onRemove}
+                                tone="danger"
+                            />
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* CAP file — uploaded state */}
-            <div className="bg-muted/30 border border-border rounded-xl p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
-                    <FileSpreadsheet className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-foreground truncate">EnterpriseHoldings_CAP.xlsx</span>
-                        <span className="text-[10px] font-bold text-success uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-success/10">
-                            Uploaded
-                        </span>
+            {/* Processing progress bar */}
+            {isProcessing && (
+                <div className="mt-3 space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>Extracting structure · validating schema</span>
+                        <span className="font-bold tabular-nums text-ai">{progress}%</span>
                     </div>
-                    <div className="text-[11px] text-muted-foreground">
-                        Pricing adjustments · 7 discount overrides · 3 custom-pricing lines
+                    <div className="h-1.5 bg-background dark:bg-zinc-900 rounded-full overflow-hidden">
+                        <div className="h-full bg-ai rounded-full transition-all duration-150" style={{ width: `${progress}%` }} />
                     </div>
                 </div>
-                <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
-            </div>
+            )}
+        </div>
+    )
+}
 
-            {/* Intake summary */}
-            <div className="bg-muted/20 border border-border rounded-xl p-4">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Intake summary — detected by AI</h4>
-                <dl className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                    <div><dt className="text-muted-foreground">Client</dt><dd className="font-bold text-foreground mt-0.5">Enterprise Holdings</dd></div>
-                    <div><dt className="text-muted-foreground">Project</dt><dd className="font-bold text-foreground mt-0.5">New HQ Floor 12</dd></div>
-                    <div><dt className="text-muted-foreground">Contract</dt><dd className="font-bold text-foreground mt-0.5">HNI Corporate · 55%</dd></div>
-                    <div><dt className="text-muted-foreground">Budget ceiling</dt><dd className="font-bold text-foreground mt-0.5">$385,000</dd></div>
-                </dl>
-            </div>
+function RowAction({
+    icon,
+    label,
+    onClick,
+    tone = 'neutral',
+}: {
+    icon: React.ReactNode
+    label: string
+    onClick: () => void
+    tone?: 'neutral' | 'danger'
+}) {
+    const toneClasses = tone === 'danger'
+        ? 'text-red-600 dark:text-red-400 hover:bg-red-500/10 hover:border-red-500/40'
+        : 'text-muted-foreground hover:text-foreground hover:bg-muted/40 hover:border-zinc-300 dark:hover:border-zinc-700'
+    return (
+        <button
+            onClick={onClick}
+            title={label}
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-md border border-transparent text-[10px] font-bold uppercase tracking-wider transition-colors ${toneClasses}`}
+        >
+            {icon}
+            <span className="hidden md:inline">{label}</span>
+        </button>
+    )
+}
 
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-ai/5 border border-ai/10 rounded-xl p-3">
-                <Upload className="h-4 w-4 text-ai shrink-0" />
-                <span>Both files recognized and validated. Strata is ready to parse — click <strong className="text-foreground">Next</strong> to continue.</span>
+// Inline tabular preview for the CAP worksheet
+function CapPreviewTable() {
+    const rows = [
+        { line: 'L-12', sku: 'ALS-FUR-PNL-60', desc: 'Allsteel Further panel system', list: 1245, override: 920, type: 'Override' },
+        { line: 'L-15', sku: 'ALS-FUR-DSK-60', desc: 'Allsteel Further desk 60×30', list: 1490, override: 1180, type: 'Override' },
+        { line: 'L-18', sku: 'HON-IGN-TASK',    desc: 'HON Ignition task chair',     list: 612,  override: 425,  type: 'Override' },
+        { line: 'L-22', sku: 'KNOLL-PROP-84',   desc: 'Knoll Propeller table 84"',   list: 4900, override: 4200, type: 'Custom' },
+        { line: 'L-25', sku: 'HM-EMB-LNG',      desc: 'Herman Miller Embody lounge', list: 2480, override: 2150, type: 'Override' },
+    ]
+    return (
+        <div className="border border-border rounded-xl overflow-hidden">
+            <div className="px-3 py-2 bg-muted/30 dark:bg-zinc-800/40 border-b border-border grid grid-cols-[3rem_7rem_1fr_5rem_5rem_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                <div>Line</div>
+                <div>SKU</div>
+                <div>Description</div>
+                <div className="text-right">List</div>
+                <div className="text-right">Override</div>
+                <div>Type</div>
+            </div>
+            <div className="divide-y divide-border">
+                {rows.map(r => (
+                    <div key={r.line} className="px-3 py-2 grid grid-cols-[3rem_7rem_1fr_5rem_5rem_5rem] gap-3 items-center text-xs hover:bg-muted/30 dark:hover:bg-zinc-800/30">
+                        <div className="font-mono text-muted-foreground">{r.line}</div>
+                        <div className="font-mono text-muted-foreground truncate">{r.sku}</div>
+                        <div className="text-foreground truncate">{r.desc}</div>
+                        <div className="text-right tabular-nums text-muted-foreground line-through">${r.list.toLocaleString()}</div>
+                        <div className="text-right tabular-nums font-bold text-foreground">${r.override.toLocaleString()}</div>
+                        <div>
+                            <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${r.type === 'Custom' ? 'bg-info/10 text-info' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'}`}>{r.type}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div className="px-3 py-2 border-t border-border bg-muted/20 dark:bg-zinc-900/40 text-[10px] text-muted-foreground">
+                Pricing worksheet · 7 discount overrides + 3 custom-pricing lines · sourced from Enterprise Holdings CAP
             </div>
         </div>
     )

@@ -85,6 +85,9 @@ export default function MBIBudgetPage() {
     const handleValidationChange = (id: string, s: ValidationStatus) =>
         setValidationStatus(prev => ({ ...prev, [id]: s }))
 
+    // Intake approval — gates Step 1 → Step 2 advance
+    const [intakeApproved, setIntakeApproved] = useState(false)
+
     // Approval state — gates the Output step
     const [approved, setApproved] = useState(false)
 
@@ -96,7 +99,7 @@ export default function MBIBudgetPage() {
 
     const canAdvance = (() => {
         switch (activeStep) {
-            case 0: return true
+            case 0: return intakeApproved
             case 1: return true
             case 2: return selectedTier !== null
             case 3: return Object.values(validationStatus).every(s => s !== 'pending')
@@ -107,7 +110,12 @@ export default function MBIBudgetPage() {
     })()
 
     const STEP_HINTS: Record<number, { hint: string; nextLabel: string }> = {
-        0: { hint: 'Confirm both files are uploaded · Strata auto-detects path.', nextLabel: 'Parse SIF + CAP' },
+        0: {
+            hint: intakeApproved
+                ? 'Documents approved · Strata is ready to parse.'
+                : 'Preview, replace or add documents · then approve to unlock parsing.',
+            nextLabel: intakeApproved ? 'Parse SIF + CAP' : 'Approve documents above',
+        },
         1: { hint: 'Watch the AI extract every line item from the SIF · open the source or pre-flight log for detail.', nextLabel: 'Pick a scenario' },
         2: { hint: 'Choose Good / Better / Best and tune markup · breakdown opens on demand.', nextLabel: 'Review validations' },
         3: { hint: 'Resolve every flagged item — Accept, Override, or Reject · approval is gated until clear.', nextLabel: 'Continue to Review' },
@@ -140,6 +148,8 @@ export default function MBIBudgetPage() {
                             quickForm={quickForm}
                             onQuickFormChange={setQuickForm}
                             lockedToDemoPath
+                            intakeApproved={intakeApproved}
+                            onIntakeApprove={() => setIntakeApproved(true)}
                         />
                     )}
                     {activeStep === 1 && (
