@@ -42,7 +42,7 @@ export default function MBIPageShell({ title, subtitle, icon, actions, children 
                 <div className="flex items-center justify-between gap-4 pb-4 border-b border-border">
                     <div className="flex items-center gap-3">
                         {icon && (
-                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-zinc-900 dark:text-primary">
                                 {icon}
                             </div>
                         )}

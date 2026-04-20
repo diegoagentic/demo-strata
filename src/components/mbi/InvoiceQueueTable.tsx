@@ -140,7 +140,7 @@ function Legend({ color, label }: { color: string; label: string }) {
 }
 
 function ConfidencePill({ value }: { value: number }) {
-    const color = value >= 95 ? 'bg-success/10 text-success' : value >= 90 ? 'bg-primary/10 text-primary' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+    const color = value >= 95 ? 'bg-success/10 text-success' : value >= 90 ? 'bg-primary/10 text-zinc-900 dark:text-primary' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
     return (
         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded tabular-nums ${color}`}>{value}%</span>
     )

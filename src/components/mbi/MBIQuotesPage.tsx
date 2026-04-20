@@ -33,7 +33,7 @@ export default function MBIQuotesPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard value="3.5 / 29" label="PCs / staff (bottleneck)" accent="text-foreground" />
                 <StatCard value="4 → 1" label="Audit loops" accent="text-success" />
-                <StatCard value="9.08/10" label="Spec Check Q10 priority" accent="text-primary" />
+                <StatCard value="9.08/10" label="Spec Check Q10 priority" accent="text-zinc-900 dark:text-primary" />
                 <StatCard value="80-90%" label="Non-catalog items today" accent="text-amber-600 dark:text-amber-400" />
             </div>
 
@@ -110,7 +110,7 @@ function SectionHeader({
     hint: string
     accent: 'ai' | 'primary'
 }) {
-    const color = accent === 'ai' ? 'text-ai' : 'text-primary'
+    const color = accent === 'ai' ? 'text-ai' : 'text-zinc-900 dark:text-primary'
     return (
         <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${color}`}>

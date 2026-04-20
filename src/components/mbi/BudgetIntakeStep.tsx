@@ -140,7 +140,7 @@ function PathCard({
             `}
         >
             <div className="flex items-start gap-3 mb-3">
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${emphasis ? 'bg-primary/10 text-primary' : 'bg-muted text-foreground'}`}>
+                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${emphasis ? 'bg-primary/10 text-zinc-900 dark:text-primary' : 'bg-muted text-foreground'}`}>
                     {icon}
                 </div>
                 <div className="flex-1">
@@ -169,7 +169,7 @@ function DesignAssistedIntake({ locked, onBack }: { locked: boolean; onBack: () 
             {/* Header with path badge */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                         <FileCode2 className="h-4 w-4" />
                     </div>
                     <div>
@@ -186,7 +186,7 @@ function DesignAssistedIntake({ locked, onBack }: { locked: boolean; onBack: () 
 
             {/* SIF file — uploaded state */}
             <div className="bg-muted/30 border border-border rounded-xl p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                     <FileCode2 className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -205,7 +205,7 @@ function DesignAssistedIntake({ locked, onBack }: { locked: boolean; onBack: () 
 
             {/* CAP file — uploaded state */}
             <div className="bg-muted/30 border border-border rounded-xl p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                     <FileSpreadsheet className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -223,7 +223,7 @@ function DesignAssistedIntake({ locked, onBack }: { locked: boolean; onBack: () 
             </div>
 
             {/* Intake summary */}
-            <div className="bg-card border border-border rounded-xl p-4">
+            <div className="bg-muted/20 border border-border rounded-xl p-4">
                 <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Intake summary — detected by AI</h4>
                 <dl className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <div><dt className="text-muted-foreground">Client</dt><dd className="font-bold text-foreground mt-0.5">Enterprise Holdings</dd></div>
@@ -289,7 +289,7 @@ function QuickBudgetIntake({
                         type="text"
                         value={form.clientName}
                         onChange={e => update('clientName', e.target.value)}
-                        className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
                     />
                 </FormField>
                 <FormField label="Project">
@@ -297,7 +297,7 @@ function QuickBudgetIntake({
                         type="text"
                         value={form.projectName}
                         onChange={e => update('projectName', e.target.value)}
-                        className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
                     />
                 </FormField>
             </div>
@@ -314,7 +314,7 @@ function QuickBudgetIntake({
                                 onClick={() => update('vertical', v.id)}
                                 className={`
                                     flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-colors
-                                    ${active ? 'bg-primary/10 text-primary border-primary' : 'bg-card text-muted-foreground border-border hover:text-foreground'}
+                                    ${active ? 'bg-primary/10 text-zinc-900 dark:text-primary border-primary' : 'bg-background text-muted-foreground border-border hover:text-foreground'}
                                 `}
                             >
                                 {v.icon}
@@ -341,7 +341,7 @@ function QuickBudgetIntake({
                     <select
                         value={form.contract}
                         onChange={e => update('contract', e.target.value as ContractType)}
-                        className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
                     >
                         {MBI_CONTRACTS.map(c => (
                             <option key={c.id} value={c.type}>{c.name} · {Math.round(c.discount * 100)}%</option>
@@ -356,7 +356,7 @@ function QuickBudgetIntake({
                             type="text"
                             value={form.budgetCeiling}
                             onChange={e => update('budgetCeiling', e.target.value)}
-                            className="w-full bg-card border border-border rounded-lg pl-6 pr-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
+                            className="w-full bg-background border border-border rounded-lg pl-6 pr-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
                         />
                     </div>
                 </FormField>
@@ -377,7 +377,7 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 
 function ScopeInput({ label, value, onChange, icon }: { label: string; value: string; onChange: (v: string) => void; icon: React.ReactNode }) {
     return (
-        <div className="bg-card border border-border rounded-lg p-2.5">
+        <div className="bg-muted/20 border border-border rounded-lg p-2.5">
             <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground mb-1">
                 {icon}
                 <span>{label}</span>

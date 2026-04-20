@@ -89,16 +89,16 @@ export default function SIFToCOREPreview() {
                     {/* Arrow */}
                     <div className="hidden md:flex items-center justify-center">
                         <div className="flex flex-col items-center gap-1">
-                            <ArrowRight className="h-4 w-4 text-primary" />
-                            <span className="text-[9px] font-bold text-primary uppercase tracking-wider">Build</span>
+                            <ArrowRight className="h-4 w-4 text-zinc-900 dark:text-primary" />
+                            <span className="text-[9px] font-bold text-zinc-900 dark:text-primary uppercase tracking-wider">Build</span>
                         </div>
                     </div>
 
                     {/* Column 3: CORE output */}
                     <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col">
                         <div className="flex items-center gap-1.5 mb-2">
-                            <FileText className="h-3.5 w-3.5 text-primary" />
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-wider">CORE proposal</span>
+                            <FileText className="h-3.5 w-3.5 text-zinc-900 dark:text-primary" />
+                            <span className="text-[10px] font-bold text-zinc-900 dark:text-primary uppercase tracking-wider">CORE proposal</span>
                         </div>
                         <div className="text-xs font-bold text-foreground font-mono">{proposal.id}</div>
                         <div className="text-[10px] text-muted-foreground">Pending PC review</div>

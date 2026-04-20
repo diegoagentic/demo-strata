@@ -107,10 +107,10 @@ export default function ValidationStep({ validations, statusById, onStatusChange
 function ValidationSummary({ total, resolved, preventedImpact }: { total: number; resolved: number; preventedImpact: number }) {
     const pct = Math.round((resolved / total) * 100)
     return (
-        <div className="bg-card border border-border rounded-2xl p-4">
+        <div className="bg-muted/20 border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                         <Shield className="h-4 w-4" />
                     </div>
                     <div>
@@ -265,18 +265,18 @@ function ValidationCard({
 
                     {/* Expected vs Actual */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div className="bg-card border border-border rounded-xl p-3">
+                        <div className="bg-background border border-border rounded-xl p-3">
                             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Expected</div>
                             <div className="text-xs text-foreground">{validation.expected}</div>
                         </div>
-                        <div className={`bg-card border rounded-xl p-3 ${isCritical && status === 'pending' ? 'border-red-200 dark:border-red-500/30' : 'border-border'}`}>
+                        <div className={`bg-background border rounded-xl p-3 ${isCritical && status === 'pending' ? 'border-red-200 dark:border-red-500/30' : 'border-border'}`}>
                             <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isCritical && status === 'pending' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>Actual</div>
                             <div className="text-xs text-foreground">{validation.actual}</div>
                         </div>
                     </div>
 
                     {/* AI suggestion */}
-                    <div className="bg-card border border-border rounded-xl p-3">
+                    <div className="bg-background border border-border rounded-xl p-3">
                         <div className="flex items-center gap-1.5 mb-1">
                             <Sparkles className="h-3 w-3 text-ai" />
                             <div className="text-[10px] font-bold text-ai uppercase tracking-wider">AI suggestion</div>

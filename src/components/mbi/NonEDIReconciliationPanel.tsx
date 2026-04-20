@@ -145,21 +145,21 @@ function MismatchCard({
 
             {/* Side-by-side PO vs Invoice */}
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-3">
-                <div className="bg-card border border-border rounded-xl p-3">
+                <div className="bg-background border border-border rounded-xl p-3">
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">PO (Strata)</div>
                     <div className="text-xs text-foreground">{d.expected}</div>
                 </div>
                 <div className="hidden md:flex items-center justify-center">
                     <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <div className="bg-card border border-red-300 dark:border-red-500/30 rounded-xl p-3">
+                <div className="bg-background border border-red-300 dark:border-red-500/30 rounded-xl p-3">
                     <div className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-1">Invoice (vendor)</div>
                     <div className="text-xs text-foreground">{d.actual}</div>
                 </div>
             </div>
 
             {/* AI-suggestion + actions */}
-            <div className="mt-3 bg-card border border-border rounded-xl p-3">
+            <div className="mt-3 bg-background border border-border rounded-xl p-3">
                 <div className="flex items-center gap-1.5 mb-1">
                     <Sparkles className="h-3 w-3 text-ai" />
                     <div className="text-[10px] font-bold text-ai uppercase tracking-wider">Strata suggests</div>

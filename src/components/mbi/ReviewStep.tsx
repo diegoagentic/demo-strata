@@ -74,9 +74,9 @@ export default function ReviewStep({
             {/* Three-column summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Client card */}
-                <div className="bg-card border border-border rounded-2xl p-4">
+                <div className="bg-muted/20 border border-border rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
-                        <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                        <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                             <Briefcase className="h-3.5 w-3.5" />
                         </div>
                         <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Client</span>
@@ -87,9 +87,9 @@ export default function ReviewStep({
                 </div>
 
                 {/* Scenario card */}
-                <div className="bg-card border border-primary/30 ring-2 ring-primary/10 rounded-2xl p-4">
+                <div className="bg-muted/20 border border-primary/30 ring-2 ring-primary/10 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
-                        <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                        <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                             <FileCheck2 className="h-3.5 w-3.5" />
                         </div>
                         <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Scenario selected</span>
@@ -102,7 +102,7 @@ export default function ReviewStep({
                 </div>
 
                 {/* Validations card */}
-                <div className={`bg-card border rounded-2xl p-4 ${allValidationsResolved ? 'border-success/30' : 'border-amber-300 dark:border-amber-500/30'}`}>
+                <div className={`bg-muted/20 border rounded-2xl p-4 ${allValidationsResolved ? 'border-success/30' : 'border-amber-300 dark:border-amber-500/30'}`}>
                     <div className="flex items-center gap-2 mb-3">
                         <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${allValidationsResolved ? 'bg-success/10 text-success' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'}`}>
                             <ShieldCheck className="h-3.5 w-3.5" />
@@ -124,7 +124,7 @@ export default function ReviewStep({
             </div>
 
             {/* Line items table */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="bg-muted/20 border border-border rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                     <div>
                         <div className="text-xs font-bold text-foreground">Line items</div>
@@ -152,7 +152,7 @@ export default function ReviewStep({
             </div>
 
             {/* Approve CTA */}
-            <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between gap-4">
+            <div className="bg-muted/20 border border-border rounded-2xl p-4 flex items-center justify-between gap-4">
                 <div>
                     <div className="text-sm font-bold text-foreground">Ready to approve?</div>
                     <div className="text-xs text-muted-foreground mt-0.5">

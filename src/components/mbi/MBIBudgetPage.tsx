@@ -172,7 +172,7 @@ function QueueView() {
                     icon={<Clock className="h-4 w-4" />}
                     value={`${inFlightCount}`}
                     label="In flight"
-                    accent="text-primary"
+                    accent="text-zinc-900 dark:text-primary"
                 />
                 <StatCard
                     icon={<CheckCircle2 className="h-4 w-4" />}
@@ -261,7 +261,7 @@ function ParsingView({ selectedTier, onSelectTier, markupOverrides, onMarkupChan
             {scenariosRevealed && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="flex items-center justify-between mb-3 pb-3 border-b border-border">
-                        <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-primary uppercase tracking-wider">
                             <Sparkles className="h-3.5 w-3.5" />
                             <span>Scenarios generated — select one to continue</span>
                         </div>
@@ -286,7 +286,7 @@ function ParsingView({ selectedTier, onSelectTier, markupOverrides, onMarkupChan
 // ─── Shared step header ───────────────────────────────────────────────────
 function StepHeader({ id, title, icon }: { id: string; title: string; icon: React.ReactNode }) {
     return (
-        <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider mb-3">
+        <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-primary uppercase tracking-wider mb-3">
             <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">{icon}</div>
             <span>Step {id}</span>
             <span>·</span>

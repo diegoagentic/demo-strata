@@ -58,7 +58,7 @@ export default function CETConfigHelperPanel() {
             <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
                 {CONVERSATION.map((m, i) => (
                     <div key={i} className={`flex gap-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${m.role === 'assistant' ? 'bg-ai/10 text-ai' : 'bg-primary/10 text-primary'}`}>
+                        <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${m.role === 'assistant' ? 'bg-ai/10 text-ai' : 'bg-primary/10 text-zinc-900 dark:text-primary'}`}>
                             {m.role === 'assistant' ? <Sparkles className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
                         </div>
                         <div className={`flex-1 max-w-[80%] ${m.role === 'user' ? 'text-right' : ''}`}>
@@ -86,7 +86,7 @@ export default function CETConfigHelperPanel() {
             </div>
 
             <div className="px-4 py-2 border-t border-border bg-muted/10">
-                <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 bg-background border border-border rounded-lg px-3 py-2">
                     <input
                         type="text"
                         placeholder="Ask about CET config, swaps, compatibility..."

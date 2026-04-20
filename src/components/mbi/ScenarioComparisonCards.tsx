@@ -33,8 +33,8 @@ const TIER_META: Record<ScenarioTier, { pill: string; accent: string }> = {
         accent: 'text-zinc-600 dark:text-zinc-300',
     },
     better: {
-        pill: 'bg-primary/20 text-primary',
-        accent: 'text-primary',
+        pill: 'bg-primary/20 text-zinc-900 dark:text-primary',
+        accent: 'text-zinc-900 dark:text-primary',
     },
     best: {
         pill: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
@@ -87,7 +87,7 @@ export default function ScenarioComparisonCards({
                                 {s.label}
                             </span>
                             {s.tier === 'better' && (
-                                <span className="text-[10px] font-bold text-primary uppercase flex items-center gap-1">
+                                <span className="text-[10px] font-bold text-zinc-900 dark:text-primary uppercase flex items-center gap-1">
                                     ⭐ Recommended
                                 </span>
                             )}

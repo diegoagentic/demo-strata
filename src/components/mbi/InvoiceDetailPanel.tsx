@@ -40,7 +40,7 @@ export default function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps)
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-2">
-                            <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                            <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                                 <FileText className="h-3.5 w-3.5" />
                             </div>
                             <div>
@@ -113,7 +113,7 @@ export default function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps)
                             <div className="text-[10px] text-muted-foreground mt-0.5">
                                 Per HealthTrust GPO contract, 3% royalty line required on this invoice before voucher posts.
                             </div>
-                            <div className="mt-2 flex items-center justify-between bg-card border border-border rounded-lg px-3 py-2">
+                            <div className="mt-2 flex items-center justify-between bg-background border border-border rounded-lg px-3 py-2">
                                 <span className="text-[10px] font-semibold text-foreground">Royalty line (3% of ${invoice.amount.toLocaleString()})</span>
                                 <span className="text-sm font-bold text-amber-700 dark:text-amber-400 tabular-nums">+${royaltyAmount.toLocaleString()}</span>
                             </div>
@@ -124,8 +124,8 @@ export default function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps)
 
             {/* CORE pre-fill CTA */}
             <div className="px-4 pb-4">
-                <div className="bg-card border border-primary/30 rounded-xl p-3 flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <div className="bg-muted/20 border border-primary/30 rounded-xl p-3 flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                         <Send className="h-4 w-4" />
                     </div>
                     <div className="flex-1 text-xs">

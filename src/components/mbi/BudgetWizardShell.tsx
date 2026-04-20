@@ -72,7 +72,7 @@ export default function BudgetWizardShell({
                                 <div
                                     className={`
                                         flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors
-                                        ${isActive ? 'bg-primary/10 text-primary border-primary/30' : ''}
+                                        ${isActive ? 'bg-primary/10 text-zinc-900 dark:text-primary border-primary/30' : ''}
                                         ${isCompleted ? 'text-success border-success/30 bg-success/5' : ''}
                                         ${!isActive && !isCompleted ? 'text-muted-foreground border-border' : ''}
                                     `}

@@ -49,7 +49,7 @@ export default function MBIAccountingPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard value={`${MBI_INVOICES.length}`} label="Invoices in queue" accent="text-foreground" />
                 <StatCard value={`${exceptionCount}`} label="Exceptions for Kathy" accent="text-amber-600 dark:text-amber-400" />
-                <StatCard value={`${healthTrustCount}`} label="HealthTrust · 3% royalty" accent="text-primary" />
+                <StatCard value={`${healthTrustCount}`} label="HealthTrust · 3% royalty" accent="text-zinc-900 dark:text-primary" />
                 <StatCard value={`${escalatedAR}`} label="AR escalated" accent="text-red-600 dark:text-red-400" />
             </div>
 
@@ -152,7 +152,7 @@ function SectionHeader({
     hint: string
     accent: 'ai' | 'primary'
 }) {
-    const color = accent === 'ai' ? 'text-ai' : 'text-primary'
+    const color = accent === 'ai' ? 'text-ai' : 'text-zinc-900 dark:text-primary'
     return (
         <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${color}`}>

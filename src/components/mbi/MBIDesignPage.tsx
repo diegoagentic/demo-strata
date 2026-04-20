@@ -34,7 +34,7 @@ export default function MBIDesignPage() {
             {/* Beth pilot persona card */}
             {beth && (
                 <div className="bg-card border border-primary/30 rounded-2xl p-4 flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <div className="h-11 w-11 rounded-full bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                         <BadgeCheck className="h-6 w-6" />
                     </div>
                     <div className="flex-1">
@@ -46,7 +46,7 @@ export default function MBIDesignPage() {
                         </div>
                     </div>
                     <div className="text-right shrink-0">
-                        <div className="text-[10px] font-bold text-primary uppercase tracking-wider">Endorsement</div>
+                        <div className="text-[10px] font-bold text-zinc-900 dark:text-primary uppercase tracking-wider">Endorsement</div>
                         <div className="text-xs text-foreground italic max-w-xs">
                             "Caught a finish mismatch I would have missed."
                         </div>
@@ -58,7 +58,7 @@ export default function MBIDesignPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard value={`${MBI_DESIGN_PROJECTS.length}`} label="Active design projects" accent="text-foreground" />
                 <StatCard value={`${flaggedChecks}`} label="Spec checks need review" accent="text-amber-600 dark:text-amber-400" />
-                <StatCard value="9.08/10" label="Q10 spec check priority" accent="text-primary" />
+                <StatCard value="9.08/10" label="Q10 spec check priority" accent="text-zinc-900 dark:text-primary" />
                 <StatCard value="< 5 min" label="Spec check turnaround" accent="text-success" />
             </div>
 
@@ -125,7 +125,7 @@ function SectionHeader({
     hint: string
     accent: 'ai' | 'primary'
 }) {
-    const color = accent === 'ai' ? 'text-ai' : 'text-primary'
+    const color = accent === 'ai' ? 'text-ai' : 'text-zinc-900 dark:text-primary'
     return (
         <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${color}`}>
