@@ -1,29 +1,23 @@
 /**
  * COMPONENT: BudgetWizardShell
- * PURPOSE: 6-step wizard chrome for the Budget Builder. Provides consistent
- *          step indicator, title, and body slot. Each step's content is rendered
- *          as children. The demo tour drives the active step; manual nav is
- *          available via Back/Next when NOT in a demo tour.
+ * PURPOSE: 6-step wizard chrome for the Budget Builder. Header = caption +
+ *          stepper chips. Body = active step content. Footer = Back + big
+ *          primary CTA. Chips are always clickable; Next label names the
+ *          action per step (e.g. "Parse SIF + CAP").
+ *
+ *          Layout rules: header is NOT sticky (avoids overlapping the
+ *          active-step caption). The big primary CTA is rendered inline at
+ *          the end of the step body via <WizardPrimaryCTA /> for visibility,
+ *          AND in the footer as a persistent nav bar.
  *
  * PROPS:
- *   - activeStep: number (0-5)     — which wizard step is active
- *   - onPrev?: () => void          — back button handler (disabled if null)
- *   - onNext?: () => void          — next button handler (disabled if null)
- *   - canAdvance?: boolean         — gates the Next button
- *   - children: ReactNode          — active step content
+ *   - activeStep: number (0-5)
+ *   - onPrev / onNext / onStepClick
+ *   - canAdvance?: boolean — gates the Next button
+ *   - nextLabel?: string   — overrides default "Continue · <next>" label
+ *   - actionHint?: string  — 1-line hint under the active step name
  *
- * STATES:
- *   - default        — step indicator + content + nav buttons
- *   - canAdvance=false — next button disabled
- *   - no onPrev/onNext — buttons hidden (demo-tour mode)
- *
- * DS TOKENS:
- *   - bg-card · border-border · rounded-2xl
- *   - active: bg-primary/10 + text-primary + border-primary
- *   - completed: text-success · border-success/30
- *   - pending: text-muted-foreground · border-border
- *
- * USED BY: MBIBudgetPage (wraps all step views)
+ * USED BY: MBIBudgetPage
  */
 
 import type { ReactNode } from 'react'
@@ -50,9 +44,7 @@ interface BudgetWizardShellProps {
     onNext?: () => void
     onStepClick?: (idx: number) => void
     canAdvance?: boolean
-    /** Label for the Next button — name the action ("Parse files", "Pick scenario"). */
     nextLabel?: string
-    /** Subtitle under the active step name — short hint about the primary action. */
     actionHint?: string
     children: ReactNode
 }
@@ -69,10 +61,33 @@ export default function BudgetWizardShell({
 }: BudgetWizardShellProps) {
     const activeSpec = WIZARD_STEPS[activeStep]
     const nextSpec = WIZARD_STEPS[activeStep + 1]
+    const resolvedNextLabel = nextLabel ?? (nextSpec ? `Continue · ${nextSpec.label}` : 'Done')
+    const isLast = activeStep === WIZARD_STEPS.length - 1
+
     return (
         <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
-            {/* 6-step indicator — sticky for long-scrolling step content */}
-            <div className="sticky top-20 z-20 px-4 py-3 border-b border-border bg-card/95 dark:bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 dark:supports-[backdrop-filter]:bg-zinc-900/80">
+            {/* Header: caption (what you're doing) + stepper chips */}
+            <div className="px-5 pt-4 pb-3 border-b border-border bg-muted/10 dark:bg-zinc-900/40 space-y-3">
+                {activeSpec && (
+                    <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                Step {activeStep + 1} of {WIZARD_STEPS.length}
+                            </div>
+                            <div className="text-base font-bold text-foreground">{activeSpec.label}</div>
+                            {actionHint && (
+                                <div className="text-xs text-muted-foreground mt-0.5">{actionHint}</div>
+                            )}
+                        </div>
+                        {nextSpec && (
+                            <div className="text-[10px] text-muted-foreground text-right shrink-0">
+                                <div className="font-bold uppercase tracking-wider">Next</div>
+                                <div className="truncate max-w-[180px]">{nextSpec.label}</div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
                     {WIZARD_STEPS.map((step, i) => {
                         const isActive = i === activeStep
@@ -112,35 +127,33 @@ export default function BudgetWizardShell({
                 </div>
             </div>
 
-            {/* Active-step caption — names what the user is doing here */}
-            {activeSpec && (
-                <div className="px-5 pt-4 pb-2 flex items-baseline justify-between gap-3 flex-wrap">
-                    <div>
-                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                            Step {activeStep + 1} of {WIZARD_STEPS.length}
-                        </div>
-                        <div className="text-base font-bold text-foreground">{activeSpec.label}</div>
-                        {actionHint && (
-                            <div className="text-xs text-muted-foreground mt-0.5">{actionHint}</div>
+            {/* Body */}
+            <div className="p-5 space-y-4">
+                {children}
+
+                {/* Inline primary CTA — big full-width button at end of step content */}
+                {!isLast && (
+                    <div className="pt-2">
+                        <button
+                            onClick={onNext}
+                            disabled={!onNext || !canAdvance}
+                            className="w-full flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                        >
+                            <span>{resolvedNextLabel}</span>
+                            <ChevronRight className="h-4 w-4" />
+                        </button>
+                        {!canAdvance && (
+                            <div className="text-[11px] text-amber-600 dark:text-amber-400 text-center mt-2 italic">
+                                Complete this step's action to continue.
+                            </div>
                         )}
                     </div>
-                    {nextSpec && (
-                        <div className="text-[10px] text-muted-foreground text-right">
-                            <div className="font-bold uppercase tracking-wider">Next</div>
-                            <div>{nextSpec.label}</div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Body */}
-            <div className="px-5 pt-2 pb-5 space-y-4">
-                {children}
+                )}
             </div>
 
-            {/* Nav footer — always rendered when wired so the user can navigate */}
+            {/* Nav footer — Back on the left, secondary Next on the right */}
             {(onPrev || onNext) && (
-                <div className="sticky bottom-0 px-5 py-3 border-t border-border bg-card/95 dark:bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 dark:supports-[backdrop-filter]:bg-zinc-900/80 flex items-center justify-between gap-3">
+                <div className="px-5 py-3 border-t border-border bg-muted/10 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
                     <button
                         onClick={onPrev}
                         disabled={!onPrev || activeStep === 0}
@@ -156,10 +169,10 @@ export default function BudgetWizardShell({
 
                     <button
                         onClick={onNext}
-                        disabled={!onNext || !canAdvance || activeStep === WIZARD_STEPS.length - 1}
+                        disabled={!onNext || !canAdvance || isLast}
                         className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                     >
-                        {nextLabel ?? (nextSpec ? `Continue · ${nextSpec.label}` : 'Done')}
+                        {isLast ? 'Done' : 'Next'}
                         <ChevronRight className="h-4 w-4" />
                     </button>
                 </div>

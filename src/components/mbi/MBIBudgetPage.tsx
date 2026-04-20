@@ -57,14 +57,14 @@ export default function MBIBudgetPage() {
         ? STEP_TO_WIZARD_INDEX[demoStepId]
         : null
 
-    // Free navigation state (overridden by demo when active)
-    const [manualStep, setManualStep] = useState(0)
-    const activeStep = demoWizardIdx ?? manualStep
+    // The wizard step is the single source of truth; the demo tour writes
+    // into it via an effect, so manual clicks always take effect immediately
+    // and the demo just nudges us to its highlighted step when it advances.
+    const [activeStep, setActiveStep] = useState(0)
     const inWizard = demoWizardIdx !== null || !isDemoActive
 
-    // Sync manual step with demo tour so jumping out of demo keeps context
     useEffect(() => {
-        if (demoWizardIdx !== null) setManualStep(demoWizardIdx)
+        if (demoWizardIdx !== null) setActiveStep(demoWizardIdx)
     }, [demoWizardIdx])
 
     // Wizard state — locked to Design-Assisted + Enterprise scenario in demo tour
@@ -91,7 +91,7 @@ export default function MBIBudgetPage() {
     // Auto-advance from Review → Output once approved
     const handleApprove = () => {
         setApproved(true)
-        setManualStep(5)
+        setActiveStep(5)
     }
 
     const canAdvance = (() => {
@@ -126,9 +126,9 @@ export default function MBIBudgetPage() {
             {inWizard ? (
                 <BudgetWizardShell
                     activeStep={activeStep}
-                    onStepClick={setManualStep}
-                    onPrev={() => setManualStep(s => Math.max(0, s - 1))}
-                    onNext={() => setManualStep(s => Math.min(WIZARD_STEPS.length - 1, s + 1))}
+                    onStepClick={setActiveStep}
+                    onPrev={() => setActiveStep(s => Math.max(0, s - 1))}
+                    onNext={() => setActiveStep(s => Math.min(WIZARD_STEPS.length - 1, s + 1))}
                     canAdvance={canAdvance}
                     actionHint={stepMeta.hint}
                     nextLabel={stepMeta.nextLabel}
