@@ -79,7 +79,7 @@ export default function ARStatusBoard({ records }: ARStatusBoardProps) {
     return (
         <div className="space-y-3">
             {/* Summary banner */}
-            <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between">
+            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4 flex items-center justify-between">
                 <div>
                     <div className="text-xs font-bold text-foreground">AR Status Taxonomy</div>
                     <div className="text-[10px] text-muted-foreground">

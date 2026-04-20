@@ -31,7 +31,7 @@ interface InvoiceQueueTableProps {
 
 export default function InvoiceQueueTable({ invoices, selectedId, onSelect }: InvoiceQueueTableProps) {
     return (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
             {/* Header row */}
             <div className="px-4 py-3 border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between">

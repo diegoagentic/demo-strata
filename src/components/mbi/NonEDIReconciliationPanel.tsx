@@ -43,7 +43,7 @@ export default function NonEDIReconciliationPanel({ invoices }: NonEDIReconcilia
     return (
         <div className="space-y-3">
             {/* Summary */}
-            <div className="bg-card border border-border rounded-2xl p-4 grid grid-cols-3 gap-4">
+            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4 grid grid-cols-3 gap-4">
                 <div>
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Non-EDI invoices</div>
                     <div className="text-2xl font-bold text-foreground tabular-nums mt-0.5">{nonEDI.length}</div>
@@ -64,7 +64,7 @@ export default function NonEDIReconciliationPanel({ invoices }: NonEDIReconcilia
 
             {/* Mismatch cards */}
             {mismatches.length === 0 ? (
-                <div className="bg-card border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground">
+                <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-8 text-center text-sm text-muted-foreground">
                     <CheckCircle2 className="h-8 w-8 text-success mx-auto mb-2" />
                     All non-EDI invoices reconciled automatically.
                 </div>

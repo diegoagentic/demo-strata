@@ -92,7 +92,7 @@ function PricingBreakdown({ scenario, markup }: { scenario: Scenario; markup: nu
     const total = subtotal + freight + install + contingency
 
     return (
-        <div className="bg-card border border-border rounded-2xl p-4">
+        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-border">
                 <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">

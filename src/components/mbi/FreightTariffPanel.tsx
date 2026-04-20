@@ -46,7 +46,7 @@ export default function FreightTariffPanel() {
     return (
         <div className="space-y-3">
             {/* Summary header */}
-            <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between">
+            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="h-9 w-9 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                         <Truck className="h-4 w-4" />
@@ -69,7 +69,7 @@ export default function FreightTariffPanel() {
             </div>
 
             {/* Orders list */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
                 <div className="px-4 py-2 border-b border-border grid grid-cols-[1fr_0.6fr_0.7fr_0.7fr_0.6fr] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                     <div>Order · Vendor</div>
                     <div className="text-right">Amount</div>

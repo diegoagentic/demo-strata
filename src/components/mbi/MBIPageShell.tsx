@@ -36,7 +36,7 @@ interface MBIPageShellProps {
 
 export default function MBIPageShell({ title, subtitle, icon, actions, children }: MBIPageShellProps) {
     return (
-        <div className="min-h-screen bg-background pt-24 px-4 pb-20">
+        <div className="min-h-screen bg-background dark:bg-black pt-24 px-4 pb-20">
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Page title row */}
                 <div className="flex items-center justify-between gap-4 pb-4 border-b border-border">

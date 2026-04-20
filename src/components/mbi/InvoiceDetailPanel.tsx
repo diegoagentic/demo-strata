@@ -34,7 +34,7 @@ export default function InvoiceDetailPanel({ invoice }: InvoiceDetailPanelProps)
     const royaltyAmount = invoice.has3PctRoyalty ? Math.round(invoice.amount * 0.03) : 0
 
     return (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
             {/* Header */}
             <div className="px-4 py-3 border-b border-border">
                 <div className="flex items-center justify-between">

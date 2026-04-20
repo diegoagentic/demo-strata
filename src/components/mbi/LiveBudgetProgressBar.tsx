@@ -22,7 +22,7 @@ export default function LiveBudgetProgressBar() {
     const tracked = MBI_DESIGN_PROJECTS.filter(p => p.budgetTracked)
 
     return (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                     <Wallet className="h-3.5 w-3.5" />

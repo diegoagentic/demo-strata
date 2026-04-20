@@ -42,7 +42,7 @@ export default function NonCatalogValidatorTable() {
     const mismatchCount = MOCK_ITEMS.filter(i => i.match === 'mismatch').length
 
     return (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
