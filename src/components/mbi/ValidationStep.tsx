@@ -66,15 +66,15 @@ export default function ValidationStep({ validations, statusById, onStatusChange
             {/* Summary header */}
             <ValidationSummary total={total} resolved={resolved} preventedImpact={preventedImpact} />
 
-            {/* Cards */}
-            <div className="space-y-4">
+            {/* Cards — side-by-side grid for at-a-glance comparison */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
                 {sorted.map((v, i) => (
                     <ValidationCard
                         key={v.id}
                         validation={v}
                         status={statusById[v.id] ?? 'pending'}
                         onChange={s => onStatusChange(v.id, s)}
-                        delayMs={i * 400}
+                        delayMs={i * 200}
                     />
                 ))}
             </div>
@@ -107,7 +107,7 @@ export default function ValidationStep({ validations, statusById, onStatusChange
 function ValidationSummary({ total, resolved, preventedImpact }: { total: number; resolved: number; preventedImpact: number }) {
     const pct = Math.round((resolved / total) * 100)
     return (
-        <div className="bg-muted/20 border border-border rounded-2xl p-4">
+        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
@@ -228,22 +228,23 @@ function ValidationCard({
         }
     })()
 
+    const innerPanel = 'bg-zinc-50/70 dark:bg-zinc-800/60 border border-border rounded-xl p-3'
+
     return (
         <div
             style={{ animationDelay: `${delayMs}ms`, animationFillMode: 'backwards' }}
             className={`
-                border-2 rounded-2xl p-5 transition-all duration-300 animate-in fade-in slide-in-from-top-4 duration-500
+                border-2 rounded-2xl p-4 transition-all duration-300 animate-in fade-in slide-in-from-top-4 duration-500 flex flex-col
                 ${severityTheme.border} ${severityTheme.bg} ${severityTheme.ring}
             `}
         >
-            <div className="flex items-start gap-4">
-                <div className={`h-11 w-11 rounded-full flex items-center justify-center shrink-0 ${severityTheme.iconBg} ${severityTheme.iconColor}`}>
+            {/* Header — icon + badges */}
+            <div className="flex items-start gap-3 mb-3">
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${severityTheme.iconBg} ${severityTheme.iconColor}`}>
                     {severityTheme.icon}
                 </div>
-
-                <div className="flex-1 space-y-3 min-w-0">
-                    {/* Badge row */}
-                    <div className="flex items-center gap-2 flex-wrap">
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${severityTheme.labelClass}`}>
                             {severityTheme.label}
                         </span>
@@ -257,100 +258,96 @@ function ValidationCard({
                             </span>
                         )}
                     </div>
-
-                    {/* Field name */}
-                    <h3 className={`font-bold leading-tight ${isCritical ? 'text-lg' : 'text-base'} text-foreground`}>
+                    <h3 className="font-bold leading-tight text-base text-foreground">
                         {validation.field}
                     </h3>
-
-                    {/* Expected vs Actual */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div className="bg-background border border-border rounded-xl p-3">
-                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Expected</div>
-                            <div className="text-xs text-foreground">{validation.expected}</div>
-                        </div>
-                        <div className={`bg-background border rounded-xl p-3 ${isCritical && status === 'pending' ? 'border-red-200 dark:border-red-500/30' : 'border-border'}`}>
-                            <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isCritical && status === 'pending' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>Actual</div>
-                            <div className="text-xs text-foreground">{validation.actual}</div>
-                        </div>
-                    </div>
-
-                    {/* AI suggestion */}
-                    <div className="bg-background border border-border rounded-xl p-3">
-                        <div className="flex items-center gap-1.5 mb-1">
-                            <Sparkles className="h-3 w-3 text-ai" />
-                            <div className="text-[10px] font-bold text-ai uppercase tracking-wider">AI suggestion</div>
-                        </div>
-                        <div className="text-xs text-foreground leading-relaxed">{validation.aiSuggestion}</div>
-                    </div>
-
-                    {/* Actions row */}
-                    {status === 'pending' ? (
-                        <div className="flex items-center justify-between pt-2 border-t border-current/10">
-                            {validation.estimatedImpact && (
-                                <div>
-                                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                        {isCritical ? 'Estimated impact prevented' : 'Estimated impact'}
-                                    </div>
-                                    <div className={`${isCritical ? 'text-3xl' : 'text-xl'} font-bold tabular-nums ${isCritical ? 'text-red-600' : 'text-amber-600'}`}>
-                                        +${validation.estimatedImpact.toLocaleString()}
-                                    </div>
-                                </div>
-                            )}
-                            <div className="flex items-center gap-2 ml-auto">
-                                <button
-                                    onClick={() => onChange('rejected')}
-                                    className="px-3 py-2 text-xs font-bold text-muted-foreground bg-background border border-border rounded-lg hover:bg-muted transition-colors"
-                                >
-                                    Reject
-                                </button>
-                                <button
-                                    onClick={() => onChange('overridden')}
-                                    className="px-3 py-2 text-xs font-bold text-foreground bg-background border border-border rounded-lg hover:bg-muted transition-colors"
-                                >
-                                    Override
-                                </button>
-                                <button
-                                    onClick={() => onChange('accepted')}
-                                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition-opacity"
-                                >
-                                    <Check className="h-3.5 w-3.5" />
-                                    Accept swap
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-between pt-2 border-t border-current/10">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                {status === 'accepted' && (
-                                    <>
-                                        <CheckCircle2 className="h-4 w-4 text-success" />
-                                        <span>AI suggestion accepted{validation.estimatedImpact && ` · $${validation.estimatedImpact.toLocaleString()} prevented`}</span>
-                                    </>
-                                )}
-                                {status === 'overridden' && (
-                                    <>
-                                        <Pencil className="h-4 w-4 text-info" />
-                                        <span>Kept current value · manual override logged</span>
-                                    </>
-                                )}
-                                {status === 'rejected' && (
-                                    <>
-                                        <X className="h-4 w-4 text-muted-foreground" />
-                                        <span>Flag rejected · not included in summary</span>
-                                    </>
-                                )}
-                            </div>
-                            <button
-                                onClick={() => onChange('pending')}
-                                className="text-[10px] text-muted-foreground hover:text-foreground underline"
-                            >
-                                Reopen
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
+
+            {/* Body — Expected / Actual stacked + AI suggestion */}
+            <div className="space-y-2 flex-1">
+                <div className={innerPanel}>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Expected</div>
+                    <div className="text-xs text-foreground">{validation.expected}</div>
+                </div>
+                <div className={`${innerPanel} ${isCritical && status === 'pending' ? 'border-red-200 dark:border-red-500/30' : ''}`}>
+                    <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isCritical && status === 'pending' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>Actual</div>
+                    <div className="text-xs text-foreground">{validation.actual}</div>
+                </div>
+                <div className={innerPanel}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <Sparkles className="h-3 w-3 text-ai" />
+                        <div className="text-[10px] font-bold text-ai uppercase tracking-wider">AI suggestion</div>
+                    </div>
+                    <div className="text-xs text-foreground leading-relaxed">{validation.aiSuggestion}</div>
+                </div>
+            </div>
+
+            {/* Footer — impact + actions */}
+            {status === 'pending' ? (
+                <div className="mt-3 pt-3 border-t border-current/10 space-y-3">
+                    {validation.estimatedImpact && (
+                        <div className="flex items-baseline justify-between">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                {isCritical ? 'Impact prevented' : 'Estimated impact'}
+                            </span>
+                            <span className={`text-2xl font-bold tabular-nums ${isCritical ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                +${validation.estimatedImpact.toLocaleString()}
+                            </span>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-3 gap-2">
+                        <button
+                            onClick={() => onChange('rejected')}
+                            className="px-2 py-2 text-xs font-bold text-muted-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors"
+                        >
+                            Reject
+                        </button>
+                        <button
+                            onClick={() => onChange('overridden')}
+                            className="px-2 py-2 text-xs font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors"
+                        >
+                            Override
+                        </button>
+                        <button
+                            onClick={() => onChange('accepted')}
+                            className="flex items-center justify-center gap-1 px-2 py-2 text-xs font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                        >
+                            <Check className="h-3.5 w-3.5" />
+                            Accept
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="mt-3 pt-3 border-t border-current/10 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                        {status === 'accepted' && (
+                            <>
+                                <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                                <span className="truncate">AI accepted{validation.estimatedImpact && ` · $${validation.estimatedImpact.toLocaleString()} prevented`}</span>
+                            </>
+                        )}
+                        {status === 'overridden' && (
+                            <>
+                                <Pencil className="h-4 w-4 text-info shrink-0" />
+                                <span className="truncate">Kept current · override logged</span>
+                            </>
+                        )}
+                        {status === 'rejected' && (
+                            <>
+                                <X className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="truncate">Flag rejected</span>
+                            </>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => onChange('pending')}
+                        className="text-[10px] text-muted-foreground hover:text-foreground underline shrink-0"
+                    >
+                        Reopen
+                    </button>
+                </div>
+            )}
         </div>
     )
 }
