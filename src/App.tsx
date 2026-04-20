@@ -46,6 +46,7 @@ import MBIBudgetPage from "./components/mbi/MBIBudgetPage"
 import MBIAccountingPage from "./components/mbi/MBIAccountingPage"
 import MBIQuotesPage from "./components/mbi/MBIQuotesPage"
 import MBIDesignPage from "./components/mbi/MBIDesignPage"
+import { Network as NetworkIcon, Calculator as CalculatorIcon, Receipt as ReceiptIcon, FileSearch as FileSearchIcon, Palette as PaletteIcon } from 'lucide-react'
 
 import {
   HomeIcon,
@@ -60,7 +61,7 @@ import logoDarkBrand from './assets/logo-dark-brand.png'
 
 function App() {
   const { user, initialLoading, signOut, showSessionWarning, refreshSession } = useAuth()
-  const { isDemoActive, currentStep, isSidebarCollapsed } = useDemo()
+  const { isDemoActive, currentStep, isSidebarCollapsed, steps, goToStep } = useDemo()
   const { activeProfile: demoProfile } = useDemoProfile()
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'detail' | 'quote-detail' | 'order-detail' | 'ack-detail' | 'ack-detail-ai' | 'workspace' | 'inventory' | 'catalogs' | 'mac' | 'transactions' | 'crm' | 'pricing'>('transactions')
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false)
@@ -83,6 +84,10 @@ function App() {
   const handleNavigate = (page: string) => {
     if (page === 'overview') {
       setCurrentPage('dashboard')
+    } else if (page.startsWith('mbi-')) {
+      // MBI nav tabs jump to the first demo step matching that module's app
+      const idx = steps.findIndex(s => s.app === page)
+      if (idx >= 0) goToStep(idx)
     } else {
       // @ts-ignore
       setCurrentPage(page)
@@ -118,6 +123,7 @@ function App() {
   const isContinua = demoProfile.id === 'continua';
   const isDupler = demoProfile.id === 'dupler';
   const isWRG = demoProfile.id === 'wrg';
+  const isMBI = demoProfile.id === 'mbi';
   const getSimulationConfig = () => {
     if (!isDemoActive) return { appName: undefined, companyName: undefined, customNavigation: undefined };
 
@@ -177,7 +183,16 @@ function App() {
     // WRG profile: no center nav (demo auto-drives all steps)
     const wrgNav: { name: string; page: string; icon: any; badge?: string }[] = [];
 
-    const nav = currentStep.app === 'crm' ? crmNav : isWRG ? wrgNav : isDupler ? duplerNav : isContinua ? continuaNav : expertNav;
+    // MBI profile: 5-tab primary nav matching MBI_Strata_Prototype_Flow.html reference
+    const mbiNav = [
+      { name: 'E2E Flow', page: 'mbi-overview', icon: NetworkIcon },
+      { name: 'Budget Builder', page: 'mbi-budget', icon: CalculatorIcon },
+      { name: 'Accounting AI', page: 'mbi-accounting', icon: ReceiptIcon },
+      { name: 'Quotes AI', page: 'mbi-quotes', icon: FileSearchIcon },
+      { name: 'Design AI', page: 'mbi-design', icon: PaletteIcon },
+    ];
+
+    const nav = currentStep.app === 'crm' ? crmNav : isWRG ? wrgNav : isDupler ? duplerNav : isContinua ? continuaNav : isMBI ? mbiNav : expertNav;
     return { appName: resolvedAppName, companyName: resolvedCompany, customNavigation: nav };
   };
 
@@ -206,12 +221,12 @@ function App() {
       'dupler-reporting': 'dashboard',
       // WRG Demo v6: no global Navbar tab — Estimator owns its own tabs
       'wrg-estimator': 'dashboard',
-      // MBI Demo: each module owns its own tab — Navbar tab kept on transactions for context
-      'mbi-overview': 'dashboard',
-      'mbi-budget': 'transactions',
-      'mbi-accounting': 'transactions',
-      'mbi-quotes': 'transactions',
-      'mbi-design': 'transactions',
+      // MBI Demo: each module owns its own primary nav tab (see mbiNav)
+      'mbi-overview': 'mbi-overview',
+      'mbi-budget': 'mbi-budget',
+      'mbi-accounting': 'mbi-accounting',
+      'mbi-quotes': 'mbi-quotes',
+      'mbi-design': 'mbi-design',
     };
     return appToTab[currentStep.app] || currentPage;
   };

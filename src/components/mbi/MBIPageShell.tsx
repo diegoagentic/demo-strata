@@ -22,59 +22,45 @@
  */
 
 import type { ReactNode } from 'react'
-import { useDemo } from '../../context/DemoContext'
 import { MBI_TENANT } from '../../config/profiles/mbi-data'
-import MBITopBar from './MBITopBar'
 
 interface MBIPageShellProps {
     title: string
     subtitle?: string
     icon?: ReactNode
     actions?: ReactNode
-    activeApp: string
+    /** activeApp kept for backwards compatibility — now unused (primary nav lives in Navbar) */
+    activeApp?: string
     children: ReactNode
 }
 
-export default function MBIPageShell({ title, subtitle, icon, actions, activeApp, children }: MBIPageShellProps) {
-    const { steps, goToStep } = useDemo()
-
-    const handleNavigate = (app: string) => {
-        const idx = steps.findIndex(s => s.app === app)
-        if (idx >= 0) goToStep(idx)
-    }
-
+export default function MBIPageShell({ title, subtitle, icon, actions, children }: MBIPageShellProps) {
     return (
-        <div className="min-h-screen bg-background pt-24 pb-20">
-            {/* Secondary nav — MBI module tabs (matches HTML reference layout) */}
-            <MBITopBar activeApp={activeApp} onNavigate={handleNavigate} />
-
-            {/* Page content */}
-            <div className="px-4 pt-6">
-                <div className="max-w-7xl mx-auto space-y-6">
-                    {/* Page title row */}
-                    <div className="flex items-center justify-between gap-4 pb-4 border-b border-border">
-                        <div className="flex items-center gap-3">
-                            {icon && (
-                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                    {icon}
-                                </div>
-                            )}
-                            <div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <span className="font-medium uppercase tracking-wider">{MBI_TENANT.short}</span>
-                                    <span>·</span>
-                                    <span>Strata for MBI</span>
-                                </div>
-                                <h1 className="text-2xl font-bold text-foreground leading-tight">{title}</h1>
-                                {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+        <div className="min-h-screen bg-background pt-24 px-4 pb-20">
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Page title row */}
+                <div className="flex items-center justify-between gap-4 pb-4 border-b border-border">
+                    <div className="flex items-center gap-3">
+                        {icon && (
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                {icon}
                             </div>
+                        )}
+                        <div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className="font-medium uppercase tracking-wider">{MBI_TENANT.short}</span>
+                                <span>·</span>
+                                <span>Strata for MBI</span>
+                            </div>
+                            <h1 className="text-2xl font-bold text-foreground leading-tight">{title}</h1>
+                            {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
                         </div>
-                        {actions && <div className="flex items-center gap-2">{actions}</div>}
                     </div>
-
-                    {/* Page body */}
-                    {children}
+                    {actions && <div className="flex items-center gap-2">{actions}</div>}
                 </div>
+
+                {/* Page body */}
+                {children}
             </div>
         </div>
     )
