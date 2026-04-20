@@ -50,6 +50,10 @@ interface BudgetWizardShellProps {
     onNext?: () => void
     onStepClick?: (idx: number) => void
     canAdvance?: boolean
+    /** Label for the Next button — name the action ("Parse files", "Pick scenario"). */
+    nextLabel?: string
+    /** Subtitle under the active step name — short hint about the primary action. */
+    actionHint?: string
     children: ReactNode
 }
 
@@ -59,8 +63,12 @@ export default function BudgetWizardShell({
     onNext,
     onStepClick,
     canAdvance = true,
+    nextLabel,
+    actionHint,
     children,
 }: BudgetWizardShellProps) {
+    const activeSpec = WIZARD_STEPS[activeStep]
+    const nextSpec = WIZARD_STEPS[activeStep + 1]
     return (
         <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
             {/* 6-step indicator — sticky for long-scrolling step content */}
@@ -104,33 +112,54 @@ export default function BudgetWizardShell({
                 </div>
             </div>
 
+            {/* Active-step caption — names what the user is doing here */}
+            {activeSpec && (
+                <div className="px-5 pt-4 pb-2 flex items-baseline justify-between gap-3 flex-wrap">
+                    <div>
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            Step {activeStep + 1} of {WIZARD_STEPS.length}
+                        </div>
+                        <div className="text-base font-bold text-foreground">{activeSpec.label}</div>
+                        {actionHint && (
+                            <div className="text-xs text-muted-foreground mt-0.5">{actionHint}</div>
+                        )}
+                    </div>
+                    {nextSpec && (
+                        <div className="text-[10px] text-muted-foreground text-right">
+                            <div className="font-bold uppercase tracking-wider">Next</div>
+                            <div>{nextSpec.label}</div>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Body */}
-            <div className="p-5 space-y-4">
+            <div className="px-5 pt-2 pb-5 space-y-4">
                 {children}
             </div>
 
-            {/* Nav footer — only shown when manual nav is allowed */}
+            {/* Nav footer — always rendered when wired so the user can navigate */}
             {(onPrev || onNext) && (
-                <div className="px-5 py-4 border-t border-border bg-muted/10 flex items-center justify-between">
+                <div className="sticky bottom-0 px-5 py-3 border-t border-border bg-card/95 dark:bg-zinc-900/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 dark:supports-[backdrop-filter]:bg-zinc-900/80 flex items-center justify-between gap-3">
                     <button
                         onClick={onPrev}
                         disabled={!onPrev || activeStep === 0}
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-background border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         <ChevronLeft className="h-4 w-4" />
                         Back
                     </button>
 
-                    <div className="text-xs text-muted-foreground">
-                        Step {activeStep + 1} of {WIZARD_STEPS.length}
+                    <div className="text-[10px] text-muted-foreground tabular-nums hidden sm:block">
+                        {activeStep + 1} / {WIZARD_STEPS.length}
                     </div>
 
                     <button
                         onClick={onNext}
                         disabled={!onNext || !canAdvance || activeStep === WIZARD_STEPS.length - 1}
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                     >
-                        Next
+                        {nextLabel ?? (nextSpec ? `Continue · ${nextSpec.label}` : 'Done')}
                         <ChevronRight className="h-4 w-4" />
                     </button>
                 </div>

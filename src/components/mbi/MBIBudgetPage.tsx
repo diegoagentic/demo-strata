@@ -106,6 +106,16 @@ export default function MBIBudgetPage() {
         }
     })()
 
+    const STEP_HINTS: Record<number, { hint: string; nextLabel: string }> = {
+        0: { hint: 'Confirm both files are uploaded · Strata auto-detects path.', nextLabel: 'Parse SIF + CAP' },
+        1: { hint: 'Watch the AI extract every line item from the SIF · open the source or pre-flight log for detail.', nextLabel: 'Pick a scenario' },
+        2: { hint: 'Choose Good / Better / Best and tune markup · breakdown opens on demand.', nextLabel: 'Review validations' },
+        3: { hint: 'Resolve every flagged item — Accept, Override, or Reject · approval is gated until clear.', nextLabel: 'Continue to Review' },
+        4: { hint: 'Final summary before client delivery · approve to lock the budget.', nextLabel: approved ? 'View output' : 'Approve to continue' },
+        5: { hint: 'Budget locked · download artifacts and send to client.', nextLabel: 'Done' },
+    }
+    const stepMeta = STEP_HINTS[activeStep] ?? { hint: '', nextLabel: undefined }
+
     return (
         <MBIPageShell
             title="Budget Builder"
@@ -116,10 +126,12 @@ export default function MBIBudgetPage() {
             {inWizard ? (
                 <BudgetWizardShell
                     activeStep={activeStep}
-                    onStepClick={isDemoActive ? undefined : setManualStep}
-                    onPrev={isDemoActive ? undefined : () => setManualStep(s => Math.max(0, s - 1))}
-                    onNext={isDemoActive ? undefined : () => setManualStep(s => Math.min(WIZARD_STEPS.length - 1, s + 1))}
+                    onStepClick={setManualStep}
+                    onPrev={() => setManualStep(s => Math.max(0, s - 1))}
+                    onNext={() => setManualStep(s => Math.min(WIZARD_STEPS.length - 1, s + 1))}
                     canAdvance={canAdvance}
+                    actionHint={stepMeta.hint}
+                    nextLabel={stepMeta.nextLabel}
                 >
                     {activeStep === 0 && (
                         <BudgetIntakeStep
