@@ -24,6 +24,8 @@ import SIFParserPreview from './SIFParserPreview'
 import PreflightScanChain from './PreflightScanChain'
 import ScenariosStep from './ScenariosStep'
 import ValidationStep from './ValidationStep'
+import ReviewStep from './ReviewStep'
+import OutputStep from './OutputStep'
 import type { ScenarioTier, ValidationStatus } from '../../config/profiles/mbi-data'
 import { HERO_VALIDATION_SECONDARY } from '../../config/profiles/mbi-data'
 import { useDemo } from '../../context/DemoContext'
@@ -68,6 +70,9 @@ export default function MBIBudgetPage() {
     const handleValidationChange = (id: string, s: ValidationStatus) =>
         setValidationStatus(prev => ({ ...prev, [id]: s }))
 
+    // Approval state — gates the Output step
+    const [approved, setApproved] = useState(false)
+
     return (
         <MBIPageShell
             title="Budget Builder"
@@ -104,7 +109,46 @@ export default function MBIBudgetPage() {
                             />
                         </>
                     )}
-                    {stepId === 'm1.4' && <OutputView />}
+                    {stepId === 'm1.4' && (() => {
+                        const hero = getHeroBudget()
+                        const selectedScenario = HERO_SCENARIOS.find(s => s.tier === selectedTier) ?? HERO_SCENARIOS[1]
+                        const effectiveMarkup = markupOverrides[selectedScenario.tier] ?? selectedScenario.markup
+                        const sif = getSIFSample('SIF-ENTERPRISE-001')
+                        const resolvedCount = Object.values(validationStatus).filter(s => s !== 'pending').length
+                        const totalValidations = Object.keys(validationStatus).length
+                        const preventedImpact = [HERO_VALIDATION, HERO_VALIDATION_SECONDARY]
+                            .filter(v => validationStatus[v.id] === 'accepted')
+                            .reduce((acc, v) => acc + (v.estimatedImpact ?? 0), 0)
+                        const markupFactor = (1 + effectiveMarkup) / (1 + selectedScenario.markup)
+                        const adjustedTotal = Math.round(selectedScenario.total * markupFactor)
+                        return (
+                            <>
+                                <StepHeader id="m1.4" title="Review + client delivery" icon={<FileCheck2 className="h-4 w-4" />} />
+                                <ReviewStep
+                                    client={hero.client}
+                                    scenario={selectedScenario}
+                                    markup={effectiveMarkup}
+                                    sifLineItems={sif?.lineItems ?? []}
+                                    validationsResolved={resolvedCount}
+                                    validationsTotal={totalValidations}
+                                    preventedImpact={preventedImpact}
+                                    approved={approved}
+                                    onApprove={() => setApproved(true)}
+                                />
+                                {approved && (
+                                    <div className="mt-6 pt-6 border-t border-border">
+                                        <OutputStep
+                                            client={hero.client}
+                                            scenarioLabel={selectedScenario.label}
+                                            total={adjustedTotal}
+                                            markup={effectiveMarkup}
+                                            preventedImpact={preventedImpact}
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )
+                    })()}
                 </BudgetWizardShell>
             ) : (
                 <QueueView />
@@ -237,47 +281,7 @@ function ParsingView({ selectedTier, onSelectTier, markupOverrides, onMarkupChan
 
 // ValidationView replaced by ValidationStep component (Phase 2.5 refactor).
 
-// ─── Step m1.4 — Review + Output ──────────────────────────────────────────
-function OutputView() {
-    const hero = getHeroBudget()
-    const better = HERO_SCENARIOS.find(s => s.tier === 'better')!
-    return (
-        <>
-            <StepHeader id="m1.4" title="Review + client delivery" icon={<FileCheck2 className="h-4 w-4" />} />
-
-            <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-2xl p-5 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                    <div className="text-sm font-bold text-foreground">Budget approved — {hero.client.name}</div>
-                    <div className="text-xs text-muted-foreground">Scenario: {better.label} · Total: ${better.total.toLocaleString()} · Markup: {Math.round(better.markup * 100)}%</div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
-                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Excel breakdown</div>
-                    <div className="aspect-[4/3] bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground text-xs">
-                        [ Excel preview mockup ]
-                    </div>
-                    <button className="w-full text-xs font-medium px-3 py-2 bg-background border border-border rounded-lg hover:bg-muted transition-colors">Download .xlsx</button>
-                </div>
-                <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
-                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Client summary PDF</div>
-                    <div className="aspect-[4/3] bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground text-xs">
-                        [ MBI-branded PDF mockup ]
-                    </div>
-                    <button className="w-full text-xs font-bold px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">Send to Enterprise Holdings</button>
-                </div>
-            </div>
-
-            <div className="text-center text-xs text-muted-foreground italic mt-4">
-                Total time: ~4 minutes (was 1 week) · Handoff to Quotes AI ready
-            </div>
-        </>
-    )
-}
+// OutputView replaced by ReviewStep + OutputStep components (Phase 2.6/2.7).
 
 // ─── Shared step header ───────────────────────────────────────────────────
 function StepHeader({ id, title, icon }: { id: string; title: string; icon: React.ReactNode }) {
