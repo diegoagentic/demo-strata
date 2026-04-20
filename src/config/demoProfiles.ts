@@ -9,6 +9,7 @@ import { DUPLER_STEPS, DUPLER_STEP_BEHAVIOR, DUPLER_STEP_MESSAGES, DUPLER_SELF_I
 import { OPS_DEMO_STEPS, OPS_DEMO_STEP_BEHAVIOR, OPS_DEMO_STEP_MESSAGES, OPS_DEMO_SELF_INDICATED } from './profiles/ops-demo';
 import { CONTINUA_DEMO_STEPS, CONTINUA_DEMO_STEP_BEHAVIOR, CONTINUA_DEMO_STEP_MESSAGES, CONTINUA_DEMO_SELF_INDICATED } from './profiles/continua-demo';
 import { WRG_DEMO_STEPS, WRG_DEMO_STEP_BEHAVIOR, WRG_DEMO_STEP_MESSAGES, WRG_DEMO_SELF_INDICATED } from './profiles/wrg-demo';
+import { MBI_STEPS, MBI_STEP_BEHAVIOR, MBI_STEP_MESSAGES, MBI_SELF_INDICATED } from './profiles/mbi';
 
 export type SimulationApp =
     | 'dashboard' | 'expert-hub' | 'email-marketplace'
@@ -30,7 +31,7 @@ export interface DemoStep {
     highlightId?: string;
 }
 
-export type DemoProfileId = 'acme' | 'coi' | 'dupler' | 'ops' | 'continua' | 'wrg';
+export type DemoProfileId = 'acme' | 'coi' | 'dupler' | 'ops' | 'continua' | 'wrg' | 'mbi';
 
 export interface DemoProfile {
     id: DemoProfileId;
@@ -110,5 +111,16 @@ export const DEMO_PROFILES: DemoProfile[] = [
         stepBehavior: WRG_DEMO_STEP_BEHAVIOR,
         stepMessages: WRG_DEMO_STEP_MESSAGES,
         selfIndicatedSteps: WRG_DEMO_SELF_INDICATED,
+    },
+    {
+        id: 'mbi',
+        name: 'MBI',
+        companyName: 'Modern Business Interiors',
+        description: 'Budget Builder prototype, Accounting AI, Quotes & Design AI',
+        icon: '🏢',
+        steps: MBI_STEPS,
+        stepBehavior: MBI_STEP_BEHAVIOR,
+        stepMessages: MBI_STEP_MESSAGES,
+        selfIndicatedSteps: MBI_SELF_INDICATED,
     },
 ];
