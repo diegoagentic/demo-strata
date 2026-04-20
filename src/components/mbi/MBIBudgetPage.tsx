@@ -23,7 +23,9 @@ import BudgetIntakeStep, { INITIAL_QUICK_FORM, type QuickFormState } from './Bud
 import SIFParserPreview from './SIFParserPreview'
 import PreflightScanChain from './PreflightScanChain'
 import ScenariosStep from './ScenariosStep'
-import type { ScenarioTier } from '../../config/profiles/mbi-data'
+import ValidationStep from './ValidationStep'
+import type { ScenarioTier, ValidationStatus } from '../../config/profiles/mbi-data'
+import { HERO_VALIDATION_SECONDARY } from '../../config/profiles/mbi-data'
 import { useDemo } from '../../context/DemoContext'
 import {
     MBI_BUDGET_REQUESTS,
@@ -58,6 +60,14 @@ export default function MBIBudgetPage() {
     const handleMarkupChange = (tier: ScenarioTier, v: number) =>
         setMarkupOverrides(prev => ({ ...prev, [tier]: v }))
 
+    // Validation state — shared between m1.3 validation and m1.4 output
+    const [validationStatus, setValidationStatus] = useState<Record<string, ValidationStatus>>({
+        [HERO_VALIDATION.id]: 'pending',
+        [HERO_VALIDATION_SECONDARY.id]: 'pending',
+    })
+    const handleValidationChange = (id: string, s: ValidationStatus) =>
+        setValidationStatus(prev => ({ ...prev, [id]: s }))
+
     return (
         <MBIPageShell
             title="Budget Builder"
@@ -84,7 +94,16 @@ export default function MBIBudgetPage() {
                             onMarkupChange={handleMarkupChange}
                         />
                     )}
-                    {stepId === 'm1.3' && <ValidationView />}
+                    {stepId === 'm1.3' && (
+                        <>
+                            <StepHeader id="m1.3" title="AI validation — $18K catch" icon={<AlertTriangle className="h-4 w-4" />} />
+                            <ValidationStep
+                                validations={[HERO_VALIDATION, HERO_VALIDATION_SECONDARY]}
+                                statusById={validationStatus}
+                                onStatusChange={handleValidationChange}
+                            />
+                        </>
+                    )}
                     {stepId === 'm1.4' && <OutputView />}
                 </BudgetWizardShell>
             ) : (
@@ -216,67 +235,7 @@ function ParsingView({ selectedTier, onSelectTier, markupOverrides, onMarkupChan
     )
 }
 
-// ─── Step m1.3 — AI Validation (⭐ $18K HERO MOMENT) ──────────────────────
-function ValidationView() {
-    return (
-        <>
-            <StepHeader id="m1.3" title="AI validation — $18K catch" icon={<AlertTriangle className="h-4 w-4" />} />
-
-            <div className="bg-red-50 dark:bg-red-500/10 border-2 border-red-400 dark:border-red-500/50 rounded-2xl p-6 ring-4 ring-red-500/10 animate-in fade-in slide-in-from-top-4 duration-500">
-                <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center shrink-0">
-                        <AlertTriangle className="h-6 w-6 text-red-600" />
-                    </div>
-                    <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20">
-                                Critical
-                            </span>
-                            <span className="text-[10px] font-medium text-muted-foreground">
-                                AI confidence {HERO_VALIDATION.confidence}%
-                            </span>
-                        </div>
-
-                        <h3 className="text-lg font-bold text-foreground">{HERO_VALIDATION.field}</h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div className="bg-card border border-border rounded-xl p-3">
-                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Expected</div>
-                                <div className="text-xs text-foreground">{HERO_VALIDATION.expected}</div>
-                            </div>
-                            <div className="bg-card border border-red-200 dark:border-red-500/30 rounded-xl p-3">
-                                <div className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-1">Actual</div>
-                                <div className="text-xs text-foreground">{HERO_VALIDATION.actual}</div>
-                            </div>
-                        </div>
-
-                        <div className="bg-card border border-border rounded-xl p-3">
-                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">AI suggestion</div>
-                            <div className="text-xs text-foreground">{HERO_VALIDATION.aiSuggestion}</div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-3 border-t border-red-200 dark:border-red-500/30">
-                            <div>
-                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Estimated impact prevented</div>
-                                <div className="text-3xl font-bold text-red-600">
-                                    +${HERO_VALIDATION.estimatedImpact?.toLocaleString()}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button className="px-4 py-2 text-xs font-bold bg-background border border-border rounded-lg text-foreground hover:bg-muted transition-colors">
-                                    Override
-                                </button>
-                                <button className="px-4 py-2 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">
-                                    Accept swap
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </>
-    )
-}
+// ValidationView replaced by ValidationStep component (Phase 2.5 refactor).
 
 // ─── Step m1.4 — Review + Output ──────────────────────────────────────────
 function OutputView() {
