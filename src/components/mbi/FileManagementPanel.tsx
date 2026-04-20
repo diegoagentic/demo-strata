@@ -143,20 +143,20 @@ function VersionHistoryTimeline() {
                 </div>
             </div>
             <div className="p-4">
-                <ol className="space-y-2.5">
+                <ol className="space-y-2">
                     {versions.map((v, i) => (
                         <li key={v.v} className="flex gap-2.5">
                             <div className="flex flex-col items-center shrink-0">
-                                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${v.current ? 'bg-success text-white' : 'bg-muted text-muted-foreground'}`}>
+                                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold ${v.current ? 'bg-success text-white ring-4 ring-success/20' : 'bg-muted text-muted-foreground'}`}>
                                     {v.v}
                                 </div>
                                 {i < versions.length - 1 && <div className="w-0.5 flex-1 bg-border mt-1" style={{ minHeight: 20 }} />}
                             </div>
-                            <div className="flex-1 pb-2">
+                            <div className={`flex-1 border border-l-4 rounded-lg px-3 py-2 ${v.current ? 'bg-success/5 border-success/20 border-l-success' : 'bg-zinc-50/50 dark:bg-zinc-800/40 border-border border-l-muted-foreground/30'}`}>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-xs font-bold text-foreground">{v.author}</span>
                                     {v.current && (
-                                        <span className="text-[9px] font-bold text-success uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-success/10">
+                                        <span className="text-[9px] font-bold text-success uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-success/10">
                                             Current
                                         </span>
                                     )}

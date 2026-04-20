@@ -46,25 +46,48 @@ export default function DesignerCapacityBoard() {
                 </div>
             </div>
 
-            <div className="divide-y divide-border">
+            <div className="p-3 space-y-2">
                 {data.map(({ designer, projects, hoursLogged, utilization }) => {
                     const overload = utilization > 90
+                    const high = utilization > 70 && !overload
                     const isHybrid = designer.role.toLowerCase().includes('hybrid')
+                    const accent = overload
+                        ? 'border-l-4 border-l-amber-500'
+                        : high
+                            ? 'border-l-4 border-l-primary'
+                            : 'border-l-4 border-l-success/60'
+                    const avatarBg = overload
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+                        : high
+                            ? 'bg-primary/15 text-zinc-900 dark:text-primary'
+                            : 'bg-success/10 text-success'
+                    const initials = designer.name.split(' ').map(n => n[0]).slice(0, 2).join('')
                     return (
-                        <div key={designer.id} className="px-4 py-3">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <div className="flex items-center gap-2 min-w-0">
-                                    <span className="text-sm font-bold text-foreground truncate">{designer.name}</span>
-                                    {isHybrid && (
-                                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-info/10 text-info">
-                                            Hybrid · was invisible
-                                        </span>
-                                    )}
-                                    {designer.isEarlyAdopter && (
-                                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-success/10 text-success">
-                                            Early adopter
-                                        </span>
-                                    )}
+                        <div
+                            key={designer.id}
+                            className={`bg-zinc-50/50 dark:bg-zinc-800/50 border border-border rounded-xl px-3 py-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors ${accent}`}
+                        >
+                            <div className="flex items-center justify-between mb-2 gap-2">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${avatarBg}`}>
+                                        {initials}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="text-sm font-bold text-foreground truncate">{designer.name}</span>
+                                            {isHybrid && (
+                                                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-info/10 text-info">
+                                                    Hybrid · was invisible
+                                                </span>
+                                            )}
+                                            {designer.isEarlyAdopter && (
+                                                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-success/10 text-success">
+                                                    Early adopter
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground truncate">{designer.role}</div>
+                                    </div>
                                 </div>
                                 <div className="text-right shrink-0">
                                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
@@ -81,14 +104,14 @@ export default function DesignerCapacityBoard() {
                             </div>
 
                             {/* Utilization bar */}
-                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-background rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full transition-all ${overload ? 'bg-amber-500' : utilization > 70 ? 'bg-primary' : 'bg-success'}`}
+                                    className={`h-full rounded-full transition-all ${overload ? 'bg-amber-500' : high ? 'bg-primary' : 'bg-success'}`}
                                     style={{ width: `${utilization}%` }}
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1.5">
                                 <div className="truncate">
                                     {projects.slice(0, 2).map(p => p.name).join(' · ') || 'No active projects'}
                                     {projects.length > 2 && ` · +${projects.length - 2} more`}

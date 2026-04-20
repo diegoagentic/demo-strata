@@ -29,6 +29,7 @@ const STATUS_META = {
         bg: 'bg-red-50 dark:bg-red-500/10',
         border: 'border-red-300 dark:border-red-500/30',
         pillBg: 'bg-red-100 dark:bg-red-500/20',
+        leftBar: 'border-l-red-500',
         icon: <AlertTriangle className="h-3.5 w-3.5" />,
     },
     'no-response': {
@@ -37,6 +38,7 @@ const STATUS_META = {
         bg: 'bg-amber-50/50 dark:bg-amber-500/5',
         border: 'border-amber-300 dark:border-amber-500/30',
         pillBg: 'bg-amber-100 dark:bg-amber-500/20',
+        leftBar: 'border-l-amber-500',
         icon: <Clock className="h-3.5 w-3.5" />,
     },
     'pending-approval': {
@@ -45,6 +47,7 @@ const STATUS_META = {
         bg: 'bg-info/5',
         border: 'border-info/20',
         pillBg: 'bg-info/10',
+        leftBar: 'border-l-info/60',
         icon: <Clock className="h-3.5 w-3.5" />,
     },
     'committed-to-pay': {
@@ -53,6 +56,7 @@ const STATUS_META = {
         bg: 'bg-success/5',
         border: 'border-success/20',
         pillBg: 'bg-success/10',
+        leftBar: 'border-l-success/60',
         icon: <Check className="h-3.5 w-3.5" />,
     },
 } as const
@@ -110,12 +114,15 @@ export default function ARStatusBoard({ records }: ARStatusBoardProps) {
                                     </span>
                                 </div>
                             </div>
-                            <div className="bg-card divide-y divide-border max-h-80 overflow-y-auto">
+                            <div className="bg-card p-2 space-y-1.5 max-h-80 overflow-y-auto">
                                 {items.length === 0 ? (
                                     <div className="text-center text-[10px] text-muted-foreground py-4">—</div>
                                 ) : (
                                     items.map(r => (
-                                        <div key={r.id} className="px-3 py-2 text-xs">
+                                        <div
+                                            key={r.id}
+                                            className={`bg-zinc-50/50 dark:bg-zinc-800/40 border border-border rounded-lg border-l-4 ${meta.leftBar} px-2.5 py-2 text-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors`}
+                                        >
                                             <div className="flex items-center justify-between mb-0.5">
                                                 <span className="font-bold text-foreground truncate pr-2">{r.client}</span>
                                                 <span className="font-bold text-foreground tabular-nums shrink-0">${(r.amount / 1000).toFixed(0)}K</span>

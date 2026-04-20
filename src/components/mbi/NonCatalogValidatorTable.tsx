@@ -78,8 +78,13 @@ export default function NonCatalogValidatorTable() {
             <div className="divide-y divide-border">
                 {MOCK_ITEMS.map(item => {
                     const deltaPct = item.priceBook > 0 ? Math.round(((item.priceQuoted - item.priceBook) / item.priceBook) * 100) : 0
+                    const rowAccent = item.match === 'mismatch'
+                        ? 'bg-amber-50/40 dark:bg-amber-500/5 border-l-4 border-l-amber-500/70'
+                        : item.match === 'close'
+                            ? 'border-l-4 border-l-info/40'
+                            : 'border-l-4 border-l-transparent hover:bg-muted/20'
                     return (
-                        <div key={item.id} className="px-4 py-2 grid grid-cols-[1.5fr_0.8fr_0.5fr_0.8fr_0.8fr_0.6fr] gap-3 items-center text-xs">
+                        <div key={item.id} className={`px-4 py-2 grid grid-cols-[1.5fr_0.8fr_0.5fr_0.8fr_0.8fr_0.6fr] gap-3 items-center text-xs transition-colors ${rowAccent}`}>
                             <div className="min-w-0">
                                 <div className="text-foreground truncate">{item.description}</div>
                                 <div className="text-[10px] text-muted-foreground font-mono">{item.id}</div>

@@ -67,9 +67,13 @@ export default function InvoiceQueueTable({ invoices, selectedId, onSelect }: In
                             key={inv.id}
                             onClick={() => onSelect(inv.id)}
                             className={`
-                                w-full text-left grid grid-cols-[minmax(120px,1.3fr)_1fr_0.8fr_0.8fr_0.9fr_0.6fr] gap-3 px-4 py-2.5 items-center text-xs transition-colors
-                                ${selected ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-muted/30 border-l-2 border-l-transparent'}
-                                ${inv.hasException ? 'border-l-red-500/60' : ''}
+                                w-full text-left grid grid-cols-[minmax(120px,1.3fr)_1fr_0.8fr_0.8fr_0.9fr_0.6fr] gap-3 px-4 py-2.5 items-center text-xs transition-colors border-l-4
+                                ${selected
+                                    ? 'bg-primary/5 border-l-primary'
+                                    : inv.hasException
+                                        ? 'bg-red-50/40 dark:bg-red-500/5 border-l-red-500/70 hover:bg-red-50 dark:hover:bg-red-500/10'
+                                        : 'hover:bg-muted/30 border-l-transparent'
+                                }
                             `}
                         >
                             {/* Vendor */}

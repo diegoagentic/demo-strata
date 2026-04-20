@@ -48,23 +48,30 @@ export default function COMWorkflowTimeline() {
             </div>
 
             <div className="p-4">
-                <ol className="space-y-3">
+                <ol className="space-y-2">
                     {STEPS.map((step, i) => {
                         const theme = step.status === 'done'
-                            ? { dot: 'bg-success text-white', line: 'bg-success' }
+                            ? { dot: 'bg-success text-white', line: 'bg-success', card: 'bg-zinc-50/50 dark:bg-zinc-800/40 border-border border-l-success/60' }
                             : step.status === 'in-progress'
-                                ? { dot: 'bg-ai/10 text-ai ring-2 ring-ai/30 animate-pulse', line: 'bg-border' }
-                                : { dot: 'bg-muted text-muted-foreground', line: 'bg-border' }
+                                ? { dot: 'bg-ai/15 text-ai ring-4 ring-ai/20 animate-pulse', line: 'bg-border', card: 'bg-ai/5 border-ai/20 border-l-ai' }
+                                : { dot: 'bg-muted text-muted-foreground', line: 'bg-border', card: 'bg-zinc-50/50 dark:bg-zinc-800/40 border-border border-l-muted-foreground/30' }
                         return (
                             <li key={step.id} className="flex gap-3">
                                 <div className="flex flex-col items-center shrink-0">
-                                    <div className={`h-7 w-7 rounded-full flex items-center justify-center ${theme.dot}`}>
-                                        {step.status === 'done' ? <CheckCircle2 className="h-3.5 w-3.5" /> : step.icon}
+                                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${theme.dot}`}>
+                                        {step.status === 'done' ? <CheckCircle2 className="h-4 w-4" /> : step.icon}
                                     </div>
                                     {i < STEPS.length - 1 && <div className={`w-0.5 flex-1 mt-1 ${theme.line}`} style={{ minHeight: 20 }} />}
                                 </div>
-                                <div className="flex-1 pb-2">
-                                    <div className="text-xs font-bold text-foreground">{step.label}</div>
+                                <div className={`flex-1 border border-l-4 rounded-lg px-3 py-2 ${theme.card}`}>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="text-xs font-bold text-foreground">{step.label}</div>
+                                        {step.status === 'in-progress' && (
+                                            <span className="text-[9px] font-bold text-ai uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-ai/10 shrink-0">
+                                                In progress
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="text-[11px] text-muted-foreground">{step.detail}</div>
                                     <div className="text-[10px] text-muted-foreground mt-0.5 italic">{step.timestamp}</div>
                                 </div>
