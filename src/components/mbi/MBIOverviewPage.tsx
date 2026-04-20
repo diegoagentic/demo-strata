@@ -16,6 +16,7 @@ export default function MBIOverviewPage() {
             title="E2E Strata Flow"
             subtitle={`AI-accelerated pipeline for ${MBI_TENANT.name}`}
             icon={<Network className="h-5 w-5" />}
+            activeApp="mbi-overview"
         >
             <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-3">
                 <Sparkles className="h-10 w-10 text-primary mx-auto" />

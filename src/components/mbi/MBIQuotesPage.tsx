@@ -14,6 +14,7 @@ export default function MBIQuotesPage() {
             title="Quotes AI"
             subtitle="Phase 4 · SIF → CORE auto-import · 4 audit loops → 1"
             icon={<FileSearch className="h-5 w-5" />}
+            activeApp="mbi-quotes"
         >
             <div className="bg-card border border-border rounded-2xl p-6 space-y-3">
                 <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Recent CORE proposals</h2>

@@ -17,6 +17,7 @@ export default function MBIAccountingPage() {
             title="Accounting AI"
             subtitle={`Phase 2 quick wins · Champion: Kathy Belleville (Controller)`}
             icon={<Receipt className="h-5 w-5" />}
+            activeApp="mbi-accounting"
         >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-card border border-border rounded-2xl p-4">

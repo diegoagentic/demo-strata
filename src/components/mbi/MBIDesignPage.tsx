@@ -16,6 +16,7 @@ export default function MBIDesignPage() {
             title="Design AI"
             subtitle={`Phase 4 · Pilot with ${beth?.name} (Q4 trust ${beth?.q4Trust}/10 · Early Adopter)`}
             icon={<Palette className="h-5 w-5" />}
+            activeApp="mbi-design"
         >
             <div className="bg-card border border-border rounded-2xl p-4">
                 <div className="flex items-center gap-3 mb-3">
