@@ -116,8 +116,8 @@ export const DEMO_PROFILES: DemoProfile[] = [
     {
         id: 'mbi',
         name: 'MBI',
-        companyName: 'Modern Business Interiors',
-        description: 'Budget Builder prototype, Accounting AI, Quotes & Design AI',
+        companyName: 'MBI',
+        description: 'Modern Business Interiors · Budget Builder prototype + Accounting/Quotes/Design AI',
         icon: '🏢',
         steps: MBI_STEPS,
         stepBehavior: MBI_STEP_BEHAVIOR,
