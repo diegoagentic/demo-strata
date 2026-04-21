@@ -34,9 +34,9 @@
  * USED BY: MBIBudgetPage (wizard step 3 · demo tour m1.4)
  */
 
-import { Fragment, useEffect, useState } from 'react'
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
-import { AlertTriangle, AlertCircle, CheckCircle2, Shield, Sparkles, Check, X, Pencil, TrendingDown, Send, Brain } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { AlertTriangle, AlertCircle, CheckCircle2, Shield, Sparkles, Check, X, Pencil, TrendingDown, Send, Brain, Ban } from 'lucide-react'
+import MBIReasonModal from './MBIReasonModal'
 import type { Validation, ValidationStatus } from '../../config/profiles/mbi-data'
 
 interface ValidationStepProps {
@@ -182,19 +182,70 @@ export default function ValidationStep({ validations, statusById, onStatusChange
                 ))}
             </div>
 
-            {/* Override / Reject modals */}
+            {/* Override modal */}
             {pendingAction?.kind === 'override' && (
-                <OverrideModal
-                    validation={pendingAction.validation}
+                <MBIReasonModal
+                    isOpen
                     onClose={() => setPendingAction(null)}
-                    onSubmit={payload => handleOverrideSubmit(pendingAction.validation, payload)}
+                    onSubmit={payload => handleOverrideSubmit(pendingAction.validation, {
+                        reasonCategory: payload.categoryId,
+                        notes: payload.notes,
+                    })}
+                    tone="info"
+                    icon={<Pencil className="h-5 w-5" />}
+                    title="Override — keep current value"
+                    subtitle={pendingAction.validation.field}
+                    contextBanner={pendingAction.validation.estimatedImpact ? {
+                        tone: 'warning',
+                        icon: <AlertTriangle className="h-4 w-4" />,
+                        title: "Your value won't trigger the AI swap.",
+                        body: (
+                            <>
+                                The <strong className="text-amber-700 dark:text-amber-400 tabular-nums">${pendingAction.validation.estimatedImpact.toLocaleString()}</strong> impact stays in the budget. Make sure this is intentional — your reason is logged.
+                            </>
+                        ),
+                    } : undefined}
+                    categories={OVERRIDE_CATEGORIES}
+                    defaultCategoryId="client-confirmed"
+                    categoryPrompt="Why are you keeping the current value?"
+                    notesPlaceholder="e.g. Client reviewed the floor plan on 04/18 and signed off on the 72×36 worksurface despite the panel constraint."
+                    notesRequiredForCategoryId="other"
+                    confirmLabel="Keep current value"
                 />
             )}
+            {/* Reject modal */}
             {pendingAction?.kind === 'reject' && (
-                <RejectModal
-                    validation={pendingAction.validation}
+                <MBIReasonModal
+                    isOpen
                     onClose={() => setPendingAction(null)}
-                    onSubmit={payload => handleRejectSubmit(pendingAction.validation, payload)}
+                    onSubmit={payload => handleRejectSubmit(pendingAction.validation, {
+                        reasonCategory: payload.categoryId,
+                        notes: payload.notes,
+                        notifyAI: payload.notifyAI,
+                    })}
+                    tone="danger"
+                    icon={<Ban className="h-5 w-5" />}
+                    title="Reject flag — Strata was wrong?"
+                    subtitle={pendingAction.validation.field}
+                    contextBanner={{
+                        tone: 'info',
+                        icon: <Brain className="h-4 w-4" />,
+                        title: 'Your feedback trains the model.',
+                        body: "Tell Strata why this flag was wrong so it stops raising the same issue on future budgets.",
+                    }}
+                    categories={REJECT_CATEGORIES}
+                    defaultCategoryId="false-positive"
+                    categoryPrompt="Why reject?"
+                    notesLabel="Notes for Strata"
+                    notesPlaceholder="e.g. The 72×36 is valid — we verified with Allsteel that this config ships with a reinforced panel mount."
+                    notesRequiredForCategoryId="other"
+                    notifyToggle={{
+                        defaultOn: true,
+                        title: 'Send feedback to Strata AI',
+                        description: 'Your rejection + reason is logged to the model-improvement pipeline. No client data shared.',
+                    }}
+                    confirmLabel="Reject flag"
+                    confirmLabelWhenNotifying="Reject & notify AI"
                 />
             )}
 
@@ -589,246 +640,6 @@ function ValidationCard({
     )
 }
 
-// ─── Override modal ──────────────────────────────────────────────────────────
-function OverrideModal({
-    validation,
-    onClose,
-    onSubmit,
-}: {
-    validation: Validation
-    onClose: () => void
-    onSubmit: (payload: { reasonCategory: string; notes: string }) => void
-}) {
-    const [reasonCategory, setReasonCategory] = useState('client-confirmed')
-    const [notes, setNotes] = useState('')
-    const canSubmit = reasonCategory !== 'other' || notes.trim().length > 0
-
-    return (
-        <Transition show={true} as={Fragment} appear>
-            <Dialog onClose={onClose} className="relative z-[100]">
-                <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
-                    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm" />
-                </TransitionChild>
-                <div className="fixed inset-0 overflow-y-auto">
-                    <div className="flex min-h-full items-center justify-center p-4">
-                        <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95 translate-y-2" enterTo="opacity-100 scale-100 translate-y-0" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
-                            <DialogPanel className="w-full max-w-xl bg-card dark:bg-zinc-900 border border-border rounded-2xl shadow-2xl">
-                                <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
-                                    <div className="flex items-start gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-info/15 text-info flex items-center justify-center shrink-0">
-                                            <Pencil className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <DialogTitle className="text-base font-bold text-foreground">Override — keep current value</DialogTitle>
-                                            <p className="text-xs text-muted-foreground mt-0.5">{validation.field}</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Close">
-                                        <X className="h-4 w-4" />
-                                    </button>
-                                </div>
-
-                                <div className="p-5 space-y-4">
-                                    {/* Impact warning */}
-                                    {validation.estimatedImpact && (
-                                        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/40 rounded-xl p-3 flex items-start gap-2.5">
-                                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                                            <div className="text-xs">
-                                                <div className="font-bold text-foreground">
-                                                    Your value won't trigger the AI swap.
-                                                </div>
-                                                <div className="text-muted-foreground mt-0.5">
-                                                    The <strong className="text-amber-700 dark:text-amber-400 tabular-nums">${validation.estimatedImpact.toLocaleString()}</strong> impact stays in the budget. Make sure this is intentional — your reason is logged.
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Why are you keeping the current value?</label>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {OVERRIDE_CATEGORIES.map(c => {
-                                                const active = reasonCategory === c.id
-                                                return (
-                                                    <button
-                                                        key={c.id}
-                                                        type="button"
-                                                        onClick={() => setReasonCategory(c.id)}
-                                                        className={`
-                                                            flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-colors
-                                                            ${active
-                                                                ? 'bg-info/10 border-info/40 text-info'
-                                                                : 'bg-background dark:bg-zinc-800 border-border text-foreground hover:border-zinc-300 dark:hover:border-zinc-700'
-                                                            }
-                                                        `}
-                                                    >
-                                                        <span className={`h-2 w-2 rounded-full shrink-0 ${active ? 'bg-info' : 'bg-muted-foreground/40'}`} />
-                                                        {c.label}
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                                            Notes {reasonCategory === 'other' && <span className="text-info ml-1">· required</span>}
-                                        </label>
-                                        <textarea
-                                            value={notes}
-                                            onChange={e => setNotes(e.target.value)}
-                                            rows={3}
-                                            placeholder="e.g. Client reviewed the floor plan on 04/18 and signed off on the 72×36 worksurface despite the panel constraint."
-                                            className="w-full bg-background dark:bg-zinc-800 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-info resize-none"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="px-5 py-3 border-t border-border bg-muted/20 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
-                                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors">
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={() => canSubmit && onSubmit({ reasonCategory, notes: notes.trim() })}
-                                        disabled={!canSubmit}
-                                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-info hover:opacity-90 rounded-lg transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                        Keep current value
-                                    </button>
-                                </div>
-                            </DialogPanel>
-                        </TransitionChild>
-                    </div>
-                </div>
-            </Dialog>
-        </Transition>
-    )
-}
-
-// ─── Reject modal ────────────────────────────────────────────────────────────
-function RejectModal({
-    validation,
-    onClose,
-    onSubmit,
-}: {
-    validation: Validation
-    onClose: () => void
-    onSubmit: (payload: { reasonCategory: string; notes: string; notifyAI: boolean }) => void
-}) {
-    const [reasonCategory, setReasonCategory] = useState('false-positive')
-    const [notes, setNotes] = useState('')
-    const [notifyAI, setNotifyAI] = useState(true)
-    const canSubmit = reasonCategory !== 'other' || notes.trim().length > 0
-
-    return (
-        <Transition show={true} as={Fragment} appear>
-            <Dialog onClose={onClose} className="relative z-[100]">
-                <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
-                    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm" />
-                </TransitionChild>
-                <div className="fixed inset-0 overflow-y-auto">
-                    <div className="flex min-h-full items-center justify-center p-4">
-                        <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95 translate-y-2" enterTo="opacity-100 scale-100 translate-y-0" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
-                            <DialogPanel className="w-full max-w-xl bg-card dark:bg-zinc-900 border border-border rounded-2xl shadow-2xl">
-                                <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
-                                    <div className="flex items-start gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
-                                            <X className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <DialogTitle className="text-base font-bold text-foreground">Reject flag — Strata was wrong?</DialogTitle>
-                                            <p className="text-xs text-muted-foreground mt-0.5">{validation.field}</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Close">
-                                        <X className="h-4 w-4" />
-                                    </button>
-                                </div>
-
-                                <div className="p-5 space-y-4">
-                                    {/* AI learning context */}
-                                    <div className="bg-ai/5 dark:bg-ai/10 border border-ai/30 rounded-xl p-3 flex items-start gap-2.5">
-                                        <Brain className="h-4 w-4 text-ai shrink-0 mt-0.5" />
-                                        <div className="text-xs">
-                                            <div className="font-bold text-foreground">Your feedback trains the model.</div>
-                                            <div className="text-muted-foreground mt-0.5">
-                                                Tell Strata why this flag was wrong so it stops raising the same issue on future budgets.
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Why reject?</label>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {REJECT_CATEGORIES.map(c => {
-                                                const active = reasonCategory === c.id
-                                                return (
-                                                    <button
-                                                        key={c.id}
-                                                        type="button"
-                                                        onClick={() => setReasonCategory(c.id)}
-                                                        className={`
-                                                            flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-colors
-                                                            ${active
-                                                                ? 'bg-muted border-muted-foreground/40 text-foreground'
-                                                                : 'bg-background dark:bg-zinc-800 border-border text-foreground hover:border-zinc-300 dark:hover:border-zinc-700'
-                                                            }
-                                                        `}
-                                                    >
-                                                        <span className={`h-2 w-2 rounded-full shrink-0 ${active ? 'bg-muted-foreground' : 'bg-muted-foreground/30'}`} />
-                                                        {c.label}
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                                            Notes for Strata {reasonCategory === 'other' && <span className="text-red-600 dark:text-red-400 ml-1">· required</span>}
-                                        </label>
-                                        <textarea
-                                            value={notes}
-                                            onChange={e => setNotes(e.target.value)}
-                                            rows={3}
-                                            placeholder="e.g. The 72×36 is valid — we verified with Allsteel that this config ships with a reinforced panel mount."
-                                            className="w-full bg-background dark:bg-zinc-800 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary resize-none"
-                                        />
-                                    </div>
-
-                                    <label className="flex items-start gap-3 bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-lg p-3 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                                        <input type="checkbox" checked={notifyAI} onChange={e => setNotifyAI(e.target.checked)} className="h-4 w-4 mt-0.5 accent-primary" />
-                                        <div className="flex-1">
-                                            <div className="text-xs font-bold text-foreground">Send feedback to Strata AI</div>
-                                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                                                Your rejection + reason is logged to the model-improvement pipeline. No client data shared.
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-
-                                <div className="px-5 py-3 border-t border-border bg-muted/20 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
-                                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors">
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={() => canSubmit && onSubmit({ reasonCategory, notes: notes.trim(), notifyAI })}
-                                        disabled={!canSubmit}
-                                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                                    >
-                                        {notifyAI ? <Brain className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                                        {notifyAI ? 'Reject & notify AI' : 'Reject flag'}
-                                    </button>
-                                </div>
-                            </DialogPanel>
-                        </TransitionChild>
-                    </div>
-                </div>
-            </Dialog>
-        </Transition>
-    )
-}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 // Splits a field like "Line 5: Allsteel Further — Worksurface Size" into

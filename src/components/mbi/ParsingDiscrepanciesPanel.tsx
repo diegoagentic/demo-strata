@@ -17,14 +17,14 @@
  * USED BY: ParsingStep (wizard step 1)
  */
 
-import { Fragment, useState } from 'react'
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
+import { useState } from 'react'
 import {
     AlertTriangle, Sparkles, CheckCircle2, Check, X, PackageSearch,
     Eye, Scale, TrendingDown, TrendingUp, ChevronRight, Send, Brain,
     ArrowRight, Package, Truck, Warehouse,
 } from 'lucide-react'
 import MBIDetailSheet from './MBIDetailSheet'
+import MBIReasonModal from './MBIReasonModal'
 
 export type DiscrepancyStatus = 'pending' | 'accepted' | 'dismissed'
 
@@ -258,10 +258,36 @@ export default function ParsingDiscrepanciesPanel({
 
             {/* Dismiss modal — feedback loop for AI training */}
             {dismissTarget && (
-                <DismissDiscrepancyModal
-                    discrepancy={dismissTarget}
+                <MBIReasonModal
+                    isOpen
                     onClose={() => setDismissTarget(null)}
-                    onSubmit={payload => handleDismissSubmit(dismissTarget, payload)}
+                    onSubmit={payload => handleDismissSubmit(dismissTarget, {
+                        reasonCategory: payload.categoryId,
+                        notes: payload.notes,
+                        notifyAI: payload.notifyAI,
+                    })}
+                    tone="danger"
+                    icon={<X className="h-5 w-5" />}
+                    title="Dismiss this discrepancy"
+                    subtitle={dismissTarget.title}
+                    contextBanner={{
+                        tone: 'info',
+                        icon: <Brain className="h-4 w-4" />,
+                        title: 'Your feedback trains the parser.',
+                        body: 'Tell Strata why this flag was noise so it stops raising it on future imports.',
+                    }}
+                    categories={DISMISS_CATEGORIES}
+                    defaultCategoryId="false-positive"
+                    categoryPrompt="Why dismiss?"
+                    notesPlaceholder="e.g. CAP total is correct — the SIF header was stale from an earlier revision."
+                    notesRequiredForCategoryId="other"
+                    notifyToggle={{
+                        defaultOn: true,
+                        title: 'Send feedback to Strata AI',
+                        description: 'Dismissal + reason logged to the parser-improvement pipeline. No client data shared.',
+                    }}
+                    confirmLabel="Dismiss flag"
+                    confirmLabelWhenNotifying="Dismiss & notify AI"
                 />
             )}
         </>
@@ -661,121 +687,3 @@ function InventoryCompareDetail() {
     )
 }
 
-// ─── Dismiss modal (feedback loop for AI) ────────────────────────────────────
-function DismissDiscrepancyModal({
-    discrepancy,
-    onClose,
-    onSubmit,
-}: {
-    discrepancy: ParsingDiscrepancy
-    onClose: () => void
-    onSubmit: (payload: { reasonCategory: string; notes: string; notifyAI: boolean }) => void
-}) {
-    const [reasonCategory, setReasonCategory] = useState('false-positive')
-    const [notes, setNotes] = useState('')
-    const [notifyAI, setNotifyAI] = useState(true)
-    const canSubmit = reasonCategory !== 'other' || notes.trim().length > 0
-
-    return (
-        <Transition show={true} as={Fragment} appear>
-            <Dialog onClose={onClose} className="relative z-[100]">
-                <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
-                    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm" />
-                </TransitionChild>
-                <div className="fixed inset-0 overflow-y-auto">
-                    <div className="flex min-h-full items-center justify-center p-4">
-                        <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95 translate-y-2" enterTo="opacity-100 scale-100 translate-y-0" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
-                            <DialogPanel className="w-full max-w-xl bg-card dark:bg-zinc-900 border border-border rounded-2xl shadow-2xl">
-                                <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
-                                    <div className="flex items-start gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
-                                            <X className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <DialogTitle className="text-base font-bold text-foreground">Dismiss this discrepancy</DialogTitle>
-                                            <p className="text-xs text-muted-foreground mt-0.5">{discrepancy.title}</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Close">
-                                        <X className="h-4 w-4" />
-                                    </button>
-                                </div>
-
-                                <div className="p-5 space-y-4">
-                                    <div className="bg-ai/5 dark:bg-ai/10 border border-ai/30 rounded-xl p-3 flex items-start gap-2.5">
-                                        <Brain className="h-4 w-4 text-ai shrink-0 mt-0.5" />
-                                        <div className="text-xs">
-                                            <div className="font-bold text-foreground">Your feedback trains the parser.</div>
-                                            <div className="text-muted-foreground mt-0.5">Tell Strata why this flag was noise so it stops raising it on future imports.</div>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Why dismiss?</label>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {DISMISS_CATEGORIES.map(c => {
-                                                const active = reasonCategory === c.id
-                                                return (
-                                                    <button
-                                                        key={c.id}
-                                                        type="button"
-                                                        onClick={() => setReasonCategory(c.id)}
-                                                        className={`
-                                                            flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-colors
-                                                            ${active
-                                                                ? 'bg-muted border-muted-foreground/40 text-foreground'
-                                                                : 'bg-background dark:bg-zinc-800 border-border text-foreground hover:border-zinc-300 dark:hover:border-zinc-700'
-                                                            }
-                                                        `}
-                                                    >
-                                                        <span className={`h-2 w-2 rounded-full shrink-0 ${active ? 'bg-muted-foreground' : 'bg-muted-foreground/30'}`} />
-                                                        {c.label}
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                                            Notes {reasonCategory === 'other' && <span className="text-red-600 dark:text-red-400 ml-1">· required</span>}
-                                        </label>
-                                        <textarea
-                                            value={notes}
-                                            onChange={e => setNotes(e.target.value)}
-                                            rows={3}
-                                            placeholder="e.g. CAP total is correct — the SIF header was stale from an earlier revision."
-                                            className="w-full bg-background dark:bg-zinc-800 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary resize-none"
-                                        />
-                                    </div>
-
-                                    <label className="flex items-start gap-3 bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-lg p-3 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                                        <input type="checkbox" checked={notifyAI} onChange={e => setNotifyAI(e.target.checked)} className="h-4 w-4 mt-0.5 accent-primary" />
-                                        <div className="flex-1">
-                                            <div className="text-xs font-bold text-foreground">Send feedback to Strata AI</div>
-                                            <div className="text-[11px] text-muted-foreground mt-0.5">Dismissal + reason logged to the parser-improvement pipeline. No client data shared.</div>
-                                        </div>
-                                    </label>
-                                </div>
-
-                                <div className="px-5 py-3 border-t border-border bg-muted/20 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
-                                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors">
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={() => canSubmit && onSubmit({ reasonCategory, notes: notes.trim(), notifyAI })}
-                                        disabled={!canSubmit}
-                                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                                    >
-                                        {notifyAI ? <Brain className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                                        {notifyAI ? 'Dismiss & notify AI' : 'Dismiss flag'}
-                                    </button>
-                                </div>
-                            </DialogPanel>
-                        </TransitionChild>
-                    </div>
-                </div>
-            </Dialog>
-        </Transition>
-    )
-}

@@ -25,7 +25,10 @@
  */
 
 import { useState } from 'react'
-import { CheckCircle2, Download, Send, FileSpreadsheet, FileText, Sparkles } from 'lucide-react'
+import {
+    CheckCircle2, Download, Send, FileSpreadsheet, FileText, Sparkles,
+    Clock, ShieldCheck, FileSignature, Package, Receipt, Palette, Calculator,
+} from 'lucide-react'
 import FlowHandoff from './FlowHandoff'
 
 interface OutputStepProps {
@@ -121,8 +124,41 @@ export default function OutputStep({ client, scenarioLabel, total, markup, preve
             {/* Post-delivery — narrative bridge to Flow 2 */}
             {delivered && (
                 <FlowHandoff
-                    clientName={client.name}
-                    preventedImpact={preventedImpact}
+                    eyebrow="Flow 1 complete"
+                    recapHeading="Amanda's work here is done"
+                    recapSubheading={`Budget delivered to ${client.name}. Here's what Strata did for her on this deal.`}
+                    recapStats={[
+                        { icon: <Clock className="h-4 w-4" />, value: '4 min', sub: 'vs 1 week before', accent: 'text-success' },
+                        { icon: <ShieldCheck className="h-4 w-4" />, value: preventedImpact > 0 ? `$${preventedImpact.toLocaleString()}` : '—', sub: 'caught by AI', accent: 'text-success' },
+                        { icon: <CheckCircle2 className="h-4 w-4" />, value: '2', sub: 'artifacts delivered' },
+                        { icon: <FileText className="h-4 w-4" />, value: 'v1.0', sub: 'logged in SharePoint' },
+                    ]}
+                    timeline={[
+                        { status: 'done', icon: <Send className="h-3.5 w-3.5" />, label: 'Budget sent', caption: 'just now', flow: 'Flow 1 · Budget Builder' },
+                        { status: 'next', icon: <FileSignature className="h-3.5 w-3.5" />, label: 'Client approves', caption: '1–2 weeks', flow: '—' },
+                        { status: 'future', icon: <FileText className="h-3.5 w-3.5" />, label: 'PO cut in CORE', caption: 'Quotes AI auto-builds', flow: 'Flow 3 · Quotes AI' },
+                        { status: 'future', icon: <Package className="h-3.5 w-3.5" />, label: 'Orders placed', caption: 'weeks of execution', flow: '—' },
+                        { status: 'future', icon: <Receipt className="h-3.5 w-3.5" />, label: 'Invoices arrive', caption: 'Kathy takes over', flow: 'Flow 2 · Accounting AI', highlight: true },
+                    ]}
+                    narrative={{
+                        eyebrow: 'Fast forward · 3 weeks later',
+                        icon: <Receipt className="h-5 w-5" />,
+                        title: `Construction is underway at ${client.name}. Vendor invoices start flowing in.`,
+                        body: (
+                            <>
+                                HealthTrust contracts trigger royalty logic, non-EDI manufacturers need line-by-line reconciliation, and the AR aging report needs to stay live for leadership. That's where <strong className="text-foreground">Kathy Belleville</strong>, MBI's Controller, takes over.
+                            </>
+                        ),
+                    }}
+                    primaryCTA={{
+                        label: "Continue to Accounting AI · Kathy's queue",
+                        icon: <Receipt className="h-4 w-4" />,
+                        targetStepId: 'm2.1',
+                    }}
+                    secondaryCTAs={[
+                        { label: 'Quotes AI', icon: <Calculator className="h-3 w-3" />, targetStepId: 'm3.1' },
+                        { label: 'Design AI', icon: <Palette className="h-3 w-3" />, targetStepId: 'm4.1' },
+                    ]}
                 />
             )}
         </div>

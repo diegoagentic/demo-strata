@@ -1,39 +1,82 @@
 /**
  * COMPONENT: FlowHandoff
- * PURPOSE: Narrative bridge from Flow 1 (Budget Builder, Amanda) to Flow 2
- *          (Accounting AI, Kathy). Renders after the user clicks "Send to
- *          client" in the final OutputStep — converts the emotional peak of
- *          successful delivery into a continuity cue: the AI platform keeps
- *          working even when Amanda's job is done.
+ * PURPOSE: Reusable narrative bridge shown at the end of any MBI flow.
+ *          Three blocks:
+ *            1. Recap stats (tiles)
+ *            2. Downstream timeline (5 nodes showing cross-flow chain)
+ *            3. Narrative time-skip + primary/secondary jump CTAs
  *
- *          Three blocks, in order:
- *            1. Recap stats — time saved, errors prevented, artifacts
- *            2. Downstream timeline — 5 nodes showing how the budget moves
- *               through all 4 MBI AI modules over the next 3 weeks
- *            3. Time-skip + invitation to Flow 2, with secondary jumps to
- *               Quotes AI (m3.1) and Design AI (m4.1)
+ *          Generalized from the Flow 1→2 implementation — config-driven so
+ *          every flow can assemble its own recap/timeline/bridge without
+ *          duplicating chrome.
  *
- * PROPS:
- *   - clientName: string            — e.g. "Enterprise Holdings"
- *   - preventedImpact: number       — aggregated $ prevented from validations
+ * PROPS: see interfaces below.
  *
- * DS TOKENS: bg-card · bg-success/5 · border-primary/30 · brand-300/500
- *
- * USED BY: OutputStep (after delivered === true)
+ * USED BY: OutputStep (Flow 1→2), Flow 2 wrap (→3), Flow 3 wrap (→4),
+ *          Flow 4 recap (final loop).
  */
 
+import type { ReactNode } from 'react'
 import { useDemo } from '../../context/DemoContext'
-import {
-    CheckCircle2, Clock, ShieldCheck, FileText, ArrowRight, Send,
-    FileSignature, Package, Receipt, Palette, Calculator, Sparkles,
-} from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 
-interface FlowHandoffProps {
-    clientName: string
-    preventedImpact: number
+export interface FlowHandoffStat {
+    icon: ReactNode
+    value: string
+    sub: string
+    accent?: string
 }
 
-export default function FlowHandoff({ clientName, preventedImpact }: FlowHandoffProps) {
+export interface FlowHandoffTimelineNode {
+    status: 'done' | 'next' | 'future'
+    icon: ReactNode
+    label: string
+    caption: string
+    /** Which flow handles this stage (e.g. 'Flow 2 · Accounting AI'). Use '—' if human step only. */
+    flow: string
+    highlight?: boolean
+}
+
+export interface FlowHandoffCTA {
+    label: string
+    icon?: ReactNode
+    targetStepId: string
+}
+
+interface FlowHandoffProps {
+    /** Optional eyebrow text above the recap heading (e.g. 'Flow 1 complete'). */
+    eyebrow?: string
+    /** Bold lead line for the recap block. */
+    recapHeading: string
+    /** 1-line context under the heading. */
+    recapSubheading?: string
+    /** 3–4 stat tiles. */
+    recapStats: FlowHandoffStat[]
+    /** Horizontal timeline nodes. */
+    timeline: FlowHandoffTimelineNode[]
+    /** Narrative block — eyebrow ('3 weeks later'), title, body copy. */
+    narrative: {
+        eyebrow?: string
+        icon?: ReactNode
+        title: string
+        body: ReactNode
+    }
+    /** Primary jump CTA (brand-colored). */
+    primaryCTA: FlowHandoffCTA
+    /** Optional secondary CTAs rendered as small pills. */
+    secondaryCTAs?: FlowHandoffCTA[]
+}
+
+export default function FlowHandoff({
+    eyebrow,
+    recapHeading,
+    recapSubheading,
+    recapStats,
+    timeline,
+    narrative,
+    primaryCTA,
+    secondaryCTAs = [],
+}: FlowHandoffProps) {
     const { steps, goToStep, isDemoActive } = useDemo()
 
     const goToFlow = (stepId: string) => {
@@ -43,149 +86,99 @@ export default function FlowHandoff({ clientName, preventedImpact }: FlowHandoff
 
     return (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* 1. Success recap */}
+            {/* 1. Recap */}
             <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-5">
                 <div className="flex items-start gap-3 mb-4">
                     <div className="h-10 w-10 rounded-xl bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                         <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                        <div className="text-base font-bold text-foreground">
-                            Amanda's work here is done
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                            Budget delivered to {clientName}. Here's what Strata did for her on this deal.
-                        </div>
+                        {eyebrow && (
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                                {eyebrow}
+                            </div>
+                        )}
+                        <div className="text-base font-bold text-foreground">{recapHeading}</div>
+                        {recapSubheading && (
+                            <div className="text-xs text-muted-foreground mt-0.5">{recapSubheading}</div>
+                        )}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <RecapStat
-                        icon={<Clock className="h-4 w-4" />}
-                        value="4 min"
-                        sub="vs 1 week before"
-                        accent="text-success"
-                    />
-                    <RecapStat
-                        icon={<ShieldCheck className="h-4 w-4" />}
-                        value={preventedImpact > 0 ? `$${preventedImpact.toLocaleString()}` : '—'}
-                        sub="caught by AI"
-                        accent="text-success"
-                    />
-                    <RecapStat
-                        icon={<CheckCircle2 className="h-4 w-4" />}
-                        value="2"
-                        sub="artifacts delivered"
-                        accent="text-foreground"
-                    />
-                    <RecapStat
-                        icon={<FileText className="h-4 w-4" />}
-                        value="v1.0"
-                        sub="logged in SharePoint"
-                        accent="text-foreground"
-                    />
+                <div className={`grid gap-3 ${recapStats.length >= 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-3'}`}>
+                    {recapStats.map((stat, i) => (
+                        <RecapStat key={i} {...stat} />
+                    ))}
                 </div>
             </div>
 
-            {/* 2. Downstream timeline */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-5">
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">What happens next</div>
-                    <div className="flex-1 h-px bg-border" />
-                    <div className="text-[10px] text-muted-foreground">4 AI modules · one chain</div>
+            {/* 2. Timeline */}
+            {timeline.length > 0 && (
+                <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">What happens next</div>
+                        <div className="flex-1 h-px bg-border" />
+                        <div className="text-[10px] text-muted-foreground">One chain across MBI's AIs</div>
+                    </div>
+
+                    <ol className={`grid grid-cols-1 gap-3 ${timeline.length === 5 ? 'md:grid-cols-5' : timeline.length === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+                        {timeline.map((node, i) => (
+                            <TimelineNode key={i} {...node} />
+                        ))}
+                    </ol>
                 </div>
+            )}
 
-                <ol className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                    <TimelineNode
-                        status="done"
-                        icon={<Send className="h-3.5 w-3.5" />}
-                        label="Budget sent"
-                        caption="just now"
-                        flow="Flow 1 · Budget Builder"
-                    />
-                    <TimelineNode
-                        status="next"
-                        icon={<FileSignature className="h-3.5 w-3.5" />}
-                        label="Client approves"
-                        caption="1–2 weeks"
-                        flow="—"
-                    />
-                    <TimelineNode
-                        status="future"
-                        icon={<FileText className="h-3.5 w-3.5" />}
-                        label="PO cut in CORE"
-                        caption="Quotes AI auto-builds"
-                        flow="Flow 3 · Quotes AI"
-                    />
-                    <TimelineNode
-                        status="future"
-                        icon={<Package className="h-3.5 w-3.5" />}
-                        label="Orders placed"
-                        caption="weeks of execution"
-                        flow="—"
-                    />
-                    <TimelineNode
-                        status="future"
-                        icon={<Receipt className="h-3.5 w-3.5" />}
-                        label="Invoices arrive"
-                        caption="Kathy takes over"
-                        flow="Flow 2 · Accounting AI"
-                        highlight
-                    />
-                </ol>
-            </div>
-
-            {/* 3. Time skip + next-flow CTA */}
+            {/* 3. Narrative + CTAs */}
             <div className="bg-gradient-to-br from-primary/5 to-ai/5 dark:from-primary/10 dark:to-ai/10 border border-primary/30 rounded-2xl p-5 space-y-4">
                 <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-ai/15 text-ai flex items-center justify-center shrink-0">
-                        <Receipt className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                            Fast forward · 3 weeks later
+                    {narrative.icon && (
+                        <div className="h-10 w-10 rounded-xl bg-ai/15 text-ai flex items-center justify-center shrink-0">
+                            {narrative.icon}
                         </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                        {narrative.eyebrow && (
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                                {narrative.eyebrow}
+                            </div>
+                        )}
                         <div className="text-sm font-bold text-foreground leading-snug">
-                            Construction is underway at {clientName}. Vendor invoices start flowing in.
+                            {narrative.title}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                            HealthTrust contracts trigger royalty logic, non-EDI manufacturers need line-by-line reconciliation, and the AR aging report needs to stay live for leadership. That's where <strong className="text-foreground">Kathy Belleville</strong>, MBI's Controller, takes over.
+                            {narrative.body}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                        onClick={() => goToFlow('m2.1')}
-                        disabled={!isDemoActive}
-                        title={isDemoActive ? undefined : 'Start the demo tour to enable flow navigation'}
-                        className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                    >
-                        <Receipt className="h-4 w-4" />
-                        <span>Continue to Accounting AI · Kathy's queue</span>
-                        <ArrowRight className="h-4 w-4" />
-                    </button>
-                </div>
+                <button
+                    onClick={() => goToFlow(primaryCTA.targetStepId)}
+                    disabled={!isDemoActive}
+                    title={isDemoActive ? undefined : 'Start the demo tour to enable flow navigation'}
+                    className="w-full flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                >
+                    {primaryCTA.icon}
+                    <span>{primaryCTA.label}</span>
+                    <ArrowRight className="h-4 w-4" />
+                </button>
 
-                <div className="flex items-center gap-2 pt-1">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Or jump to</span>
-                    <button
-                        onClick={() => goToFlow('m3.1')}
-                        disabled={!isDemoActive}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:border-primary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        <Calculator className="h-3 w-3" />
-                        Quotes AI
-                    </button>
-                    <button
-                        onClick={() => goToFlow('m4.1')}
-                        disabled={!isDemoActive}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:border-primary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        <Palette className="h-3 w-3" />
-                        Design AI
-                    </button>
-                </div>
+                {secondaryCTAs.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap pt-1">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Or jump to</span>
+                        {secondaryCTAs.map((cta, i) => (
+                            <button
+                                key={i}
+                                onClick={() => goToFlow(cta.targetStepId)}
+                                disabled={!isDemoActive}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:border-primary/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                {cta.icon}
+                                {cta.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )
@@ -196,13 +189,8 @@ function RecapStat({
     icon,
     value,
     sub,
-    accent,
-}: {
-    icon: React.ReactNode
-    value: string
-    sub: string
-    accent: string
-}) {
+    accent = 'text-foreground',
+}: FlowHandoffStat) {
     return (
         <div className="bg-zinc-50/60 dark:bg-zinc-800/60 border border-border rounded-xl p-3">
             <div className={`flex items-center gap-1.5 ${accent}`}>
@@ -222,14 +210,7 @@ function TimelineNode({
     caption,
     flow,
     highlight,
-}: {
-    status: 'done' | 'next' | 'future'
-    icon: React.ReactNode
-    label: string
-    caption: string
-    flow: string
-    highlight?: boolean
-}) {
+}: FlowHandoffTimelineNode) {
     const isAIStep = flow !== '—'
     const theme = (() => {
         if (status === 'done') return {

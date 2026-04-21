@@ -25,7 +25,8 @@ import { useEffect, useState } from 'react'
 import { Calculator, Plus, Clock, DollarSign, TrendingUp, CheckCircle2 } from 'lucide-react'
 import MBIPageShell from './MBIPageShell'
 import BudgetQueueKanban from './BudgetQueueKanban'
-import BudgetWizardShell, { WIZARD_STEPS } from './BudgetWizardShell'
+import MBIWizardShell, { type WizardStepSpec } from './MBIWizardShell'
+import MBIPersonaBadge from './MBIPersonaBadge'
 import BudgetIntakeStep, { INITIAL_QUICK_FORM, type QuickFormState } from './BudgetIntakeStep'
 import ParsingStep from './ParsingStep'
 import ScenariosStep from './ScenariosStep'
@@ -43,6 +44,16 @@ import {
     getSIFSample,
 } from '../../config/profiles/mbi-data'
 import type { BudgetPath } from '../../config/profiles/mbi-data'
+
+// Budget Builder wizard steps (Flow 1 scenes)
+const BUDGET_WIZARD_STEPS: WizardStepSpec[] = [
+    { id: 'intake', label: 'Intake', shortLabel: '1. Intake' },
+    { id: 'parsing', label: 'AI Parsing', shortLabel: '2. Parsing' },
+    { id: 'scenarios', label: 'Scenarios', shortLabel: '3. Scenarios' },
+    { id: 'validation', label: 'Validation', shortLabel: '4. Validation' },
+    { id: 'review', label: 'Review', shortLabel: '5. Review' },
+    { id: 'output', label: 'Output', shortLabel: '6. Output' },
+]
 
 // Map demo tour step id → wizard step index (0-based)
 const STEP_TO_WIZARD_INDEX: Record<string, number> = {
@@ -157,14 +168,16 @@ export default function MBIBudgetPage() {
             activeApp="mbi-budget"
         >
             {inWizard ? (
-                <BudgetWizardShell
+                <MBIWizardShell
+                    steps={BUDGET_WIZARD_STEPS}
                     activeStep={activeStep}
                     onStepClick={navigateWizard}
                     onPrev={() => navigateWizard(Math.max(0, activeStep - 1))}
-                    onNext={() => navigateWizard(Math.min(WIZARD_STEPS.length - 1, activeStep + 1))}
+                    onNext={() => navigateWizard(Math.min(BUDGET_WIZARD_STEPS.length - 1, activeStep + 1))}
                     canAdvance={canAdvance}
                     actionHint={stepMeta.hint}
                     nextLabel={stepMeta.nextLabel}
+                    persona={<MBIPersonaBadge name="Amanda Renshaw" role="Account Manager · Dealer" />}
                 >
                     {activeStep === 0 && (
                         <BudgetIntakeStep
@@ -235,7 +248,7 @@ export default function MBIBudgetPage() {
                             />
                         )
                     })()}
-                </BudgetWizardShell>
+                </MBIWizardShell>
             ) : (
                 <QueueView />
             )}

@@ -1,44 +1,38 @@
 /**
- * COMPONENT: BudgetWizardShell
- * PURPOSE: 6-step wizard chrome for the Budget Builder. Header = caption +
- *          stepper chips. Body = active step content. Footer = Back + big
- *          primary CTA. Chips are always clickable; Next label names the
- *          action per step (e.g. "Parse SIF + CAP").
+ * COMPONENT: MBIWizardShell
+ * PURPOSE: Generic wizard chrome shared across all MBI demo flows. Provides
+ *          the same header (caption + stepper chips), body slot, inline CTA,
+ *          and footer that Flow 1 uses — but flow-agnostic. Each flow owns
+ *          its own step list and passes it via `steps`.
  *
- *          Layout rules: header is NOT sticky (avoids overlapping the
- *          active-step caption). The big primary CTA is rendered inline at
- *          the end of the step body via <WizardPrimaryCTA /> for visibility,
- *          AND in the footer as a persistent nav bar.
+ *          Renamed from BudgetWizardShell to signal Flow-2/3/4 reuse. The
+ *          step config shape is exported so each flow can define its own
+ *          ordered list of scenes.
  *
  * PROPS:
- *   - activeStep: number (0-5)
- *   - onPrev / onNext / onStepClick
- *   - canAdvance?: boolean — gates the Next button
- *   - nextLabel?: string   — overrides default "Continue · <next>" label
- *   - actionHint?: string  — 1-line hint under the active step name
+ *   - steps: WizardStepSpec[]       — ordered scenes for the flow
+ *   - activeStep: number             — index into steps (0-based)
+ *   - onPrev / onNext / onStepClick  — navigation handlers
+ *   - canAdvance?: boolean           — gates the Next button
+ *   - nextLabel?: string             — overrides default 'Continue · <next>' label
+ *   - actionHint?: string            — 1-line hint under the active step name
+ *   - persona?: ReactNode            — optional persona badge rendered in header
+ *   - children: ReactNode            — active scene content
  *
- * USED BY: MBIBudgetPage
+ * USED BY: MBIBudgetPage (Flow 1), future flow pages.
  */
 
 import type { ReactNode } from 'react'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 
-interface WizardStepSpec {
+export interface WizardStepSpec {
     id: string
     label: string
     shortLabel: string
 }
 
-export const WIZARD_STEPS: WizardStepSpec[] = [
-    { id: 'intake', label: 'Intake', shortLabel: '1. Intake' },
-    { id: 'parsing', label: 'AI Parsing', shortLabel: '2. Parsing' },
-    { id: 'scenarios', label: 'Scenarios', shortLabel: '3. Scenarios' },
-    { id: 'validation', label: 'Validation', shortLabel: '4. Validation' },
-    { id: 'review', label: 'Review', shortLabel: '5. Review' },
-    { id: 'output', label: 'Output', shortLabel: '6. Output' },
-]
-
-interface BudgetWizardShellProps {
+interface MBIWizardShellProps {
+    steps: WizardStepSpec[]
     activeStep: number
     onPrev?: () => void
     onNext?: () => void
@@ -46,10 +40,12 @@ interface BudgetWizardShellProps {
     canAdvance?: boolean
     nextLabel?: string
     actionHint?: string
+    persona?: ReactNode
     children: ReactNode
 }
 
-export default function BudgetWizardShell({
+export default function MBIWizardShell({
+    steps,
     activeStep,
     onPrev,
     onNext,
@@ -57,27 +53,31 @@ export default function BudgetWizardShell({
     canAdvance = true,
     nextLabel,
     actionHint,
+    persona,
     children,
-}: BudgetWizardShellProps) {
-    const activeSpec = WIZARD_STEPS[activeStep]
-    const nextSpec = WIZARD_STEPS[activeStep + 1]
+}: MBIWizardShellProps) {
+    const activeSpec = steps[activeStep]
+    const nextSpec = steps[activeStep + 1]
     const resolvedNextLabel = nextLabel ?? (nextSpec ? `Continue · ${nextSpec.label}` : 'Done')
-    const isLast = activeStep === WIZARD_STEPS.length - 1
+    const isLast = activeStep === steps.length - 1
 
     return (
         <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
-            {/* Header: caption (what you're doing) + stepper chips */}
+            {/* Header: caption + persona + stepper chips */}
             <div className="px-5 pt-4 pb-3 border-b border-border bg-muted/10 dark:bg-zinc-900/40 space-y-3">
                 {activeSpec && (
                     <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                        <div className="min-w-0">
-                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                Step {activeStep + 1} of {WIZARD_STEPS.length}
+                        <div className="min-w-0 flex items-start gap-3">
+                            {persona}
+                            <div className="min-w-0">
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                    Step {activeStep + 1} of {steps.length}
+                                </div>
+                                <div className="text-base font-bold text-foreground">{activeSpec.label}</div>
+                                {actionHint && (
+                                    <div className="text-xs text-muted-foreground mt-0.5">{actionHint}</div>
+                                )}
                             </div>
-                            <div className="text-base font-bold text-foreground">{activeSpec.label}</div>
-                            {actionHint && (
-                                <div className="text-xs text-muted-foreground mt-0.5">{actionHint}</div>
-                            )}
                         </div>
                         {nextSpec && (
                             <div className="text-[10px] text-muted-foreground text-right shrink-0">
@@ -89,7 +89,7 @@ export default function BudgetWizardShell({
                 )}
 
                 <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-                    {WIZARD_STEPS.map((step, i) => {
+                    {steps.map((step, i) => {
                         const isActive = i === activeStep
                         const isCompleted = i < activeStep
                         const clickable = !!onStepClick
@@ -118,7 +118,7 @@ export default function BudgetWizardShell({
                                     </div>
                                     <span className="whitespace-nowrap">{step.label}</span>
                                 </Comp>
-                                {i < WIZARD_STEPS.length - 1 && (
+                                {i < steps.length - 1 && (
                                     <div className={`h-px w-3 shrink-0 ${i < activeStep ? 'bg-success/50' : 'bg-border'}`} />
                                 )}
                             </div>
@@ -131,7 +131,7 @@ export default function BudgetWizardShell({
             <div className="p-5 space-y-4">
                 {children}
 
-                {/* Inline primary CTA — Back (secondary) + Next (brand) at end of step */}
+                {/* Inline primary CTA — Back + Next side-by-side at end of step */}
                 {!isLast && (
                     <div className="pt-2">
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -174,7 +174,7 @@ export default function BudgetWizardShell({
                     </button>
 
                     <div className="text-[10px] text-muted-foreground tabular-nums hidden sm:block">
-                        {activeStep + 1} / {WIZARD_STEPS.length}
+                        {activeStep + 1} / {steps.length}
                     </div>
 
                     <button
