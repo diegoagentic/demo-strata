@@ -131,17 +131,27 @@ export default function BudgetWizardShell({
             <div className="p-5 space-y-4">
                 {children}
 
-                {/* Inline primary CTA — big full-width button at end of step content */}
+                {/* Inline primary CTA — Back (secondary) + Next (brand) at end of step */}
                 {!isLast && (
                     <div className="pt-2">
-                        <button
-                            onClick={onNext}
-                            disabled={!onNext || !canAdvance}
-                            className="w-full flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                        >
-                            <span>{resolvedNextLabel}</span>
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <button
+                                onClick={onPrev}
+                                disabled={!onPrev || activeStep === 0}
+                                className="flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto sm:px-6"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                <span>Back</span>
+                            </button>
+                            <button
+                                onClick={onNext}
+                                disabled={!onNext || !canAdvance}
+                                className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                            >
+                                <span>{resolvedNextLabel}</span>
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        </div>
                         {!canAdvance && (
                             <div className="text-[11px] text-amber-600 dark:text-amber-400 text-center mt-2 italic">
                                 Complete this step's action to continue.

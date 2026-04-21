@@ -25,6 +25,7 @@ import { useEffect, useState } from 'react'
 import { Sparkles, FileCode2, ShieldCheck, CheckCircle2, ChevronRight, Loader2 } from 'lucide-react'
 import SIFParserPreview from './SIFParserPreview'
 import MBIDetailSheet from './MBIDetailSheet'
+import ParsingDiscrepanciesPanel, { DEFAULT_PARSING_DISCREPANCIES, type DiscrepancyStatus } from './ParsingDiscrepanciesPanel'
 import { getSIFSample } from '../../config/profiles/mbi-data'
 import type { ScenarioTier } from '../../config/profiles/mbi-data'
 
@@ -48,6 +49,9 @@ export default function ParsingStep(_props: ParsingStepProps) {
     const [sourceOpen, setSourceOpen] = useState(false)
     const [logOpen, setLogOpen] = useState(false)
     const [preflightPhase, setPreflightPhase] = useState(-1)
+    const [discrepancyStatus, setDiscrepancyStatus] = useState<Record<string, DiscrepancyStatus>>({})
+    const handleDiscrepancy = (id: string, s: DiscrepancyStatus) =>
+        setDiscrepancyStatus(prev => ({ ...prev, [id]: s }))
 
     // Preflight auto-plays after the SIF parser completes (~1.8s)
     useEffect(() => {
@@ -118,12 +122,23 @@ export default function ParsingStep(_props: ParsingStepProps) {
                 </button>
             </div>
 
+            {/* Parse-time discrepancies — shown once pre-flight is done */}
+            {preflightDone && (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <ParsingDiscrepanciesPanel
+                        discrepancies={DEFAULT_PARSING_DISCREPANCIES}
+                        statusById={discrepancyStatus}
+                        onStatusChange={handleDiscrepancy}
+                    />
+                </div>
+            )}
+
             {/* Next-step cue — once pre-flight is done, invite to scenarios */}
             {preflightDone && (
                 <div className="flex items-center gap-3 text-xs bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-3 animate-in fade-in duration-300">
                     <Sparkles className="h-4 w-4 text-zinc-900 dark:text-primary shrink-0" />
                     <span className="flex-1 text-foreground">
-                        Structured data ready · <strong>3 scenarios</strong> generated. Continue to <strong>Scenarios</strong> to pick Good / Better / Best.
+                        Structured data ready · <strong>3 scenarios</strong> generated. Triage discrepancies above, then continue to <strong>Scenarios</strong>.
                     </span>
                 </div>
             )}
