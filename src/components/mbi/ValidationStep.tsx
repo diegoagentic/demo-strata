@@ -75,15 +75,22 @@ export default function ValidationStep({ validations, statusById, onStatusChange
                 warningCount={warningCount}
             />
 
-            {/* Section intro — explains the side-by-side layout */}
-            <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-muted/30 dark:bg-zinc-800/50 border border-border rounded-xl px-3 py-2">
-                <Sparkles className="h-3.5 w-3.5 text-ai shrink-0 mt-0.5" />
-                <span>
-                    <strong className="text-foreground">One card per finding</strong> · shown side-by-side so you can compare
-                    both in one pass. For each, compare <strong className="text-foreground">Expected</strong> vs <strong className="text-foreground">Actual</strong>, then{' '}
-                    <strong className="text-foreground">Accept</strong> the AI swap, <strong className="text-foreground">Override</strong> to keep the current value, or{' '}
-                    <strong className="text-foreground">Reject</strong> the flag.
-                </span>
+            {/* Section intro — explains what the cards are and how to act */}
+            <div className="flex items-start gap-2.5 text-[11px] text-muted-foreground bg-muted/30 dark:bg-zinc-800/50 border border-border rounded-xl px-3 py-2.5">
+                <Sparkles className="h-4 w-4 text-ai shrink-0 mt-0.5" />
+                <div className="flex-1">
+                    <div className="text-foreground font-bold text-xs mb-0.5">
+                        {total} independent findings — decide on each below
+                    </div>
+                    <div>
+                        Each card is one SIF line item Strata flagged. Compare{' '}
+                        <strong className="text-foreground">Expected</strong> (what should be there) with{' '}
+                        <strong className="text-foreground">Actual</strong> (what's in your SIF), then choose:{' '}
+                        <strong className="text-success">Accept</strong> applies the AI swap ·{' '}
+                        <strong className="text-info">Override</strong> keeps your value ·{' '}
+                        <strong className="text-muted-foreground">Reject</strong> dismisses the flag.
+                    </div>
+                </div>
             </div>
 
             {/* Cards — side-by-side grid for at-a-glance comparison */}
@@ -215,6 +222,7 @@ function ValidationCard({
     total: number
 }) {
     const isCritical = validation.severity === 'critical'
+    const parsed = parseValidationField(validation.field)
     const [pulseActive, setPulseActive] = useState(isCritical && status === 'pending')
 
     // Stop the pulsing ring after 2s — the hero card draws attention, then settles
@@ -313,8 +321,8 @@ function ValidationCard({
                     {severityTheme.icon}
                 </div>
                 <div className="min-w-0 flex-1">
-                    {/* Top row: Finding N of X · Severity · AI confidence · Blocks? */}
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                    {/* Top row: Finding N of X · Severity · AI confidence */}
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                             Finding {position} of {total}
                         </span>
@@ -325,26 +333,40 @@ function ValidationCard({
                         <span className="text-[10px] font-medium text-muted-foreground">
                             AI {validation.confidence}%
                         </span>
-                    </div>
-                    {/* Second row: status badge (only after resolution) */}
-                    {statusBadge && (
-                        <div className="mb-1">
+                        {statusBadge && (
                             <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusBadge.className}`}>
                                 {statusBadge.icon}
                                 {statusBadge.label}
                             </span>
-                        </div>
-                    )}
+                        )}
+                    </div>
+
+                    {/* Big title — the attribute in conflict · eye-level readable */}
+                    <h3 className="font-bold leading-tight text-lg text-foreground">
+                        {parsed.attribute}{' '}
+                        <span className="text-muted-foreground font-normal text-sm">mismatch</span>
+                    </h3>
+
+                    {/* Subtitle — line reference + product */}
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                        <span className="font-mono font-semibold text-foreground">{parsed.lineRef}</span>
+                        {parsed.product && (
+                            <>
+                                <span className="mx-1">·</span>
+                                <span>{parsed.product}</span>
+                            </>
+                        )}
+                        <span className="mx-1">·</span>
+                        <span>in this SIF</span>
+                    </div>
+
                     {/* Blocks approval signal — only when critical AND pending */}
                     {isCritical && status === 'pending' && (
-                        <div className="text-[10px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1 mb-1">
+                        <div className="text-[10px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1 mt-1.5">
                             <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                             {severityBadge.blocksHint}
                         </div>
                     )}
-                    <h3 className="font-bold leading-tight text-base text-foreground">
-                        {validation.field}
-                    </h3>
                 </div>
             </div>
 
@@ -434,4 +456,19 @@ function ValidationCard({
             )}
         </div>
     )
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Splits a field like "Line 5: Allsteel Further — Worksurface Size" into
+// { lineRef: "Line 5", product: "Allsteel Further", attribute: "Worksurface Size" }.
+// Falls back gracefully when the expected delimiters aren't present.
+function parseValidationField(field: string): { lineRef: string; product: string; attribute: string } {
+    const [left, right] = field.split(':').map(s => s.trim())
+    if (!right) return { lineRef: '', product: '', attribute: field }
+    const [product, attribute] = right.split('—').map(s => s.trim())
+    return {
+        lineRef: left,
+        product: product ?? '',
+        attribute: attribute ?? product ?? field,
+    }
 }
