@@ -53,8 +53,19 @@ const STEP_TO_WIZARD_INDEX: Record<string, number> = {
     'm1.5': 4,  // Review — approve auto-advances to Output (wizard 5)
 }
 
+// Reverse: wizard index → demo tour step id (for wizard→tour sync).
+// Wizard step 5 (Output) shares m1.5 with wizard 4 (Review) — Approve auto-advances.
+const WIZARD_INDEX_TO_STEP: Record<number, string> = {
+    0: 'm1.1',
+    1: 'm1.2',
+    2: 'm1.3',
+    3: 'm1.4',
+    4: 'm1.5',
+    5: 'm1.5',
+}
+
 export default function MBIBudgetPage() {
-    const { currentStep, isDemoActive } = useDemo()
+    const { currentStep, isDemoActive, steps: tourSteps, goToStep } = useDemo()
     const demoStepId = isDemoActive ? currentStep?.id : null
     const demoWizardIdx = demoStepId && demoStepId in STEP_TO_WIZARD_INDEX
         ? STEP_TO_WIZARD_INDEX[demoStepId]
@@ -69,6 +80,17 @@ export default function MBIBudgetPage() {
     useEffect(() => {
         if (demoWizardIdx !== null) setActiveStep(demoWizardIdx)
     }, [demoWizardIdx])
+
+    // Wizard → tour sync: when the user navigates manually (chip/Back/Next/approve),
+    // nudge the guided tour sidebar to the matching beat so the guide stays in sync.
+    const navigateWizard = (idx: number) => {
+        setActiveStep(idx)
+        if (!isDemoActive) return
+        const targetId = WIZARD_INDEX_TO_STEP[idx]
+        if (!targetId || currentStep?.id === targetId) return
+        const tourIdx = tourSteps.findIndex(s => s.id === targetId)
+        if (tourIdx >= 0) goToStep(tourIdx)
+    }
 
     // Wizard state — locked to Design-Assisted + Enterprise scenario in demo tour
     const [path] = useState<BudgetPath>('design-assisted')
@@ -94,10 +116,10 @@ export default function MBIBudgetPage() {
     // Approval state — gates the Output step
     const [approved, setApproved] = useState(false)
 
-    // Auto-advance from Review → Output once approved
+    // Auto-advance from Review → Output once approved (also nudges the tour)
     const handleApprove = () => {
         setApproved(true)
-        setActiveStep(5)
+        navigateWizard(5)
     }
 
     const canAdvance = (() => {
@@ -137,9 +159,9 @@ export default function MBIBudgetPage() {
             {inWizard ? (
                 <BudgetWizardShell
                     activeStep={activeStep}
-                    onStepClick={setActiveStep}
-                    onPrev={() => setActiveStep(s => Math.max(0, s - 1))}
-                    onNext={() => setActiveStep(s => Math.min(WIZARD_STEPS.length - 1, s + 1))}
+                    onStepClick={navigateWizard}
+                    onPrev={() => navigateWizard(Math.max(0, activeStep - 1))}
+                    onNext={() => navigateWizard(Math.min(WIZARD_STEPS.length - 1, activeStep + 1))}
                     canAdvance={canAdvance}
                     actionHint={stepMeta.hint}
                     nextLabel={stepMeta.nextLabel}
