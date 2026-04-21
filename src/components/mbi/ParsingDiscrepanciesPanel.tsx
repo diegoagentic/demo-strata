@@ -17,14 +17,30 @@
  * USED BY: ParsingStep (wizard step 1)
  */
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
+import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
 import {
     AlertTriangle, Sparkles, CheckCircle2, Check, X, PackageSearch,
-    Eye, Scale, TrendingDown, TrendingUp, ChevronRight,
+    Eye, Scale, TrendingDown, TrendingUp, ChevronRight, Send, Brain,
+    ArrowRight, Package, Truck, Warehouse,
 } from 'lucide-react'
 import MBIDetailSheet from './MBIDetailSheet'
 
 export type DiscrepancyStatus = 'pending' | 'accepted' | 'dismissed'
+
+interface DiscrepancyMeta {
+    reasonCategory?: string
+    notes?: string
+    notifyAI?: boolean
+    appliedAt: Date
+}
+
+const DISMISS_CATEGORIES = [
+    { id: 'false-positive', label: 'False positive · Strata misread the SIF' },
+    { id: 'addressed-elsewhere', label: 'Already addressed outside the parse' },
+    { id: 'not-applicable', label: 'Not applicable to this project' },
+    { id: 'other', label: 'Other (describe below)' },
+]
 
 export interface ParsingDiscrepancy {
     id: string
@@ -78,6 +94,43 @@ export default function ParsingDiscrepanciesPanel({
     onStatusChange,
 }: ParsingDiscrepanciesPanelProps) {
     const [sheetOpen, setSheetOpen] = useState(false)
+
+    // Per-card action state
+    const [reviewTarget, setReviewTarget] = useState<ParsingDiscrepancy | null>(null)
+    const [dismissTarget, setDismissTarget] = useState<ParsingDiscrepancy | null>(null)
+    const [metaById, setMetaById] = useState<Record<string, DiscrepancyMeta>>({})
+    const [toast, setToast] = useState<{ id: string; message: string; tone: 'success' | 'info' | 'neutral' } | null>(null)
+
+    const pushToast = (id: string, tone: 'success' | 'info' | 'neutral', message: string) => {
+        setToast({ id, tone, message })
+        setTimeout(() => setToast(prev => (prev?.id === id ? null : prev)), 4200)
+    }
+
+    const handleAccept = (d: ParsingDiscrepancy) => {
+        onStatusChange(d.id, 'accepted')
+        setMetaById(prev => ({ ...prev, [d.id]: { appliedAt: new Date() } }))
+        const impact = d.impact ? ` · $${d.impact.amount.toLocaleString()} ${d.impact.tone === 'positive' ? 'saved' : 'reconciled'}` : ''
+        pushToast(d.id, 'success', `${d.actionLabel}${impact}`)
+    }
+
+    const handleAcceptFromSheet = (d: ParsingDiscrepancy) => {
+        handleAccept(d)
+        setReviewTarget(null)
+    }
+
+    const handleDismissSubmit = (d: ParsingDiscrepancy, payload: { reasonCategory: string; notes: string; notifyAI: boolean }) => {
+        onStatusChange(d.id, 'dismissed')
+        setMetaById(prev => ({ ...prev, [d.id]: { ...payload, appliedAt: new Date() } }))
+        setDismissTarget(null)
+        const suffix = payload.notifyAI ? ' · feedback sent to Strata AI' : ' · logged locally'
+        pushToast(d.id, 'neutral', `Dismissed${suffix}`)
+    }
+
+    const handleReopen = (d: ParsingDiscrepancy) => {
+        onStatusChange(d.id, 'pending')
+        setMetaById(prev => { const { [d.id]: _, ...rest } = prev; return rest })
+        if (toast?.id === d.id) setToast(null)
+    }
 
     const total = discrepancies.length
     const resolved = discrepancies.filter(d => (statusById[d.id] ?? 'pending') !== 'pending').length
@@ -179,11 +232,38 @@ export default function ParsingDiscrepanciesPanel({
                             key={d.id}
                             discrepancy={d}
                             status={statusById[d.id] ?? 'pending'}
-                            onChange={s => onStatusChange(d.id, s)}
+                            meta={metaById[d.id]}
+                            activeToast={toast?.id === d.id ? toast : null}
+                            onAccept={() => handleAccept(d)}
+                            onReview={() => setReviewTarget(d)}
+                            onDismiss={() => setDismissTarget(d)}
+                            onReopen={() => handleReopen(d)}
                         />
                     ))}
                 </div>
             </MBIDetailSheet>
+
+            {/* Deep-dive review sheet (opens on Open reconciler / Compare inventory) */}
+            {reviewTarget && (
+                <ReviewDiscrepancySheet
+                    discrepancy={reviewTarget}
+                    onClose={() => setReviewTarget(null)}
+                    onApply={() => handleAcceptFromSheet(reviewTarget)}
+                    onDismiss={() => {
+                        setReviewTarget(null)
+                        setDismissTarget(reviewTarget)
+                    }}
+                />
+            )}
+
+            {/* Dismiss modal — feedback loop for AI training */}
+            {dismissTarget && (
+                <DismissDiscrepancyModal
+                    discrepancy={dismissTarget}
+                    onClose={() => setDismissTarget(null)}
+                    onSubmit={payload => handleDismissSubmit(dismissTarget, payload)}
+                />
+            )}
         </>
     )
 }
@@ -192,11 +272,21 @@ export default function ParsingDiscrepanciesPanel({
 function DiscrepancyCard({
     discrepancy,
     status,
-    onChange,
+    meta,
+    activeToast,
+    onAccept,
+    onReview,
+    onDismiss,
+    onReopen,
 }: {
     discrepancy: ParsingDiscrepancy
     status: DiscrepancyStatus
-    onChange: (s: DiscrepancyStatus) => void
+    meta?: DiscrepancyMeta
+    activeToast: { id: string; tone: 'success' | 'info' | 'neutral'; message: string } | null
+    onAccept: () => void
+    onReview: () => void
+    onDismiss: () => void
+    onReopen: () => void
 }) {
     const isField = discrepancy.kind === 'field'
     const theme = (() => {
@@ -303,20 +393,23 @@ function DiscrepancyCard({
             {status === 'pending' ? (
                 <div className="mt-3 grid grid-cols-3 gap-1.5">
                     <button
-                        onClick={() => onChange('dismissed')}
-                        className="px-2 py-1.5 text-[11px] font-bold text-muted-foreground bg-background dark:bg-zinc-800 border border-border rounded-md hover:bg-muted transition-colors"
+                        onClick={onDismiss}
+                        title="Dismiss the flag · send feedback to Strata AI"
+                        className="px-2 py-1.5 text-[11px] font-bold text-muted-foreground bg-background dark:bg-zinc-800 border border-border rounded-md hover:bg-muted hover:border-muted-foreground/40 transition-colors"
                     >
                         Dismiss
                     </button>
                     <button
-                        onClick={() => onChange('dismissed')}
-                        className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-md hover:bg-muted transition-colors"
+                        onClick={onReview}
+                        title={`Open a detailed comparison before deciding`}
+                        className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-md hover:bg-muted hover:border-info/40 transition-colors"
                     >
                         <Eye className="h-3 w-3" />
                         {discrepancy.reviewLabel ?? 'Review'}
                     </button>
                     <button
-                        onClick={() => onChange('accepted')}
+                        onClick={onAccept}
+                        title="Apply the AI suggestion"
                         className="flex items-center justify-center gap-1 px-2 py-1.5 text-[11px] font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-md hover:opacity-90 transition-opacity shadow-sm"
                     >
                         <Check className="h-3 w-3" />
@@ -324,28 +417,365 @@ function DiscrepancyCard({
                     </button>
                 </div>
             ) : (
-                <div className="mt-2 pt-2 border-t border-current/10 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
-                        {status === 'accepted' ? (
-                            <>
-                                <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
-                                <span className="truncate">{isField ? 'CAP total adopted' : 'Swap applied'}</span>
-                            </>
-                        ) : (
-                            <>
-                                <X className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                <span className="truncate">Dismissed · kept as parsed</span>
-                            </>
-                        )}
+                <div className="mt-2 pt-2 border-t border-current/10 space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-1.5 text-[11px] min-w-0">
+                            {status === 'accepted'
+                                ? <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" />
+                                : <X className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />}
+                            <div className="min-w-0">
+                                <div className="text-foreground font-semibold">
+                                    {status === 'accepted'
+                                        ? (isField
+                                            ? <>CAP total adopted{discrepancy.impact && <> · <span className="text-amber-600 dark:text-amber-400 tabular-nums">${discrepancy.impact.amount.toLocaleString()} reconciled</span></>}</>
+                                            : <>Inventory swap applied{discrepancy.impact && <> · <span className="text-success tabular-nums">${discrepancy.impact.amount.toLocaleString()} saved</span></>}</>
+                                        )
+                                        : <>Dismissed{meta?.notifyAI ? ' · AI notified' : ' · logged locally'}</>
+                                    }
+                                </div>
+                                {meta?.reasonCategory && status === 'dismissed' && (
+                                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                                        Reason: <span className="text-foreground font-medium">
+                                            {DISMISS_CATEGORIES.find(c => c.id === meta.reasonCategory)?.label ?? meta.reasonCategory}
+                                        </span>
+                                    </div>
+                                )}
+                                {meta?.notes && (
+                                    <div className="text-[10px] text-muted-foreground italic mt-0.5 line-clamp-2">"{meta.notes}"</div>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            onClick={onReopen}
+                            className="text-[10px] text-muted-foreground hover:text-foreground underline shrink-0"
+                        >
+                            Reopen
+                        </button>
                     </div>
-                    <button
-                        onClick={() => onChange('pending')}
-                        className="text-[10px] text-muted-foreground hover:text-foreground underline shrink-0"
-                    >
-                        Reopen
-                    </button>
+
+                    {/* Transient toast confirmation */}
+                    {activeToast && (
+                        <div
+                            className={`
+                                flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] font-semibold animate-in fade-in slide-in-from-bottom-2 duration-300
+                                ${activeToast.tone === 'success' ? 'bg-success/15 text-success border border-success/30' : ''}
+                                ${activeToast.tone === 'info' ? 'bg-info/15 text-info border border-info/30' : ''}
+                                ${activeToast.tone === 'neutral' ? 'bg-muted text-foreground border border-border' : ''}
+                            `}
+                        >
+                            {status === 'dismissed' && meta?.notifyAI
+                                ? <Brain className="h-3.5 w-3.5 shrink-0" />
+                                : <Send className="h-3.5 w-3.5 shrink-0" />}
+                            <span className="truncate">{activeToast.message}</span>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
+    )
+}
+
+// ─── Review sheet (Open reconciler / Compare inventory) ──────────────────────
+function ReviewDiscrepancySheet({
+    discrepancy,
+    onClose,
+    onApply,
+    onDismiss,
+}: {
+    discrepancy: ParsingDiscrepancy
+    onClose: () => void
+    onApply: () => void
+    onDismiss: () => void
+}) {
+    const isField = discrepancy.kind === 'field'
+
+    return (
+        <MBIDetailSheet
+            isOpen={true}
+            onClose={onClose}
+            title={discrepancy.reviewLabel ?? 'Review discrepancy'}
+            subtitle={discrepancy.title}
+            icon={isField ? <Scale className="h-4 w-4" /> : <PackageSearch className="h-4 w-4" />}
+            width="md"
+        >
+            <div className="space-y-4">
+                {/* Context banner */}
+                <div
+                    className={`
+                        border rounded-xl p-3 flex items-start gap-2.5
+                        ${isField
+                            ? 'bg-amber-50/70 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/40'
+                            : 'bg-info/5 dark:bg-info/10 border-info/30'
+                        }
+                    `}
+                >
+                    {isField
+                        ? <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        : <PackageSearch className="h-4 w-4 text-info shrink-0 mt-0.5" />
+                    }
+                    <div className="text-xs">
+                        <div className="font-bold text-foreground">
+                            {isField ? 'Reconcile the budget ceiling' : 'Compare vendor vs inventory'}
+                        </div>
+                        <div className="text-muted-foreground mt-0.5">{discrepancy.context}</div>
+                    </div>
+                </div>
+
+                {/* Kind-specific detail */}
+                {isField ? <FieldReconcilerDetail /> : <InventoryCompareDetail />}
+
+                {/* Decision footer */}
+                <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
+                    <button
+                        onClick={onDismiss}
+                        className="px-3 py-2 text-xs font-bold text-muted-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors"
+                    >
+                        Dismiss with feedback
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onClose}
+                            className="px-3 py-2 text-xs font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors"
+                        >
+                            Keep reviewing
+                        </button>
+                        <button
+                            onClick={onApply}
+                            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                        >
+                            <Check className="h-3.5 w-3.5" />
+                            {discrepancy.actionLabel}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </MBIDetailSheet>
+    )
+}
+
+function FieldReconcilerDetail() {
+    const deltaRows = [
+        { line: 'L-12', desc: 'Allsteel Further panel override', delta: 1250 },
+        { line: 'L-15', desc: 'Allsteel Further desk override', delta: 2100 },
+        { line: 'L-18', desc: 'HON Ignition chair override', delta: 820 },
+        { line: 'L-22', desc: 'Knoll Propeller custom pricing', delta: 2400 },
+        { line: 'L-25', desc: 'Herman Miller Embody override', delta: 780 },
+    ]
+    const total = deltaRows.reduce((acc, r) => acc + r.delta, 0)
+
+    return (
+        <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-xl p-3">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">SIF header</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Declared ceiling</div>
+                    <div className="text-xl font-bold text-foreground tabular-nums mt-1">$385,000</div>
+                </div>
+                <div className="bg-amber-50/60 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/40 rounded-xl p-3">
+                    <div className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">CAP worksheet</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Sum of overrides</div>
+                    <div className="text-xl font-bold text-foreground tabular-nums mt-1">$392,450</div>
+                </div>
+            </div>
+
+            <div className="border border-border rounded-xl overflow-hidden">
+                <div className="px-3 py-2 bg-muted/40 dark:bg-zinc-800/60 border-b border-border grid grid-cols-[3rem_1fr_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <div>Line</div>
+                    <div>Override</div>
+                    <div className="text-right">Delta</div>
+                </div>
+                <div className="divide-y divide-border">
+                    {deltaRows.map(r => (
+                        <div key={r.line} className="px-3 py-2 grid grid-cols-[3rem_1fr_5rem] gap-3 items-center text-xs">
+                            <div className="font-mono text-muted-foreground">{r.line}</div>
+                            <div className="text-foreground truncate">{r.desc}</div>
+                            <div className="text-right tabular-nums font-bold text-amber-600 dark:text-amber-400">+${r.delta.toLocaleString()}</div>
+                        </div>
+                    ))}
+                </div>
+                <div className="px-3 py-2 bg-amber-50/40 dark:bg-amber-500/10 border-t border-border grid grid-cols-[3rem_1fr_5rem] gap-3 items-center text-xs">
+                    <div />
+                    <div className="font-bold text-foreground">Total deviation</div>
+                    <div className="text-right tabular-nums font-bold text-amber-700 dark:text-amber-400 text-base">+${total.toLocaleString()}</div>
+                </div>
+            </div>
+
+            <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-zinc-800/40 border border-border rounded-lg p-2.5">
+                Adopting the CAP total updates the budget ceiling to <strong className="text-foreground">$392,450</strong> before scenarios compute. The SIF header is kept in the audit log with a reconciliation note.
+            </div>
+        </div>
+    )
+}
+
+function InventoryCompareDetail() {
+    return (
+        <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
+                <div className="bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-xl p-3 flex flex-col gap-2">
+                    <div className="flex items-center gap-1.5">
+                        <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Vendor new</span>
+                    </div>
+                    <div>
+                        <div className="text-xs font-bold text-foreground">Knoll Propeller 84"</div>
+                        <div className="text-[10px] text-muted-foreground">SKU KNOLL-PROP-84 · SIF line</div>
+                    </div>
+                    <div className="mt-auto pt-2 border-t border-border space-y-0.5 text-[11px]">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Unit price</span><span className="text-foreground tabular-nums">$8,400</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Qty</span><span className="text-foreground tabular-nums">2</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Lead time</span><span className="text-foreground">6–8 weeks</span></div>
+                        <div className="flex justify-between pt-1 border-t border-border"><span className="font-bold text-foreground">Subtotal</span><span className="font-bold text-foreground tabular-nums">$16,800</span></div>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-center">
+                    <ArrowRight className="h-4 w-4 text-info" />
+                </div>
+
+                <div className="bg-info/5 dark:bg-info/10 border border-info/30 rounded-xl p-3 flex flex-col gap-2">
+                    <div className="flex items-center gap-1.5">
+                        <Warehouse className="h-3.5 w-3.5 text-info" />
+                        <span className="text-[10px] font-bold text-info uppercase tracking-wider">Strata inventory</span>
+                    </div>
+                    <div>
+                        <div className="text-xs font-bold text-foreground">Knoll Propeller 84" · refurb'd</div>
+                        <div className="text-[10px] text-muted-foreground">Birmingham DC · stock #INV-04521</div>
+                    </div>
+                    <div className="mt-auto pt-2 border-t border-info/20 space-y-0.5 text-[11px]">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Unit price</span><span className="text-foreground tabular-nums">$6,900</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">In stock</span><span className="text-success font-semibold tabular-nums">4 units</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Lead time</span><span className="text-success font-semibold inline-flex items-center gap-1"><Truck className="h-3 w-3" />2 days</span></div>
+                        <div className="flex justify-between pt-1 border-t border-info/20"><span className="font-bold text-foreground">Subtotal</span><span className="font-bold text-foreground tabular-nums">$13,800</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-success/5 dark:bg-success/10 border border-success/30 rounded-xl p-3 flex items-center justify-between gap-3">
+                <div className="text-xs">
+                    <div className="font-bold text-foreground">Swap applies $3,000 in savings</div>
+                    <div className="text-muted-foreground mt-0.5">Dimensions, finish (Black Oak), and base match — verified by Strata inventory AI.</div>
+                </div>
+                <span className="text-xl font-bold text-success tabular-nums shrink-0">−$3,000</span>
+            </div>
+        </div>
+    )
+}
+
+// ─── Dismiss modal (feedback loop for AI) ────────────────────────────────────
+function DismissDiscrepancyModal({
+    discrepancy,
+    onClose,
+    onSubmit,
+}: {
+    discrepancy: ParsingDiscrepancy
+    onClose: () => void
+    onSubmit: (payload: { reasonCategory: string; notes: string; notifyAI: boolean }) => void
+}) {
+    const [reasonCategory, setReasonCategory] = useState('false-positive')
+    const [notes, setNotes] = useState('')
+    const [notifyAI, setNotifyAI] = useState(true)
+    const canSubmit = reasonCategory !== 'other' || notes.trim().length > 0
+
+    return (
+        <Transition show={true} as={Fragment} appear>
+            <Dialog onClose={onClose} className="relative z-[100]">
+                <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+                    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm" />
+                </TransitionChild>
+                <div className="fixed inset-0 overflow-y-auto">
+                    <div className="flex min-h-full items-center justify-center p-4">
+                        <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95 translate-y-2" enterTo="opacity-100 scale-100 translate-y-0" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                            <DialogPanel className="w-full max-w-xl bg-card dark:bg-zinc-900 border border-border rounded-2xl shadow-2xl">
+                                <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                                            <X className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <DialogTitle className="text-base font-bold text-foreground">Dismiss this discrepancy</DialogTitle>
+                                            <p className="text-xs text-muted-foreground mt-0.5">{discrepancy.title}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Close">
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+
+                                <div className="p-5 space-y-4">
+                                    <div className="bg-ai/5 dark:bg-ai/10 border border-ai/30 rounded-xl p-3 flex items-start gap-2.5">
+                                        <Brain className="h-4 w-4 text-ai shrink-0 mt-0.5" />
+                                        <div className="text-xs">
+                                            <div className="font-bold text-foreground">Your feedback trains the parser.</div>
+                                            <div className="text-muted-foreground mt-0.5">Tell Strata why this flag was noise so it stops raising it on future imports.</div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Why dismiss?</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {DISMISS_CATEGORIES.map(c => {
+                                                const active = reasonCategory === c.id
+                                                return (
+                                                    <button
+                                                        key={c.id}
+                                                        type="button"
+                                                        onClick={() => setReasonCategory(c.id)}
+                                                        className={`
+                                                            flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-colors
+                                                            ${active
+                                                                ? 'bg-muted border-muted-foreground/40 text-foreground'
+                                                                : 'bg-background dark:bg-zinc-800 border-border text-foreground hover:border-zinc-300 dark:hover:border-zinc-700'
+                                                            }
+                                                        `}
+                                                    >
+                                                        <span className={`h-2 w-2 rounded-full shrink-0 ${active ? 'bg-muted-foreground' : 'bg-muted-foreground/30'}`} />
+                                                        {c.label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                                            Notes {reasonCategory === 'other' && <span className="text-red-600 dark:text-red-400 ml-1">· required</span>}
+                                        </label>
+                                        <textarea
+                                            value={notes}
+                                            onChange={e => setNotes(e.target.value)}
+                                            rows={3}
+                                            placeholder="e.g. CAP total is correct — the SIF header was stale from an earlier revision."
+                                            className="w-full bg-background dark:bg-zinc-800 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary resize-none"
+                                        />
+                                    </div>
+
+                                    <label className="flex items-start gap-3 bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-lg p-3 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+                                        <input type="checkbox" checked={notifyAI} onChange={e => setNotifyAI(e.target.checked)} className="h-4 w-4 mt-0.5 accent-primary" />
+                                        <div className="flex-1">
+                                            <div className="text-xs font-bold text-foreground">Send feedback to Strata AI</div>
+                                            <div className="text-[11px] text-muted-foreground mt-0.5">Dismissal + reason logged to the parser-improvement pipeline. No client data shared.</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div className="px-5 py-3 border-t border-border bg-muted/20 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
+                                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => canSubmit && onSubmit({ reasonCategory, notes: notes.trim(), notifyAI })}
+                                        disabled={!canSubmit}
+                                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                                    >
+                                        {notifyAI ? <Brain className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                                        {notifyAI ? 'Dismiss & notify AI' : 'Dismiss flag'}
+                                    </button>
+                                </div>
+                            </DialogPanel>
+                        </TransitionChild>
+                    </div>
+                </div>
+            </Dialog>
+        </Transition>
     )
 }
