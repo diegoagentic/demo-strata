@@ -56,7 +56,7 @@ export default function MBIDetailSheet({
 
     return (
         <Transition show={isOpen} as={Fragment}>
-            <Dialog onClose={onClose} className="relative z-50">
+            <Dialog onClose={onClose} className="relative z-[100]">
                 <TransitionChild
                     as={Fragment}
                     enter="ease-out duration-200"
