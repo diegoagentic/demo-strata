@@ -1,165 +1,137 @@
 /**
  * COMPONENT: MBIAccountingPage
- * PURPOSE: Phase 2 Accounting AI — Document AI, Reconciliation, AR, Forecast.
- *          Step-aware: m2.1 shows Document AI (Invoice ingestion + HealthTrust logic);
- *          m2.2 reserved for Phase 3.B Non-EDI reconciliation + AR (Phase 3.C).
+ * PURPOSE: Flow 2 — Accounting AI, packaged in MBIWizardShell with 4 scenes
+ *          that follow Kathy Belleville's morning: queue → HealthTrust
+ *          exception → Non-EDI reconciliation → AR wrap-up + Flow 3 handoff.
  *
- *          Without an active demo step, shows a compact overview with all sections.
+ *          Mirrors Flow 1's wizard pattern — shared stepper, persona badge,
+ *          per-step CTA, FlowHandoff at the end.
+ *
+ * DEMO TOUR: m2.1 → m2.4 map 1:1 to wizard scenes 0–3. Outside a demo step
+ * the user navigates freely via the stepper chips + Back/Next.
  */
 
-import { useState } from 'react'
-import { Receipt, Heart, Sparkles, GitCompare, DollarSign } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Receipt, Heart, GitCompare, DollarSign } from 'lucide-react'
 import MBIPageShell from './MBIPageShell'
-import InvoiceQueueTable from './InvoiceQueueTable'
-import InvoiceDetailPanel from './InvoiceDetailPanel'
-import NonEDIReconciliationPanel from './NonEDIReconciliationPanel'
-import FreightTariffPanel from './FreightTariffPanel'
-import InstallerPanel from './InstallerPanel'
-import ARStatusBoard from './ARStatusBoard'
-import EscalationRuleBuilder from './EscalationRuleBuilder'
-import LiveBillingForecast from './LiveBillingForecast'
-import AIEmailDraftsPanel from './AIEmailDraftsPanel'
+import MBIWizardShell, { type WizardStepSpec } from './MBIWizardShell'
+import MBIPersonaBadge from './MBIPersonaBadge'
+import AccountingMorningQueue from './AccountingMorningQueue'
+import HealthTrustExceptionScene from './HealthTrustExceptionScene'
+import NonEDIReconcilerScene from './NonEDIReconcilerScene'
+import ARAgingWrapScene from './ARAgingWrapScene'
 import { useDemo } from '../../context/DemoContext'
-import {
-    MBI_INVOICES,
-    MBI_AR_RECORDS,
-} from '../../config/profiles/mbi-data'
+
+const ACCOUNTING_STEPS: WizardStepSpec[] = [
+    { id: 'morning', label: 'Morning queue', shortLabel: '1. Queue' },
+    { id: 'healthtrust', label: 'HealthTrust', shortLabel: '2. HealthTrust' },
+    { id: 'non-edi', label: 'Non-EDI recon', shortLabel: '3. Non-EDI' },
+    { id: 'ar-wrap', label: 'AR wrap-up', shortLabel: '4. AR wrap' },
+]
+
+const STEP_TO_WIZARD_INDEX: Record<string, number> = {
+    'm2.1': 0,
+    'm2.2': 1,
+    'm2.3': 2,
+    'm2.4': 3,
+}
+
+const WIZARD_INDEX_TO_STEP: Record<number, string> = {
+    0: 'm2.1',
+    1: 'm2.2',
+    2: 'm2.3',
+    3: 'm2.4',
+}
+
+const STEP_HINTS: Record<number, { hint: string; nextLabel: string }> = {
+    0: { hint: 'Strata pre-processed 12 invoices overnight · you review only the 2 exceptions.', nextLabel: 'Review HealthTrust royalty' },
+    1: { hint: 'Approve the auto-calculated 3% royalty · or override with a logged reason · or escalate to Lynda.', nextLabel: 'Reconcile non-EDI' },
+    2: { hint: 'Line-by-line diff vs PO · accept variances that match your delivery, override with a reason for the rest.', nextLabel: 'Close with AR wrap' },
+    3: { hint: 'Live AR aging · collection emails pre-drafted · close the morning to continue.', nextLabel: 'Done' },
+}
 
 export default function MBIAccountingPage() {
-    const { currentStep, isDemoActive } = useDemo()
-    const stepId = isDemoActive ? currentStep?.id : null
+    const { currentStep, isDemoActive, steps: tourSteps, goToStep } = useDemo()
+    const demoStepId = isDemoActive ? currentStep?.id : null
+    const demoWizardIdx = demoStepId && demoStepId in STEP_TO_WIZARD_INDEX
+        ? STEP_TO_WIZARD_INDEX[demoStepId]
+        : null
 
-    // Document AI: default selected = hero HealthTrust invoice (INV-0486 BJC-style)
-    const defaultSelectedId = MBI_INVOICES.find(i => i.isHealthTrust)?.id ?? MBI_INVOICES[0].id
-    const [selectedId, setSelectedId] = useState<string>(defaultSelectedId)
+    const [activeStep, setActiveStep] = useState(0)
+    const inWizard = demoWizardIdx !== null || !isDemoActive
 
-    const selected = MBI_INVOICES.find(i => i.id === selectedId) ?? MBI_INVOICES[0]
-    const exceptionCount = MBI_INVOICES.filter(i => i.hasException).length
-    const healthTrustCount = MBI_INVOICES.filter(i => i.isHealthTrust).length
-    const escalatedAR = MBI_AR_RECORDS.filter(a => a.status === 'escalated').length
+    useEffect(() => {
+        if (demoWizardIdx !== null) setActiveStep(demoWizardIdx)
+    }, [demoWizardIdx])
+
+    const navigateWizard = (idx: number) => {
+        setActiveStep(idx)
+        if (!isDemoActive) return
+        const targetId = WIZARD_INDEX_TO_STEP[idx]
+        if (!targetId || currentStep?.id === targetId) return
+        const tourIdx = tourSteps.findIndex(s => s.id === targetId)
+        if (tourIdx >= 0) goToStep(tourIdx)
+    }
+
+    const stepMeta = STEP_HINTS[activeStep] ?? { hint: '', nextLabel: undefined }
 
     return (
         <MBIPageShell
             title="Accounting AI"
-            subtitle="Phase 2 quick wins · Champion: Kathy Belleville (Controller)"
+            subtitle="Phase 2 quick wins · Kathy Belleville (Controller) · morning routine · 4h → 18 min"
             icon={<Receipt className="h-5 w-5" />}
             activeApp="mbi-accounting"
         >
-            {/* Stats strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <StatCard value={`${MBI_INVOICES.length}`} label="Invoices in queue" accent="text-foreground" />
-                <StatCard value={`${exceptionCount}`} label="Exceptions for Kathy" accent="text-amber-600 dark:text-amber-400" />
-                <StatCard value={`${healthTrustCount}`} label="HealthTrust · 3% royalty" accent="text-zinc-900 dark:text-primary" />
-                <StatCard value={`${escalatedAR}`} label="AR escalated" accent="text-red-600 dark:text-red-400" />
-            </div>
-
-            {/* Section — Document AI (m2.1 story) */}
-            {(stepId === 'm2.1' || !stepId) && (
-                <section className="space-y-3 mt-2">
-                    <SectionHeader
-                        icon={<Sparkles className="h-3.5 w-3.5" />}
-                        label="Document AI — Invoice ingestion"
-                        hint="Overnight auto-extraction · HealthTrust 3% royalty logic · exception-only review for Kathy"
-                        accent="ai"
-                    />
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-3">
-                            <InvoiceQueueTable
-                                invoices={MBI_INVOICES}
-                                selectedId={selectedId}
-                                onSelect={setSelectedId}
-                            />
-                        </div>
-                        <div className="lg:col-span-2">
-                            <InvoiceDetailPanel invoice={selected} />
-                        </div>
-                    </div>
-
-                    {selected.isHealthTrust && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-amber-500/5 border border-amber-300/30 dark:border-amber-500/20 rounded-xl p-3">
-                            <Heart className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                            <span>
-                                Strata detected this as a HealthTrust GPO invoice. The 3% royalty line is auto-calculated and flagged for Kathy's final approval per the MBI GPO contract.
-                            </span>
-                        </div>
-                    )}
-                </section>
-            )}
-
-            {/* Phase 3.B — Reconciliation Agents (m2.2) */}
-            {(stepId === 'm2.2' || !stepId) && (
-                <section className="space-y-3 mt-6">
-                    <SectionHeader
-                        icon={<GitCompare className="h-3.5 w-3.5" />}
-                        label="Reconciliation agents"
-                        hint="Non-EDI · Freight & Tariff · Installer — routes exceptions to Kathy only"
-                        accent="primary"
-                    />
-
-                    <div className="grid grid-cols-1 gap-4">
-                        <NonEDIReconciliationPanel invoices={MBI_INVOICES} />
-                        <FreightTariffPanel />
-                        <InstallerPanel />
-                    </div>
-                </section>
-            )}
-
-            {/* Phase 3.C — AR Management + Billing Forecast (m2.2 + default) */}
-            {(stepId === 'm2.2' || !stepId) && (
-                <section className="space-y-3 mt-6">
-                    <SectionHeader
-                        icon={<DollarSign className="h-3.5 w-3.5" />}
-                        label="AR Management + Live Forecast"
-                        hint="Structured taxonomy · escalation rules · real-time forecast · AI email drafts"
-                        accent="primary"
-                    />
-
-                    <ARStatusBoard records={MBI_AR_RECORDS} />
-                    <EscalationRuleBuilder />
-
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                        <div className="lg:col-span-3">
-                            <LiveBillingForecast />
-                        </div>
-                        <div className="lg:col-span-2">
-                            <AIEmailDraftsPanel />
-                        </div>
-                    </div>
-                </section>
+            {inWizard ? (
+                <MBIWizardShell
+                    steps={ACCOUNTING_STEPS}
+                    activeStep={activeStep}
+                    onStepClick={navigateWizard}
+                    onPrev={() => navigateWizard(Math.max(0, activeStep - 1))}
+                    onNext={() => navigateWizard(Math.min(ACCOUNTING_STEPS.length - 1, activeStep + 1))}
+                    canAdvance
+                    actionHint={stepMeta.hint}
+                    nextLabel={stepMeta.nextLabel}
+                    persona={
+                        <MBIPersonaBadge
+                            name="Kathy Belleville"
+                            role="Controller · Accounting"
+                            isPilot
+                            tone="ai"
+                        />
+                    }
+                >
+                    {activeStep === 0 && <AccountingMorningQueue />}
+                    {activeStep === 1 && <HealthTrustExceptionScene />}
+                    {activeStep === 2 && <NonEDIReconcilerScene />}
+                    {activeStep === 3 && <ARAgingWrapScene />}
+                </MBIWizardShell>
+            ) : (
+                <OverviewStub />
             )}
         </MBIPageShell>
     )
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function StatCard({ value, label, accent }: { value: string; label: string; accent: string }) {
+function OverviewStub() {
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
-            <div className={`text-2xl font-bold tabular-nums ${accent}`}>{value}</div>
-            <div className="text-[11px] text-muted-foreground mt-1">{label}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard icon={<Receipt className="h-4 w-4" />} value="12" label="Invoices processed overnight" accent="text-foreground" />
+            <StatCard icon={<Heart className="h-4 w-4" />} value="2" label="HealthTrust royalty flagged" accent="text-zinc-900 dark:text-primary" />
+            <StatCard icon={<GitCompare className="h-4 w-4" />} value="2" label="Non-EDI exceptions" accent="text-amber-600 dark:text-amber-400" />
+            <StatCard icon={<DollarSign className="h-4 w-4" />} value="$240K" label="AR live · forecast refreshed" accent="text-success" />
         </div>
     )
 }
 
-function SectionHeader({
-    icon,
-    label,
-    hint,
-    accent,
-}: {
-    icon: React.ReactNode
-    label: string
-    hint: string
-    accent: 'ai' | 'primary'
-}) {
-    const color = accent === 'ai' ? 'text-ai' : 'text-zinc-900 dark:text-primary'
+function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value: string; label: string; accent: string }) {
     return (
-        <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${color}`}>
+        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
+            <div className={`flex items-center gap-2 ${accent}`}>
                 {icon}
-                <span>{label}</span>
+                <span className="text-2xl font-bold leading-none">{value}</span>
             </div>
-            <div className="text-[10px] text-muted-foreground">{hint}</div>
+            <div className="text-[11px] text-muted-foreground mt-2">{label}</div>
         </div>
     )
 }

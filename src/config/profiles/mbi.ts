@@ -15,9 +15,11 @@
 //   m1.4: AI Validation — Catches $18K Allsteel worksurface mismatch (wizard 3)
 //   m1.5: Review + client delivery — approve folds into Output (wizard 4 → 5)
 //
-// FLOW 2 — Accounting AI (Phase 2, Kathy Belleville)
-//   m2.1: AP invoice ingestion with HealthTrust logic
-//   m2.2: Non-EDI reconciliation + AR aging alerts
+// FLOW 2 — Accounting AI (Phase 2, Kathy Belleville) · 4 scenes / 4 beats
+//   m2.1: Morning queue — 12 invoices pre-processed, 2 exceptions
+//   m2.2: HealthTrust exception — 3% royalty · approve / override / escalate
+//   m2.3: Non-EDI reconciliation — PO vs invoice line-by-line diff
+//   m2.4: AR wrap-up — taxonomy + collection emails + handoff to Flow 3
 //
 // FLOW 3 — Quotes AI (Phase 4, PC bottleneck resolution)
 //   m3.1: SIF → CORE auto-import + AI proposal
@@ -90,14 +92,14 @@ export const MBI_STEPS: DemoStep[] = [
 
     // ═══════════════════════════════════════════
     // FLOW 2: Accounting AI (Phase 2)
-    // Kathy Belleville (Controller, 1-person dept) · 2 steps
+    // Kathy Belleville (Controller · Phase 1 Pilot) · 4 scenes
     // ═══════════════════════════════════════════
     {
         id: 'm2.1',
         groupId: 1,
         groupTitle: 'Flow 2: Accounting AI',
-        title: 'AP invoice ingestion with HealthTrust logic',
-        description: 'Kathy, MBI controller, opens her morning queue. Strata has already read 12 vendor invoices overnight — extracted fields, pre-populated CORE vouchers. Healthcare invoices trigger HealthTrust contract logic automatically and flag the 3% royalty line. Kathy reviews exceptions, not every invoice.',
+        title: 'Morning queue — 12 invoices pre-processed',
+        description: 'Kathy, MBI controller, opens Strata. Overnight, Document AI read every vendor invoice, extracted fields with 90%+ OCR confidence, matched to open POs in CORE, and flagged 2 exceptions. What used to be a 4-hour morning is now a focused review of what only Kathy can decide.',
         app: 'mbi-accounting',
         role: 'Dealer',
     },
@@ -105,8 +107,26 @@ export const MBI_STEPS: DemoStep[] = [
         id: 'm2.2',
         groupId: 1,
         groupTitle: 'Flow 2: Accounting AI',
-        title: 'Non-EDI reconciliation + AR aging',
-        description: 'For non-EDI manufacturers, Strata compares PO to invoice line-by-line and routes clean matches automatically. Kathy sees only the flagged exceptions. The live billing forecast replaces the bi-weekly Excel — leadership now has real-time visibility.',
+        title: 'HealthTrust exception — 3% royalty',
+        description: 'Mercy hospital invoice hits the HealthTrust GPO contract. Strata auto-calculates the $1,872 royalty line and flags for approval. Kathy reviews the calculation, approves to post, overrides with a reason, or escalates to Lynda Alexander (Director of Healthcare) via Teams.',
+        app: 'mbi-accounting',
+        role: 'Dealer',
+    },
+    {
+        id: 'm2.3',
+        groupId: 1,
+        groupTitle: 'Flow 2: Accounting AI',
+        title: 'Non-EDI reconciliation — line-by-line',
+        description: 'Herman Miller doesn\'t ship EDI. Strata OCR\'d the paper invoice and compared it to PO-2026-0051 line-by-line. Kathy sees 2 flagged variances (Jarvis short-ship, oak veneer upcharge) — she accepts or overrides each with a reason. Every override trains the vendor-specific matcher.',
+        app: 'mbi-accounting',
+        role: 'Dealer',
+    },
+    {
+        id: 'm2.4',
+        groupId: 1,
+        groupTitle: 'Flow 2: Accounting AI',
+        title: 'AR wrap-up — forecast + collection emails',
+        description: 'Before logging off: AR Status Taxonomy shows every open account by state. Strata pre-drafted collection emails for the 3 escalated accounts using each client\'s tone history. Kathy reviews and sends. Live billing forecast replaces the bi-weekly Excel — leadership sees real-time numbers.',
         app: 'mbi-accounting',
         role: 'Dealer',
     },
@@ -148,8 +168,10 @@ export const MBI_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     'm1.3': { mode: 'interactive', userAction: 'Pick Good / Better / Best and fine-tune the markup slider' },
     'm1.4': { mode: 'interactive', userAction: 'Review the $18K validation flag and accept the AI suggestion' },
     'm1.5': { mode: 'interactive', userAction: 'Approve the Better scenario and deliver the branded summary' },
-    'm2.1': { mode: 'interactive', userAction: 'Review the invoice queue and the HealthTrust-flagged exceptions' },
-    'm2.2': { mode: 'interactive', userAction: 'Check the non-EDI reconciliation and the live billing forecast' },
+    'm2.1': { mode: 'interactive', userAction: 'Review the overnight queue · 12 invoices pre-processed · 2 exceptions flagged' },
+    'm2.2': { mode: 'interactive', userAction: 'Approve the 3% HealthTrust royalty · or override with a reason · or escalate to Lynda' },
+    'm2.3': { mode: 'interactive', userAction: 'Reconcile the Herman Miller non-EDI invoice line-by-line' },
+    'm2.4': { mode: 'interactive', userAction: 'Close the morning with AR review + collection emails · hand off to Quotes AI' },
     'm3.1': { mode: 'interactive', userAction: 'Watch the SIF flow into CORE and the proposal auto-build' },
     'm4.1': { mode: 'interactive', userAction: 'Run Spec Check on Beth\'s ICU project and catch the finish issue' },
 };
@@ -199,18 +221,28 @@ export const MBI_STEP_MESSAGES: Record<string, string[]> = {
     ],
     'm2.1': [
         'Fetching overnight invoice queue — 12 vendor PDFs',
-        'Document AI extracting fields',
+        'Document AI extracting fields · 90%+ OCR confidence',
         'Matching to open POs in CORE',
         'Applying HealthTrust exception logic',
-        'Flagging 3% royalty lines on Mercy invoices',
-        'Routing clean invoices, surfacing exceptions',
+        '10 invoices auto-posted · 2 exceptions surfaced for Kathy',
     ],
     'm2.2': [
-        'Comparing PO vs invoice for non-EDI manufacturers',
-        'Flagging mismatches for Kathy review',
-        'Generating AR aging report',
-        'Drafting collection emails by account',
-        'Updating live billing forecast',
+        'Detected HealthTrust GPO member: Mercy hospital',
+        'Computing 3% royalty on $62,400 subtotal',
+        'Staging royalty line as separate GL entry',
+        'Awaiting Kathy approval before posting to GPO payable',
+    ],
+    'm2.3': [
+        'Herman Miller flagged as non-EDI · OCR fallback',
+        'Matching invoice to PO-2026-0051 line-by-line',
+        'Detected 2 variances: Jarvis qty 5/6, oak veneer $95 vs $85',
+        'Training matcher from Kathy\'s decisions',
+    ],
+    'm2.4': [
+        'Generating AR aging report (live, not bi-weekly)',
+        'Drafting collection emails by account tone + history',
+        'Updating leadership billing forecast in real-time',
+        'Morning complete · 18 min vs 4h before',
     ],
     'm3.1': [
         'Approved budget received from Amanda',
@@ -233,7 +265,7 @@ export const MBI_STEP_MESSAGES: Record<string, string[]> = {
 
 export const MBI_SELF_INDICATED: string[] = [
     'm1.1', 'm1.2', 'm1.3', 'm1.4', 'm1.5',
-    'm2.1', 'm2.2',
+    'm2.1', 'm2.2', 'm2.3', 'm2.4',
     'm3.1',
     'm4.1',
 ];
