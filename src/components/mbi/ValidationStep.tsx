@@ -570,7 +570,7 @@ function ValidationCard({
                         </button>
                         <button
                             onClick={onAccept}
-                            className="flex items-center justify-center gap-1 px-2 py-2 text-xs font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                            className="flex items-center justify-center gap-1 px-2 py-2 text-xs font-bold text-zinc-900 bg-primary rounded-lg hover:opacity-90 transition-opacity shadow-sm"
                             title="Apply the AI swap"
                         >
                             <Check className="h-3.5 w-3.5" />

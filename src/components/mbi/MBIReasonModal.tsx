@@ -116,7 +116,7 @@ const TONE_CONFIG: Record<ReasonTone, {
         categoryActiveBorder: 'border-amber-300 dark:border-amber-500/40',
         categoryActiveText: 'text-amber-700 dark:text-amber-400',
         categoryActiveDot: 'bg-amber-500',
-        confirmClass: 'text-zinc-900 bg-brand-300 dark:bg-brand-500 hover:opacity-90',
+        confirmClass: 'text-zinc-900 bg-primary hover:opacity-90',
     },
     neutral: {
         headerIconBg: 'bg-muted',
@@ -126,7 +126,7 @@ const TONE_CONFIG: Record<ReasonTone, {
         categoryActiveBorder: 'border-muted-foreground/40',
         categoryActiveText: 'text-foreground',
         categoryActiveDot: 'bg-muted-foreground',
-        confirmClass: 'text-zinc-900 bg-brand-300 dark:bg-brand-500 hover:opacity-90',
+        confirmClass: 'text-zinc-900 bg-primary hover:opacity-90',
     },
 }
 

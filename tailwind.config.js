@@ -42,6 +42,13 @@ export default {
                     DEFAULT: "rgb(from var(--card) r g b / <alpha-value>)",
                     foreground: "rgb(from var(--card-foreground) r g b / <alpha-value>)",
                 },
+                // Semantic status tokens (added 2026-04 · used by MBI + shared DS).
+                // Dark mode handled via --color-* overrides in variables-dark.css.
+                success: "rgb(from var(--color-success) r g b / <alpha-value>)",
+                warning: "rgb(from var(--color-warning) r g b / <alpha-value>)",
+                info: "rgb(from var(--color-info) r g b / <alpha-value>)",
+                ai: "rgb(from var(--color-ai) r g b / <alpha-value>)",
+                danger: "rgb(from var(--color-danger) r g b / <alpha-value>)",
                 brand: {
                     50: "rgb(from var(--color-brand-50) r g b / <alpha-value>)",
                     100: "rgb(from var(--color-brand-100) r g b / <alpha-value>)",

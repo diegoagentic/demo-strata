@@ -174,7 +174,7 @@ export default function NonEDIReconcilerScene() {
                                             <button
                                                 onClick={() => handleAccept(row)}
                                                 title="Accept variance"
-                                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-md hover:opacity-90 transition-opacity shadow-sm"
+                                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-zinc-900 bg-primary rounded-md hover:opacity-90 transition-opacity shadow-sm"
                                             >
                                                 <Check className="h-3 w-3" />
                                                 Accept

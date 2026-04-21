@@ -156,7 +156,7 @@ export default function FlowHandoff({
                     onClick={() => goToFlow(primaryCTA.targetStepId)}
                     disabled={!isDemoActive}
                     title={isDemoActive ? undefined : 'Start the demo tour to enable flow navigation'}
-                    className="w-full flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-primary rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                     {primaryCTA.icon}
                     <span>{primaryCTA.label}</span>

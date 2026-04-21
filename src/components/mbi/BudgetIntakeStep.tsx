@@ -450,7 +450,7 @@ function DesignAssistedIntake({
                             <button
                                 onClick={onApprove}
                                 disabled={!allReady || !onApprove}
-                                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-zinc-900 bg-primary rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                             >
                                 <ShieldCheck className="h-4 w-4" />
                                 Approve documents
@@ -592,7 +592,7 @@ function RejectedCard({
             <div className="flex items-center gap-2 pt-1">
                 <button
                     onClick={onReplace}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-zinc-900 bg-primary rounded-lg hover:opacity-90 transition-opacity shadow-sm"
                 >
                     <Upload className="h-3.5 w-3.5" />
                     Replace documents

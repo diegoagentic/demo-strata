@@ -218,7 +218,7 @@ function ArtifactCard({
                         ${ctaPrimary
                             ? (ctaDisabled
                                 ? 'bg-success/15 text-success border border-success/30'
-                                : 'bg-brand-300 dark:bg-brand-500 text-zinc-900 hover:opacity-90 shadow-sm')
+                                : 'bg-primary text-zinc-900 hover:opacity-90 shadow-sm')
                             : 'bg-background dark:bg-zinc-800 border border-border text-foreground hover:bg-muted'
                         }
                     `}

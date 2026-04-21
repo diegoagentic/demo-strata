@@ -163,7 +163,7 @@ export default function MBIOverviewPage() {
                     </div>
                     <button
                         onClick={() => jumpTo('m1.1')}
-                        className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+                        className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-zinc-900 bg-primary rounded-xl hover:opacity-90 transition-opacity shadow-sm"
                     >
                         <Sparkles className="h-4 w-4" />
                         Start from Flow 1

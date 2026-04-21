@@ -15,6 +15,13 @@
   --color-accent-foreground: #02060C;
   --color-destructive: #E52D49;
   --color-destructive-foreground: #ffffff;
+  /* Semantic status tokens · added 2026-04 for MBI + shared DS usage.
+     Values match chart palette when possible to avoid palette drift. */
+  --color-success: #22c55e;      /* green-500 · mirrors chart-2 */
+  --color-warning: #f59e0b;      /* amber-500 · mirrors chart-4 */
+  --color-info: #6366f1;         /* indigo-500 · mirrors chart-1 */
+  --color-ai: #10b981;           /* emerald-500 · AI-branded teal, distinct from success */
+  --color-danger: #E52D49;       /* alias of destructive for narrative tone */
   --color-border: #D0D4D8;
   --color-input: #D0D4D8;
   --color-input-background: #fafafa;

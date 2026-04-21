@@ -177,7 +177,7 @@ export default function HealthTrustExceptionScene() {
                         </button>
                         <button
                             onClick={handleApprove}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-zinc-900 bg-primary rounded-lg hover:opacity-90 transition-opacity shadow-sm"
                         >
                             <Check className="h-3.5 w-3.5" />
                             Approve & post

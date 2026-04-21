@@ -146,7 +146,7 @@ export default function MBIWizardShell({
                             <button
                                 onClick={onNext}
                                 disabled={!onNext || !canAdvance}
-                                className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                                className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-primary rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                             >
                                 <span>{resolvedNextLabel}</span>
                                 <ChevronRight className="h-4 w-4" />
@@ -180,7 +180,7 @@ export default function MBIWizardShell({
                     <button
                         onClick={onNext}
                         disabled={!onNext || !canAdvance || isLast}
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-zinc-900 bg-primary rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                     >
                         {isLast ? 'Done' : 'Next'}
                         <ChevronRight className="h-4 w-4" />
