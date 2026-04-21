@@ -19,6 +19,7 @@ import {
     Clock, ShieldCheck, Award, Users, Building2, Network,
 } from 'lucide-react'
 import MBIPageShell from './MBIPageShell'
+import { StatusBadge, type StatusTone } from '../shared'
 import { MBI_TENANT } from '../../config/profiles/mbi-data'
 
 interface FlowCard {
@@ -221,9 +222,7 @@ function FlowCardView({ flow, onLaunch }: { flow: FlowCard; onLaunch: () => void
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${tint.badge}`}>
-                            Flow {flow.number}
-                        </span>
+                        <StatusBadge label={`Flow ${flow.number}`} tone={flow.tint as StatusTone} size="xs" />
                         <span className="text-[9px] text-muted-foreground">{flow.scenes} scenes</span>
                     </div>
                     <div className="text-base font-bold text-foreground leading-tight mt-0.5">{flow.title}</div>
@@ -239,10 +238,12 @@ function FlowCardView({ flow, onLaunch }: { flow: FlowCard; onLaunch: () => void
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-bold text-foreground truncate">{flow.persona}</span>
                         {flow.isPilot && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-ai/15 text-ai">
-                                <Award className="h-2.5 w-2.5" />
-                                Phase 1 Pilot
-                            </span>
+                            <StatusBadge
+                                label="Phase 1 Pilot"
+                                tone="ai"
+                                size="xs"
+                                icon={<Award className="h-2.5 w-2.5" />}
+                            />
                         )}
                     </div>
                     <div className="text-[10px] text-muted-foreground truncate">{flow.personaRole}</div>

@@ -24,7 +24,7 @@ import {
     ArrowRight, Package, Truck, Warehouse,
 } from 'lucide-react'
 import MBIDetailSheet from './MBIDetailSheet'
-import MBIReasonModal from './MBIReasonModal'
+import { ReasonDialog as MBIReasonModal, StatusBadge, type StatusTone } from '../shared'
 
 export type DiscrepancyStatus = 'pending' | 'accepted' | 'dismissed'
 
@@ -315,7 +315,15 @@ function DiscrepancyCard({
     onReopen: () => void
 }) {
     const isField = discrepancy.kind === 'field'
-    const theme = (() => {
+    const theme: {
+        border: string
+        bg: string
+        leftBar: string
+        iconBg: string
+        icon: React.ReactNode
+        label: string
+        tone: StatusTone
+    } = (() => {
         if (status === 'accepted') {
             return {
                 border: 'border-success/40',
@@ -324,7 +332,7 @@ function DiscrepancyCard({
                 iconBg: 'bg-success/15 text-success',
                 icon: <CheckCircle2 className="h-4 w-4" />,
                 label: 'Applied',
-                labelClass: 'bg-success/15 text-success',
+                tone: 'success',
             }
         }
         if (status === 'dismissed') {
@@ -335,7 +343,7 @@ function DiscrepancyCard({
                 iconBg: 'bg-muted text-muted-foreground',
                 icon: <X className="h-4 w-4" />,
                 label: 'Dismissed',
-                labelClass: 'bg-muted text-muted-foreground',
+                tone: 'neutral',
             }
         }
         if (isField) {
@@ -346,7 +354,7 @@ function DiscrepancyCard({
                 iconBg: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
                 icon: <AlertTriangle className="h-4 w-4" />,
                 label: 'Field mismatch',
-                labelClass: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+                tone: 'warning',
             }
         }
         return {
@@ -356,7 +364,7 @@ function DiscrepancyCard({
             iconBg: 'bg-info/15 text-info',
             icon: <PackageSearch className="h-4 w-4" />,
             label: 'Inventory suggestion',
-            labelClass: 'bg-info/15 text-info',
+            tone: 'info',
         }
     })()
 
@@ -371,9 +379,7 @@ function DiscrepancyCard({
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${theme.labelClass}`}>
-                            {theme.label}
-                        </span>
+                        <StatusBadge label={theme.label} tone={theme.tone} size="xs" />
                         <span className="text-[9px] text-muted-foreground">AI {discrepancy.confidence}%</span>
                     </div>
                     <div className="text-sm font-bold text-foreground leading-tight mt-0.5">{discrepancy.title}</div>

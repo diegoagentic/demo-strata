@@ -20,7 +20,7 @@ import {
     Heart, Sparkles, CheckCircle2, Check, X, Pencil, Send, Brain,
     AlertTriangle, Building2, FileText, UserCheck, Flag,
 } from 'lucide-react'
-import MBIReasonModal from './MBIReasonModal'
+import { ReasonDialog as MBIReasonModal, StatusBadge } from '../shared'
 import { MBI_INVOICES } from '../../config/profiles/mbi-data'
 
 type ExceptionStatus = 'pending' | 'approved' | 'overridden' | 'escalated'
@@ -116,9 +116,7 @@ export default function HealthTrustExceptionScene() {
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
-                                HealthTrust GPO
-                            </span>
+                            <StatusBadge label="HealthTrust GPO" tone="warning" size="sm" />
                             <span className="text-[10px] text-muted-foreground">AI 97% · auto-calculated</span>
                         </div>
                         <h3 className="text-lg font-bold text-foreground leading-tight mt-1">

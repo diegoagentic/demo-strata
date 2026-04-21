@@ -17,6 +17,7 @@ import {
     Palette, ArrowRight, Building2, Layers, FileCode2, Award,
     CheckCircle2, Clock, AlertCircle, Users,
 } from 'lucide-react'
+import { StatusBadge } from '../shared'
 import { MBI_STAKEHOLDERS, MBI_DESIGN_PROJECTS } from '../../config/profiles/mbi-data'
 
 const MARINE_BLUE_PALETTE = [
@@ -96,19 +97,18 @@ export default function DesignProjectPick() {
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-sm font-bold text-foreground truncate">{p.name}</span>
                                         {isHero && (
-                                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-ai/15 text-ai">
-                                                Today's target
-                                            </span>
+                                            <StatusBadge label="Today's target" tone="ai" size="xs" />
                                         )}
-                                        <span className={`
-                                            text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md
-                                            ${p.status === 'approved' ? 'bg-success/15 text-success' : ''}
-                                            ${p.status === 'design' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400' : ''}
-                                            ${p.status === 'intake' ? 'bg-muted text-muted-foreground' : ''}
-                                            ${p.status === 'review' ? 'bg-info/15 text-info' : ''}
-                                        `}>
-                                            {p.status}
-                                        </span>
+                                        <StatusBadge
+                                            label={p.status}
+                                            tone={
+                                                p.status === 'approved' ? 'success'
+                                                : p.status === 'design' ? 'warning'
+                                                : p.status === 'review' ? 'info'
+                                                : 'neutral'
+                                            }
+                                            size="xs"
+                                        />
                                     </div>
                                     <div className="text-[11px] text-muted-foreground">
                                         {p.client} · {p.vertical} · {p.hoursLogged}h logged

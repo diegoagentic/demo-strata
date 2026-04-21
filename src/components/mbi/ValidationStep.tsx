@@ -36,7 +36,7 @@
 
 import { useEffect, useState } from 'react'
 import { AlertTriangle, AlertCircle, CheckCircle2, Shield, Sparkles, Check, X, Pencil, TrendingDown, Send, Brain, Ban } from 'lucide-react'
-import MBIReasonModal from './MBIReasonModal'
+import { ReasonDialog as MBIReasonModal, StatusBadge } from '../shared'
 import type { Validation, ValidationStatus } from '../../config/profiles/mbi-data'
 
 interface ValidationStepProps {
@@ -312,16 +312,20 @@ function ValidationSummary({
             {/* Severity breakdown chips */}
             <div className="flex items-center gap-2 flex-wrap mb-3">
                 {criticalCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
-                        <AlertCircle className="h-3 w-3" />
-                        {criticalCount} critical · blocks approval
-                    </span>
+                    <StatusBadge
+                        label={`${criticalCount} critical · blocks approval`}
+                        tone="danger"
+                        size="sm"
+                        icon={<AlertCircle className="h-3 w-3" />}
+                    />
                 )}
                 {warningCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
-                        <AlertTriangle className="h-3 w-3" />
-                        {warningCount} warning · advisory
-                    </span>
+                    <StatusBadge
+                        label={`${warningCount} warning · advisory`}
+                        tone="warning"
+                        size="sm"
+                        icon={<AlertTriangle className="h-3 w-3" />}
+                    />
                 )}
             </div>
 
