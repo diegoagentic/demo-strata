@@ -34,8 +34,9 @@
  * USED BY: MBIBudgetPage (wizard step 3 · demo tour m1.4)
  */
 
-import { useEffect, useState } from 'react'
-import { AlertTriangle, AlertCircle, CheckCircle2, Shield, Sparkles, Check, X, Pencil, TrendingDown } from 'lucide-react'
+import { Fragment, useEffect, useState } from 'react'
+import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
+import { AlertTriangle, AlertCircle, CheckCircle2, Shield, Sparkles, Check, X, Pencil, TrendingDown, Send, Brain } from 'lucide-react'
 import type { Validation, ValidationStatus } from '../../config/profiles/mbi-data'
 
 interface ValidationStepProps {
@@ -43,6 +44,33 @@ interface ValidationStepProps {
     statusById: Record<string, ValidationStatus>
     onStatusChange: (id: string, status: ValidationStatus) => void
 }
+
+// Reason metadata captured by Override / Reject modals.
+interface ValidationMeta {
+    reasonCategory?: string
+    notes?: string
+    notifyAI?: boolean
+    appliedAt: Date
+}
+
+type PendingAction =
+    | { kind: 'override'; validation: Validation }
+    | { kind: 'reject'; validation: Validation }
+    | null
+
+const OVERRIDE_CATEGORIES = [
+    { id: 'client-confirmed', label: 'Client confirmed the current spec' },
+    { id: 'custom-requirement', label: 'Custom requirement · intentional' },
+    { id: 'accepting-risk', label: 'Accepting the risk · logged' },
+    { id: 'other', label: 'Other (describe below)' },
+]
+
+const REJECT_CATEGORIES = [
+    { id: 'false-positive', label: 'False positive · Strata misread the SIF' },
+    { id: 'already-addressed', label: 'Already addressed outside the budget' },
+    { id: 'not-applicable', label: 'Not applicable to this project' },
+    { id: 'other', label: 'Other (describe below)' },
+]
 
 export default function ValidationStep({ validations, statusById, onStatusChange }: ValidationStepProps) {
     const total = validations.length
@@ -63,6 +91,47 @@ export default function ValidationStep({ validations, statusById, onStatusChange
 
     const criticalCount = sorted.filter(v => v.severity === 'critical').length
     const warningCount = sorted.filter(v => v.severity === 'warning').length
+
+    // Modal + per-validation metadata
+    const [pendingAction, setPendingAction] = useState<PendingAction>(null)
+    const [metaById, setMetaById] = useState<Record<string, ValidationMeta>>({})
+    const [toast, setToast] = useState<{ id: string; kind: ValidationStatus; message: string } | null>(null)
+
+    const pushToast = (id: string, kind: ValidationStatus, message: string) => {
+        setToast({ id, kind, message })
+        setTimeout(() => setToast(prev => (prev?.id === id ? null : prev)), 4200)
+    }
+
+    // Accept — one click, captures AI swap + pushes success toast
+    const handleAccept = (v: Validation) => {
+        onStatusChange(v.id, 'accepted')
+        setMetaById(prev => ({ ...prev, [v.id]: { appliedAt: new Date() } }))
+        const savings = v.estimatedImpact ? ` · $${v.estimatedImpact.toLocaleString()} prevented` : ''
+        pushToast(v.id, 'accepted', `AI swap applied${savings}`)
+    }
+
+    // Override / Reject open a modal first; the modal submits through these.
+    const handleOverrideSubmit = (v: Validation, payload: { reasonCategory: string; notes: string }) => {
+        onStatusChange(v.id, 'overridden')
+        setMetaById(prev => ({ ...prev, [v.id]: { ...payload, appliedAt: new Date() } }))
+        setPendingAction(null)
+        pushToast(v.id, 'overridden', `Current value kept · $${(v.estimatedImpact ?? 0).toLocaleString()} stays in budget`)
+    }
+
+    const handleRejectSubmit = (v: Validation, payload: { reasonCategory: string; notes: string; notifyAI: boolean }) => {
+        onStatusChange(v.id, 'rejected')
+        setMetaById(prev => ({ ...prev, [v.id]: { ...payload, appliedAt: new Date() } }))
+        setPendingAction(null)
+        const suffix = payload.notifyAI ? ' · feedback sent to Strata AI' : ' · logged locally'
+        pushToast(v.id, 'rejected', `Flag rejected${suffix}`)
+    }
+
+    // Re-opening a resolved card clears its meta + any active toast
+    const handleReopen = (v: Validation) => {
+        onStatusChange(v.id, 'pending')
+        setMetaById(prev => { const { [v.id]: _, ...rest } = prev; return rest })
+        if (toast?.id === v.id) setToast(null)
+    }
 
     return (
         <div className="space-y-4">
@@ -100,13 +169,34 @@ export default function ValidationStep({ validations, statusById, onStatusChange
                         key={v.id}
                         validation={v}
                         status={statusById[v.id] ?? 'pending'}
-                        onChange={s => onStatusChange(v.id, s)}
+                        meta={metaById[v.id]}
+                        activeToast={toast?.id === v.id ? toast : null}
+                        onAccept={() => handleAccept(v)}
+                        onOverride={() => setPendingAction({ kind: 'override', validation: v })}
+                        onReject={() => setPendingAction({ kind: 'reject', validation: v })}
+                        onReopen={() => handleReopen(v)}
                         delayMs={i * 200}
                         position={i + 1}
                         total={total}
                     />
                 ))}
             </div>
+
+            {/* Override / Reject modals */}
+            {pendingAction?.kind === 'override' && (
+                <OverrideModal
+                    validation={pendingAction.validation}
+                    onClose={() => setPendingAction(null)}
+                    onSubmit={payload => handleOverrideSubmit(pendingAction.validation, payload)}
+                />
+            )}
+            {pendingAction?.kind === 'reject' && (
+                <RejectModal
+                    validation={pendingAction.validation}
+                    onClose={() => setPendingAction(null)}
+                    onSubmit={payload => handleRejectSubmit(pendingAction.validation, payload)}
+                />
+            )}
 
             {/* All-resolved success banner */}
             {allResolved && (
@@ -209,14 +299,24 @@ function ValidationSummary({
 function ValidationCard({
     validation,
     status,
-    onChange,
+    meta,
+    activeToast,
+    onAccept,
+    onOverride,
+    onReject,
+    onReopen,
     delayMs,
     position,
     total,
 }: {
     validation: Validation
     status: ValidationStatus
-    onChange: (s: ValidationStatus) => void
+    meta?: ValidationMeta
+    activeToast: { id: string; kind: ValidationStatus; message: string } | null
+    onAccept: () => void
+    onOverride: () => void
+    onReject: () => void
+    onReopen: () => void
     delayMs: number
     position: number
     total: number
@@ -404,20 +504,23 @@ function ValidationCard({
                     )}
                     <div className="grid grid-cols-3 gap-2">
                         <button
-                            onClick={() => onChange('rejected')}
-                            className="px-2 py-2 text-xs font-bold text-muted-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors"
+                            onClick={onReject}
+                            className="px-2 py-2 text-xs font-bold text-muted-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted hover:border-muted-foreground/40 transition-colors"
+                            title="Dismiss the flag · send feedback to Strata AI"
                         >
                             Reject
                         </button>
                         <button
-                            onClick={() => onChange('overridden')}
-                            className="px-2 py-2 text-xs font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors"
+                            onClick={onOverride}
+                            className="px-2 py-2 text-xs font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted hover:border-info/40 transition-colors"
+                            title="Keep the current value · impact stays in budget"
                         >
                             Override
                         </button>
                         <button
-                            onClick={() => onChange('accepted')}
+                            onClick={onAccept}
                             className="flex items-center justify-center gap-1 px-2 py-2 text-xs font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                            title="Apply the AI swap"
                         >
                             <Check className="h-3.5 w-3.5" />
                             Accept
@@ -425,36 +528,305 @@ function ValidationCard({
                     </div>
                 </div>
             ) : (
-                <div className="mt-3 pt-3 border-t border-current/10 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-                        {status === 'accepted' && (
-                            <>
-                                <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-                                <span className="truncate">AI accepted{validation.estimatedImpact && ` · $${validation.estimatedImpact.toLocaleString()} prevented`}</span>
-                            </>
-                        )}
-                        {status === 'overridden' && (
-                            <>
-                                <Pencil className="h-4 w-4 text-info shrink-0" />
-                                <span className="truncate">Kept current · override logged</span>
-                            </>
-                        )}
-                        {status === 'rejected' && (
-                            <>
-                                <X className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="truncate">Flag rejected</span>
-                            </>
-                        )}
+                <div className="mt-3 pt-3 border-t border-current/10 space-y-2">
+                    {/* Primary resolved row */}
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 text-xs min-w-0">
+                            {status === 'accepted' && <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />}
+                            {status === 'overridden' && <Pencil className="h-4 w-4 text-info shrink-0 mt-0.5" />}
+                            {status === 'rejected' && <X className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />}
+                            <div className="min-w-0">
+                                <div className="text-foreground font-semibold">
+                                    {status === 'accepted' && (
+                                        <>AI swap applied{validation.estimatedImpact && <> · <span className="text-success tabular-nums">${validation.estimatedImpact.toLocaleString()} prevented</span></>}</>
+                                    )}
+                                    {status === 'overridden' && (
+                                        <>Current value kept{validation.estimatedImpact && <> · <span className="text-info tabular-nums">${validation.estimatedImpact.toLocaleString()} stays in budget</span></>}</>
+                                    )}
+                                    {status === 'rejected' && <>Flag rejected{meta?.notifyAI ? ' · AI notified' : ' · logged locally'}</>}
+                                </div>
+                                {meta?.reasonCategory && (
+                                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                                        Reason: <span className="text-foreground font-medium">
+                                            {(status === 'overridden' ? OVERRIDE_CATEGORIES : REJECT_CATEGORIES).find(c => c.id === meta.reasonCategory)?.label ?? meta.reasonCategory}
+                                        </span>
+                                    </div>
+                                )}
+                                {meta?.notes && (
+                                    <div className="text-[10px] text-muted-foreground italic mt-0.5 line-clamp-2">
+                                        "{meta.notes}"
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            onClick={onReopen}
+                            className="text-[10px] text-muted-foreground hover:text-foreground underline shrink-0"
+                        >
+                            Reopen
+                        </button>
                     </div>
-                    <button
-                        onClick={() => onChange('pending')}
-                        className="text-[10px] text-muted-foreground hover:text-foreground underline shrink-0"
-                    >
-                        Reopen
-                    </button>
+
+                    {/* Transient toast-style confirmation (auto-dismisses) */}
+                    {activeToast && (
+                        <div
+                            className={`
+                                flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold animate-in fade-in slide-in-from-bottom-2 duration-300
+                                ${activeToast.kind === 'accepted' ? 'bg-success/15 text-success border border-success/30' : ''}
+                                ${activeToast.kind === 'overridden' ? 'bg-info/15 text-info border border-info/30' : ''}
+                                ${activeToast.kind === 'rejected' ? 'bg-muted text-foreground border border-border' : ''}
+                            `}
+                        >
+                            {activeToast.kind === 'rejected' && meta?.notifyAI
+                                ? <Brain className="h-3.5 w-3.5 shrink-0" />
+                                : <Send className="h-3.5 w-3.5 shrink-0" />}
+                            <span className="truncate">{activeToast.message}</span>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
+    )
+}
+
+// ─── Override modal ──────────────────────────────────────────────────────────
+function OverrideModal({
+    validation,
+    onClose,
+    onSubmit,
+}: {
+    validation: Validation
+    onClose: () => void
+    onSubmit: (payload: { reasonCategory: string; notes: string }) => void
+}) {
+    const [reasonCategory, setReasonCategory] = useState('client-confirmed')
+    const [notes, setNotes] = useState('')
+    const canSubmit = reasonCategory !== 'other' || notes.trim().length > 0
+
+    return (
+        <Transition show={true} as={Fragment} appear>
+            <Dialog onClose={onClose} className="relative z-[100]">
+                <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+                    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm" />
+                </TransitionChild>
+                <div className="fixed inset-0 overflow-y-auto">
+                    <div className="flex min-h-full items-center justify-center p-4">
+                        <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95 translate-y-2" enterTo="opacity-100 scale-100 translate-y-0" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                            <DialogPanel className="w-full max-w-xl bg-card dark:bg-zinc-900 border border-border rounded-2xl shadow-2xl">
+                                <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-info/15 text-info flex items-center justify-center shrink-0">
+                                            <Pencil className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <DialogTitle className="text-base font-bold text-foreground">Override — keep current value</DialogTitle>
+                                            <p className="text-xs text-muted-foreground mt-0.5">{validation.field}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Close">
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+
+                                <div className="p-5 space-y-4">
+                                    {/* Impact warning */}
+                                    {validation.estimatedImpact && (
+                                        <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/40 rounded-xl p-3 flex items-start gap-2.5">
+                                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                            <div className="text-xs">
+                                                <div className="font-bold text-foreground">
+                                                    Your value won't trigger the AI swap.
+                                                </div>
+                                                <div className="text-muted-foreground mt-0.5">
+                                                    The <strong className="text-amber-700 dark:text-amber-400 tabular-nums">${validation.estimatedImpact.toLocaleString()}</strong> impact stays in the budget. Make sure this is intentional — your reason is logged.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Why are you keeping the current value?</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {OVERRIDE_CATEGORIES.map(c => {
+                                                const active = reasonCategory === c.id
+                                                return (
+                                                    <button
+                                                        key={c.id}
+                                                        type="button"
+                                                        onClick={() => setReasonCategory(c.id)}
+                                                        className={`
+                                                            flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-colors
+                                                            ${active
+                                                                ? 'bg-info/10 border-info/40 text-info'
+                                                                : 'bg-background dark:bg-zinc-800 border-border text-foreground hover:border-zinc-300 dark:hover:border-zinc-700'
+                                                            }
+                                                        `}
+                                                    >
+                                                        <span className={`h-2 w-2 rounded-full shrink-0 ${active ? 'bg-info' : 'bg-muted-foreground/40'}`} />
+                                                        {c.label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                                            Notes {reasonCategory === 'other' && <span className="text-info ml-1">· required</span>}
+                                        </label>
+                                        <textarea
+                                            value={notes}
+                                            onChange={e => setNotes(e.target.value)}
+                                            rows={3}
+                                            placeholder="e.g. Client reviewed the floor plan on 04/18 and signed off on the 72×36 worksurface despite the panel constraint."
+                                            className="w-full bg-background dark:bg-zinc-800 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-info resize-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="px-5 py-3 border-t border-border bg-muted/20 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
+                                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => canSubmit && onSubmit({ reasonCategory, notes: notes.trim() })}
+                                        disabled={!canSubmit}
+                                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-info hover:opacity-90 rounded-lg transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                        Keep current value
+                                    </button>
+                                </div>
+                            </DialogPanel>
+                        </TransitionChild>
+                    </div>
+                </div>
+            </Dialog>
+        </Transition>
+    )
+}
+
+// ─── Reject modal ────────────────────────────────────────────────────────────
+function RejectModal({
+    validation,
+    onClose,
+    onSubmit,
+}: {
+    validation: Validation
+    onClose: () => void
+    onSubmit: (payload: { reasonCategory: string; notes: string; notifyAI: boolean }) => void
+}) {
+    const [reasonCategory, setReasonCategory] = useState('false-positive')
+    const [notes, setNotes] = useState('')
+    const [notifyAI, setNotifyAI] = useState(true)
+    const canSubmit = reasonCategory !== 'other' || notes.trim().length > 0
+
+    return (
+        <Transition show={true} as={Fragment} appear>
+            <Dialog onClose={onClose} className="relative z-[100]">
+                <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+                    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm" />
+                </TransitionChild>
+                <div className="fixed inset-0 overflow-y-auto">
+                    <div className="flex min-h-full items-center justify-center p-4">
+                        <TransitionChild as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95 translate-y-2" enterTo="opacity-100 scale-100 translate-y-0" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                            <DialogPanel className="w-full max-w-xl bg-card dark:bg-zinc-900 border border-border rounded-2xl shadow-2xl">
+                                <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                                            <X className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <DialogTitle className="text-base font-bold text-foreground">Reject flag — Strata was wrong?</DialogTitle>
+                                            <p className="text-xs text-muted-foreground mt-0.5">{validation.field}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" aria-label="Close">
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+
+                                <div className="p-5 space-y-4">
+                                    {/* AI learning context */}
+                                    <div className="bg-ai/5 dark:bg-ai/10 border border-ai/30 rounded-xl p-3 flex items-start gap-2.5">
+                                        <Brain className="h-4 w-4 text-ai shrink-0 mt-0.5" />
+                                        <div className="text-xs">
+                                            <div className="font-bold text-foreground">Your feedback trains the model.</div>
+                                            <div className="text-muted-foreground mt-0.5">
+                                                Tell Strata why this flag was wrong so it stops raising the same issue on future budgets.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Why reject?</label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {REJECT_CATEGORIES.map(c => {
+                                                const active = reasonCategory === c.id
+                                                return (
+                                                    <button
+                                                        key={c.id}
+                                                        type="button"
+                                                        onClick={() => setReasonCategory(c.id)}
+                                                        className={`
+                                                            flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-colors
+                                                            ${active
+                                                                ? 'bg-muted border-muted-foreground/40 text-foreground'
+                                                                : 'bg-background dark:bg-zinc-800 border-border text-foreground hover:border-zinc-300 dark:hover:border-zinc-700'
+                                                            }
+                                                        `}
+                                                    >
+                                                        <span className={`h-2 w-2 rounded-full shrink-0 ${active ? 'bg-muted-foreground' : 'bg-muted-foreground/30'}`} />
+                                                        {c.label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                                            Notes for Strata {reasonCategory === 'other' && <span className="text-red-600 dark:text-red-400 ml-1">· required</span>}
+                                        </label>
+                                        <textarea
+                                            value={notes}
+                                            onChange={e => setNotes(e.target.value)}
+                                            rows={3}
+                                            placeholder="e.g. The 72×36 is valid — we verified with Allsteel that this config ships with a reinforced panel mount."
+                                            className="w-full bg-background dark:bg-zinc-800 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary resize-none"
+                                        />
+                                    </div>
+
+                                    <label className="flex items-start gap-3 bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-lg p-3 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+                                        <input type="checkbox" checked={notifyAI} onChange={e => setNotifyAI(e.target.checked)} className="h-4 w-4 mt-0.5 accent-primary" />
+                                        <div className="flex-1">
+                                            <div className="text-xs font-bold text-foreground">Send feedback to Strata AI</div>
+                                            <div className="text-[11px] text-muted-foreground mt-0.5">
+                                                Your rejection + reason is logged to the model-improvement pipeline. No client data shared.
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div className="px-5 py-3 border-t border-border bg-muted/20 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
+                                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors">
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => canSubmit && onSubmit({ reasonCategory, notes: notes.trim(), notifyAI })}
+                                        disabled={!canSubmit}
+                                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                                    >
+                                        {notifyAI ? <Brain className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                                        {notifyAI ? 'Reject & notify AI' : 'Reject flag'}
+                                    </button>
+                                </div>
+                            </DialogPanel>
+                        </TransitionChild>
+                    </div>
+                </div>
+            </Dialog>
+        </Transition>
     )
 }
 
