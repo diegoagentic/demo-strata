@@ -23,8 +23,9 @@
  * USED BY: MBIBudgetPage (Step 1 view)
  */
 
-import { useEffect, useRef, useState } from 'react'
-import { Upload, FileSpreadsheet, FileCode2, ClipboardList, Briefcase, Building2, GraduationCap, Landmark, Heart, CheckCircle2, Eye, RefreshCw, Trash2, Loader2, Plus, ShieldCheck, FileText } from 'lucide-react'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
+import { Upload, FileSpreadsheet, FileCode2, ClipboardList, Briefcase, Building2, GraduationCap, Landmark, Heart, CheckCircle2, Eye, RefreshCw, Trash2, Loader2, Plus, ShieldCheck, FileText, XCircle, Send, Ban, Undo2, AlertTriangle, X } from 'lucide-react'
 import MBIDetailSheet from './MBIDetailSheet'
 import type { BudgetPath, Vertical, ContractType } from '../../config/profiles/mbi-data'
 import { MBI_CONTRACTS, getSIFSample } from '../../config/profiles/mbi-data'
@@ -185,6 +186,8 @@ interface IntakeFile {
     description: string
     /** Base seconds for the simulated processing pass. */
     processingMs: number
+    /** Person who uploaded — used to notify them on rejection. */
+    author?: { name: string; role: string; channel: string }
 }
 
 const INITIAL_FILES: IntakeFile[] = [
@@ -196,6 +199,7 @@ const INITIAL_FILES: IntakeFile[] = [
         statusLabel: 'CET export',
         description: '24 fields · 7 line items · CET v16.5.2',
         processingMs: 2200,
+        author: { name: 'Beth Gianino', role: 'Designer', channel: 'Teams · #design-handoffs' },
     },
     {
         id: 'cap',
@@ -205,7 +209,24 @@ const INITIAL_FILES: IntakeFile[] = [
         statusLabel: 'Pricing worksheet',
         description: '7 discount overrides · 3 custom-pricing lines',
         processingMs: 1700,
+        author: { name: 'Amy Shoemaker', role: 'Senior Designer', channel: 'Teams · #design-handoffs' },
     },
+]
+
+interface RejectionState {
+    reason: string
+    category: string
+    notifyAuthors: boolean
+    submittedAt: Date
+    notifiedAuthors: string[]
+}
+
+const REJECTION_CATEGORIES = [
+    { id: 'missing-fields', label: 'Missing required fields' },
+    { id: 'stale-export', label: 'SIF export is out of date' },
+    { id: 'pricing-mismatch', label: 'CAP pricing does not match contract' },
+    { id: 'wrong-file', label: 'Wrong file attached' },
+    { id: 'other', label: 'Other (describe below)' },
 ]
 
 function DesignAssistedIntake({
@@ -231,6 +252,31 @@ function DesignAssistedIntake({
     const replaceInputRef = useRef<HTMLInputElement>(null)
     const addInputRef = useRef<HTMLInputElement>(null)
     const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null)
+
+    // Rejection flow
+    const [rejectOpen, setRejectOpen] = useState(false)
+    const [rejection, setRejection] = useState<RejectionState | null>(null)
+    const [notificationToast, setNotificationToast] = useState<string | null>(null)
+
+    const submitRejection = (payload: Omit<RejectionState, 'submittedAt' | 'notifiedAuthors'>) => {
+        const authorsToNotify = payload.notifyAuthors
+            ? Array.from(new Set(files.map(f => f.author?.name).filter(Boolean) as string[]))
+            : []
+        setRejection({
+            ...payload,
+            submittedAt: new Date(),
+            notifiedAuthors: authorsToNotify,
+        })
+        setRejectOpen(false)
+        if (authorsToNotify.length > 0) {
+            setNotificationToast(
+                `Notification sent to ${authorsToNotify.join(' + ')} via Teams · #design-handoffs`,
+            )
+            setTimeout(() => setNotificationToast(null), 4500)
+        }
+    }
+
+    const undoRejection = () => setRejection(null)
 
     // Drive the per-file processing animation
     useEffect(() => {
@@ -355,50 +401,95 @@ function DesignAssistedIntake({
                 </div>
             )}
 
-            {/* Approve CTA — gates the wizard's Next button */}
-            <div
-                className={`
-                    rounded-xl border p-4 flex items-center justify-between gap-4
-                    ${approved
-                        ? 'bg-success/10 border-success/30'
-                        : allReady
-                            ? 'bg-primary/5 dark:bg-primary/10 border-primary/30'
-                            : 'bg-muted/30 dark:bg-zinc-800/40 border-border'
-                    }
-                `}
-            >
-                <div className="min-w-0">
-                    <div className={`text-sm font-bold ${approved ? 'text-success' : 'text-foreground'}`}>
-                        {approved
-                            ? 'Documents approved'
+            {/* Approve / Reject CTA — gates the wizard's Next button */}
+            {rejection ? (
+                <RejectedCard
+                    rejection={rejection}
+                    categoryLabel={REJECTION_CATEGORIES.find(c => c.id === rejection.category)?.label ?? rejection.category}
+                    onUndo={undoRejection}
+                    onReplace={() => addInputRef.current?.click()}
+                />
+            ) : (
+                <div
+                    className={`
+                        rounded-xl border p-4 flex flex-col md:flex-row md:items-center justify-between gap-4
+                        ${approved
+                            ? 'bg-success/10 border-success/30'
                             : allReady
-                                ? 'Ready to approve documents'
-                                : `Processing ${processingCount} document${processingCount > 1 ? 's' : ''}…`}
+                                ? 'bg-primary/5 dark:bg-primary/10 border-primary/30'
+                                : 'bg-muted/30 dark:bg-zinc-800/40 border-border'
+                        }
+                    `}
+                >
+                    <div className="min-w-0">
+                        <div className={`text-sm font-bold ${approved ? 'text-success' : 'text-foreground'}`}>
+                            {approved
+                                ? 'Documents approved'
+                                : allReady
+                                    ? 'Ready to approve documents'
+                                    : `Processing ${processingCount} document${processingCount > 1 ? 's' : ''}…`}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                            {approved
+                                ? 'Strata will parse the SIF + CAP and generate scenarios in the next step.'
+                                : allReady
+                                    ? 'Approve to unlock AI Parsing · or reject with feedback for the uploader.'
+                                    : 'You can preview, replace, or add files at any time during processing.'}
+                        </div>
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                        {approved
-                            ? 'Strata will parse the SIF + CAP and generate scenarios in the next step.'
-                            : allReady
-                                ? 'Approving locks the inputs and unlocks AI Parsing.'
-                                : 'You can preview, replace, or add files at any time during processing.'}
-                    </div>
+                    {!approved ? (
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                onClick={() => setRejectOpen(true)}
+                                disabled={!allReady}
+                                className="flex items-center gap-1.5 px-3 py-2.5 text-sm font-bold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-xl hover:bg-red-100 dark:hover:bg-red-500/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                <Ban className="h-4 w-4" />
+                                Reject
+                            </button>
+                            <button
+                                onClick={onApprove}
+                                disabled={!allReady || !onApprove}
+                                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                            >
+                                <ShieldCheck className="h-4 w-4" />
+                                Approve documents
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="shrink-0 flex items-center gap-2 text-sm font-bold text-success px-4 py-2.5 bg-success/15 rounded-xl border border-success/30">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Approved
+                        </div>
+                    )}
                 </div>
-                {!approved ? (
-                    <button
-                        onClick={onApprove}
-                        disabled={!allReady || !onApprove}
-                        className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 text-sm font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                    >
-                        <ShieldCheck className="h-4 w-4" />
-                        Approve documents
-                    </button>
-                ) : (
-                    <div className="shrink-0 flex items-center gap-2 text-sm font-bold text-success px-4 py-2.5 bg-success/15 rounded-xl border border-success/30">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Approved
+            )}
+
+            {/* Notification toast — simulates Teams message after rejection */}
+            {notificationToast && (
+                <div className="bg-info/10 dark:bg-info/15 border border-info/30 rounded-xl p-3 flex items-start gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <Send className="h-4 w-4 text-info shrink-0 mt-0.5" />
+                    <div className="flex-1 text-xs">
+                        <div className="font-bold text-foreground">Feedback delivered</div>
+                        <div className="text-muted-foreground mt-0.5">{notificationToast}</div>
                     </div>
-                )}
-            </div>
+                    <button
+                        onClick={() => setNotificationToast(null)}
+                        className="text-muted-foreground hover:text-foreground shrink-0"
+                        aria-label="Dismiss"
+                    >
+                        <X className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            )}
+
+            {/* Reject modal */}
+            <RejectDocumentsModal
+                isOpen={rejectOpen}
+                onClose={() => setRejectOpen(false)}
+                onSubmit={submitRejection}
+                files={files}
+            />
 
             {/* Preview sheet */}
             {previewFile && (
@@ -436,6 +527,283 @@ ${sif.lineItems.map(i => `    <item sku="${i.sku}" qty="${i.quantity}" desc="${i
                 </MBIDetailSheet>
             )}
         </div>
+    )
+}
+
+// ─── Rejected card (replaces approve CTA after submission) ───────────────────
+function RejectedCard({
+    rejection,
+    categoryLabel,
+    onUndo,
+    onReplace,
+}: {
+    rejection: RejectionState
+    categoryLabel: string
+    onUndo: () => void
+    onReplace: () => void
+}) {
+    return (
+        <div className="rounded-xl border border-red-300 dark:border-red-500/40 bg-red-50/60 dark:bg-red-500/10 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                    <XCircle className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
+                            Rejected
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                            {rejection.submittedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                    </div>
+                    <div className="text-sm font-bold text-foreground mt-1">Documents sent back to uploader</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                        Intake is blocked until the files are replaced or the rejection is undone.
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="bg-card dark:bg-zinc-800/60 border border-border rounded-lg p-3">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Category</div>
+                    <div className="text-xs font-semibold text-foreground">{categoryLabel}</div>
+                </div>
+                <div className="bg-card dark:bg-zinc-800/60 border border-border rounded-lg p-3">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Notified</div>
+                    {rejection.notifiedAuthors.length > 0 ? (
+                        <div className="text-xs text-foreground">
+                            {rejection.notifiedAuthors.join(' + ')}
+                            <span className="text-muted-foreground"> · Teams</span>
+                        </div>
+                    ) : (
+                        <div className="text-xs italic text-muted-foreground">No one notified — reason kept in audit log</div>
+                    )}
+                </div>
+            </div>
+
+            {rejection.reason && (
+                <div className="bg-card dark:bg-zinc-800/60 border border-border rounded-lg p-3">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Reason</div>
+                    <div className="text-xs text-foreground whitespace-pre-wrap">{rejection.reason}</div>
+                </div>
+            )}
+
+            <div className="flex items-center gap-2 pt-1">
+                <button
+                    onClick={onReplace}
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-zinc-900 bg-brand-300 dark:bg-brand-500 rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                >
+                    <Upload className="h-3.5 w-3.5" />
+                    Replace documents
+                </button>
+                <button
+                    onClick={onUndo}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors"
+                >
+                    <Undo2 className="h-3.5 w-3.5" />
+                    Undo rejection
+                </button>
+            </div>
+        </div>
+    )
+}
+
+// ─── Reject documents modal ──────────────────────────────────────────────────
+function RejectDocumentsModal({
+    isOpen,
+    onClose,
+    onSubmit,
+    files,
+}: {
+    isOpen: boolean
+    onClose: () => void
+    onSubmit: (payload: Omit<RejectionState, 'submittedAt' | 'notifiedAuthors'>) => void
+    files: IntakeFile[]
+}) {
+    const [category, setCategory] = useState('missing-fields')
+    const [reason, setReason] = useState('')
+    const [notifyAuthors, setNotifyAuthors] = useState(true)
+
+    // Reset form when the dialog opens
+    useEffect(() => {
+        if (isOpen) {
+            setCategory('missing-fields')
+            setReason('')
+            setNotifyAuthors(true)
+        }
+    }, [isOpen])
+
+    const authors = Array.from(
+        new Map(
+            files
+                .map(f => f.author)
+                .filter((a): a is NonNullable<IntakeFile['author']> => !!a)
+                .map(a => [a.name, a]),
+        ).values(),
+    )
+    const canSubmit = reason.trim().length > 0 || category !== 'other'
+
+    const handleSubmit = () => {
+        if (!canSubmit) return
+        onSubmit({ category, reason: reason.trim(), notifyAuthors })
+    }
+
+    return (
+        <Transition show={isOpen} as={Fragment}>
+            <Dialog onClose={onClose} className="relative z-50">
+                <TransitionChild
+                    as={Fragment}
+                    enter="ease-out duration-200"
+                    enterFrom="opacity-0"
+                    enterTo="opacity-100"
+                    leave="ease-in duration-150"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                >
+                    <div className="fixed inset-0 bg-background/70 backdrop-blur-sm" />
+                </TransitionChild>
+
+                <div className="fixed inset-0 overflow-y-auto">
+                    <div className="flex min-h-full items-center justify-center p-4">
+                        <TransitionChild
+                            as={Fragment}
+                            enter="ease-out duration-200"
+                            enterFrom="opacity-0 scale-95 translate-y-2"
+                            enterTo="opacity-100 scale-100 translate-y-0"
+                            leave="ease-in duration-150"
+                            leaveFrom="opacity-100 scale-100"
+                            leaveTo="opacity-0 scale-95"
+                        >
+                            <DialogPanel className="w-full max-w-xl bg-card dark:bg-zinc-900 border border-border rounded-2xl shadow-2xl">
+                                <div className="px-5 py-4 border-b border-border flex items-start justify-between gap-3">
+                                    <div className="flex items-start gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                                            <Ban className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <DialogTitle className="text-base font-bold text-foreground">Reject documents</DialogTitle>
+                                            <p className="text-xs text-muted-foreground mt-0.5">
+                                                Send the files back with feedback so the uploader can improve the next export.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={onClose}
+                                        className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                        aria-label="Close"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+
+                                <div className="p-5 space-y-4">
+                                    {/* Category */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                                            Reason category
+                                        </label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {REJECTION_CATEGORIES.map(c => {
+                                                const active = category === c.id
+                                                return (
+                                                    <button
+                                                        key={c.id}
+                                                        type="button"
+                                                        onClick={() => setCategory(c.id)}
+                                                        className={`
+                                                            flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-colors
+                                                            ${active
+                                                                ? 'bg-red-50 dark:bg-red-500/10 border-red-300 dark:border-red-500/40 text-red-700 dark:text-red-400'
+                                                                : 'bg-background dark:bg-zinc-800 border-border text-foreground hover:border-zinc-300 dark:hover:border-zinc-700'
+                                                            }
+                                                        `}
+                                                    >
+                                                        <span className={`h-2 w-2 rounded-full shrink-0 ${active ? 'bg-red-500' : 'bg-muted-foreground/40'}`} />
+                                                        {c.label}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Reason */}
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                                            Notes for the uploader
+                                            {category === 'other' && <span className="text-red-600 dark:text-red-400 ml-1">· required</span>}
+                                        </label>
+                                        <textarea
+                                            value={reason}
+                                            onChange={e => setReason(e.target.value)}
+                                            rows={4}
+                                            placeholder="e.g. The SIF export is missing the contract discount field — please re-export from CET v16.5.2 with the Enterprise Holdings template."
+                                            className="w-full bg-background dark:bg-zinc-800 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary resize-none"
+                                        />
+                                        <div className="text-[10px] text-muted-foreground mt-1">
+                                            {reason.length} / 500 characters
+                                        </div>
+                                    </div>
+
+                                    {/* Notify authors */}
+                                    <label className="flex items-start gap-3 bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-lg p-3 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={notifyAuthors}
+                                            onChange={e => setNotifyAuthors(e.target.checked)}
+                                            className="h-4 w-4 mt-0.5 accent-primary"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-bold text-foreground">Notify the uploader(s)</div>
+                                            <div className="text-[11px] text-muted-foreground mt-0.5">
+                                                {authors.length > 0 ? (
+                                                    <>
+                                                        Send to{' '}
+                                                        {authors.map((a, i) => (
+                                                            <span key={a.name}>
+                                                                <strong className="text-foreground">{a.name}</strong>
+                                                                <span className="text-muted-foreground"> ({a.role})</span>
+                                                                {i < authors.length - 1 && ', '}
+                                                            </span>
+                                                        ))}
+                                                        <span> via {authors[0].channel}. The message includes the category, your notes, and a link to re-upload.</span>
+                                                    </>
+                                                ) : (
+                                                    <>No uploaders detected on these files — feedback will be kept in the audit log only.</>
+                                                )}
+                                            </div>
+                                            {notifyAuthors && authors.length > 0 && (
+                                                <div className="flex items-center gap-1.5 mt-2 text-[10px] text-info">
+                                                    <AlertTriangle className="h-3 w-3" />
+                                                    <span>They will see the first name of the reviewer (you) and can reply in-thread.</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div className="px-5 py-3 border-t border-border bg-muted/20 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
+                                    <button
+                                        onClick={onClose}
+                                        className="px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={!canSubmit}
+                                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                                    >
+                                        <Send className="h-4 w-4" />
+                                        {notifyAuthors && authors.length > 0 ? 'Reject & notify uploader' : 'Reject documents'}
+                                    </button>
+                                </div>
+                            </DialogPanel>
+                        </TransitionChild>
+                    </div>
+                </div>
+            </Dialog>
+        </Transition>
     )
 }
 
