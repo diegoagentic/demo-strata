@@ -17,7 +17,7 @@
  *
  * DS TOKENS: bg-card · border-border · rounded-2xl · text-success/text-ai
  *
- * USED BY: MBIBudgetPage (Step m1.2 ParsingView)
+ * USED BY: ParsingStep — now rendered inside the MBIDetailSheet "Pre-flight log" popup (wizard step 1 · demo tour m1.2)
  */
 
 import { useEffect, useState } from 'react'

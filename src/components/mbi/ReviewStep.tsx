@@ -26,7 +26,7 @@
  *
  * DS TOKENS: bg-card · border-border · rounded-2xl · primary/success/muted
  *
- * USED BY: MBIBudgetPage (m1.4 first half)
+ * USED BY: MBIBudgetPage (wizard step 4 · demo tour m1.5)
  */
 
 import { useState } from 'react'

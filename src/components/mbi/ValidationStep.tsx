@@ -31,7 +31,7 @@
  * DS TOKENS: bg-red-500/10 (critical) · bg-amber-500/10 (warning) ·
  *            bg-success/5 (accepted) · DS tokens throughout
  *
- * USED BY: MBIBudgetPage (m1.3 step view)
+ * USED BY: MBIBudgetPage (wizard step 3 · demo tour m1.4)
  */
 
 import { useEffect, useState } from 'react'

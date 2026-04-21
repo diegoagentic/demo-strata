@@ -8,11 +8,12 @@
 //
 // DEMO NARRATIVE: 5 AI modules, hero prototype = Budget Builder
 //
-// FLOW 1 — Budget Builder (Prototype, Phase 3)
-//   m1.1: Intake — Design-Assisted path (SIF/CAP upload)
-//   m1.2: AI Parsing & Scenarios — Good/Better/Best generated
-//   m1.3: AI Validation — Catches $18K Allsteel worksurface mismatch
-//   m1.4: Human Review + Output — PDF/Excel delivery
+// FLOW 1 — Budget Builder (Prototype, Phase 3) · 5 tour beats / 6 wizard steps
+//   m1.1: Intake — Design-Assisted + Approve/Reject (wizard 0)
+//   m1.2: AI Parsing + 2 triage discrepancies (wizard 1)
+//   m1.3: Pick a scenario — Good/Better/Best + markup (wizard 2)
+//   m1.4: AI Validation — Catches $18K Allsteel worksurface mismatch (wizard 3)
+//   m1.5: Review + client delivery — approve folds into Output (wizard 4 → 5)
 //
 // FLOW 2 — Accounting AI (Phase 2, Kathy Belleville)
 //   m2.1: AP invoice ingestion with HealthTrust logic
@@ -39,14 +40,14 @@ export const MBI_STEPS: DemoStep[] = [
 
     // ═══════════════════════════════════════════
     // FLOW 1: Budget Builder (Hero Prototype)
-    // Amanda Renshaw (Account Manager) · 4 steps
+    // Amanda Renshaw (Account Manager) · 5 beats
     // ═══════════════════════════════════════════
     {
         id: 'm1.1',
         groupId: 0,
         groupTitle: 'Flow 1: Budget Builder Prototype',
         title: 'Intake — Design-Assisted path',
-        description: 'Amanda, account manager at MBI, receives a new opportunity from Enterprise Holdings for a corporate HQ floor renovation. She uploads the SIF export from CET and the CAP worksheet from the design team. Strata detects the path automatically and routes to the parser.',
+        description: 'Amanda, account manager at MBI, receives a new opportunity from Enterprise Holdings for a corporate HQ floor renovation. She drops in the SIF export from CET and the CAP worksheet from the design team — Strata processes each file in real time, lets her preview, replace or add documents, and then either approve the intake or send it back to the uploader with feedback. Nothing is parsed until she approves.',
         app: 'mbi-budget',
         role: 'Dealer',
     },
@@ -54,8 +55,8 @@ export const MBI_STEPS: DemoStep[] = [
         id: 'm1.2',
         groupId: 0,
         groupTitle: 'Flow 1: Budget Builder Prototype',
-        title: 'AI parsing + scenario generation',
-        description: 'Strata parses 24 fields from the SIF, applies the HNI contract discount, calculates freight and install, and generates three scenarios — Good, Better, Best — with product swaps and clear pricing deltas. What used to take Amanda a week is ready in under two minutes.',
+        title: 'AI parsing + triage',
+        description: 'Strata parses 24 fields from the SIF, applies the HNI contract discount, calculates freight and install, and runs a 5-check pre-flight. Two items surface for Amanda to triage before scenarios — a $7,450 ceiling mismatch between the SIF and the CAP, and a Knoll Propeller table that exists in Strata\'s inventory $1,500 cheaper per unit. She decides, then continues.',
         app: 'mbi-budget',
         role: 'Dealer',
     },
@@ -63,8 +64,8 @@ export const MBI_STEPS: DemoStep[] = [
         id: 'm1.3',
         groupId: 0,
         groupTitle: 'Flow 1: Budget Builder Prototype',
-        title: 'AI validation — $18K catch',
-        description: 'Before Amanda sends the budget, Strata flags a critical issue: the Allsteel Further worksurface size in the SIF is incompatible with the panel system. Confidence 94%. Estimated impact: $18,240 — exactly the class of error that cost MBI a real deal last quarter. Amanda accepts the swap suggestion.',
+        title: 'Pick a scenario — Good / Better / Best',
+        description: 'Strata generates three scenarios automatically from the parsed SIF — Good, Better, Best — with product swaps and clear pricing deltas vs the mid-range. Amanda compares them side by side, fine-tunes the markup with a slider, and opens the live pricing breakdown on demand. What used to take a week is a decision she makes in under two minutes.',
         app: 'mbi-budget',
         role: 'Dealer',
     },
@@ -72,8 +73,17 @@ export const MBI_STEPS: DemoStep[] = [
         id: 'm1.4',
         groupId: 0,
         groupTitle: 'Flow 1: Budget Builder Prototype',
+        title: 'AI validation — $18K catch',
+        description: 'Before Amanda sends the budget, Strata flags a critical issue: the Allsteel Further worksurface size in the SIF is incompatible with the panel system. Confidence 94%. Estimated impact: $18,240 — exactly the class of error that cost MBI a real deal last quarter. Amanda accepts the swap suggestion; a secondary finish warning is cleared at the same time.',
+        app: 'mbi-budget',
+        role: 'Dealer',
+    },
+    {
+        id: 'm1.5',
+        groupId: 0,
+        groupTitle: 'Flow 1: Budget Builder Prototype',
         title: 'Review + client delivery',
-        description: 'Amanda reviews the Better scenario, tunes the markup to 33%, and approves. Strata generates both the Excel breakdown and a branded MBI client summary PDF. She sends it to Enterprise Holdings with one click. Total time: 4 minutes, down from 1 week.',
+        description: 'Amanda reviews the Better scenario one last time — client, scenario, validations cleared, line items one click away. She approves: Strata generates the Excel breakdown and the MBI-branded client summary PDF, logs a version in SharePoint, and surfaces the delivery output. She sends it to Enterprise Holdings with one click. Total time: 4 minutes, down from 1 week.',
         app: 'mbi-budget',
         role: 'Dealer',
     },
@@ -133,10 +143,11 @@ export const MBI_STEPS: DemoStep[] = [
 // ─── STEP BEHAVIOR ───────────────────────────────────────────────────────────
 
 export const MBI_STEP_BEHAVIOR: Record<string, StepBehavior> = {
-    'm1.1': { mode: 'interactive', userAction: 'Upload the SIF and CAP files and let Strata route to the parser' },
-    'm1.2': { mode: 'interactive', userAction: 'Watch Strata parse the SIF and generate three scenarios' },
-    'm1.3': { mode: 'interactive', userAction: 'Review the $18K validation flag and accept the AI suggestion' },
-    'm1.4': { mode: 'interactive', userAction: 'Approve the Better scenario and send the branded summary to the client' },
+    'm1.1': { mode: 'interactive', userAction: 'Watch the files process, preview if you want, then approve the intake' },
+    'm1.2': { mode: 'interactive', userAction: 'Triage the 2 discrepancies: apply the inventory swap and reconcile the ceiling' },
+    'm1.3': { mode: 'interactive', userAction: 'Pick Good / Better / Best and fine-tune the markup slider' },
+    'm1.4': { mode: 'interactive', userAction: 'Review the $18K validation flag and accept the AI suggestion' },
+    'm1.5': { mode: 'interactive', userAction: 'Approve the Better scenario and deliver the branded summary' },
     'm2.1': { mode: 'interactive', userAction: 'Review the invoice queue and the HealthTrust-flagged exceptions' },
     'm2.2': { mode: 'interactive', userAction: 'Check the non-EDI reconciliation and the live billing forecast' },
     'm3.1': { mode: 'interactive', userAction: 'Watch the SIF flow into CORE and the proposal auto-build' },
@@ -148,21 +159,30 @@ export const MBI_STEP_BEHAVIOR: Record<string, StepBehavior> = {
 export const MBI_STEP_MESSAGES: Record<string, string[]> = {
     'm1.1': [
         'Receiving new Enterprise Holdings opportunity',
-        'Loading SIF export from CET',
+        'Streaming SIF export from CET',
         'Reading CAP worksheet',
+        'Processing documents — schema + checksum',
         'Detecting path: Design-Assisted',
-        'Routing to AI parser',
+        'Awaiting reviewer approval',
     ],
     'm1.2': [
         'Parsing SIF schema — 24 fields extracted',
         'Matching contract: HNI Corporate (55% discount)',
         'Applying markup — 35% default',
-        'Calculating freight (% of net)',
+        'Calculating freight (10% of net)',
         'Calculating install (12% non-union)',
-        'Generating Good / Better / Best scenarios',
-        'Computing swap deltas',
+        'Cross-checking CAP overrides vs SIF ceiling',
+        'Searching inventory for cheaper equivalents',
+        'Flagged: ceiling mismatch ($7,450) + inventory swap ($3,000 savings)',
     ],
     'm1.3': [
+        'Composing scenario: Good (entry-tier swaps)',
+        'Composing scenario: Better (recommended mid-range)',
+        'Composing scenario: Best (premium finishes)',
+        'Computing per-scenario pricing deltas vs Mid-Range',
+        'Scenarios ready — awaiting pick + markup',
+    ],
+    'm1.4': [
         'Cross-checking SIF quantities against CET config',
         'Validating worksurface dimensions',
         'Detected anomaly: Allsteel Further 72×36 not compatible with panel system',
@@ -170,8 +190,8 @@ export const MBI_STEP_MESSAGES: Record<string, string[]> = {
         'AI confidence: 94%',
         'Suggesting swap: Allsteel Shape (compatible 72×36)',
     ],
-    'm1.4': [
-        'Applying markup 33%',
+    'm1.5': [
+        'Applying final markup',
         'Generating Excel breakdown',
         'Rendering branded MBI client summary PDF',
         'Preparing send to Enterprise Holdings',
@@ -212,7 +232,7 @@ export const MBI_STEP_MESSAGES: Record<string, string[]> = {
 // ─── SELF-INDICATED STEPS ────────────────────────────────────────────────────
 
 export const MBI_SELF_INDICATED: string[] = [
-    'm1.1', 'm1.2', 'm1.3', 'm1.4',
+    'm1.1', 'm1.2', 'm1.3', 'm1.4', 'm1.5',
     'm2.1', 'm2.2',
     'm3.1',
     'm4.1',

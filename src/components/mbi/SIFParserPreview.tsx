@@ -16,7 +16,7 @@
  * DS TOKENS: bg-card · border-border · rounded-2xl · text-foreground
  *            · text-ai for AI/parser accents · bg-primary for progress bar
  *
- * USED BY: MBIBudgetPage (Step m1.2 ParsingView)
+ * USED BY: ParsingStep (wizard step 1 · demo tour m1.2)
  */
 
 import { useEffect, useState } from 'react'

@@ -12,11 +12,13 @@
  *   - 4 Review       · Client · scenario · validations summary
  *   - 5 Output       · PDF delivery + approve
  *
- * DEMO TOUR: when the demo drives a step (m1.1 → m1.4), the wizard slot is
- * set programmatically via STEP_TO_WIZARD_INDEX. Outside a demo step the user
- * navigates freely via the stepper chips + Back/Next.
+ * DEMO TOUR: when the demo drives a step (m1.1 → m1.5), the wizard slot is
+ * set programmatically via STEP_TO_WIZARD_INDEX. The 5 tour beats map to the
+ * 6 wizard steps: Scenarios is its own beat, Review+Output fold (approve
+ * auto-advances). Outside a demo step the user navigates freely via the
+ * stepper chips + Back/Next.
  *
- * STATUS: Phase 2.8 wizard refactor — consolidated free-nav + demo-nav modes.
+ * STATUS: Phase 2.9 wizard refactor — tour aligned to 5 beats.
  */
 
 import { useEffect, useState } from 'react'
@@ -45,9 +47,10 @@ import type { BudgetPath } from '../../config/profiles/mbi-data'
 // Map demo tour step id → wizard step index (0-based)
 const STEP_TO_WIZARD_INDEX: Record<string, number> = {
     'm1.1': 0,  // Intake
-    'm1.2': 1,  // AI Parsing
-    'm1.3': 3,  // Validation (scenarios are auto-selected for the demo)
-    'm1.4': 4,  // Review — approve auto-advances to Output
+    'm1.2': 1,  // AI Parsing + discrepancies triage
+    'm1.3': 2,  // Pick a scenario (Good/Better/Best + markup)
+    'm1.4': 3,  // AI Validation — $18K catch
+    'm1.5': 4,  // Review — approve auto-advances to Output (wizard 5)
 }
 
 export default function MBIBudgetPage() {

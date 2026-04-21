@@ -21,7 +21,7 @@
  *
  * DS TOKENS: bg-card · bg-success/5 · border-success/30 · border-primary/30
  *
- * USED BY: MBIBudgetPage (m1.4 second half after approval)
+ * USED BY: MBIBudgetPage (wizard step 5 · demo tour m1.5 after approve)
  */
 
 import { CheckCircle2, Download, Send, FileSpreadsheet, FileText, ArrowRight, Sparkles } from 'lucide-react'
