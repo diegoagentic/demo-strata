@@ -27,8 +27,10 @@
 //   m3.3: AI validation — 4 audit loops → 1 AI + 1 human review
 //   m3.4: Send proposal + handoff to Flow 4 (Design AI, upstream)
 //
-// FLOW 4 — Design AI (Phase 4, Beth Gianino early adopter)
-//   m4.1: Spec Check Engine (Q10 #1 — 9.08/10 priority)
+// FLOW 4 — Design AI (Phase 4, Beth Gianino early adopter) · 3 scenes / 3 beats
+//   m4.1: Pick project — Beth selects BJC ICU · Phase 1 Pilot context
+//   m4.2: Spec Check scan — 4 AI checks, 47 items, under 5 min
+//   m4.3: Findings review + demo recap — one swap catches "all blue except this"
 //
 // HERO SCENARIO: Enterprise Holdings Corporate HQ · $385,000 · HNI contract
 //   Allsteel Further worksurface size mismatch caught by AI — $18,240 prevented
@@ -177,14 +179,32 @@ export const MBI_STEPS: DemoStep[] = [
 
     // ═══════════════════════════════════════════
     // FLOW 4: Design AI (Phase 4)
-    // Beth Gianino (early adopter, Q4 8/10) · 1 step
+    // Beth Gianino (early adopter · Phase 1 Pilot · Q4 8/10) · 3 scenes
     // ═══════════════════════════════════════════
     {
         id: 'm4.1',
         groupId: 3,
         groupTitle: 'Flow 4: Design AI',
-        title: 'Spec check engine (pilot with Beth)',
-        description: 'Beth, an early adopter on the design team, runs Strata Spec Check on her Mercy Hospital ICU project. The engine scans the CET BOM in under 5 minutes, flagging a finish inconsistency — "everything is blue, this one chair is green." Caught before the client sees it. This is the story that will unlock adoption for the rest of the design team.',
+        title: 'Pick project · Beth\'s pilot',
+        description: "Design team's Q4 AI trust averages 3.3/10 — lowest in company. Rogers Diffusion says don't deploy to the 1-out-of-10 first. Beth Gianino (8/10 trust, early adopter) picks her BJC ICU project with 47 line items and Marine Blue palette. She pilots Spec Check alone · a visible win unlocks team-wide rollout.",
+        app: 'mbi-design',
+        role: 'Designer',
+    },
+    {
+        id: 'm4.2',
+        groupId: 3,
+        groupTitle: 'Flow 4: Design AI',
+        title: 'Spec check scan · 4 AI checks',
+        description: 'Strata runs 4 sequential AI checks across the 47 BOM items: dimensions (match CET footprint), finish (every upholstery + laminate), palette (Marine Blue project), availability (vendor lead times). Total scan time: under 5 minutes vs today\'s manual line-by-line review that still misses things.',
+        app: 'mbi-design',
+        role: 'Designer',
+    },
+    {
+        id: 'm4.3',
+        groupId: 3,
+        groupTitle: 'Flow 4: Design AI',
+        title: 'Findings review · "all blue except this"',
+        description: 'One finding: Line 23 HON Ignition chair is Forest Green — outside the Marine Blue project palette. Exactly the class of mistake that cost MBI before ("everything is blue, this one chair is green"). Beth accepts the AI swap to Onyx Black in one click. Caught before the client sees it. Proof point unlocked · demo arc closes.',
         app: 'mbi-design',
         role: 'Designer',
     },
@@ -206,7 +226,9 @@ export const MBI_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     'm3.2': { mode: 'interactive', userAction: 'Watch the SIF flow into CORE · 24 fields, 87 seconds, zero keystrokes' },
     'm3.3': { mode: 'interactive', userAction: 'Review Spec Check · audit loops collapse from 4 to 1+1' },
     'm3.4': { mode: 'interactive', userAction: 'Approve and send the proposal · orders route to manufacturers' },
-    'm4.1': { mode: 'interactive', userAction: 'Run Spec Check on Beth\'s ICU project and catch the finish issue' },
+    'm4.1': { mode: 'interactive', userAction: "Confirm Beth as Phase 1 Pilot · select BJC ICU project · 47 items, Marine Blue palette" },
+    'm4.2': { mode: 'interactive', userAction: 'Run Spec Check · watch 4 AI checks run against the 47-item BOM' },
+    'm4.3': { mode: 'interactive', userAction: 'Review the palette finding on Line 23 · accept swap · close the demo arc' },
 };
 
 // ─── STEP MESSAGES (AI Agent Progress) ───────────────────────────────────────
@@ -304,12 +326,24 @@ export const MBI_STEP_MESSAGES: Record<string, string[]> = {
         'Amanda pinged · handoff complete',
     ],
     'm4.1': [
-        'Beth running Spec Check on ICU project',
-        'Scanning CET BOM — 47 line items',
-        'Checking finishes — 46 matching, 1 anomaly',
-        'Flagged: Line 23 finish "Forest Green" inconsistent with project "Marine Blue" palette',
-        'Generating structured report',
-        'Caught before client review',
+        'Loading Beth\'s active design projects',
+        'BJC ICU Expansion flagged as ready for Spec Check',
+        '47 line items · Marine Blue palette locked',
+        'Phase 1 Pilot mode · Beth alone for now',
+    ],
+    'm4.2': [
+        'Running AI check 1: Dimensions · matching CET footprint',
+        'Running AI check 2: Finish consistency · upholstery + laminate + powder-coat',
+        'Running AI check 3: Palette match · Marine Blue 5-color set',
+        'Running AI check 4: Vendor availability · lead times vs install date',
+        '3 of 4 checks clean · 1 finding on Line 23',
+    ],
+    'm4.3': [
+        'Finding: HON Ignition chair finish Forest Green',
+        'Project palette is Marine Blue · no green',
+        'Suggesting swap to Onyx Black (palette match)',
+        'Beth accepts · BOM palette 100% clean',
+        'Proof point logged · ready for team rollout',
     ],
 };
 
@@ -319,5 +353,5 @@ export const MBI_SELF_INDICATED: string[] = [
     'm1.1', 'm1.2', 'm1.3', 'm1.4', 'm1.5',
     'm2.1', 'm2.2', 'm2.3', 'm2.4',
     'm3.1', 'm3.2', 'm3.3', 'm3.4',
-    'm4.1',
+    'm4.1', 'm4.2', 'm4.3',
 ];
