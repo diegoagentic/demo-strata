@@ -61,10 +61,30 @@ export default function ValidationStep({ validations, statusById, onStatusChange
         return order[a.severity] - order[b.severity]
     })
 
+    const criticalCount = sorted.filter(v => v.severity === 'critical').length
+    const warningCount = sorted.filter(v => v.severity === 'warning').length
+
     return (
         <div className="space-y-4">
             {/* Summary header */}
-            <ValidationSummary total={total} resolved={resolved} preventedImpact={preventedImpact} />
+            <ValidationSummary
+                total={total}
+                resolved={resolved}
+                preventedImpact={preventedImpact}
+                criticalCount={criticalCount}
+                warningCount={warningCount}
+            />
+
+            {/* Section intro — explains the side-by-side layout */}
+            <div className="flex items-start gap-2 text-[11px] text-muted-foreground bg-muted/30 dark:bg-zinc-800/50 border border-border rounded-xl px-3 py-2">
+                <Sparkles className="h-3.5 w-3.5 text-ai shrink-0 mt-0.5" />
+                <span>
+                    <strong className="text-foreground">One card per finding</strong> · shown side-by-side so you can compare
+                    both in one pass. For each, compare <strong className="text-foreground">Expected</strong> vs <strong className="text-foreground">Actual</strong>, then{' '}
+                    <strong className="text-foreground">Accept</strong> the AI swap, <strong className="text-foreground">Override</strong> to keep the current value, or{' '}
+                    <strong className="text-foreground">Reject</strong> the flag.
+                </span>
+            </div>
 
             {/* Cards — side-by-side grid for at-a-glance comparison */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
@@ -75,6 +95,8 @@ export default function ValidationStep({ validations, statusById, onStatusChange
                         status={statusById[v.id] ?? 'pending'}
                         onChange={s => onStatusChange(v.id, s)}
                         delayMs={i * 200}
+                        position={i + 1}
+                        total={total}
                     />
                 ))}
             </div>
@@ -104,28 +126,57 @@ export default function ValidationStep({ validations, statusById, onStatusChange
 }
 
 // ─── Summary header ──────────────────────────────────────────────────────────
-function ValidationSummary({ total, resolved, preventedImpact }: { total: number; resolved: number; preventedImpact: number }) {
+function ValidationSummary({
+    total,
+    resolved,
+    preventedImpact,
+    criticalCount,
+    warningCount,
+}: {
+    total: number
+    resolved: number
+    preventedImpact: number
+    criticalCount: number
+    warningCount: number
+}) {
     const pct = Math.round((resolved / total) * 100)
     return (
         <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
+            <div className="flex items-start justify-between mb-3 gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                         <Shield className="h-4 w-4" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                         <div className="text-xs font-bold text-foreground">Pre-delivery validation</div>
                         <div className="text-[10px] text-muted-foreground">
-                            Strata reviewed every line item against CET config + contract pricing + inventory
+                            Strata compared every SIF line against CET config, contract pricing, and inventory — {total} issue{total !== 1 ? 's' : ''} need your decision.
                         </div>
                     </div>
                 </div>
-                <div className="flex items-baseline gap-1">
+                <div className="flex items-baseline gap-1 shrink-0">
                     <span className="text-2xl font-bold text-foreground tabular-nums">{resolved}</span>
                     <span className="text-sm text-muted-foreground tabular-nums">/ {total}</span>
                     <span className="text-xs text-muted-foreground ml-1">resolved</span>
                 </div>
             </div>
+
+            {/* Severity breakdown chips */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+                {criticalCount > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
+                        <AlertCircle className="h-3 w-3" />
+                        {criticalCount} critical · blocks approval
+                    </span>
+                )}
+                {warningCount > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="h-3 w-3" />
+                        {warningCount} warning · advisory
+                    </span>
+                )}
+            </div>
+
             <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                 <div
                     className={`h-full rounded-full transition-all duration-300 ${resolved === total ? 'bg-success' : 'bg-primary'}`}
@@ -153,11 +204,15 @@ function ValidationCard({
     status,
     onChange,
     delayMs,
+    position,
+    total,
 }: {
     validation: Validation
     status: ValidationStatus
     onChange: (s: ValidationStatus) => void
     delayMs: number
+    position: number
+    total: number
 }) {
     const isCritical = validation.severity === 'critical'
     const [pulseActive, setPulseActive] = useState(isCritical && status === 'pending')
@@ -174,6 +229,30 @@ function ValidationCard({
         if (status !== 'pending') setPulseActive(false)
     }, [status])
 
+    // Severity badge — keeps its original flavor even after resolution
+    const severityBadge = isCritical
+        ? {
+            label: 'Critical',
+            className: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400',
+            icon: <AlertCircle className="h-3 w-3" />,
+            blocksHint: 'Blocks approval',
+        }
+        : {
+            label: 'Warning',
+            className: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+            icon: <AlertTriangle className="h-3 w-3" />,
+            blocksHint: 'Advisory · does not block',
+        }
+
+    // Status badge — shown alongside severity after resolution
+    const statusBadge = (() => {
+        if (status === 'accepted') return { label: 'AI swap accepted', className: 'bg-success/15 text-success', icon: <CheckCircle2 className="h-3 w-3" /> }
+        if (status === 'overridden') return { label: 'Manually kept', className: 'bg-info/15 text-info', icon: <Pencil className="h-3 w-3" /> }
+        if (status === 'rejected') return { label: 'Flag rejected', className: 'bg-muted text-muted-foreground', icon: <X className="h-3 w-3" /> }
+        return null
+    })()
+
+    // Card outer theme — signals resolution state (overrides severity bg when resolved)
     const severityTheme = (() => {
         if (status === 'accepted') return {
             border: 'border-success/30',
@@ -182,8 +261,6 @@ function ValidationCard({
             iconBg: 'bg-success/10',
             iconColor: 'text-success',
             icon: <CheckCircle2 className="h-5 w-5" />,
-            label: 'Accepted',
-            labelClass: 'bg-success/10 text-success',
         }
         if (status === 'overridden') return {
             border: 'border-info/30',
@@ -192,8 +269,6 @@ function ValidationCard({
             iconBg: 'bg-info/10',
             iconColor: 'text-info',
             icon: <Pencil className="h-5 w-5" />,
-            label: 'Manually kept',
-            labelClass: 'bg-info/10 text-info',
         }
         if (status === 'rejected') return {
             border: 'border-muted',
@@ -202,19 +277,15 @@ function ValidationCard({
             iconBg: 'bg-muted',
             iconColor: 'text-muted-foreground',
             icon: <X className="h-5 w-5" />,
-            label: 'Rejected',
-            labelClass: 'bg-muted text-muted-foreground',
         }
-        // pending
-        if (validation.severity === 'critical') return {
+        // pending — uses severity color
+        if (isCritical) return {
             border: 'border-red-400 dark:border-red-500/50',
             bg: 'bg-red-50 dark:bg-red-500/10',
             ring: pulseActive ? 'ring-4 ring-red-500/20 animate-pulse' : 'ring-2 ring-red-500/10',
             iconBg: 'bg-red-100 dark:bg-red-500/20',
             iconColor: 'text-red-600',
             icon: <AlertCircle className="h-5 w-5" />,
-            label: 'Critical',
-            labelClass: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400',
         }
         return {
             border: 'border-amber-300 dark:border-amber-500/40',
@@ -223,8 +294,6 @@ function ValidationCard({
             iconBg: 'bg-amber-100 dark:bg-amber-500/20',
             iconColor: 'text-amber-600',
             icon: <AlertTriangle className="h-5 w-5" />,
-            label: 'Warning',
-            labelClass: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
         }
     })()
 
@@ -238,26 +307,41 @@ function ValidationCard({
                 ${severityTheme.border} ${severityTheme.bg} ${severityTheme.ring}
             `}
         >
-            {/* Header — icon + badges */}
+            {/* Header — icon + persistent severity + position + status */}
             <div className="flex items-start gap-3 mb-3">
                 <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${severityTheme.iconBg} ${severityTheme.iconColor}`}>
                     {severityTheme.icon}
                 </div>
                 <div className="min-w-0 flex-1">
+                    {/* Top row: Finding N of X · Severity · AI confidence · Blocks? */}
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${severityTheme.labelClass}`}>
-                            {severityTheme.label}
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            Finding {position} of {total}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${severityBadge.className}`}>
+                            {severityBadge.icon}
+                            {severityBadge.label}
                         </span>
                         <span className="text-[10px] font-medium text-muted-foreground">
-                            AI confidence {validation.confidence}%
+                            AI {validation.confidence}%
                         </span>
-                        {isCritical && status === 'pending' && (
-                            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                                Blocks approval
-                            </span>
-                        )}
                     </div>
+                    {/* Second row: status badge (only after resolution) */}
+                    {statusBadge && (
+                        <div className="mb-1">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusBadge.className}`}>
+                                {statusBadge.icon}
+                                {statusBadge.label}
+                            </span>
+                        </div>
+                    )}
+                    {/* Blocks approval signal — only when critical AND pending */}
+                    {isCritical && status === 'pending' && (
+                        <div className="text-[10px] font-bold text-red-600 dark:text-red-400 flex items-center gap-1 mb-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                            {severityBadge.blocksHint}
+                        </div>
+                    )}
                     <h3 className="font-bold leading-tight text-base text-foreground">
                         {validation.field}
                     </h3>
