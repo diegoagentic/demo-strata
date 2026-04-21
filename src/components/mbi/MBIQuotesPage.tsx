@@ -1,123 +1,134 @@
 /**
  * COMPONENT: MBIQuotesPage
- * PURPOSE: Phase 4 — Quotes AI · PC bottleneck resolution.
- *          4 sections matching the implementation plan:
- *          A. Handoff Gate + SIF→CORE auto-import
- *          B. AI Validation Layer (SpecCheck + Non-Catalog + COM)
- *          C. Order Execution (EDI + non-EDI + Compass)
- *          ⭐ Audit Loop Diagram (4→1) — hero visual
+ * PURPOSE: Flow 3 — Quotes AI. 4-scene wizard following the PC team's
+ *          proposal creation: incoming budget → SIF→CORE auto-import →
+ *          AI validation (4→1+1 audit loop collapse) → send + handoff to
+ *          Flow 4 (Design AI).
  *
- *          Step-aware: m3.1 shows the full flow; without a step shows
- *          everything as the default reference.
+ *          Mirrors Flow 1/2 wizard pattern. Marcia Ludwig (Director of PM)
+ *          renders as persona — though the 'doers' are Amy Behl + Mario +
+ *          Erin (hybrid PC/designer). For the demo, Marcia owns the flow.
+ *
+ * DEMO TOUR: m3.1 → m3.4 map 1:1 to wizard scenes 0–3.
  */
 
-import { FileSearch, Sparkles, ShieldCheck, Zap } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { FileSearch } from 'lucide-react'
 import MBIPageShell from './MBIPageShell'
-import QuoteReadinessGate from './QuoteReadinessGate'
-import SIFToCOREPreview from './SIFToCOREPreview'
-import AuditLoopDiagram from './AuditLoopDiagram'
-import SpecCheckReport from './SpecCheckReport'
-import NonCatalogValidatorTable from './NonCatalogValidatorTable'
-import COMWorkflowTimeline from './COMWorkflowTimeline'
-import OrderExecutionPanel from './OrderExecutionPanel'
+import MBIWizardShell, { type WizardStepSpec } from './MBIWizardShell'
+import MBIPersonaBadge from './MBIPersonaBadge'
+import QuoteIncomingBudget from './QuoteIncomingBudget'
+import QuoteAutoImportScene from './QuoteAutoImportScene'
+import QuoteValidationScene from './QuoteValidationScene'
+import QuoteSendProposalScene from './QuoteSendProposalScene'
+import { useDemo } from '../../context/DemoContext'
+
+const QUOTES_STEPS: WizardStepSpec[] = [
+    { id: 'incoming', label: 'Incoming budget', shortLabel: '1. Incoming' },
+    { id: 'auto-import', label: 'SIF → CORE', shortLabel: '2. Auto-import' },
+    { id: 'validation', label: 'AI validation', shortLabel: '3. Validation' },
+    { id: 'send', label: 'Send proposal', shortLabel: '4. Send' },
+]
+
+const STEP_TO_WIZARD_INDEX: Record<string, number> = {
+    'm3.1': 0,
+    'm3.2': 1,
+    'm3.3': 2,
+    'm3.4': 3,
+}
+
+const WIZARD_INDEX_TO_STEP: Record<number, string> = {
+    0: 'm3.1',
+    1: 'm3.2',
+    2: 'm3.3',
+    3: 'm3.4',
+}
+
+const STEP_HINTS: Record<number, { hint: string; nextLabel: string }> = {
+    0: { hint: 'Signed budget from Amanda · all 4 readiness checks pass · PC can pick up.', nextLabel: 'Watch SIF → CORE' },
+    1: { hint: 'Zero keystrokes · 24 fields flow from SIF into a CORE proposal draft.', nextLabel: 'Run AI validation' },
+    2: { hint: '4 audit loops → 1 AI pass + 1 human review · Spec Check is MBI\'s #1 Q10 priority.', nextLabel: 'Send the proposal' },
+    3: { hint: 'Approve + send · orders route to each manufacturer · hand off upstream to Design AI.', nextLabel: 'Done' },
+}
 
 export default function MBIQuotesPage() {
+    const { currentStep, isDemoActive, steps: tourSteps, goToStep } = useDemo()
+    const demoStepId = isDemoActive ? currentStep?.id : null
+    const demoWizardIdx = demoStepId && demoStepId in STEP_TO_WIZARD_INDEX
+        ? STEP_TO_WIZARD_INDEX[demoStepId]
+        : null
+
+    const [activeStep, setActiveStep] = useState(0)
+    const inWizard = demoWizardIdx !== null || !isDemoActive
+
+    useEffect(() => {
+        if (demoWizardIdx !== null) setActiveStep(demoWizardIdx)
+    }, [demoWizardIdx])
+
+    const navigateWizard = (idx: number) => {
+        setActiveStep(idx)
+        if (!isDemoActive) return
+        const targetId = WIZARD_INDEX_TO_STEP[idx]
+        if (!targetId || currentStep?.id === targetId) return
+        const tourIdx = tourSteps.findIndex(s => s.id === targetId)
+        if (tourIdx >= 0) goToStep(tourIdx)
+    }
+
+    const stepMeta = STEP_HINTS[activeStep] ?? { hint: '', nextLabel: undefined }
+
     return (
         <MBIPageShell
             title="Quotes AI"
-            subtitle="Phase 4 · PC bottleneck (3.5 PCs / 29 staff) → reviewers, not builders"
+            subtitle="Phase 4 · PC bottleneck (3.5 PCs / 29 staff) → reviewers, not builders · 2h per proposal → 12 min"
             icon={<FileSearch className="h-5 w-5" />}
             activeApp="mbi-quotes"
         >
-            {/* Stats strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <StatCard value="3.5 / 29" label="PCs / staff (bottleneck)" accent="text-foreground" />
-                <StatCard value="4 → 1" label="Audit loops" accent="text-success" />
-                <StatCard value="9.08/10" label="Spec Check Q10 priority" accent="text-zinc-900 dark:text-primary" />
-                <StatCard value="80-90%" label="Non-catalog items today" accent="text-amber-600 dark:text-amber-400" />
-            </div>
-
-            {/* Section A — Handoff + SIF → CORE */}
-            <section className="space-y-3 mt-2">
-                <SectionHeader
-                    icon={<ShieldCheck className="h-3.5 w-3.5" />}
-                    label="A · Handoff gate + SIF → CORE"
-                    hint="Eliminates PC's largest manual step · enforced via Teams"
-                    accent="primary"
-                />
-                <QuoteReadinessGate />
-                <SIFToCOREPreview />
-            </section>
-
-            {/* Hero — Audit loop diagram */}
-            <section className="space-y-3 mt-6">
-                <SectionHeader
-                    icon={<Sparkles className="h-3.5 w-3.5" />}
-                    label="⭐ Audit loop collapse"
-                    hint="The 4-loop reality vs. Strata's 1 + 1 model"
-                    accent="ai"
-                />
-                <AuditLoopDiagram />
-            </section>
-
-            {/* Section B — AI Validation Layer */}
-            <section className="space-y-3 mt-6">
-                <SectionHeader
-                    icon={<Sparkles className="h-3.5 w-3.5" />}
-                    label="B · AI validation layer"
-                    hint="Spec Check (Q10 #1) · Non-Catalog Validator · COM workflow"
-                    accent="ai"
-                />
-                <SpecCheckReport />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <NonCatalogValidatorTable />
-                    <COMWorkflowTimeline />
-                </div>
-            </section>
-
-            {/* Section C — Order Execution */}
-            <section className="space-y-3 mt-6">
-                <SectionHeader
-                    icon={<Zap className="h-3.5 w-3.5" />}
-                    label="C · Order execution"
-                    hint="EDI transmission · Non-EDI agent · Compass reconciliation (all 4 mfrs)"
-                    accent="primary"
-                />
-                <OrderExecutionPanel />
-            </section>
+            {inWizard ? (
+                <MBIWizardShell
+                    steps={QUOTES_STEPS}
+                    activeStep={activeStep}
+                    onStepClick={navigateWizard}
+                    onPrev={() => navigateWizard(Math.max(0, activeStep - 1))}
+                    onNext={() => navigateWizard(Math.min(QUOTES_STEPS.length - 1, activeStep + 1))}
+                    canAdvance
+                    actionHint={stepMeta.hint}
+                    nextLabel={stepMeta.nextLabel}
+                    persona={
+                        <MBIPersonaBadge
+                            name="Marcia Ludwig"
+                            role="Director of PM · 3.5 PCs for 29 staff"
+                            tone="neutral"
+                        />
+                    }
+                >
+                    {activeStep === 0 && <QuoteIncomingBudget />}
+                    {activeStep === 1 && <QuoteAutoImportScene />}
+                    {activeStep === 2 && <QuoteValidationScene />}
+                    {activeStep === 3 && <QuoteSendProposalScene />}
+                </MBIWizardShell>
+            ) : (
+                <OverviewStub />
+            )}
         </MBIPageShell>
     )
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+function OverviewStub() {
+    return (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard value="3.5 / 29" label="PCs / staff (bottleneck)" accent="text-foreground" />
+            <StatCard value="4 → 1+1" label="Audit loops (collapsed)" accent="text-success" />
+            <StatCard value="9.08/10" label="Spec Check Q10 priority" accent="text-zinc-900 dark:text-primary" />
+            <StatCard value="2h → 12m" label="Per proposal PC effort" accent="text-success" />
+        </div>
+    )
+}
+
 function StatCard({ value, label, accent }: { value: string; label: string; accent: string }) {
     return (
         <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
             <div className={`text-2xl font-bold tabular-nums ${accent}`}>{value}</div>
             <div className="text-[11px] text-muted-foreground mt-1">{label}</div>
-        </div>
-    )
-}
-
-function SectionHeader({
-    icon,
-    label,
-    hint,
-    accent,
-}: {
-    icon: React.ReactNode
-    label: string
-    hint: string
-    accent: 'ai' | 'primary'
-}) {
-    const color = accent === 'ai' ? 'text-ai' : 'text-zinc-900 dark:text-primary'
-    return (
-        <div className="flex items-center justify-between pb-3 border-b border-border">
-            <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-wider ${color}`}>
-                {icon}
-                <span>{label}</span>
-            </div>
-            <div className="text-[10px] text-muted-foreground">{hint}</div>
         </div>
     )
 }

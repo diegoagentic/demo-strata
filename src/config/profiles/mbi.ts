@@ -21,8 +21,11 @@
 //   m2.3: Non-EDI reconciliation — PO vs invoice line-by-line diff
 //   m2.4: AR wrap-up — taxonomy + collection emails + handoff to Flow 3
 //
-// FLOW 3 — Quotes AI (Phase 4, PC bottleneck resolution)
-//   m3.1: SIF → CORE auto-import + AI proposal
+// FLOW 3 — Quotes AI (Phase 4, PC bottleneck resolution) · 4 scenes / 4 beats
+//   m3.1: Incoming budget — signed handoff from Amanda → PC queue
+//   m3.2: SIF → CORE auto-import — 24 fields, zero keystrokes
+//   m3.3: AI validation — 4 audit loops → 1 AI + 1 human review
+//   m3.4: Send proposal + handoff to Flow 4 (Design AI, upstream)
 //
 // FLOW 4 — Design AI (Phase 4, Beth Gianino early adopter)
 //   m4.1: Spec Check Engine (Q10 #1 — 9.08/10 priority)
@@ -133,14 +136,41 @@ export const MBI_STEPS: DemoStep[] = [
 
     // ═══════════════════════════════════════════
     // FLOW 3: Quotes AI (Phase 4)
-    // PC bottleneck resolution · 1 step
+    // Marcia Ludwig (Director of PM) + 3.5 PCs for 29 staff · 4 scenes
     // ═══════════════════════════════════════════
     {
         id: 'm3.1',
         groupId: 2,
         groupTitle: 'Flow 3: Quotes AI',
+        title: 'Incoming budget · handoff from Amanda',
+        description: "The Enterprise Holdings budget Amanda approved last week lands in the PC team's queue. All 4 readiness checks pass: budget confirmed, contract identified, scope locked, design sign-off. For the first time, a PC can pick up a quote-ready project instead of chasing missing context.",
+        app: 'mbi-quotes',
+        role: 'Project Manager',
+    },
+    {
+        id: 'm3.2',
+        groupId: 2,
+        groupTitle: 'Flow 3: Quotes AI',
         title: 'SIF → CORE auto-import',
-        description: 'The approved budget flows downstream. Instead of a PC manually re-entering the SIF into CORE — the largest bottleneck at MBI — Strata auto-imports the structured data and builds the proposal draft. The PC team shifts from builders to reviewers. Three audit loops collapse into one AI validation plus one human check.',
+        description: "Instead of a PC manually re-entering 24 SIF fields into CORE (the largest bottleneck at MBI — 2 hours per proposal), Strata auto-imports the structured data in under 90 seconds. Zero keystrokes, zero typos. The PC team shifts from builders to reviewers.",
+        app: 'mbi-quotes',
+        role: 'Project Manager',
+    },
+    {
+        id: 'm3.3',
+        groupId: 2,
+        groupTitle: 'Flow 3: Quotes AI',
+        title: 'AI validation · audit loops collapse',
+        description: "MBI's Q10 #1 priority (9.08/10): Spec Check. Today PCs run 4 sequential audit loops by eye — internal, vendor, manager, client. Strata collapses those into 1 AI pass + 1 human review. Non-catalog items cross-checked against manufacturer price books, COM fabric workflow formalized, no spec gaps slip through.",
+        app: 'mbi-quotes',
+        role: 'Project Manager',
+    },
+    {
+        id: 'm3.4',
+        groupId: 2,
+        groupTitle: 'Flow 3: Quotes AI',
+        title: 'Send proposal · route orders',
+        description: "One human review later, the PC sends the proposal. Orders auto-route: 5 EDI manufacturers get transmitted instantly, 2 non-EDI get PO emails drafted and sent. Compass reconciliation queued for the 4 manufacturers that require it. 2 hours of PC work → 12 minutes.",
         app: 'mbi-quotes',
         role: 'Project Manager',
     },
@@ -172,7 +202,10 @@ export const MBI_STEP_BEHAVIOR: Record<string, StepBehavior> = {
     'm2.2': { mode: 'interactive', userAction: 'Approve the 3% HealthTrust royalty · or override with a reason · or escalate to Lynda' },
     'm2.3': { mode: 'interactive', userAction: 'Reconcile the Herman Miller non-EDI invoice line-by-line' },
     'm2.4': { mode: 'interactive', userAction: 'Close the morning with AR review + collection emails · hand off to Quotes AI' },
-    'm3.1': { mode: 'interactive', userAction: 'Watch the SIF flow into CORE and the proposal auto-build' },
+    'm3.1': { mode: 'interactive', userAction: "Review the signed budget handoff from Amanda · verify the 4 readiness checks" },
+    'm3.2': { mode: 'interactive', userAction: 'Watch the SIF flow into CORE · 24 fields, 87 seconds, zero keystrokes' },
+    'm3.3': { mode: 'interactive', userAction: 'Review Spec Check · audit loops collapse from 4 to 1+1' },
+    'm3.4': { mode: 'interactive', userAction: 'Approve and send the proposal · orders route to manufacturers' },
     'm4.1': { mode: 'interactive', userAction: 'Run Spec Check on Beth\'s ICU project and catch the finish issue' },
 };
 
@@ -245,11 +278,30 @@ export const MBI_STEP_MESSAGES: Record<string, string[]> = {
         'Morning complete · 18 min vs 4h before',
     ],
     'm3.1': [
-        'Approved budget received from Amanda',
-        'Auto-importing SIF structured data to CORE',
-        'Building proposal draft from CET + customer context',
-        'Running AI spec validation',
-        'Handing off to PC for final review',
+        'Enterprise Holdings budget signed by client',
+        'Checking readiness gate · budget, contract, scope, design sign-off',
+        'All 4 checks green · routing to Marcia\'s PC queue',
+        'Amy Behl picks it up · bottleneck avoided',
+    ],
+    'm3.2': [
+        'Reading signed SIF v5 · 24 structured fields',
+        'Applying HNI Corporate contract discount (55%)',
+        'Freight + install recalculated (no manual touching)',
+        'Building CORE proposal draft PROP-2026-003',
+        'Zero keystrokes · 87 seconds · 2h saved',
+    ],
+    'm3.3': [
+        'Running Spec Check — dimensions, finish, palette, availability',
+        'Cross-checking non-catalog items vs manufacturer price books',
+        'COM workflow: 5 fabric approvals traced',
+        'Audit loops collapsed: 4 → 1 AI + 1 PC review',
+    ],
+    'm3.4': [
+        'PC signed off · proposal ready to send',
+        'Transmitting EDI to 5 manufacturers',
+        'Drafting non-EDI POs for Gunlocke + HBF',
+        'Compass reconciliation queued for 4 mfrs',
+        'Amanda pinged · handoff complete',
     ],
     'm4.1': [
         'Beth running Spec Check on ICU project',
@@ -266,6 +318,6 @@ export const MBI_STEP_MESSAGES: Record<string, string[]> = {
 export const MBI_SELF_INDICATED: string[] = [
     'm1.1', 'm1.2', 'm1.3', 'm1.4', 'm1.5',
     'm2.1', 'm2.2', 'm2.3', 'm2.4',
-    'm3.1',
+    'm3.1', 'm3.2', 'm3.3', 'm3.4',
     'm4.1',
 ];
