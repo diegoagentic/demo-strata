@@ -4,6 +4,7 @@ import {
     XMarkIcon, ArrowRightIcon, ArrowLeftIcon, CheckCircleIcon, XCircleIcon,
     ExclamationTriangleIcon, SparklesIcon, ShoppingCartIcon, ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline'
+import { StatusBadge } from './shared'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -123,9 +124,9 @@ const severityColor = (sev?: 'low' | 'medium' | 'high') => {
 };
 
 const severityBadge = (sev?: 'low' | 'medium' | 'high') => {
-    if (sev === 'high') return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">High</span>;
-    if (sev === 'medium') return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">Medium</span>;
-    return <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400">Low</span>;
+    if (sev === 'high') return <StatusBadge label="High" tone="danger" size="xs" uppercase={false} />;
+    if (sev === 'medium') return <StatusBadge label="Medium" tone="warning" size="xs" uppercase={false} />;
+    return <StatusBadge label="Low" tone="info" size="xs" uppercase={false} />;
 };
 
 // ── Component ──────────────────────────────────────────────────
@@ -396,15 +397,9 @@ export default function DocumentConversionModal({ isOpen, onClose, mode, trigger
                                             <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                                                 {/* Summary badges */}
                                                 <div className="flex items-center gap-3 mb-4">
-                                                    <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400">
-                                                        {matchedCount} Matched
-                                                    </span>
-                                                    <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
-                                                        {discrepancies.filter(d => d.status === 'mismatch').length} Mismatch
-                                                    </span>
-                                                    <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
-                                                        {discrepancies.filter(d => d.status === 'partial').length} Partial
-                                                    </span>
+                                                    <StatusBadge label={`${matchedCount} Matched`} tone="success" size="md" uppercase={false} />
+                                                    <StatusBadge label={`${discrepancies.filter(d => d.status === 'mismatch').length} Mismatch`} tone="danger" size="md" uppercase={false} />
+                                                    <StatusBadge label={`${discrepancies.filter(d => d.status === 'partial').length} Partial`} tone="warning" size="md" uppercase={false} />
                                                 </div>
 
                                                 <div className="border border-border rounded-xl overflow-hidden">
