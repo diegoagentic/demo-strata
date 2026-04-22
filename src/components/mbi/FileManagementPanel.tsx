@@ -20,6 +20,7 @@
  */
 
 import { Hash, FolderTree, History, Bot, FileCode2, FileSpreadsheet, FileText, Folder, Sparkles, ArrowRight } from 'lucide-react'
+import { StatusBadge } from '../shared'
 
 export default function FileManagementPanel() {
     return (
@@ -156,9 +157,7 @@ function VersionHistoryTimeline() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-xs font-bold text-foreground">{v.author}</span>
                                     {v.current && (
-                                        <span className="text-[9px] font-bold text-success uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-success/10">
-                                            Current
-                                        </span>
+                                        <StatusBadge label="Current" tone="success" size="xs" />
                                     )}
                                 </div>
                                 <div className="text-[11px] text-foreground">{v.note}</div>

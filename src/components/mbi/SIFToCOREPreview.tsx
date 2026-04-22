@@ -14,6 +14,7 @@
  */
 
 import { FileCode2, Sparkles, FileText, ArrowRight, Check } from 'lucide-react'
+import { StatusBadge } from '../shared'
 import { getSIFSample, MBI_PROPOSALS } from '../../config/profiles/mbi-data'
 
 export default function SIFToCOREPreview() {
@@ -36,10 +37,7 @@ export default function SIFToCOREPreview() {
                         </div>
                     </div>
                 </div>
-                <span className="text-[10px] font-bold text-success uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/10 inline-flex items-center gap-1">
-                    <Check className="h-3 w-3" />
-                    Auto-built
-                </span>
+                <StatusBadge label="Auto-built" tone="success" size="sm" icon={<Check className="h-3 w-3" />} />
             </div>
 
             <div className="p-4">

@@ -15,6 +15,7 @@
  */
 
 import { Users, Clock, Briefcase, AlertTriangle } from 'lucide-react'
+import { StatusBadge } from '../shared'
 import { MBI_STAKEHOLDERS, MBI_DESIGN_PROJECTS, getStakeholder } from '../../config/profiles/mbi-data'
 
 const CAPACITY_HOURS = 40 // weekly capacity per designer
@@ -76,14 +77,10 @@ export default function DesignerCapacityBoard() {
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                             <span className="text-sm font-bold text-foreground truncate">{designer.name}</span>
                                             {isHybrid && (
-                                                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-info/10 text-info">
-                                                    Hybrid · was invisible
-                                                </span>
+                                                <StatusBadge label="Hybrid · was invisible" tone="info" size="xs" />
                                             )}
                                             {designer.isEarlyAdopter && (
-                                                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-success/10 text-success">
-                                                    Early adopter
-                                                </span>
+                                                <StatusBadge label="Early adopter" tone="success" size="xs" />
                                             )}
                                         </div>
                                         <div className="text-[10px] text-muted-foreground truncate">{designer.role}</div>

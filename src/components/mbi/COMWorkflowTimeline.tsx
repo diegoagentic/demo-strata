@@ -12,6 +12,7 @@
  */
 
 import { Palette, CheckCircle2, Clock, Package, MessageSquare } from 'lucide-react'
+import { StatusBadge } from '../shared'
 
 interface TimelineStep {
     id: string
@@ -67,9 +68,7 @@ export default function COMWorkflowTimeline() {
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="text-xs font-bold text-foreground">{step.label}</div>
                                         {step.status === 'in-progress' && (
-                                            <span className="text-[9px] font-bold text-ai uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-ai/10 shrink-0">
-                                                In progress
-                                            </span>
+                                            <StatusBadge label="In progress" tone="ai" size="xs" />
                                         )}
                                     </div>
                                     <div className="text-[11px] text-muted-foreground">{step.detail}</div>

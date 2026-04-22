@@ -16,6 +16,7 @@
  */
 
 import { Users, Sparkles, Eye, X, Check, TrendingDown, ArrowRight } from 'lucide-react'
+import { StatusBadge } from '../shared'
 
 const BEFORE_LOOPS = [
     { label: 'Design self-check', detail: 'Designer reviews own CET output', human: true },
@@ -44,9 +45,7 @@ export default function AuditLoopDiagram() {
                         </div>
                     </div>
                 </div>
-                <span className="text-[10px] font-bold text-success uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/10">
-                    3 loops eliminated
-                </span>
+                <StatusBadge label="3 loops eliminated" tone="success" size="sm" />
             </div>
 
             <div className="p-4">

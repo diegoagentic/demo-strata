@@ -27,6 +27,7 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
 import { Upload, FileSpreadsheet, FileCode2, ClipboardList, Briefcase, Building2, GraduationCap, Landmark, Heart, CheckCircle2, Eye, RefreshCw, Trash2, Loader2, Plus, ShieldCheck, FileText, XCircle, Send, Ban, Undo2, AlertTriangle, X } from 'lucide-react'
 import MBIDetailSheet from './MBIDetailSheet'
+import { StatusBadge } from '../shared'
 import type { BudgetPath, Vertical, ContractType } from '../../config/profiles/mbi-data'
 import { MBI_CONTRACTS, getSIFSample } from '../../config/profiles/mbi-data'
 
@@ -550,9 +551,7 @@ function RejectedCard({
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400">
-                            Rejected
-                        </span>
+                        <StatusBadge label="Rejected" tone="danger" size="sm" />
                         <span className="text-[10px] text-muted-foreground">
                             {rejection.submittedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
@@ -846,16 +845,10 @@ function FileRow({
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-bold text-foreground truncate">{file.name}</span>
                         {isReady && (
-                            <span className="text-[10px] font-bold text-success uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-success/10 inline-flex items-center gap-1">
-                                <CheckCircle2 className="h-2.5 w-2.5" />
-                                Ready
-                            </span>
+                            <StatusBadge label="Ready" tone="success" size="sm" icon={<CheckCircle2 className="h-2.5 w-2.5" />} />
                         )}
                         {isProcessing && (
-                            <span className="text-[10px] font-bold text-ai uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-ai/10 inline-flex items-center gap-1">
-                                <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                Processing
-                            </span>
+                            <StatusBadge label="Processing" tone="ai" size="sm" icon={<Loader2 className="h-2.5 w-2.5 animate-spin" />} />
                         )}
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate">{file.statusLabel} · {file.description}</div>

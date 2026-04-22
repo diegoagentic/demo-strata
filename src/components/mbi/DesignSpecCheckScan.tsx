@@ -17,6 +17,7 @@ import {
     CheckCircle2, Loader2, ShieldCheck, ArrowRight, Ruler, Palette,
     Droplet, Package, AlertTriangle,
 } from 'lucide-react'
+import { StatusBadge } from '../shared'
 
 interface SpecCheck {
     id: string
@@ -178,17 +179,14 @@ export default function DesignSpecCheckScan() {
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-xs font-bold text-foreground">{check.label}</span>
                                         {isDone && (
-                                            <span className={`
-                                                text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md
-                                                ${hasFindings ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-success/15 text-success'}
-                                            `}>
-                                                {hasFindings ? `${check.findings} finding${check.findings !== 1 ? 's' : ''}` : 'Clean'}
-                                            </span>
+                                            <StatusBadge
+                                                label={hasFindings ? `${check.findings} finding${check.findings !== 1 ? 's' : ''}` : 'Clean'}
+                                                tone={hasFindings ? 'warning' : 'success'}
+                                                size="xs"
+                                            />
                                         )}
                                         {isRunning && (
-                                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-ai/15 text-ai">
-                                                Scanning
-                                            </span>
+                                            <StatusBadge label="Scanning" tone="ai" size="xs" />
                                         )}
                                     </div>
                                     <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">{check.detail}</div>

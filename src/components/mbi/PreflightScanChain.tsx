@@ -22,6 +22,7 @@
 
 import { useEffect, useState } from 'react'
 import { CheckCircle2, Loader2, ShieldCheck } from 'lucide-react'
+import { StatusBadge } from '../shared'
 
 interface CheckSpec {
     id: string
@@ -92,9 +93,7 @@ export default function PreflightScanChain({
                         </div>
                     </div>
                 </div>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${allDone ? 'bg-success/10 text-success' : 'bg-ai/10 text-ai'}`}>
-                    {allDone ? 'Done' : 'Scanning'}
-                </span>
+                <StatusBadge label={allDone ? 'Done' : 'Scanning'} tone={allDone ? 'success' : 'ai'} size="sm" />
             </div>
 
             <div className="p-4 space-y-2">

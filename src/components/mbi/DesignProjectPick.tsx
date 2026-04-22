@@ -66,10 +66,7 @@ export default function DesignProjectPick() {
                             </div>
                         </div>
                     </div>
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-ai/15 text-ai">
-                        <Award className="h-2.5 w-2.5" />
-                        Phase 1 Pilot
-                    </span>
+                    <StatusBadge label="Phase 1 Pilot" tone="ai" size="xs" icon={<Award className="h-2.5 w-2.5" />} />
                 </div>
                 <div className="divide-y divide-border">
                     {bethProjects.map(p => {

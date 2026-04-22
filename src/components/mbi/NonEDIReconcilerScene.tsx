@@ -18,7 +18,7 @@ import {
     GitCompare, Check, X, Pencil, ArrowRight, CheckCircle2,
     AlertTriangle, Package, Mail, Sparkles,
 } from 'lucide-react'
-import MBIReasonModal from './MBIReasonModal'
+import { ReasonDialog as MBIReasonModal, StatusBadge } from '../shared'
 import { MBI_INVOICES } from '../../config/profiles/mbi-data'
 
 interface LineRow {
@@ -182,16 +182,10 @@ export default function NonEDIReconcilerScene() {
                                         </>
                                     )}
                                     {status === 'accepted' && (
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-success uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-success/15">
-                                            <CheckCircle2 className="h-3 w-3" />
-                                            Accepted
-                                        </span>
+                                        <StatusBadge label="Accepted" tone="success" size="sm" icon={<CheckCircle2 className="h-3 w-3" />} />
                                     )}
                                     {status === 'overridden' && (
-                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-info uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-info/15">
-                                            <Pencil className="h-3 w-3" />
-                                            Override
-                                        </span>
+                                        <StatusBadge label="Override" tone="info" size="sm" icon={<Pencil className="h-3 w-3" />} />
                                     )}
                                 </div>
                             </div>

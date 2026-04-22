@@ -14,6 +14,7 @@
  */
 
 import { Wrench, AlertTriangle, CheckCircle2, MessageSquare } from 'lucide-react'
+import { StatusBadge, type StatusTone } from '../shared'
 
 interface InstallerInvoice {
     id: string
@@ -84,26 +85,32 @@ export default function InstallerPanel() {
 
 // ─── Row ─────────────────────────────────────────────────────────────────────
 function Row({ invoice }: { invoice: InstallerInvoice }) {
-    const theme = (() => {
+    const theme: {
+        icon: React.ReactNode
+        iconBg: string
+        label: string
+        tone: StatusTone
+        deltaClass: string
+    } = (() => {
         if (invoice.status === 'clean') return {
             icon: <CheckCircle2 className="h-4 w-4" />,
             iconBg: 'bg-success/10 text-success',
             label: 'Clean match',
-            labelClass: 'bg-success/10 text-success',
+            tone: 'success',
             deltaClass: 'text-muted-foreground',
         }
         if (invoice.status === 'change-order') return {
             icon: <MessageSquare className="h-4 w-4" />,
             iconBg: 'bg-info/10 text-info',
             label: 'Change-order documented',
-            labelClass: 'bg-info/10 text-info',
+            tone: 'info',
             deltaClass: 'text-info',
         }
         return {
             icon: <AlertTriangle className="h-4 w-4" />,
             iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
             label: 'Needs clarification',
-            labelClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+            tone: 'warning',
             deltaClass: 'text-amber-600 dark:text-amber-400',
         }
     })()
@@ -116,9 +123,7 @@ function Row({ invoice }: { invoice: InstallerInvoice }) {
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-foreground truncate">{invoice.installer}</span>
-                    <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${theme.labelClass}`}>
-                        {theme.label}
-                    </span>
+                    <StatusBadge label={theme.label} tone={theme.tone} size="xs" />
                 </div>
                 <div className="text-[10px] text-muted-foreground font-mono">{invoice.id} · linked to {invoice.poId}</div>
                 {invoice.note && (

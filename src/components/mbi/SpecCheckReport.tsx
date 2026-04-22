@@ -18,6 +18,7 @@
  */
 
 import { Sparkles, AlertTriangle, AlertCircle, Info, Scan } from 'lucide-react'
+import { StatusBadge } from '../shared'
 import { MBI_SPEC_CHECKS } from '../../config/profiles/mbi-data'
 
 interface SpecCheckReportProps {
@@ -51,11 +52,11 @@ export default function SpecCheckReport({ reportId = 'SC-002' }: SpecCheckReport
                         </div>
                     </div>
                 </div>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                    report.status === 'clean' ? 'bg-success/10 text-success' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                }`}>
-                    {report.status === 'clean' ? 'Clean' : 'Needs review'}
-                </span>
+                <StatusBadge
+                    label={report.status === 'clean' ? 'Clean' : 'Needs review'}
+                    tone={report.status === 'clean' ? 'success' : 'warning'}
+                    size="sm"
+                />
             </div>
 
             {/* Summary counts */}

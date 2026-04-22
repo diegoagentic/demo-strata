@@ -393,25 +393,25 @@ function ValidationCard({
     }, [status])
 
     // Severity badge — keeps its original flavor even after resolution
-    const severityBadge = isCritical
+    const severityBadge: { label: string; tone: 'danger' | 'warning'; icon: React.ReactNode; blocksHint: string } = isCritical
         ? {
             label: 'Critical',
-            className: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400',
+            tone: 'danger',
             icon: <AlertCircle className="h-3 w-3" />,
             blocksHint: 'Blocks approval',
         }
         : {
             label: 'Warning',
-            className: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+            tone: 'warning',
             icon: <AlertTriangle className="h-3 w-3" />,
             blocksHint: 'Advisory · does not block',
         }
 
     // Status badge — shown alongside severity after resolution
-    const statusBadge = (() => {
-        if (status === 'accepted') return { label: 'AI swap accepted', className: 'bg-success/15 text-success', icon: <CheckCircle2 className="h-3 w-3" /> }
-        if (status === 'overridden') return { label: 'Manually kept', className: 'bg-info/15 text-info', icon: <Pencil className="h-3 w-3" /> }
-        if (status === 'rejected') return { label: 'Flag rejected', className: 'bg-muted text-muted-foreground', icon: <X className="h-3 w-3" /> }
+    const statusBadge: { label: string; tone: 'success' | 'info' | 'neutral'; icon: React.ReactNode } | null = (() => {
+        if (status === 'accepted') return { label: 'AI swap accepted', tone: 'success', icon: <CheckCircle2 className="h-3 w-3" /> }
+        if (status === 'overridden') return { label: 'Manually kept', tone: 'info', icon: <Pencil className="h-3 w-3" /> }
+        if (status === 'rejected') return { label: 'Flag rejected', tone: 'neutral', icon: <X className="h-3 w-3" /> }
         return null
     })()
 
@@ -481,18 +481,12 @@ function ValidationCard({
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                             Finding {position} of {total}
                         </span>
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${severityBadge.className}`}>
-                            {severityBadge.icon}
-                            {severityBadge.label}
-                        </span>
+                        <StatusBadge label={severityBadge.label} tone={severityBadge.tone} size="sm" icon={severityBadge.icon} />
                         <span className="text-[10px] font-medium text-muted-foreground">
                             AI {validation.confidence}%
                         </span>
                         {statusBadge && (
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusBadge.className}`}>
-                                {statusBadge.icon}
-                                {statusBadge.label}
-                            </span>
+                            <StatusBadge label={statusBadge.label} tone={statusBadge.tone} size="sm" icon={statusBadge.icon} />
                         )}
                     </div>
 

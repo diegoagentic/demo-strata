@@ -21,6 +21,7 @@
 
 import { useState } from 'react'
 import { FileText, AlertTriangle, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react'
+import { StatusBadge } from '../shared'
 import type { Invoice } from '../../config/profiles/mbi-data'
 
 interface NonEDIReconciliationPanelProps {
@@ -134,9 +135,7 @@ function MismatchCard({
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20">
-                            Non-EDI mismatch
-                        </span>
+                        <StatusBadge label="Non-EDI mismatch" tone="danger" size="sm" />
                         <span className="text-[10px] text-muted-foreground">{invoice.vendor} · {invoice.poNumber}</span>
                     </div>
                     <h4 className="text-sm font-bold text-foreground mt-1">{d.field}</h4>

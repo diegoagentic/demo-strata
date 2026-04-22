@@ -17,6 +17,7 @@
 
 import { useState } from 'react'
 import { Sparkles, Send, Pencil, CheckCircle2, AlertTriangle, Mail } from 'lucide-react'
+import { StatusBadge, type StatusTone } from '../shared'
 import { MBI_AR_RECORDS } from '../../config/profiles/mbi-data'
 
 interface EmailDraft {
@@ -57,9 +58,9 @@ function buildDrafts(): EmailDraft[] {
 }
 
 const TONE_META = {
-    friendly: { label: 'Friendly · 1st reminder', pill: 'bg-info/10 text-info', icon: <Mail className="h-3 w-3" /> },
-    firm: { label: '2nd follow-up', pill: 'bg-amber-500/10 text-amber-700 dark:text-amber-400', icon: <Mail className="h-3 w-3" /> },
-    escalation: { label: 'Escalation', pill: 'bg-red-500/10 text-red-700 dark:text-red-400', icon: <AlertTriangle className="h-3 w-3" /> },
+    friendly: { label: 'Friendly · 1st reminder', tone: 'info' as StatusTone, icon: <Mail className="h-3 w-3" /> },
+    firm: { label: '2nd follow-up', tone: 'warning' as StatusTone, icon: <Mail className="h-3 w-3" /> },
+    escalation: { label: 'Escalation', tone: 'danger' as StatusTone, icon: <AlertTriangle className="h-3 w-3" /> },
 }
 
 export default function AIEmailDraftsPanel() {
@@ -78,9 +79,7 @@ export default function AIEmailDraftsPanel() {
                         LLM personalizes by account · Kathy reviews + one-click sends
                     </div>
                 </div>
-                <span className="text-[10px] font-bold text-ai uppercase tracking-wider px-2 py-0.5 rounded-full bg-ai/10">
-                    {drafts.length} drafts ready
-                </span>
+                <StatusBadge label={`${drafts.length} drafts ready`} tone="ai" size="sm" />
             </div>
 
             <div className="divide-y divide-border">
@@ -105,10 +104,7 @@ export default function AIEmailDraftsPanel() {
                             ) : (
                                 <div>
                                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 ${tone.pill}`}>
-                                            {tone.icon}
-                                            {tone.label}
-                                        </span>
+                                        <StatusBadge label={tone.label} tone={tone.tone} size="xs" icon={tone.icon} />
                                         <span className="text-[10px] text-muted-foreground font-mono">→ {draft.to}</span>
                                     </div>
 

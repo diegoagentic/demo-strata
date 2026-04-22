@@ -18,6 +18,7 @@
  */
 
 import { CheckCircle2, Shield, Users } from 'lucide-react'
+import { StatusBadge } from '../shared'
 
 const DEFAULT_CHECKS = [
     { label: 'Budget confirmed', detail: 'BDG-2026-002 · Enterprise Holdings · $372,500 · approved' },
@@ -41,10 +42,7 @@ export default function QuoteReadinessGate() {
                                 Enforced by Teams bot · all 4 criteria met before PC picks up
                             </div>
                         </div>
-                        <span className="text-[10px] font-bold text-success uppercase tracking-wider px-2 py-0.5 rounded-full bg-success/10 inline-flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            PC bottleneck avoided
-                        </span>
+                        <StatusBadge label="PC bottleneck avoided" tone="success" size="sm" icon={<Users className="h-3 w-3" />} />
                     </div>
                 </div>
             </div>

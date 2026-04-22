@@ -25,19 +25,20 @@
  */
 
 import { CheckCircle2, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react'
+import { StatusBadge, type StatusTone } from '../shared'
 import type { Scenario, ScenarioTier } from '../../config/profiles/mbi-data'
 
-const TIER_META: Record<ScenarioTier, { pill: string; accent: string }> = {
+const TIER_META: Record<ScenarioTier, { tone: StatusTone; accent: string }> = {
     good: {
-        pill: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300',
+        tone: 'neutral',
         accent: 'text-zinc-600 dark:text-zinc-300',
     },
     better: {
-        pill: 'bg-primary/20 text-zinc-900 dark:text-primary',
+        tone: 'primary',
         accent: 'text-zinc-900 dark:text-primary',
     },
     best: {
-        pill: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
+        tone: 'warning',
         accent: 'text-amber-600 dark:text-amber-400',
     },
 }
@@ -83,9 +84,7 @@ export default function ScenarioComparisonCards({
                     >
                         {/* Top: tier pill + recommended badge */}
                         <div className="flex items-center justify-between">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${TIER_META[s.tier].pill}`}>
-                                {s.label}
-                            </span>
+                            <StatusBadge label={s.label} tone={TIER_META[s.tier].tone} size="sm" />
                             {s.tier === 'better' && (
                                 <span className="text-[10px] font-bold text-zinc-900 dark:text-primary uppercase flex items-center gap-1">
                                     ⭐ Recommended

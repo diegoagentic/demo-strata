@@ -18,7 +18,7 @@ import {
     Clock, ShieldCheck, TrendingDown, Award, Receipt, FileText,
     Calculator, Send, ArrowRight, Brain, Flag,
 } from 'lucide-react'
-import MBIReasonModal from './MBIReasonModal'
+import { ReasonDialog as MBIReasonModal, StatusBadge } from '../shared'
 import FlowHandoff from './FlowHandoff'
 
 const OVERRIDE_CATEGORIES = [
@@ -101,9 +101,7 @@ export default function DesignFindingsReview() {
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400">
-                                Palette mismatch
-                            </span>
+                            <StatusBadge label="Palette mismatch" tone="warning" size="sm" />
                             <span className="text-[10px] text-muted-foreground">AI 92%</span>
                         </div>
                         <h3 className="text-lg font-bold text-foreground leading-tight mt-1">
