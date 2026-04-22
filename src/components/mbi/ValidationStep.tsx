@@ -145,7 +145,7 @@ export default function ValidationStep({ validations, statusById, onStatusChange
             />
 
             {/* Section intro — explains what the cards are and how to act */}
-            <div className="flex items-start gap-2.5 text-[11px] text-muted-foreground bg-muted/30 dark:bg-zinc-800/50 border border-border rounded-xl px-3 py-2.5">
+            <div className="flex items-start gap-2.5 text-[11px] text-muted-foreground bg-muted/30 dark:bg-zinc-900/40 border border-border rounded-xl px-3 py-2.5">
                 <Sparkles className="h-4 w-4 text-ai shrink-0 mt-0.5" />
                 <div className="flex-1">
                     <div className="text-foreground font-bold text-xs mb-0.5">
@@ -289,7 +289,7 @@ function ValidationSummary({
 }) {
     const pct = Math.round((resolved / total) * 100)
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl p-4">
             <div className="flex items-start justify-between mb-3 gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                     <div className="h-8 w-8 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
@@ -460,7 +460,7 @@ function ValidationCard({
         }
     })()
 
-    const innerPanel = 'bg-zinc-50/70 dark:bg-zinc-800/60 border border-border rounded-xl p-3'
+    const innerPanel = 'bg-zinc-50/70 dark:bg-zinc-900/40 border border-border rounded-xl p-3'
 
     return (
         <div

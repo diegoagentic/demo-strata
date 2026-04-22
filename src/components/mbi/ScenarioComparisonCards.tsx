@@ -74,10 +74,10 @@ export default function ScenarioComparisonCards({
                         onClick={() => onSelect(s.tier)}
                         style={{ animationDelay: `${i * 120}ms`, animationFillMode: 'backwards' }}
                         className={`
-                            relative text-left bg-card dark:bg-zinc-800/40 border rounded-2xl p-5 space-y-3 transition-all
+                            relative text-left bg-card dark:bg-zinc-800 border rounded-2xl p-5 space-y-3 transition-all
                             animate-in fade-in slide-in-from-bottom-4 duration-500
                             ${isSelected
-                                ? 'border-primary ring-4 ring-primary/15 shadow-lg dark:bg-zinc-800/60'
+                                ? 'border-primary ring-4 ring-primary/15 shadow-lg dark:bg-zinc-900/40'
                                 : 'border-border hover:border-muted-foreground/40 hover:shadow-md'
                             }
                         `}

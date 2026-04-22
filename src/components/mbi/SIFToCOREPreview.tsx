@@ -24,7 +24,7 @@ export default function SIFToCOREPreview() {
     if (!sif) return null
 
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-ai/10 text-ai flex items-center justify-center">
@@ -43,7 +43,7 @@ export default function SIFToCOREPreview() {
             <div className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] items-stretch gap-3">
                     {/* Column 1: SIF source */}
-                    <div className="bg-muted/40 dark:bg-zinc-800/50 border border-border rounded-xl p-3 flex flex-col">
+                    <div className="bg-muted/40 dark:bg-zinc-900/40 border border-border rounded-xl p-3 flex flex-col">
                         <div className="flex items-center gap-1.5 mb-2">
                             <FileCode2 className="h-3.5 w-3.5 text-muted-foreground" />
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">SIF source</span>

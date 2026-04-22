@@ -67,7 +67,7 @@ export default function ReviewStep({
             {/* Three-column summary — primary surface */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Client card */}
-                <div className="bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
+                <div className="bg-muted/30 dark:bg-zinc-800 border border-border rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                             <Briefcase className="h-3.5 w-3.5" />
@@ -80,7 +80,7 @@ export default function ReviewStep({
                 </div>
 
                 {/* Scenario card */}
-                <div className="bg-muted/30 dark:bg-zinc-800/40 border border-primary/30 ring-2 ring-primary/10 rounded-2xl p-4">
+                <div className="bg-muted/30 dark:bg-zinc-800 border border-primary/30 ring-2 ring-primary/10 rounded-2xl p-4">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                             <FileCheck2 className="h-3.5 w-3.5" />
@@ -95,7 +95,7 @@ export default function ReviewStep({
                 </div>
 
                 {/* Validations card */}
-                <div className={`bg-muted/30 dark:bg-zinc-800/40 border rounded-2xl p-4 ${allValidationsResolved ? 'border-success/30' : 'border-amber-300 dark:border-amber-500/30'}`}>
+                <div className={`bg-muted/30 dark:bg-zinc-800 border rounded-2xl p-4 ${allValidationsResolved ? 'border-success/30' : 'border-amber-300 dark:border-amber-500/30'}`}>
                     <div className="flex items-center gap-2 mb-3">
                         <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${allValidationsResolved ? 'bg-success/10 text-success' : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'}`}>
                             <ShieldCheck className="h-3.5 w-3.5" />
@@ -119,7 +119,7 @@ export default function ReviewStep({
             {/* Line items quick link → DetailSheet */}
             <button
                 onClick={() => setItemsOpen(true)}
-                className="w-full flex items-center gap-3 bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-2xl px-4 py-3 hover:border-primary/40 transition-colors text-left"
+                className="w-full flex items-center gap-3 bg-muted/30 dark:bg-zinc-800 border border-border rounded-2xl px-4 py-3 hover:border-primary/40 transition-colors text-left"
             >
                 <div className="h-9 w-9 rounded-xl bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                     <ListChecks className="h-4 w-4" />
@@ -135,7 +135,7 @@ export default function ReviewStep({
             </button>
 
             {/* Approve CTA */}
-            <div className="bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-2xl p-4 flex items-center justify-between gap-4">
+            <div className="bg-muted/30 dark:bg-zinc-800 border border-border rounded-2xl p-4 flex items-center justify-between gap-4">
                 <div>
                     <div className="text-sm font-bold text-foreground">Ready to approve?</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
@@ -175,7 +175,7 @@ export default function ReviewStep({
                 width="lg"
             >
                 <div className="border border-border rounded-xl overflow-hidden">
-                    <div className="px-3 py-2 bg-muted/30 dark:bg-zinc-800/40 border-b border-border grid grid-cols-[6rem_1fr_3rem_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <div className="px-3 py-2 bg-muted/30 dark:bg-zinc-800 border-b border-border grid grid-cols-[6rem_1fr_3rem_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                         <div>SKU</div>
                         <div>Description</div>
                         <div className="text-right">Qty</div>

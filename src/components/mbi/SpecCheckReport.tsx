@@ -39,7 +39,7 @@ export default function SpecCheckReport({ reportId = 'SC-002' }: SpecCheckReport
     const infoCount = report.flags.filter(f => f.severity === 'info').length
 
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-ai/10 text-ai flex items-center justify-center">

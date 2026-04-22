@@ -391,7 +391,7 @@ function DesignAssistedIntake({
 
             {/* Intake summary — only after files ready */}
             {allReady && (
-                <div className="bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="bg-muted/30 dark:bg-zinc-800 border border-border rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Intake summary — detected by AI</h4>
                     <dl className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <div><dt className="text-muted-foreground">Client</dt><dd className="font-bold text-foreground mt-0.5">Enterprise Holdings</dd></div>
@@ -418,7 +418,7 @@ function DesignAssistedIntake({
                             ? 'bg-success/10 border-success/30'
                             : allReady
                                 ? 'bg-primary/5 dark:bg-primary/10 border-primary/30'
-                                : 'bg-muted/30 dark:bg-zinc-800/40 border-border'
+                                : 'bg-muted/30 dark:bg-zinc-800 border-border'
                         }
                     `}
                 >
@@ -503,7 +503,7 @@ function DesignAssistedIntake({
                     width={previewFile.kind === 'cap' ? 'lg' : 'md'}
                 >
                     {previewFile.kind === 'sif' ? (
-                        <pre className="font-mono text-[11px] text-foreground bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-xl p-4 overflow-x-auto leading-relaxed">
+                        <pre className="font-mono text-[11px] text-foreground bg-muted/30 dark:bg-zinc-900/40 border border-border rounded-xl p-4 overflow-x-auto leading-relaxed">
 {`<sif-export>
   <header>
     <cet-version>${sif.cetVersion}</cet-version>
@@ -519,7 +519,7 @@ ${sif.lineItems.map(i => `    <item sku="${i.sku}" qty="${i.quantity}" desc="${i
                     ) : previewFile.kind === 'cap' ? (
                         <CapPreviewTable />
                     ) : (
-                        <div className="bg-muted/30 dark:bg-zinc-800/60 border border-dashed border-border rounded-xl p-8 text-center">
+                        <div className="bg-muted/30 dark:bg-zinc-900/40 border border-dashed border-border rounded-xl p-8 text-center">
                             <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                             <div className="text-sm font-bold text-foreground">{previewFile.name}</div>
                             <div className="text-xs text-muted-foreground mt-1">Inline preview not available · processed and indexed by Strata</div>
@@ -564,11 +564,11 @@ function RejectedCard({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div className="bg-card dark:bg-zinc-800/60 border border-border rounded-lg p-3">
+                <div className="bg-card dark:bg-zinc-900/40 border border-border rounded-lg p-3">
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Category</div>
                     <div className="text-xs font-semibold text-foreground">{categoryLabel}</div>
                 </div>
-                <div className="bg-card dark:bg-zinc-800/60 border border-border rounded-lg p-3">
+                <div className="bg-card dark:bg-zinc-900/40 border border-border rounded-lg p-3">
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Notified</div>
                     {rejection.notifiedAuthors.length > 0 ? (
                         <div className="text-xs text-foreground">
@@ -582,7 +582,7 @@ function RejectedCard({
             </div>
 
             {rejection.reason && (
-                <div className="bg-card dark:bg-zinc-800/60 border border-border rounded-lg p-3">
+                <div className="bg-card dark:bg-zinc-900/40 border border-border rounded-lg p-3">
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Reason</div>
                     <div className="text-xs text-foreground whitespace-pre-wrap">{rejection.reason}</div>
                 </div>
@@ -745,7 +745,7 @@ function RejectDocumentsModal({
                                     </div>
 
                                     {/* Notify authors */}
-                                    <label className="flex items-start gap-3 bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-lg p-3 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+                                    <label className="flex items-start gap-3 bg-muted/30 dark:bg-zinc-900/40 border border-border rounded-lg p-3 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
                                         <input
                                             type="checkbox"
                                             checked={notifyAuthors}
@@ -828,7 +828,7 @@ function FileRow({
         <div
             className={`
                 rounded-xl border p-3 transition-colors
-                ${isReady ? 'bg-zinc-50/60 dark:bg-zinc-800/50 border-border' : ''}
+                ${isReady ? 'bg-zinc-50/60 dark:bg-zinc-900/40 border-border' : ''}
                 ${isProcessing ? 'bg-ai/5 dark:bg-ai/10 border-ai/30' : ''}
             `}
         >
@@ -923,7 +923,7 @@ function CapPreviewTable() {
     ]
     return (
         <div className="border border-border rounded-xl overflow-hidden">
-            <div className="px-3 py-2 bg-muted/30 dark:bg-zinc-800/40 border-b border-border grid grid-cols-[3rem_7rem_1fr_5rem_5rem_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            <div className="px-3 py-2 bg-muted/30 dark:bg-zinc-800 border-b border-border grid grid-cols-[3rem_7rem_1fr_5rem_5rem_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                 <div>Line</div>
                 <div>SKU</div>
                 <div>Description</div>

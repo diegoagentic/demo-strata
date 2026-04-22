@@ -49,7 +49,7 @@ export default function QuoteIncomingBudget() {
             </div>
 
             {/* Why this matters intro */}
-            <div className="bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-xl p-3 flex items-start gap-2.5">
+            <div className="bg-muted/30 dark:bg-zinc-800 border border-border rounded-xl p-3 flex items-start gap-2.5">
                 <Building2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                 <div className="text-xs">
                     <div className="font-bold text-foreground">
@@ -89,7 +89,7 @@ function HandoffStat({
     accent?: string
 }) {
     return (
-        <div className="bg-zinc-50/60 dark:bg-zinc-800/60 border border-border rounded-xl p-3">
+        <div className="bg-zinc-50/60 dark:bg-zinc-900/40 border border-border rounded-xl p-3">
             <div className={`flex items-center gap-1.5 ${accent}`}>
                 {icon}
                 <span className="text-lg font-bold tabular-nums leading-none">{value}</span>

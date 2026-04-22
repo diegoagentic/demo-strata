@@ -64,7 +64,7 @@ export default function QuoteSendProposalScene() {
 
             {/* Send CTA — pre-delivery */}
             {!sent && (
-                <div className="bg-card dark:bg-zinc-800/40 border border-primary/30 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="bg-card dark:bg-zinc-800 border border-primary/30 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="min-w-0">
                         <div className="text-sm font-bold text-foreground">Approve + send proposal</div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">

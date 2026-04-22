@@ -55,7 +55,7 @@ export default function ARAgingWrapScene() {
 
             {/* Close morning CTA · gates FlowHandoff */}
             {!morningClosed ? (
-                <div className="bg-card dark:bg-zinc-800/40 border border-primary/30 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="bg-card dark:bg-zinc-800 border border-primary/30 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div className="min-w-0">
                         <div className="text-sm font-bold text-foreground">Ready to close the morning?</div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -124,7 +124,7 @@ export default function ARAgingWrapScene() {
 
 function SummaryTile({ label, value, accent }: { label: string; value: string; accent: string }) {
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-xl p-3">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-xl p-3">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</div>
             <div className={`text-lg font-bold tabular-nums mt-0.5 ${accent}`}>{value}</div>
         </div>

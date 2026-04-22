@@ -26,7 +26,7 @@ export default function OrderExecutionPanel() {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* EDI Transmission */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+            <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-info/10 text-info flex items-center justify-center">
                         <Zap className="h-3.5 w-3.5" />
@@ -55,7 +55,7 @@ export default function OrderExecutionPanel() {
             </div>
 
             {/* Non-EDI Email PO */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+            <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 flex items-center justify-center">
                         <Mail className="h-3.5 w-3.5" />
@@ -84,7 +84,7 @@ export default function OrderExecutionPanel() {
             </div>
 
             {/* Compass Reconciliation — full width */}
-            <div className="lg:col-span-2 bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+            <div className="lg:col-span-2 bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">

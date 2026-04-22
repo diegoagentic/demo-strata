@@ -62,7 +62,7 @@ export default function MBIWizardShell({
     const isLast = activeStep === steps.length - 1
 
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             {/* Header: caption + persona + stepper chips */}
             <div className="px-5 pt-4 pb-3 border-b border-border bg-muted/10 dark:bg-zinc-900/40 space-y-3">
                 {activeSpec && (

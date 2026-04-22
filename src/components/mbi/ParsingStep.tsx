@@ -81,7 +81,7 @@ export default function ParsingStep(_props: ParsingStepProps) {
             <div className="flex flex-col md:flex-row md:items-center gap-3">
                 <button
                     onClick={() => setSourceOpen(true)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-muted/20 dark:bg-zinc-800/50 hover:border-primary/40 transition-colors text-left"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-muted/20 dark:bg-zinc-900/40 hover:border-primary/40 transition-colors text-left"
                 >
                     <FileCode2 className="h-4 w-4 text-muted-foreground" />
                     <div className="text-xs">
@@ -152,7 +152,7 @@ export default function ParsingStep(_props: ParsingStepProps) {
                 icon={<FileCode2 className="h-4 w-4" />}
                 width="md"
             >
-                <pre className="font-mono text-[11px] text-foreground bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-xl p-4 overflow-x-auto leading-relaxed">
+                <pre className="font-mono text-[11px] text-foreground bg-muted/30 dark:bg-zinc-900/40 border border-border rounded-xl p-4 overflow-x-auto leading-relaxed">
 {`<sif-export>
   <header>
     <cet-version>${sif.cetVersion}</cet-version>
@@ -193,7 +193,7 @@ ${sif.lineItems.map(i => `    <item sku="${i.sku}" qty="${i.quantity}" desc="${i
                                     flex items-start gap-3 px-3 py-2.5 rounded-lg border border-l-4
                                     ${done ? 'bg-success/10 dark:bg-success/15 border-success/30 border-l-success' : ''}
                                     ${running ? 'bg-ai/10 dark:bg-ai/15 border-ai/30 border-l-ai' : ''}
-                                    ${!done && !running ? 'bg-zinc-50/50 dark:bg-zinc-800/40 border-border border-l-muted-foreground/30 opacity-60' : ''}
+                                    ${!done && !running ? 'bg-zinc-50/50 dark:bg-zinc-800 border-border border-l-muted-foreground/30 opacity-60' : ''}
                                 `}
                             >
                                 {done && <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />}

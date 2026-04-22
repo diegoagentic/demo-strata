@@ -66,7 +66,7 @@ export default function ScenariosStep({
                     </div>
                     <button
                         onClick={() => setBreakdownOpen(true)}
-                        className="lg:col-span-2 bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4 text-left hover:border-primary/40 transition-colors"
+                        className="lg:col-span-2 bg-card dark:bg-zinc-800 border border-border rounded-2xl p-4 text-left hover:border-primary/40 transition-colors"
                     >
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ export default function ScenariosStep({
                         </div>
                     </dl>
 
-                    <div className="mt-5 text-xs text-muted-foreground bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-xl p-3">
+                    <div className="mt-5 text-xs text-muted-foreground bg-muted/30 dark:bg-zinc-800 border border-border rounded-xl p-3">
                         Numbers recompute live as you tune the markup slider. This view is budget-grade — final figures are signed off in the Review step.
                     </div>
                 </MBIDetailSheet>

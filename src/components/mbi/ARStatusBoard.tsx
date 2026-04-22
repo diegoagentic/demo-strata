@@ -79,7 +79,7 @@ export default function ARStatusBoard({ records }: ARStatusBoardProps) {
     return (
         <div className="space-y-3">
             {/* Summary banner */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4 flex items-center justify-between">
+            <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl p-4 flex items-center justify-between">
                 <div>
                     <div className="text-xs font-bold text-foreground">AR Status Taxonomy</div>
                     <div className="text-[10px] text-muted-foreground">
@@ -121,7 +121,7 @@ export default function ARStatusBoard({ records }: ARStatusBoardProps) {
                                     items.map(r => (
                                         <div
                                             key={r.id}
-                                            className={`bg-zinc-50/50 dark:bg-zinc-800/40 border border-border rounded-lg border-l-4 ${meta.leftBar} px-2.5 py-2 text-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors`}
+                                            className={`bg-zinc-50/50 dark:bg-zinc-800 border border-border rounded-lg border-l-4 ${meta.leftBar} px-2.5 py-2 text-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors`}
                                         >
                                             <div className="flex items-center justify-between mb-0.5">
                                                 <span className="font-bold text-foreground truncate pr-2">{r.client}</span>

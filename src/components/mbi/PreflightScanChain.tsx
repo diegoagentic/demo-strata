@@ -80,7 +80,7 @@ export default function PreflightScanChain({
     const allDone = phase >= CHECKS.length
 
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl">
             <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${allDone ? 'bg-success/10 text-success' : 'bg-ai/10 text-ai'}`}>
@@ -106,7 +106,7 @@ export default function PreflightScanChain({
                                 flex items-start gap-3 px-3 py-2 rounded-lg border transition-colors
                                 ${state === 'done' ? 'border-success/30 bg-success/10 dark:bg-success/15 border-l-4 border-l-success' : ''}
                                 ${state === 'running' ? 'border-ai/40 bg-ai/10 dark:bg-ai/15 border-l-4 border-l-ai' : ''}
-                                ${state === 'pending' ? 'border-border bg-zinc-50/50 dark:bg-zinc-800/40 opacity-60' : ''}
+                                ${state === 'pending' ? 'border-border bg-zinc-50/50 dark:bg-zinc-800 opacity-60' : ''}
                             `}
                         >
                             {state === 'done' && <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />}

@@ -48,7 +48,7 @@ export default function QuoteAutoImportScene() {
             <SIFToCOREPreview />
 
             {/* What just happened */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4">
+            <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl p-4">
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
                     What Strata just did · no PC intervention
                 </div>
@@ -89,7 +89,7 @@ export default function QuoteAutoImportScene() {
 
 function AutoImportCheck({ label, caption }: { label: string; caption: string }) {
     return (
-        <div className="bg-zinc-50/60 dark:bg-zinc-800/60 border border-border rounded-lg p-2.5">
+        <div className="bg-zinc-50/60 dark:bg-zinc-900/40 border border-border rounded-lg p-2.5">
             <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                 <CheckCircle2 className="h-3.5 w-3.5 text-success shrink-0" />
                 <span className="truncate">{label}</span>

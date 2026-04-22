@@ -150,7 +150,7 @@ export default function ParsingDiscrepanciesPanel({
             {/* Compact summary strip */}
             <div
                 className={`
-                    bg-card dark:bg-zinc-800/40 border rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3
+                    bg-card dark:bg-zinc-800 border rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3
                     ${pending > 0 ? 'border-amber-300 dark:border-amber-500/30' : 'border-success/30'}
                 `}
             >
@@ -338,7 +338,7 @@ function DiscrepancyCard({
         if (status === 'dismissed') {
             return {
                 border: 'border-border',
-                bg: 'bg-muted/30 dark:bg-zinc-800/40',
+                bg: 'bg-muted/30 dark:bg-zinc-800',
                 leftBar: 'border-l-muted-foreground/40',
                 iconBg: 'bg-muted text-muted-foreground',
                 icon: <X className="h-4 w-4" />,
@@ -368,7 +368,7 @@ function DiscrepancyCard({
         }
     })()
 
-    const innerPanel = 'bg-zinc-50/70 dark:bg-zinc-800/60 border border-border rounded-lg p-2.5 min-w-0'
+    const innerPanel = 'bg-zinc-50/70 dark:bg-zinc-900/40 border border-border rounded-lg p-2.5 min-w-0'
 
     return (
         <div className={`border border-l-4 rounded-xl p-3 ${theme.border} ${theme.bg} ${theme.leftBar}`}>
@@ -598,7 +598,7 @@ function FieldReconcilerDetail() {
     return (
         <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-xl p-3">
+                <div className="bg-muted/30 dark:bg-zinc-900/40 border border-border rounded-xl p-3">
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">SIF header</div>
                     <div className="text-xs text-muted-foreground mt-0.5">Declared ceiling</div>
                     <div className="text-xl font-bold text-foreground tabular-nums mt-1">$385,000</div>
@@ -611,7 +611,7 @@ function FieldReconcilerDetail() {
             </div>
 
             <div className="border border-border rounded-xl overflow-hidden">
-                <div className="px-3 py-2 bg-muted/40 dark:bg-zinc-800/60 border-b border-border grid grid-cols-[3rem_1fr_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="px-3 py-2 bg-muted/40 dark:bg-zinc-900/40 border-b border-border grid grid-cols-[3rem_1fr_5rem] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                     <div>Line</div>
                     <div>Override</div>
                     <div className="text-right">Delta</div>
@@ -632,7 +632,7 @@ function FieldReconcilerDetail() {
                 </div>
             </div>
 
-            <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-zinc-800/40 border border-border rounded-lg p-2.5">
+            <div className="text-[11px] text-muted-foreground bg-muted/20 dark:bg-zinc-800 border border-border rounded-lg p-2.5">
                 Adopting the CAP total updates the budget ceiling to <strong className="text-foreground">$392,450</strong> before scenarios compute. The SIF header is kept in the audit log with a reconciliation note.
             </div>
         </div>
@@ -643,7 +643,7 @@ function InventoryCompareDetail() {
     return (
         <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
-                <div className="bg-muted/30 dark:bg-zinc-800/60 border border-border rounded-xl p-3 flex flex-col gap-2">
+                <div className="bg-muted/30 dark:bg-zinc-900/40 border border-border rounded-xl p-3 flex flex-col gap-2">
                     <div className="flex items-center gap-1.5">
                         <Package className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Vendor new</span>

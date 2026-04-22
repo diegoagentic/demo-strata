@@ -36,7 +36,7 @@ export default function FileManagementPanel() {
 // ─── 1. ProjectNumberGenerator ───────────────────────────────────────────────
 function ProjectNumberGenerator() {
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
                     <Hash className="h-3.5 w-3.5" />
@@ -79,7 +79,7 @@ function ProjectNumberGenerator() {
 // ─── 2. FolderTemplateTree ───────────────────────────────────────────────────
 function FolderTemplateTree() {
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-info/10 text-info flex items-center justify-center">
                     <FolderTree className="h-3.5 w-3.5" />
@@ -131,7 +131,7 @@ function VersionHistoryTimeline() {
         { v: 'v3', author: 'Amy Shoemaker', timestamp: 'Apr 14 · 11:30 AM', note: 'Initial floor plan import' },
     ]
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-success/10 text-success flex items-center justify-center">
                     <History className="h-3.5 w-3.5" />
@@ -153,7 +153,7 @@ function VersionHistoryTimeline() {
                                 </div>
                                 {i < versions.length - 1 && <div className="w-0.5 flex-1 bg-border mt-1" style={{ minHeight: 20 }} />}
                             </div>
-                            <div className={`flex-1 border border-l-4 rounded-lg px-3 py-2 ${v.current ? 'bg-success/5 border-success/20 border-l-success' : 'bg-zinc-50/50 dark:bg-zinc-800/40 border-border border-l-muted-foreground/30'}`}>
+                            <div className={`flex-1 border border-l-4 rounded-lg px-3 py-2 ${v.current ? 'bg-success/5 border-success/20 border-l-success' : 'bg-zinc-50/50 dark:bg-zinc-800 border-border border-l-muted-foreground/30'}`}>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-xs font-bold text-foreground">{v.author}</span>
                                     {v.current && (
@@ -174,7 +174,7 @@ function VersionHistoryTimeline() {
 // ─── 4. TeamsBotMessagePreview ───────────────────────────────────────────────
 function TeamsBotMessagePreview() {
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                 <div className="h-7 w-7 rounded-lg bg-ai/10 text-ai flex items-center justify-center">
                     <Bot className="h-3.5 w-3.5" />

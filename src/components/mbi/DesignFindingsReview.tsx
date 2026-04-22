@@ -82,7 +82,7 @@ export default function DesignFindingsReview() {
                 border-2 border-l-4 rounded-2xl p-4 transition-all
                 ${status === 'accepted' ? 'border-success/40 bg-success/5 dark:bg-success/10 border-l-success' : ''}
                 ${status === 'overridden' ? 'border-info/40 bg-info/5 dark:bg-info/10 border-l-info' : ''}
-                ${status === 'rejected' ? 'border-border bg-muted/30 dark:bg-zinc-800/40 border-l-muted-foreground/40' : ''}
+                ${status === 'rejected' ? 'border-border bg-muted/30 dark:bg-zinc-800 border-l-muted-foreground/40' : ''}
                 ${status === 'pending' ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50/70 dark:bg-amber-500/10 border-l-amber-500' : ''}
             `}>
                 {/* Header */}
@@ -115,14 +115,14 @@ export default function DesignFindingsReview() {
 
                 {/* Expected vs Actual with palette chips */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                    <div className="bg-zinc-50/70 dark:bg-zinc-800/60 border border-border rounded-lg p-3">
+                    <div className="bg-zinc-50/70 dark:bg-zinc-900/40 border border-border rounded-lg p-3">
                         <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Expected</div>
                         <div className="flex items-center gap-2">
                             <div className="h-5 w-5 rounded-md border border-border shrink-0" style={{ backgroundColor: '#1F2937' }} />
                             <div className="text-xs text-foreground">Onyx Black · project palette</div>
                         </div>
                     </div>
-                    <div className="bg-zinc-50/70 dark:bg-zinc-800/60 border border-amber-200 dark:border-amber-500/30 rounded-lg p-3">
+                    <div className="bg-zinc-50/70 dark:bg-zinc-900/40 border border-amber-200 dark:border-amber-500/30 rounded-lg p-3">
                         <div className="text-[10px] font-bold uppercase tracking-wider mb-1 text-amber-700 dark:text-amber-400">Actual</div>
                         <div className="flex items-center gap-2">
                             <div className="h-5 w-5 rounded-md border border-border shrink-0" style={{ backgroundColor: '#228B22' }} />
@@ -132,7 +132,7 @@ export default function DesignFindingsReview() {
                 </div>
 
                 {/* AI suggestion */}
-                <div className="bg-zinc-50/70 dark:bg-zinc-800/60 border border-border rounded-lg p-3 mb-3">
+                <div className="bg-zinc-50/70 dark:bg-zinc-900/40 border border-border rounded-lg p-3 mb-3">
                     <div className="flex items-center gap-1.5 mb-1">
                         <Sparkles className="h-3 w-3 text-ai" />
                         <div className="text-[10px] font-bold uppercase tracking-wider text-ai">AI suggestion</div>

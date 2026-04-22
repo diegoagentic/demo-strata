@@ -87,7 +87,7 @@ export default function FlowHandoff({
     return (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* 1. Recap */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-5">
+            <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl p-5">
                 <div className="flex items-start gap-3 mb-4">
                     <div className="h-10 w-10 rounded-xl bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                         <Sparkles className="h-5 w-5" />
@@ -114,7 +114,7 @@ export default function FlowHandoff({
 
             {/* 2. Timeline */}
             {timeline.length > 0 && (
-                <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-5">
+                <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl p-5">
                     <div className="flex items-center gap-2 mb-4">
                         <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">What happens next</div>
                         <div className="flex-1 h-px bg-border" />
@@ -192,7 +192,7 @@ function RecapStat({
     accent = 'text-foreground',
 }: FlowHandoffStat) {
     return (
-        <div className="bg-zinc-50/60 dark:bg-zinc-800/60 border border-border rounded-xl p-3">
+        <div className="bg-zinc-50/60 dark:bg-zinc-900/40 border border-border rounded-xl p-3">
             <div className={`flex items-center gap-1.5 ${accent}`}>
                 {icon}
                 <span className="text-xl font-bold tabular-nums leading-none">{value}</span>
@@ -224,7 +224,7 @@ function TimelineNode({
             labelColor: 'text-foreground',
         }
         if (status === 'next') return {
-            bg: 'bg-muted/30 dark:bg-zinc-800/50 border-border',
+            bg: 'bg-muted/30 dark:bg-zinc-900/40 border-border',
             dotBg: 'bg-muted-foreground/30 text-muted-foreground',
             labelColor: 'text-foreground',
         }

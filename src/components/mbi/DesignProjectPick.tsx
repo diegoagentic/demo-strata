@@ -53,7 +53,7 @@ export default function DesignProjectPick() {
             </div>
 
             {/* Beth's project picker */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+            <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
@@ -149,7 +149,7 @@ export default function DesignProjectPick() {
             </div>
 
             {/* Palette preview — makes the "this chair is green" story visible */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-xl p-3">
+            <div className="bg-card dark:bg-zinc-800 border border-border rounded-xl p-3">
                 <div className="flex items-center justify-between mb-2">
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                         Project palette · {selected.name}
@@ -192,7 +192,7 @@ function ProjectStat({
     accent?: string
 }) {
     return (
-        <div className="bg-zinc-50/60 dark:bg-zinc-800/60 border border-border rounded-xl p-3">
+        <div className="bg-zinc-50/60 dark:bg-zinc-900/40 border border-border rounded-xl p-3">
             <div className={`flex items-center gap-1.5 ${accent}`}>
                 {icon}
                 <span className="text-lg font-bold tabular-nums leading-none">{value}</span>

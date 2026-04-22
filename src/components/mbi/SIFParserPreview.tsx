@@ -48,7 +48,7 @@ export default function SIFParserPreview({ sif, animate = true, stagger = 120 }:
     const isComplete = extractedCount >= sif.lineItems.length
 
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             {/* Header with progress */}
             <div className="px-4 py-3 border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between mb-2">
@@ -116,7 +116,7 @@ export default function SIFParserPreview({ sif, animate = true, stagger = 120 }:
                         {sif.lineItems.slice(0, extractedCount).map((item, i) => (
                             <div
                                 key={i}
-                                className="flex items-center gap-2 bg-zinc-50/50 dark:bg-zinc-800/50 border border-border rounded-lg px-3 py-2 text-xs animate-in fade-in slide-in-from-left-2 duration-300"
+                                className="flex items-center gap-2 bg-zinc-50/50 dark:bg-zinc-900/40 border border-border rounded-lg px-3 py-2 text-xs animate-in fade-in slide-in-from-left-2 duration-300"
                             >
                                 <FileCode2 className="h-3 w-3 text-muted-foreground shrink-0" />
                                 <span className="font-mono text-muted-foreground truncate w-20">{item.sku}</span>

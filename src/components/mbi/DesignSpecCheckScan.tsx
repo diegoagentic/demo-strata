@@ -87,7 +87,7 @@ export default function DesignSpecCheckScan() {
                     ? 'bg-success/10 dark:bg-success/15 border-success/40'
                     : scanning
                         ? 'bg-ai/5 dark:bg-ai/10 border-ai/40'
-                        : 'bg-card dark:bg-zinc-800/40 border-border'
+                        : 'bg-card dark:bg-zinc-800 border-border'
                 }
             `}>
                 <div className={`
@@ -159,7 +159,7 @@ export default function DesignSpecCheckScan() {
                                 ${isDone && hasFindings ? 'bg-amber-50/60 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/40 border-l-amber-500' : ''}
                                 ${isDone && !hasFindings ? 'bg-success/5 dark:bg-success/10 border-success/30 border-l-success' : ''}
                                 ${isRunning ? 'bg-ai/10 dark:bg-ai/15 border-ai/40 border-l-ai' : ''}
-                                ${isPending ? 'bg-zinc-50/50 dark:bg-zinc-800/40 border-border border-l-muted-foreground/30 opacity-60' : ''}
+                                ${isPending ? 'bg-zinc-50/50 dark:bg-zinc-800 border-border border-l-muted-foreground/30 opacity-60' : ''}
                             `}
                         >
                             <div className="flex items-start gap-2.5">

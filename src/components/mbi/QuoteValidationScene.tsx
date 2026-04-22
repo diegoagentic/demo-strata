@@ -53,7 +53,7 @@ export default function QuoteValidationScene() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <button
                     onClick={() => setNonCatalogOpen(true)}
-                    className="bg-card dark:bg-zinc-800/40 border border-border rounded-xl p-3 hover:border-primary/40 transition-colors text-left flex items-center gap-3"
+                    className="bg-card dark:bg-zinc-800 border border-border rounded-xl p-3 hover:border-primary/40 transition-colors text-left flex items-center gap-3"
                 >
                     <div className="h-9 w-9 rounded-xl bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                         <Search className="h-4 w-4" />
@@ -69,7 +69,7 @@ export default function QuoteValidationScene() {
 
                 <button
                     onClick={() => setComOpen(true)}
-                    className="bg-card dark:bg-zinc-800/40 border border-border rounded-xl p-3 hover:border-primary/40 transition-colors text-left flex items-center gap-3"
+                    className="bg-card dark:bg-zinc-800 border border-border rounded-xl p-3 hover:border-primary/40 transition-colors text-left flex items-center gap-3"
                 >
                     <div className="h-9 w-9 rounded-xl bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                         <Palette className="h-4 w-4" />

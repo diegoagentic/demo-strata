@@ -33,7 +33,7 @@ const STEPS: TimelineStep[] = [
 
 export default function COMWorkflowTimeline() {
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border">
                 <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
@@ -52,10 +52,10 @@ export default function COMWorkflowTimeline() {
                 <ol className="space-y-2">
                     {STEPS.map((step, i) => {
                         const theme = step.status === 'done'
-                            ? { dot: 'bg-success text-white', line: 'bg-success', card: 'bg-zinc-50/50 dark:bg-zinc-800/40 border-border border-l-success/60' }
+                            ? { dot: 'bg-success text-white', line: 'bg-success', card: 'bg-zinc-50/50 dark:bg-zinc-800 border-border border-l-success/60' }
                             : step.status === 'in-progress'
                                 ? { dot: 'bg-ai/15 text-ai ring-4 ring-ai/20 animate-pulse', line: 'bg-border', card: 'bg-ai/5 border-ai/20 border-l-ai' }
-                                : { dot: 'bg-muted text-muted-foreground', line: 'bg-border', card: 'bg-zinc-50/50 dark:bg-zinc-800/40 border-border border-l-muted-foreground/30' }
+                                : { dot: 'bg-muted text-muted-foreground', line: 'bg-border', card: 'bg-zinc-50/50 dark:bg-zinc-800 border-border border-l-muted-foreground/30' }
                         return (
                             <li key={step.id} className="flex gap-3">
                                 <div className="flex flex-col items-center shrink-0">

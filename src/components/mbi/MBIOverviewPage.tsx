@@ -155,7 +155,7 @@ export default function MBIOverviewPage() {
 
             {/* Tour CTA when the demo is inactive */}
             {!isDemoActive && (
-                <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="min-w-0">
                         <div className="text-sm font-bold text-foreground">Walk the whole story · 16 tour beats</div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -293,7 +293,7 @@ function ImpactStat({
     accent?: string
 }) {
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl p-3">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl p-3">
             <div className={`flex items-center gap-2 ${accent}`}>
                 {icon}
                 <span className="text-base font-bold tabular-nums leading-none truncate">{value}</span>

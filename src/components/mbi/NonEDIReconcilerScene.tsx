@@ -109,7 +109,7 @@ export default function NonEDIReconcilerScene() {
             </div>
 
             {/* Line-by-line diff table */}
-            <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+            <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-border bg-muted/20 dark:bg-zinc-900/40 grid grid-cols-[3rem_1fr_5rem_5rem_5rem_auto] gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider items-center">
                     <div>Line</div>
                     <div>Item</div>
@@ -219,7 +219,7 @@ export default function NonEDIReconcilerScene() {
             )}
 
             {/* AI learning footer */}
-            <div className="flex items-center gap-2.5 bg-muted/30 dark:bg-zinc-800/40 border border-border rounded-xl p-3">
+            <div className="flex items-center gap-2.5 bg-muted/30 dark:bg-zinc-800 border border-border rounded-xl p-3">
                 <div className="h-8 w-8 rounded-lg bg-ai/15 text-ai flex items-center justify-center shrink-0">
                     <Sparkles className="h-4 w-4" />
                 </div>
@@ -262,7 +262,7 @@ export default function NonEDIReconcilerScene() {
 
 function SummaryTile({ label, value, accent }: { label: string; value: string; accent: string }) {
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-xl p-3">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-xl p-3">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</div>
             <div className={`text-lg font-bold tabular-nums mt-0.5 ${accent}`}>{value}</div>
         </div>

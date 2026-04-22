@@ -32,7 +32,7 @@ export default function DesignerCapacityBoard() {
     }).sort((a, b) => b.hoursLogged - a.hoursLogged)
 
     return (
-        <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-zinc-800 border border-border rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center">
@@ -66,7 +66,7 @@ export default function DesignerCapacityBoard() {
                     return (
                         <div
                             key={designer.id}
-                            className={`bg-zinc-50/50 dark:bg-zinc-800/50 border border-border rounded-xl px-3 py-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors ${accent}`}
+                            className={`bg-zinc-50/50 dark:bg-zinc-900/40 border border-border rounded-xl px-3 py-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors ${accent}`}
                         >
                             <div className="flex items-center justify-between mb-2 gap-2">
                                 <div className="flex items-center gap-2.5 min-w-0">

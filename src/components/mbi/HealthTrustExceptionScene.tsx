@@ -133,8 +133,8 @@ export default function HealthTrustExceptionScene() {
                 </div>
 
                 {/* Calculation breakdown */}
-                <div className="bg-zinc-50/70 dark:bg-zinc-800/60 border border-border rounded-xl overflow-hidden">
-                    <div className="px-3 py-2 bg-muted/30 dark:bg-zinc-800/40 border-b border-border text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="bg-zinc-50/70 dark:bg-zinc-900/40 border border-border rounded-xl overflow-hidden">
+                    <div className="px-3 py-2 bg-muted/30 dark:bg-zinc-800 border-b border-border text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                         Calculation
                     </div>
                     <div className="divide-y divide-border text-xs">
@@ -228,7 +228,7 @@ export default function HealthTrustExceptionScene() {
 
             {/* Context cards — who is Lynda, what contract */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-xl p-3 flex items-start gap-2.5">
+                <div className="bg-card dark:bg-zinc-800 border border-border rounded-xl p-3 flex items-start gap-2.5">
                     <div className="h-8 w-8 rounded-lg bg-info/15 text-info flex items-center justify-center shrink-0">
                         <UserCheck className="h-4 w-4" />
                     </div>
@@ -238,7 +238,7 @@ export default function HealthTrustExceptionScene() {
                         <div className="text-[10px] text-muted-foreground mt-0.5">Teams · #healthcare-gpo · responds ~1h</div>
                     </div>
                 </div>
-                <div className="bg-card dark:bg-zinc-800/40 border border-border rounded-xl p-3 flex items-start gap-2.5">
+                <div className="bg-card dark:bg-zinc-800 border border-border rounded-xl p-3 flex items-start gap-2.5">
                     <div className="h-8 w-8 rounded-lg bg-primary/10 text-zinc-900 dark:text-primary flex items-center justify-center shrink-0">
                         <FileText className="h-4 w-4" />
                     </div>
