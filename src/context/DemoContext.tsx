@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { useDemoProfile } from './DemoProfileContext';
+import { useDemoProfile } from './useDemoProfile';
 import type { DemoStep } from '../config/demoProfiles';
 
 export type { SimulationApp, DemoStep } from '../config/demoProfiles';

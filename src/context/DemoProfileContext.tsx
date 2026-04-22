@@ -1,13 +1,17 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useState, useEffect, type ReactNode } from 'react';
 import { DEMO_PROFILES, type DemoProfile, type DemoProfileId } from '../config/demoProfiles';
 
-interface DemoProfileContextType {
+export interface DemoProfileContextType {
     activeProfile: DemoProfile;
     profiles: DemoProfile[];
     switchProfile: (id: DemoProfileId) => void;
 }
 
-const DemoProfileContext = createContext<DemoProfileContextType | undefined>(undefined);
+// Exported so the hook (in useDemoProfile.ts) can subscribe. Splitting the
+// hook into its own module keeps this file as a pure component file, which
+// is what Vite's Fast Refresh requires — otherwise every save here triggers
+// a full page reload and resets demo state mid-session.
+export const DemoProfileContext = createContext<DemoProfileContextType | undefined>(undefined);
 
 export function DemoProfileProvider({ children }: { children: ReactNode }) {
     const [activeProfileId, setActiveProfileId] = useState<DemoProfileId>(
@@ -29,10 +33,4 @@ export function DemoProfileProvider({ children }: { children: ReactNode }) {
             {children}
         </DemoProfileContext.Provider>
     );
-}
-
-export function useDemoProfile() {
-    const context = useContext(DemoProfileContext);
-    if (!context) throw new Error('useDemoProfile must be used within DemoProfileProvider');
-    return context;
 }

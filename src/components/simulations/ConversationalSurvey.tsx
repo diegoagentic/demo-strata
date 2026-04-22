@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { CheckCircleIcon, ArrowPathIcon, ArrowRightIcon, StarIcon } from '@heroicons/react/24/outline';
 import { useDemo } from '../../context/DemoContext';
-import { useDemoProfile } from '../../context/DemoProfileContext';
+import { useDemoProfile } from '../../context/useDemoProfile';
 import { AIAgentAvatar } from './DemoAvatars';
 import MobileDeviceFrame from './MobileDeviceFrame';
 import { CONTINUA_STEP_TIMING } from '../../config/profiles/continua-demo';

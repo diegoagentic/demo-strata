@@ -58,7 +58,7 @@ import { useGenUI } from './context/GenUIContext'
 import DashboardMetricsGrid from './components/DashboardMetricsGrid';
 import { Card } from 'strata-design-system';
 import { useDemo } from './context/DemoContext'
-import { useDemoProfile } from './context/DemoProfileContext'
+import { useDemoProfile } from './context/useDemoProfile'
 import AgentPipelineStrip from './components/simulations/AgentPipelineStrip'
 import DemoAvatar, { AIAgentAvatar } from './components/simulations/DemoAvatars'
 import MobileDeviceFrame from './components/simulations/MobileDeviceFrame'

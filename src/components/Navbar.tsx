@@ -19,7 +19,7 @@ import { useTheme } from 'strata-design-system'
 import { useTenant } from '../TenantContext'
 import { useAuth } from '../context/AuthContext'
 import { useDemo } from '../context/DemoContext'
-import { useDemoProfile } from '../context/DemoProfileContext'
+import { useDemoProfile } from '../context/useDemoProfile'
 
 import ActionCenter from './notifications/ActionCenter';
 

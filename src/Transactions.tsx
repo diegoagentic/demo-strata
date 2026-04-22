@@ -28,7 +28,7 @@ import AckReconciliationModal from './components/AckReconciliationModal'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { useDemo } from './context/DemoContext'
-import { useDemoProfile } from './context/DemoProfileContext'
+import { useDemoProfile } from './context/useDemoProfile'
 import { AIAgentAvatar } from './components/simulations/DemoAvatars'
 import { CONTINUA_STEP_TIMING } from './config/profiles/continua-demo'
 function cn(...inputs: (string | undefined | null | false)[]) {

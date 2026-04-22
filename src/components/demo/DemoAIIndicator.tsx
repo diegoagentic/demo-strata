@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Loader2, MousePointerClick, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useDemo } from '../../context/DemoContext';
-import { useDemoProfile } from '../../context/DemoProfileContext';
+import { useDemoProfile } from '../../context/useDemoProfile';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 

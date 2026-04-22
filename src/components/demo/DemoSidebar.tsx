@@ -10,7 +10,7 @@ import {
     Pause,
     Loader2,
 } from 'lucide-react';
-import { useDemoProfile } from '../../context/DemoProfileContext';
+import { useDemoProfile } from '../../context/useDemoProfile';
 
 // Apps belonging to Expert Hub — System steps in these show as "Expert"
 const EXPERT_HUB_APPS = ['expert-hub', 'ack-detail', 'transactions', 'mac', 'quote-detail'];

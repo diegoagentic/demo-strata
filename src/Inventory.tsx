@@ -8,7 +8,7 @@ import ChangeStatusModal from './components/ChangeStatusModal';
 import QuickMovementsModal from './components/QuickMovementsModal';
 import { useTenant } from './TenantContext';
 import { useDemo } from './context/DemoContext';
-import { useDemoProfile } from './context/DemoProfileContext';
+import { useDemoProfile } from './context/useDemoProfile';
 import { CONTINUA_STEP_TIMING } from './config/profiles/continua-demo';
 import { AIAgentAvatar } from './components/simulations/DemoAvatars';
 import Breadcrumbs from './components/Breadcrumbs';

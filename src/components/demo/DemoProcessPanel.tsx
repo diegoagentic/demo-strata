@@ -10,7 +10,7 @@ import {
     SearchIcon,
 } from 'lucide-react';
 import { useDemo } from '../../context/DemoContext';
-import { useDemoProfile } from '../../context/DemoProfileContext';
+import { useDemoProfile } from '../../context/useDemoProfile';
 import AgentPipelineStrip from '../simulations/AgentPipelineStrip';
 import type { AgentStep } from '../simulations/AgentPipelineStrip';
 import ConfidenceScoreBadge from '../widgets/ConfidenceScoreBadge';

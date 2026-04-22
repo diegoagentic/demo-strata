@@ -26,7 +26,7 @@ import {
     ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 import { useDemo } from '../context/DemoContext';
-import { useDemoProfile } from '../context/DemoProfileContext';
+import { useDemoProfile } from '../context/useDemoProfile';
 import { CONTINUA_STEP_TIMING } from '../config/profiles/continua-demo';
 import LiabilityAnalysisPanel from './widgets/LiabilityAnalysisPanel';
 import ConfidenceScoreBadge from './widgets/ConfidenceScoreBadge';

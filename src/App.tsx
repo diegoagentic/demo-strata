@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { GenUIProvider } from './context/GenUIContext'
 import { useAuth } from './context/AuthContext'
 import { useDemo } from './context/DemoContext'
-import { useDemoProfile } from './context/DemoProfileContext'
+import { useDemoProfile } from './context/useDemoProfile'
 import Login from "./Login"
 import Dashboard from "./Dashboard"
 import Detail from "./Detail"

@@ -13,7 +13,7 @@ import {
     PieChart, Pie, Cell
 } from 'recharts'
 import { useDemo } from '../../context/DemoContext'
-import { useDemoProfile } from '../../context/DemoProfileContext'
+import { useDemoProfile } from '../../context/useDemoProfile'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { Bot, Package, FileText, Truck, Wrench, Mail } from 'lucide-react'

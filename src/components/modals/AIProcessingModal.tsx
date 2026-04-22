@@ -11,7 +11,7 @@ import {
 import AgentPipelineStrip from '../simulations/AgentPipelineStrip';
 import type { AgentStep } from '../simulations/AgentPipelineStrip';
 import { useDemo } from '../../context/DemoContext';
-import { useDemoProfile } from '../../context/DemoProfileContext';
+import { useDemoProfile } from '../../context/useDemoProfile';
 
 interface AIProcessingModalProps {
     open: boolean;

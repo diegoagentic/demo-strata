@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { useDemoProfile } from './context/DemoProfileContext';
+import { useDemoProfile } from './context/useDemoProfile';
 
 export type Tenant = string;
 

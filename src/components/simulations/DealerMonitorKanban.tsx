@@ -17,7 +17,7 @@ import {
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { CheckCircleIcon, ArrowPathIcon, ArrowRightIcon, ExclamationTriangleIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { useDemo } from '../../context/DemoContext';
-import { useDemoProfile } from '../../context/DemoProfileContext';
+import { useDemoProfile } from '../../context/useDemoProfile';
 import { CONTINUA_STEP_TIMING } from '../../config/profiles/continua-demo';
 import { useTheme } from 'strata-design-system';
 import { AIAgentAvatar } from './DemoAvatars';
