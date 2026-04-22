@@ -130,61 +130,43 @@ export default function MBIWizardShell({
             {/* Body */}
             <div className="p-5 space-y-4">
                 {children}
-
-                {/* Inline primary CTA — Back + Next side-by-side at end of step */}
-                {!isLast && (
-                    <div className="pt-2">
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <button
-                                onClick={onPrev}
-                                disabled={!onPrev || activeStep === 0}
-                                className="flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-foreground bg-background dark:bg-zinc-800 border border-border rounded-xl hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed sm:w-auto sm:px-6"
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                                <span>Back</span>
-                            </button>
-                            <button
-                                onClick={onNext}
-                                disabled={!onNext || !canAdvance}
-                                className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold text-zinc-900 bg-primary rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                            >
-                                <span>{resolvedNextLabel}</span>
-                                <ChevronRight className="h-4 w-4" />
-                            </button>
-                        </div>
-                        {!canAdvance && (
-                            <div className="text-[11px] text-amber-600 dark:text-amber-400 text-center mt-2 italic">
-                                Complete this step's action to continue.
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
 
-            {/* Nav footer — Back on the left, secondary Next on the right */}
+            {/* Single nav controller — Back · pagination · primary action.
+                Lives at the wizard footer so it is always reachable, with the
+                primary action labelled by the next step's name (or 'Done' on
+                the final step). Both handlers fire the same callbacks the
+                demo guide listens to, so step changes stay in sync either way. */}
             {(onPrev || onNext) && (
-                <div className="px-5 py-3 border-t border-border bg-muted/10 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
-                    <button
-                        onClick={onPrev}
-                        disabled={!onPrev || activeStep === 0}
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                        Back
-                    </button>
+                <div className="px-5 py-3 border-t border-border bg-muted/10 dark:bg-zinc-900/40 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <button
+                            onClick={onPrev}
+                            disabled={!onPrev || activeStep === 0}
+                            className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium text-foreground bg-background dark:bg-zinc-800 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                            Back
+                        </button>
 
-                    <div className="text-[10px] text-muted-foreground tabular-nums hidden sm:block">
-                        {activeStep + 1} / {steps.length}
+                        <div className="text-[10px] text-muted-foreground tabular-nums hidden sm:block">
+                            Step {activeStep + 1} of {steps.length}
+                        </div>
+
+                        <button
+                            onClick={onNext}
+                            disabled={!onNext || !canAdvance}
+                            className="flex-1 sm:flex-none min-w-[180px] flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-zinc-900 bg-primary rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                        >
+                            <span>{isLast ? 'Done' : resolvedNextLabel}</span>
+                            <ChevronRight className="h-4 w-4" />
+                        </button>
                     </div>
-
-                    <button
-                        onClick={onNext}
-                        disabled={!onNext || !canAdvance || isLast}
-                        className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-zinc-900 bg-primary rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-                    >
-                        {isLast ? 'Done' : 'Next'}
-                        <ChevronRight className="h-4 w-4" />
-                    </button>
+                    {!canAdvance && (
+                        <div className="text-[11px] text-amber-600 dark:text-amber-400 text-center italic">
+                            Complete this step's action to continue.
+                        </div>
+                    )}
                 </div>
             )}
         </div>
