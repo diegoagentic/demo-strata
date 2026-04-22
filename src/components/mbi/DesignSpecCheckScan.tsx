@@ -18,6 +18,7 @@ import {
     Droplet, Package, AlertTriangle,
 } from 'lucide-react'
 import { StatusBadge } from '../shared'
+import { usePauseAware } from '../../context/usePauseAware'
 
 interface SpecCheck {
     id: string
@@ -67,11 +68,11 @@ export default function DesignSpecCheckScan() {
         setPhase(0)
     }
 
+    const { pauseAwareTimeout } = usePauseAware()
     useEffect(() => {
         if (phase < 0 || phase >= CHECKS.length) return
-        const t = setTimeout(() => setPhase(p => p + 1), 1400)
-        return () => clearTimeout(t)
-    }, [phase])
+        return pauseAwareTimeout(() => setPhase(p => p + 1), 1400)
+    }, [phase, pauseAwareTimeout])
 
     const done = phase >= CHECKS.length
     const runningCheck = phase >= 0 && !done ? CHECKS[phase] : null

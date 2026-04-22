@@ -22,6 +22,7 @@
 import { useEffect, useState } from 'react'
 import { FileCode2, Sparkles, ChevronRight } from 'lucide-react'
 import type { SIFSample } from '../../config/profiles/mbi-data'
+import { usePauseAware } from '../../context/usePauseAware'
 
 interface SIFParserPreviewProps {
     sif: SIFSample
@@ -32,17 +33,19 @@ interface SIFParserPreviewProps {
 export default function SIFParserPreview({ sif, animate = true, stagger = 120 }: SIFParserPreviewProps) {
     const [extractedCount, setExtractedCount] = useState(animate ? 0 : sif.lineItems.length)
 
+    const { pausedRef } = usePauseAware()
     useEffect(() => {
         if (!animate) return
         setExtractedCount(0)
         let i = 0
         const interval = setInterval(() => {
+            if (pausedRef.current) return
             i++
             setExtractedCount(i)
             if (i >= sif.lineItems.length) clearInterval(interval)
         }, stagger)
         return () => clearInterval(interval)
-    }, [sif.id, animate, stagger, sif.lineItems.length])
+    }, [sif.id, animate, stagger, sif.lineItems.length, pausedRef])
 
     const progress = Math.round((extractedCount / sif.lineItems.length) * 100)
     const isComplete = extractedCount >= sif.lineItems.length

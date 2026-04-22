@@ -23,6 +23,7 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle2, Loader2, ShieldCheck } from 'lucide-react'
 import { StatusBadge } from '../shared'
+import { usePauseAware } from '../../context/usePauseAware'
 
 interface CheckSpec {
     id: string
@@ -54,21 +55,20 @@ export default function PreflightScanChain({
     onComplete,
 }: PreflightScanChainProps) {
     const [phase, setPhase] = useState(autoplay ? -1 : CHECKS.length)
+    const { pauseAwareTimeout } = usePauseAware()
 
     useEffect(() => {
         if (!autoplay) return
-        const startTimer = setTimeout(() => setPhase(0), startDelay)
-        return () => clearTimeout(startTimer)
-    }, [autoplay, startDelay])
+        return pauseAwareTimeout(() => setPhase(0), startDelay)
+    }, [autoplay, startDelay, pauseAwareTimeout])
 
     useEffect(() => {
         if (phase < 0 || phase >= CHECKS.length) {
             if (phase >= CHECKS.length) onComplete?.()
             return
         }
-        const t = setTimeout(() => setPhase(p => p + 1), perCheckDuration)
-        return () => clearTimeout(t)
-    }, [phase, perCheckDuration, onComplete])
+        return pauseAwareTimeout(() => setPhase(p => p + 1), perCheckDuration)
+    }, [phase, perCheckDuration, onComplete, pauseAwareTimeout])
 
     const stateOf = (i: number): CheckState => {
         if (i < phase) return 'done'

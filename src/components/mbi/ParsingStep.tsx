@@ -28,6 +28,7 @@ import MBIDetailSheet from './MBIDetailSheet'
 import ParsingDiscrepanciesPanel, { DEFAULT_PARSING_DISCREPANCIES, type DiscrepancyStatus } from './ParsingDiscrepanciesPanel'
 import { getSIFSample } from '../../config/profiles/mbi-data'
 import type { ScenarioTier } from '../../config/profiles/mbi-data'
+import { usePauseAware } from '../../context/usePauseAware'
 
 interface ParsingStepProps {
     selectedTier: ScenarioTier | null
@@ -54,16 +55,15 @@ export default function ParsingStep(_props: ParsingStepProps) {
         setDiscrepancyStatus(prev => ({ ...prev, [id]: s }))
 
     // Preflight auto-plays after the SIF parser completes (~1.8s)
+    const { pauseAwareTimeout } = usePauseAware()
     useEffect(() => {
-        const start = setTimeout(() => setPreflightPhase(0), 1800)
-        return () => clearTimeout(start)
-    }, [])
+        return pauseAwareTimeout(() => setPreflightPhase(0), 1800)
+    }, [pauseAwareTimeout])
 
     useEffect(() => {
         if (preflightPhase < 0 || preflightPhase >= PREFLIGHT_CHECKS.length) return
-        const t = setTimeout(() => setPreflightPhase(p => p + 1), 900)
-        return () => clearTimeout(t)
-    }, [preflightPhase])
+        return pauseAwareTimeout(() => setPreflightPhase(p => p + 1), 900)
+    }, [preflightPhase, pauseAwareTimeout])
 
     const preflightDone = preflightPhase >= PREFLIGHT_CHECKS.length
     const preflightRunningLabel = preflightPhase >= 0 && !preflightDone

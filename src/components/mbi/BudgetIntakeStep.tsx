@@ -30,6 +30,7 @@ import MBIDetailSheet from './MBIDetailSheet'
 import { StatusBadge } from '../shared'
 import type { BudgetPath, Vertical, ContractType } from '../../config/profiles/mbi-data'
 import { MBI_CONTRACTS, getSIFSample } from '../../config/profiles/mbi-data'
+import { usePauseAware } from '../../context/usePauseAware'
 
 export interface QuickFormState {
     clientName: string
@@ -279,7 +280,9 @@ function DesignAssistedIntake({
 
     const undoRejection = () => setRejection(null)
 
-    // Drive the per-file processing animation
+    // Drive the per-file processing animation. Holds position when the demo
+    // guide is paused so the user can read the in-flight state.
+    const { pausedRef } = usePauseAware()
     useEffect(() => {
         const intervals = files.map(f => {
             if (status[f.id] !== 'processing') return null
@@ -287,6 +290,7 @@ function DesignAssistedIntake({
             const totalSteps = Math.max(8, Math.round(f.processingMs / stepMs))
             let i = 0
             return setInterval(() => {
+                if (pausedRef.current) return
                 i++
                 const pct = Math.min(100, Math.round((i / totalSteps) * 100))
                 setProgress(prev => ({ ...prev, [f.id]: pct }))
@@ -296,7 +300,7 @@ function DesignAssistedIntake({
             }, stepMs)
         })
         return () => intervals.forEach(t => t && clearInterval(t))
-    }, [files, status])
+    }, [files, status, pausedRef])
 
     const allReady = files.every(f => status[f.id] === 'ready')
     const processingCount = files.filter(f => status[f.id] === 'processing').length
