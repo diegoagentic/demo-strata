@@ -77,6 +77,17 @@ function getStepDataThread(stepId: string): string | null {
         'w2.2': '5 modules validated — verification report sent to expert',
         'w2.3': 'All adjustments resolved — proposal assembled ($202,138)',
         'w2.4': 'Proposal approved and released to client — 92% time saved',
+        // Leland — purchase order pipeline (10 steps)
+        'l0.1': 'Inbox set · the manual baseline',
+        'l1.1': 'PO captured · ready for the next check',
+        'l1.2': 'Matching quote found',
+        'l1.3': 'Price difference caught · sent for review',
+        'l1.4': 'Reviewer approved · Strata resumes',
+        'l1.5': 'Customer · materials · configuration validated',
+        'l1.6': 'Sales order built',
+        'l1.7': 'Comments · metadata · rebate applied',
+        'l1.8': 'Order logged · ticket closed',
+        'l2.1': 'One catch · meaningful annual savings',
     };
     return threads[stepId] || null;
 }
@@ -89,7 +100,8 @@ export default function DemoSidebar() {
     const isContinua = activeProfile.id === 'continua';
     const isDupler = activeProfile.id === 'dupler';
     const isWRG = activeProfile.id === 'wrg';
-    const hasDataThreads = isContinua || isDupler || isWRG;
+    const isLeland = activeProfile.id === 'leland';
+    const hasDataThreads = isContinua || isDupler || isWRG || isLeland;
 
     // Invert: when app is dark → sidebar is light, when app is light → sidebar is dark
     const isDarkSidebar = theme === 'light';

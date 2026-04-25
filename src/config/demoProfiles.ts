@@ -10,6 +10,7 @@ import { OPS_DEMO_STEPS, OPS_DEMO_STEP_BEHAVIOR, OPS_DEMO_STEP_MESSAGES, OPS_DEM
 import { CONTINUA_DEMO_STEPS, CONTINUA_DEMO_STEP_BEHAVIOR, CONTINUA_DEMO_STEP_MESSAGES, CONTINUA_DEMO_SELF_INDICATED } from './profiles/continua-demo';
 import { WRG_DEMO_STEPS, WRG_DEMO_STEP_BEHAVIOR, WRG_DEMO_STEP_MESSAGES, WRG_DEMO_SELF_INDICATED } from './profiles/wrg-demo';
 import { MBI_STEPS, MBI_STEP_BEHAVIOR, MBI_STEP_MESSAGES, MBI_SELF_INDICATED } from './profiles/mbi';
+import { LELAND_STEPS, LELAND_STEP_BEHAVIOR, LELAND_STEP_MESSAGES, LELAND_SELF_INDICATED } from './profiles/leland-demo';
 
 export type SimulationApp =
     | 'dashboard' | 'expert-hub' | 'email-marketplace'
@@ -19,7 +20,8 @@ export type SimulationApp =
     | 'crm'
     | 'dupler-pdf' | 'dupler-warehouse' | 'dupler-reporting'
     | 'wrg-estimator'
-    | 'mbi-overview' | 'mbi-budget' | 'mbi-accounting' | 'mbi-quotes' | 'mbi-design';
+    | 'mbi-overview' | 'mbi-budget' | 'mbi-accounting' | 'mbi-quotes' | 'mbi-design'
+    | 'leland-strata' | 'leland-inbox' | 'leland-seradex' | 'leland-review';
 
 export interface DemoStep {
     id: string;
@@ -32,7 +34,7 @@ export interface DemoStep {
     highlightId?: string;
 }
 
-export type DemoProfileId = 'acme' | 'coi' | 'dupler' | 'ops' | 'continua' | 'wrg' | 'mbi';
+export type DemoProfileId = 'acme' | 'coi' | 'dupler' | 'ops' | 'continua' | 'wrg' | 'mbi' | 'leland';
 
 export interface DemoProfile {
     id: DemoProfileId;
@@ -123,5 +125,16 @@ export const DEMO_PROFILES: DemoProfile[] = [
         stepBehavior: MBI_STEP_BEHAVIOR,
         stepMessages: MBI_STEP_MESSAGES,
         selfIndicatedSteps: MBI_SELF_INDICATED,
+    },
+    {
+        id: 'leland',
+        name: 'Leland',
+        companyName: 'Leland',
+        description: 'Purchase order pipeline · materials review · exception handling',
+        icon: '🪑',
+        steps: LELAND_STEPS,
+        stepBehavior: LELAND_STEP_BEHAVIOR,
+        stepMessages: LELAND_STEP_MESSAGES,
+        selfIndicatedSteps: LELAND_SELF_INDICATED,
     },
 ];

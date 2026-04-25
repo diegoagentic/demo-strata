@@ -46,7 +46,10 @@ import MBIBudgetPage from "./components/mbi/MBIBudgetPage"
 import MBIAccountingPage from "./components/mbi/MBIAccountingPage"
 import MBIQuotesPage from "./components/mbi/MBIQuotesPage"
 import MBIDesignPage from "./components/mbi/MBIDesignPage"
-import { Calculator as CalculatorIcon, Receipt as ReceiptIcon, FileSearch as FileSearchIcon, Palette as PaletteIcon } from 'lucide-react'
+import { Calculator as CalculatorIcon, Receipt as ReceiptIcon, FileSearch as FileSearchIcon, Palette as PaletteIcon, Sparkles as SparklesIcon, Mail as MailIcon, Database as DatabaseIcon, ShieldCheck as ShieldCheckIcon } from 'lucide-react'
+
+// Leland Demo — 4 app shells (Phase L0 · expanded in L1-L5)
+import { LelandStrataShell, LelandInboxApp, LelandSeradexApp, LelandReviewQueueApp } from "./features/leland"
 
 import {
   HomeIcon,
@@ -84,8 +87,8 @@ function App() {
   const handleNavigate = (page: string) => {
     if (page === 'overview') {
       setCurrentPage('dashboard')
-    } else if (page.startsWith('mbi-')) {
-      // MBI nav tabs jump to the first demo step matching that module's app
+    } else if (page.startsWith('mbi-') || page.startsWith('leland-')) {
+      // MBI/Leland nav tabs jump to the first demo step matching that module's app
       const idx = steps.findIndex(s => s.app === page)
       if (idx >= 0) goToStep(idx)
     } else {
@@ -124,6 +127,7 @@ function App() {
   const isDupler = demoProfile.id === 'dupler';
   const isWRG = demoProfile.id === 'wrg';
   const isMBI = demoProfile.id === 'mbi';
+  const isLeland = demoProfile.id === 'leland';
   const getSimulationConfig = () => {
     if (!isDemoActive) return { appName: undefined, companyName: undefined, customNavigation: undefined };
 
@@ -143,7 +147,17 @@ function App() {
     const isWrgDealer = isWRG && currentStep.role === 'Dealer';
     const isWrgExpert = isWRG && currentStep.role === 'Expert';
     const isWrgDesigner = isWRG && currentStep.role === 'Designer';
+
+    // Leland — appName follows the app's purpose; company switches by role.
+    const lelandAppName = currentStep.app === 'leland-inbox' ? 'Inbox'
+      : currentStep.app === 'leland-strata' ? 'PO Workspace'
+      : currentStep.app === 'leland-seradex' ? 'Order System'
+      : currentStep.app === 'leland-review' ? 'Review Queue'
+      : 'PO Workspace';
+    const lelandCompany = currentStep.role === 'System' ? 'Strata Services' : demoProfile.companyName;
+
     const resolvedAppName = isContinua ? continuaAppName
+      : isLeland ? lelandAppName
       : currentStep.app === 'email-marketplace' ? (isWRG ? 'WRG Mail' : 'Wells Fargo Mail')
       : currentStep.app === 'catalog' ? 'Marketplace'
       : currentStep.app === 'service-now' ? 'ServiceNow'
@@ -155,7 +169,10 @@ function App() {
       : isDuplerExpert ? 'Expert Hub'
       : isExpert ? 'Expert Hub'
       : 'Dealer Experience';
-    const resolvedCompany = isContinua ? continuaCompany : isExpert || isDuplerExpert || isWrgExpert || isWrgDesigner ? 'Strata Services' : demoProfile.companyName;
+    const resolvedCompany = isContinua ? continuaCompany
+      : isLeland ? lelandCompany
+      : isExpert || isDuplerExpert || isWrgExpert || isWrgDesigner ? 'Strata Services'
+      : demoProfile.companyName;
 
     // Continua profile: 4-tab nav including Inventory with "Connected" badge
     const continuaNav = [
@@ -192,7 +209,15 @@ function App() {
       { name: 'Design AI', page: 'mbi-design', icon: PaletteIcon },
     ];
 
-    const nav = currentStep.app === 'crm' ? crmNav : isWRG ? wrgNav : isDupler ? duplerNav : isContinua ? continuaNav : isMBI ? mbiNav : expertNav;
+    // Leland profile: 4-tab primary nav (PO Workspace · Inbox · Order System · Review)
+    const lelandNav = [
+      { name: 'PO Workspace', page: 'leland-strata', icon: SparklesIcon },
+      { name: 'Inbox', page: 'leland-inbox', icon: MailIcon },
+      { name: 'Order System', page: 'leland-seradex', icon: DatabaseIcon },
+      { name: 'Review Queue', page: 'leland-review', icon: ShieldCheckIcon },
+    ];
+
+    const nav = currentStep.app === 'crm' ? crmNav : isWRG ? wrgNav : isDupler ? duplerNav : isContinua ? continuaNav : isMBI ? mbiNav : isLeland ? lelandNav : expertNav;
     return { appName: resolvedAppName, companyName: resolvedCompany, customNavigation: nav };
   };
 
@@ -221,6 +246,11 @@ function App() {
       'dupler-reporting': 'dashboard',
       // WRG Demo v6: no global Navbar tab — Estimator owns its own tabs
       'wrg-estimator': 'dashboard',
+      // Leland Demo: each app maps to its own primary nav tab (see lelandNav)
+      'leland-strata': 'leland-strata',
+      'leland-inbox': 'leland-inbox',
+      'leland-seradex': 'leland-seradex',
+      'leland-review': 'leland-review',
       // MBI Demo: each module owns its own primary nav tab (see mbiNav)
       'mbi-overview': 'mbi-overview',
       'mbi-budget': 'mbi-budget',
@@ -312,6 +342,14 @@ function App() {
         return <MBIQuotesPage />;
       case 'mbi-design':
         return <MBIDesignPage />;
+      case 'leland-strata':
+        return <LelandStrataShell />;
+      case 'leland-inbox':
+        return <LelandInboxApp />;
+      case 'leland-seradex':
+        return <LelandSeradexApp />;
+      case 'leland-review':
+        return <LelandReviewQueueApp />;
       default:
         return (
           <ExpertHubTransactions
