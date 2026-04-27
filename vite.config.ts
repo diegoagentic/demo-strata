@@ -18,18 +18,6 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'vendor-react';
-          if (id.includes('node_modules/lucide-react')) return 'vendor-lucide';
-          if (id.includes('node_modules/@heroicons')) return 'vendor-heroicons';
-          if (id.includes('node_modules/')) return 'vendor';
-          if (id.includes('/features/leland/') || id.includes('/config/profiles/leland')) return 'feature-leland';
-          if (id.includes('/components/mbi/') || id.includes('/features/mbi/')) return 'feature-mbi';
-          if (id.includes('/components/simulations/') || id.includes('/features/strata-estimator')) return 'feature-simulations';
-        },
-      },
-    },
+    chunkSizeWarningLimit: 5000,
   },
 })
