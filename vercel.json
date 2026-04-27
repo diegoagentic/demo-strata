@@ -1,6 +1,5 @@
 {
   "installCommand": "node scripts/vercel-install.mjs && npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "outputDirectory": "dist"
 }
