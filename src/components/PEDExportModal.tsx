@@ -5,8 +5,6 @@ import {
     CalendarIcon, TruckIcon, CheckCircleIcon, ExclamationTriangleIcon,
     ChevronUpDownIcon, CheckIcon,
 } from '@heroicons/react/24/outline';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 // --- Types ---
 
@@ -535,6 +533,11 @@ export default function PEDExportModal({ isOpen, onClose, data: initialData }: P
         setIsExporting(true);
 
         try {
+            const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+                import('html2canvas'),
+                import('jspdf'),
+            ]);
+
             // Build clean HTML with inline styles only (no Tailwind) for html2canvas compatibility
             const htmlContent = buildPdfHtml();
 
