@@ -17,16 +17,4 @@ export default defineConfig({
       'strata-design-system': path.resolve(__dirname, 'packages/strata-ds/src/components/index.ts'),
     },
   },
-  build: {
-    chunkSizeWarningLimit: 5000,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        },
-      },
-    },
-  },
 })
