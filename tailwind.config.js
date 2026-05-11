@@ -49,6 +49,36 @@ export default {
                 info: "rgb(from var(--color-info) r g b / <alpha-value>)",
                 ai: "rgb(from var(--color-ai) r g b / <alpha-value>)",
                 danger: "rgb(from var(--color-danger) r g b / <alpha-value>)",
+                // New DS token naming (strata-ds v2 · --color-status-*)
+                status: {
+                    success: {
+                        DEFAULT: "rgb(from var(--color-status-success) r g b / <alpha-value>)",
+                        foreground: "rgb(from var(--color-status-success-foreground) r g b / <alpha-value>)",
+                    },
+                    warning: {
+                        DEFAULT: "rgb(from var(--color-status-warning) r g b / <alpha-value>)",
+                        foreground: "rgb(from var(--color-status-warning-foreground) r g b / <alpha-value>)",
+                    },
+                    error: {
+                        DEFAULT: "rgb(from var(--color-status-error) r g b / <alpha-value>)",
+                        foreground: "rgb(from var(--color-status-error-foreground) r g b / <alpha-value>)",
+                    },
+                    info: {
+                        DEFAULT: "rgb(from var(--color-status-info) r g b / <alpha-value>)",
+                        foreground: "rgb(from var(--color-status-info-foreground) r g b / <alpha-value>)",
+                    },
+                    ai: {
+                        DEFAULT: "rgb(from var(--color-status-ai) r g b / <alpha-value>)",
+                        foreground: "rgb(from var(--color-status-ai-foreground) r g b / <alpha-value>)",
+                    },
+                },
+                violet: {
+                    300: "rgb(from var(--color-violet-300) r g b / <alpha-value>)",
+                    400: "rgb(from var(--color-violet-400) r g b / <alpha-value>)",
+                    500: "rgb(from var(--color-violet-500) r g b / <alpha-value>)",
+                    600: "rgb(from var(--color-violet-600) r g b / <alpha-value>)",
+                    700: "rgb(from var(--color-violet-700) r g b / <alpha-value>)",
+                },
                 brand: {
                     50: "rgb(from var(--color-brand-50) r g b / <alpha-value>)",
                     100: "rgb(from var(--color-brand-100) r g b / <alpha-value>)",

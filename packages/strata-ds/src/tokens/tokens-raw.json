@@ -100,6 +100,36 @@
       "sidebar-ring": {
         "value": "{color.zinc.500}"
       },
+      "status-success": {
+        "value": "{color.green.600}"
+      },
+      "status-success-foreground": {
+        "value": "{color.white}"
+      },
+      "status-warning": {
+        "value": "{color.amber.700}"
+      },
+      "status-warning-foreground": {
+        "value": "{color.white}"
+      },
+      "status-error": {
+        "value": "{color.red.600}"
+      },
+      "status-error-foreground": {
+        "value": "{color.white}"
+      },
+      "status-info": {
+        "value": "{color.blue.600}"
+      },
+      "status-info-foreground": {
+        "value": "{color.white}"
+      },
+      "status-ai": {
+        "value": "{color.violet.500}"
+      },
+      "status-ai-foreground": {
+        "value": "{color.white}"
+      },
       "brand": {
         "50": {
           "value": "#fdfee7"
@@ -346,6 +376,23 @@
         },
         "950": {
           "value": "#1e1b4b"
+        }
+      },
+      "violet": {
+        "300": {
+          "value": "#c4b5fd"
+        },
+        "400": {
+          "value": "#a78bfa"
+        },
+        "500": {
+          "value": "#8b5cf6"
+        },
+        "600": {
+          "value": "#7c3aed"
+        },
+        "700": {
+          "value": "#6d28d9"
         }
       },
       "white": {
@@ -712,6 +759,36 @@
       "sidebar-ring": {
         "value": "{color.zinc.400}"
       },
+      "status-success": {
+        "value": "{color.green.400}"
+      },
+      "status-success-foreground": {
+        "value": "{color.black}"
+      },
+      "status-warning": {
+        "value": "{color.amber.400}"
+      },
+      "status-warning-foreground": {
+        "value": "{color.black}"
+      },
+      "status-error": {
+        "value": "{color.red.400}"
+      },
+      "status-error-foreground": {
+        "value": "{color.black}"
+      },
+      "status-info": {
+        "value": "{color.blue.400}"
+      },
+      "status-info-foreground": {
+        "value": "{color.black}"
+      },
+      "status-ai": {
+        "value": "{color.violet.400}"
+      },
+      "status-ai-foreground": {
+        "value": "{color.black}"
+      },
       "brand": {
         "50": {
           "value": "#fdfee7"
@@ -958,6 +1035,23 @@
         },
         "950": {
           "value": "#1e1b4b"
+        }
+      },
+      "violet": {
+        "300": {
+          "value": "#c4b5fd"
+        },
+        "400": {
+          "value": "#a78bfa"
+        },
+        "500": {
+          "value": "#8b5cf6"
+        },
+        "600": {
+          "value": "#7c3aed"
+        },
+        "700": {
+          "value": "#6d28d9"
         }
       },
       "white": {

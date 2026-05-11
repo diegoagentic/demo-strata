@@ -6,20 +6,40 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuration
-const STRATA_ROOT = path.resolve(__dirname, '../../../../Strata Design System');
-const CATALYST_ROOT = path.resolve(__dirname, '../');
+// Configuration — source is the strata-ds sub-repo (github.com/diegoagentic/strata-ds)
+const STRATA_ROOT = path.resolve(__dirname, '../../../../Strata Design System/strata-ds');
+const CATALYST_ROOT = path.resolve(__dirname, '../packages/strata-ds');
 
 const MAPPINGS = [
     {
-        name: 'Light Mode Tokens',
+        name: 'Light Mode Tokens (CSS)',
         src: path.join(STRATA_ROOT, 'src/styles/tokens/variables.css'),
         dest: path.join(CATALYST_ROOT, 'src/styles/tokens/variables.css')
     },
     {
-        name: 'Dark Mode Tokens',
+        name: 'Dark Mode Tokens (CSS)',
         src: path.join(STRATA_ROOT, 'src/styles/tokens/variables-dark.css'),
         dest: path.join(CATALYST_ROOT, 'src/styles/tokens/variables-dark.css')
+    },
+    {
+        name: 'Theme CSS',
+        src: path.join(STRATA_ROOT, 'src/styles/theme.css'),
+        dest: path.join(CATALYST_ROOT, 'src/styles/theme.css')
+    },
+    {
+        name: 'Primitive Colors (JSON)',
+        src: path.join(STRATA_ROOT, 'tokens/primitives/colors.json'),
+        dest: path.join(CATALYST_ROOT, 'tokens/primitives/colors.json')
+    },
+    {
+        name: 'Semantic Colors Light (JSON)',
+        src: path.join(STRATA_ROOT, 'tokens/semantic/colors.json'),
+        dest: path.join(CATALYST_ROOT, 'tokens/semantic/colors.json')
+    },
+    {
+        name: 'Semantic Colors Dark (JSON)',
+        src: path.join(STRATA_ROOT, 'tokens/semantic/colors-dark.json'),
+        dest: path.join(CATALYST_ROOT, 'tokens/semantic/colors-dark.json')
     }
 ];
 

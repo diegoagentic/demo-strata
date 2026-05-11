@@ -98,6 +98,36 @@
         },
         "sidebar-ring": {
             "value": "{color.zinc.500}"
+        },
+        "status-success": {
+            "value": "{color.green.600}"
+        },
+        "status-success-foreground": {
+            "value": "{color.white}"
+        },
+        "status-warning": {
+            "value": "{color.amber.700}"
+        },
+        "status-warning-foreground": {
+            "value": "{color.white}"
+        },
+        "status-error": {
+            "value": "{color.red.600}"
+        },
+        "status-error-foreground": {
+            "value": "{color.white}"
+        },
+        "status-info": {
+            "value": "{color.blue.600}"
+        },
+        "status-info-foreground": {
+            "value": "{color.white}"
+        },
+        "status-ai": {
+            "value": "{color.violet.500}"
+        },
+        "status-ai-foreground": {
+            "value": "{color.white}"
         }
     }
 }

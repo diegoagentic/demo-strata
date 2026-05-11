@@ -32,6 +32,16 @@
   --color-sidebar-accent-foreground: var(--color-sidebar-accent-foreground);
   --color-sidebar-border: var(--color-sidebar-border);
   --color-sidebar-ring: var(--color-sidebar-ring);
+  --color-status-success: var(--color-status-success);
+  --color-status-success-foreground: var(--color-status-success-foreground);
+  --color-status-warning: var(--color-status-warning);
+  --color-status-warning-foreground: var(--color-status-warning-foreground);
+  --color-status-error: var(--color-status-error);
+  --color-status-error-foreground: var(--color-status-error-foreground);
+  --color-status-info: var(--color-status-info);
+  --color-status-info-foreground: var(--color-status-info-foreground);
+  --color-status-ai: var(--color-status-ai);
+  --color-status-ai-foreground: var(--color-status-ai-foreground);
   --color-brand-50: var(--color-brand-50);
   --color-brand-100: var(--color-brand-100);
   --color-brand-200: var(--color-brand-200);
@@ -110,6 +120,11 @@
   --color-indigo-800: var(--color-indigo-800);
   --color-indigo-900: var(--color-indigo-900);
   --color-indigo-950: var(--color-indigo-950);
+  --color-violet-300: var(--color-violet-300);
+  --color-violet-400: var(--color-violet-400);
+  --color-violet-500: var(--color-violet-500);
+  --color-violet-600: var(--color-violet-600);
+  --color-violet-700: var(--color-violet-700);
   --color-white: var(--color-white);
   --color-black: var(--color-black);
   --shadow-sm: var(--shadow-sm);
