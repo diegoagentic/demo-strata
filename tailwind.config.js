@@ -1,10 +1,19 @@
+import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// Real strata-ds source (github.com/diegoagentic/strata-ds)
+const strataDsSrc = resolve(__dirname, '../../../Strata Design System/strata-ds/src')
+
 /** @type {import('tailwindcss').Config} */
 export default {
     darkMode: 'class',
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
-        "./packages/strata-ds/src/**/*.{js,ts,jsx,tsx}",
+        `${strataDsSrc}/**/*.{js,ts,jsx,tsx}`,
     ],
     theme: {
         extend: {
